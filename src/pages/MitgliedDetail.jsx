@@ -11,6 +11,34 @@ import { de } from 'date-fns/locale';
 
 const MITGLIEDSSTATUS = ['Aktiv', 'Passiv', 'Passiv mit Häs', 'Leihäs', 'Jugendliche 11-14', 'Jungaktive 15-17', 'Kinder 4-10', 'Kleinkind 0-3', 'Ehrenmitglied'];
 
+function Field({ label, value, field, type = 'text', options, editing, mitglied, onChange }) {
+  return (
+    <div>
+      <label className="text-xs text-muted-foreground font-medium block mb-1">{label}</label>
+      {editing ? (
+        options ? (
+          <select
+            value={mitglied[field] || ''}
+            onChange={e => onChange(field, e.target.value)}
+            className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+          >
+            {options.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
+        ) : (
+          <input
+            type={type}
+            value={mitglied[field] || ''}
+            onChange={e => onChange(field, e.target.value)}
+            className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+          />
+        )
+      ) : (
+        <p className="text-sm text-foreground py-1">{value || mitglied[field] || '–'}</p>
+      )}
+    </div>
+  );
+}
+
 export default function MitgliedDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -73,31 +101,7 @@ export default function MitgliedDetail() {
 
   const alter = mitglied.geburtsdatum ? differenceInYears(new Date(), new Date(mitglied.geburtsdatum)) : null;
 
-  const Field = ({ label, value, field, type = 'text', options }) => (
-    <div>
-      <label className="text-xs text-muted-foreground font-medium block mb-1">{label}</label>
-      {editing ? (
-        options ? (
-          <select
-            value={mitglied[field] || ''}
-            onChange={e => setMitglied(p => ({ ...p, [field]: e.target.value }))}
-            className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
-          >
-            {options.map(o => <option key={o} value={o}>{o}</option>)}
-          </select>
-        ) : (
-          <input
-            type={type}
-            value={mitglied[field] || ''}
-            onChange={e => setMitglied(p => ({ ...p, [field]: e.target.value }))}
-            className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
-          />
-        )
-      ) : (
-        <p className="text-sm text-foreground py-1">{value || mitglied[field] || '–'}</p>
-      )}
-    </div>
-  );
+  const handleFieldChange = (field, value) => setMitglied(p => ({ ...p, [field]: value }));
 
   if (loading) {
     return (
@@ -174,14 +178,14 @@ export default function MitgliedDetail() {
           <User size={16} className="text-primary" /> Persönliche Daten
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Vorname" field="vorname" />
-          <Field label="Nachname" field="nachname" />
-          <Field label="Geburtsdatum" field="geburtsdatum" type="date" />
-          <Field label="E-Mail" field="email" type="email" />
-          <Field label="Telefon" field="telefon" />
-          <Field label="Mitgliedsstatus" field="mitgliedsstatus" options={MITGLIEDSSTATUS} />
-          <Field label="Eintrittsdatum" field="eintrittsdatum" type="date" />
-          <Field label="Austrittsdatum" field="austrittsdatum" type="date" />
+          <Field label="Vorname" field="vorname" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+          <Field label="Nachname" field="nachname" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+          <Field label="Geburtsdatum" field="geburtsdatum" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+          <Field label="E-Mail" field="email" type="email" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+          <Field label="Telefon" field="telefon" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+          <Field label="Mitgliedsstatus" field="mitgliedsstatus" options={MITGLIEDSSTATUS} editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+          <Field label="Eintrittsdatum" field="eintrittsdatum" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+          <Field label="Austrittsdatum" field="austrittsdatum" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
         </div>
       </div>
 
@@ -192,10 +196,10 @@ export default function MitgliedDetail() {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
-            <Field label="Straße" field="strasse" />
+            <Field label="Straße" field="strasse" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           </div>
-          <Field label="PLZ" field="plz" />
-          <Field label="Ort" field="ort" />
+          <Field label="PLZ" field="plz" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+          <Field label="Ort" field="ort" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
         </div>
       </div>
 
@@ -221,13 +225,13 @@ export default function MitgliedDetail() {
             <CreditCard size={16} className="text-primary" /> Bankverbindung (SEPA)
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Kontoinhaber" field="kontoinhaber" />
-            <Field label="Bank" field="bankname" />
+            <Field label="Kontoinhaber" field="kontoinhaber" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+            <Field label="Bank" field="bankname" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
             <div className="sm:col-span-2">
-              <Field label="IBAN" field="iban" />
+              <Field label="IBAN" field="iban" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
             </div>
-            <Field label="Mandatnummer" field="sepa_mandatnummer" />
-            <Field label="Mandatdatum" field="sepa_mandatdatum" type="date" />
+            <Field label="Mandatnummer" field="sepa_mandatnummer" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+            <Field label="Mandatdatum" field="sepa_mandatdatum" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           </div>
         </div>
       )}
