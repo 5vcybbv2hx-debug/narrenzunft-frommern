@@ -1,0 +1,38 @@
+{
+  "name": "Haes",
+  "type": "object",
+  "properties": {
+    "haesnummer": {
+      "type": "string"
+    },
+    "haesgruppe_id": {
+      "type": "string"
+    },
+    "bezeichnung": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Aktiv",
+        "Verliehen",
+        "Verkauft",
+        "Frei",
+        "Stillgelegt"
+      ],
+      "default": "Frei"
+    },
+    "aktueller_besitzer_id": {
+      "type": "string"
+    },
+    "notizen": {
+      "type": "string"
+    },
+    "bild_url": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "haesnummer"
+  ]
+}

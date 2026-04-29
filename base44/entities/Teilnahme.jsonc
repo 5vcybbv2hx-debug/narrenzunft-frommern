@@ -1,0 +1,38 @@
+{
+  "name": "Teilnahme",
+  "type": "object",
+  "properties": {
+    "veranstaltung_id": {
+      "type": "string"
+    },
+    "mitglied_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Angemeldet",
+        "Abgesagt",
+        "Best\u00e4tigt",
+        "Anwesend",
+        "Abwesend"
+      ],
+      "default": "Angemeldet"
+    },
+    "bus": {
+      "type": "boolean",
+      "default": false
+    },
+    "bus_anwesend": {
+      "type": "boolean",
+      "default": false
+    },
+    "notizen": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "veranstaltung_id",
+    "mitglied_id"
+  ]
+}

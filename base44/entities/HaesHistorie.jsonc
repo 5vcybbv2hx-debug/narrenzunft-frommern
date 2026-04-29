@@ -1,0 +1,27 @@
+{
+  "name": "HaesHistorie",
+  "type": "object",
+  "properties": {
+    "haes_id": {
+      "type": "string"
+    },
+    "mitglied_id": {
+      "type": "string"
+    },
+    "von_datum": {
+      "type": "string",
+      "format": "date"
+    },
+    "bis_datum": {
+      "type": "string",
+      "format": "date"
+    },
+    "notizen": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "haes_id",
+    "mitglied_id"
+  ]
+}

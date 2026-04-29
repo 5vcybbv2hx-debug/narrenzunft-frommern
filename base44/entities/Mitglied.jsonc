@@ -1,0 +1,86 @@
+{
+  "name": "Mitglied",
+  "type": "object",
+  "properties": {
+    "vorname": {
+      "type": "string"
+    },
+    "nachname": {
+      "type": "string"
+    },
+    "strasse": {
+      "type": "string"
+    },
+    "plz": {
+      "type": "string"
+    },
+    "ort": {
+      "type": "string"
+    },
+    "telefon": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "geburtsdatum": {
+      "type": "string",
+      "format": "date"
+    },
+    "eintrittsdatum": {
+      "type": "string",
+      "format": "date"
+    },
+    "austrittsdatum": {
+      "type": "string",
+      "format": "date"
+    },
+    "mitgliedsstatus": {
+      "type": "string",
+      "enum": [
+        "Aktiv",
+        "Passiv",
+        "Passiv mit H\u00e4s",
+        "Leih\u00e4s",
+        "Jugendliche 11-14",
+        "Jungaktive 15-17",
+        "Kinder 4-10",
+        "Kleinkind 0-3",
+        "Ehrenmitglied"
+      ],
+      "default": "Aktiv"
+    },
+    "notizen": {
+      "type": "string"
+    },
+    "profilbild_url": {
+      "type": "string"
+    },
+    "familie_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "iban": {
+      "type": "string"
+    },
+    "kontoinhaber": {
+      "type": "string"
+    },
+    "sepa_mandatnummer": {
+      "type": "string"
+    },
+    "sepa_mandatdatum": {
+      "type": "string",
+      "format": "date"
+    },
+    "bankname": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "vorname",
+    "nachname"
+  ]
+}

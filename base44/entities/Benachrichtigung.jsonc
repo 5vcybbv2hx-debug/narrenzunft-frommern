@@ -1,0 +1,38 @@
+{
+  "name": "Benachrichtigung",
+  "type": "object",
+  "properties": {
+    "mitglied_id": {
+      "type": "string"
+    },
+    "titel": {
+      "type": "string"
+    },
+    "nachricht": {
+      "type": "string"
+    },
+    "typ": {
+      "type": "string",
+      "enum": [
+        "Info",
+        "Warnung",
+        "Ehrung",
+        "Arbeitsdienst",
+        "Veranstaltung",
+        "Beitrag"
+      ],
+      "default": "Info"
+    },
+    "gelesen": {
+      "type": "boolean",
+      "default": false
+    },
+    "link": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "mitglied_id",
+    "titel"
+  ]
+}

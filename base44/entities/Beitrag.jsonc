@@ -1,0 +1,40 @@
+{
+  "name": "Beitrag",
+  "type": "object",
+  "properties": {
+    "mitglied_id": {
+      "type": "string"
+    },
+    "jahr": {
+      "type": "number"
+    },
+    "betrag": {
+      "type": "number"
+    },
+    "mitgliedsstatus": {
+      "type": "string"
+    },
+    "zahlungsstatus": {
+      "type": "string",
+      "enum": [
+        "Offen",
+        "Bezahlt",
+        "\u00dcberf\u00e4llig",
+        "Erlassen"
+      ],
+      "default": "Offen"
+    },
+    "zahlungsdatum": {
+      "type": "string",
+      "format": "date"
+    },
+    "notizen": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "mitglied_id",
+    "jahr",
+    "betrag"
+  ]
+}

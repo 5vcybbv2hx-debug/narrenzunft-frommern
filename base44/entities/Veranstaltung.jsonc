@@ -1,0 +1,61 @@
+{
+  "name": "Veranstaltung",
+  "type": "object",
+  "properties": {
+    "titel": {
+      "type": "string"
+    },
+    "typ": {
+      "type": "string",
+      "enum": [
+        "Umzug",
+        "Abendveranstaltung",
+        "Intern",
+        "Arbeitsdienst"
+      ],
+      "default": "Umzug"
+    },
+    "datum": {
+      "type": "string",
+      "format": "date"
+    },
+    "uhrzeit": {
+      "type": "string"
+    },
+    "ort": {
+      "type": "string"
+    },
+    "beschreibung": {
+      "type": "string"
+    },
+    "anmeldeschluss": {
+      "type": "string",
+      "format": "date"
+    },
+    "max_teilnehmer": {
+      "type": "number"
+    },
+    "bus_erforderlich": {
+      "type": "boolean",
+      "default": false
+    },
+    "anmeldung_aktiv": {
+      "type": "boolean",
+      "default": true
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Geplant",
+        "Aktiv",
+        "Abgeschlossen",
+        "Abgesagt"
+      ],
+      "default": "Geplant"
+    }
+  },
+  "required": [
+    "titel",
+    "datum"
+  ]
+}

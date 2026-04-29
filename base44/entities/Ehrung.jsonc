@@ -1,0 +1,45 @@
+{
+  "name": "Ehrung",
+  "type": "object",
+  "properties": {
+    "mitglied_id": {
+      "type": "string"
+    },
+    "typ": {
+      "type": "string",
+      "enum": [
+        "Mitgliedsjahre",
+        "Umzugsteilnahmen",
+        "Sonderehrung"
+      ]
+    },
+    "wert": {
+      "type": "number"
+    },
+    "jahr": {
+      "type": "number"
+    },
+    "beschreibung": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Vorgeschlagen",
+        "Genehmigt",
+        "Verliehen",
+        "Abgelehnt"
+      ],
+      "default": "Vorgeschlagen"
+    },
+    "datum": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": [
+    "mitglied_id",
+    "typ",
+    "wert"
+  ]
+}

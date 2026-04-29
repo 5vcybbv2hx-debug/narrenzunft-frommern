@@ -1,0 +1,41 @@
+{
+  "name": "Arbeitsdienst",
+  "type": "object",
+  "properties": {
+    "titel": {
+      "type": "string"
+    },
+    "datum": {
+      "type": "string",
+      "format": "date"
+    },
+    "uhrzeit": {
+      "type": "string"
+    },
+    "ort": {
+      "type": "string"
+    },
+    "beschreibung": {
+      "type": "string"
+    },
+    "benoetigte_personen": {
+      "type": "number"
+    },
+    "verantwortlicher_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Offen",
+        "In Planung",
+        "Abgeschlossen"
+      ],
+      "default": "Offen"
+    }
+  },
+  "required": [
+    "titel",
+    "datum"
+  ]
+}

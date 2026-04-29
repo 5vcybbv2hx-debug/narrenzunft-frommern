@@ -1,0 +1,30 @@
+{
+  "name": "ArbeitsdienstZuweisung",
+  "type": "object",
+  "properties": {
+    "arbeitsdienst_id": {
+      "type": "string"
+    },
+    "mitglied_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Offen",
+        "Best\u00e4tigt",
+        "Abgesagt",
+        "Erledigt",
+        "Nicht erledigt"
+      ],
+      "default": "Offen"
+    },
+    "notizen": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "arbeitsdienst_id",
+    "mitglied_id"
+  ]
+}
