@@ -9,7 +9,19 @@ import {
 import { format, differenceInYears } from 'date-fns';
 import { de } from 'date-fns/locale';
 
-const MITGLIEDSSTATUS = ['Aktiv', 'Passiv', 'Passiv mit Häs', 'Leihäs', 'Jugendliche 11-14', 'Jungaktive 15-17', 'Kinder 4-10', 'Kleinkind 0-3', 'Ehrenmitglied'];
+const ALLE_STATUS = ['Aktiv', 'Passiv', 'Passiv mit Häs', 'Leihäs', 'Jugendliche 11-14', 'Jungaktive 15-17', 'Kinder 4-10', 'Kleinkind 0-3', 'Ehrenmitglied'];
+
+function getVerfuegbareStatus(geburtsdatum) {
+  if (!geburtsdatum) return ALLE_STATUS;
+  const alter = differenceInYears(new Date(), new Date(geburtsdatum));
+  return ALLE_STATUS.filter(s => {
+    if (s === 'Kleinkind 0-3') return alter <= 3;
+    if (s === 'Kinder 4-10') return alter >= 4 && alter <= 10;
+    if (s === 'Jugendliche 11-14') return alter >= 11 && alter <= 14;
+    if (s === 'Jungaktive 15-17') return alter >= 15 && alter <= 17;
+    return true; // Alle anderen immer verfügbar
+  });
+}
 
 function Field({ label, value, field, type = 'text', options, editing, mitglied, onChange }) {
   return (
@@ -183,7 +195,7 @@ export default function MitgliedDetail() {
           <Field label="Geburtsdatum" field="geburtsdatum" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           <Field label="E-Mail" field="email" type="email" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           <Field label="Telefon" field="telefon" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
-          <Field label="Mitgliedsstatus" field="mitgliedsstatus" options={MITGLIEDSSTATUS} editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+          <Field label="Mitgliedsstatus" field="mitgliedsstatus" options={getVerfuegbareStatus(mitglied.geburtsdatum)} editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           <Field label="Eintrittsdatum" field="eintrittsdatum" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           <Field label="Austrittsdatum" field="austrittsdatum" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
         </div>
