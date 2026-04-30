@@ -1,30 +1,38 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { Bus, Car, Calendar, MapPin, Clock, ChevronRight, Check } from 'lucide-react';
+import { isAdmin } from '@/lib/roles';
+import { Bus, Car, Clock, MapPin, Check, Plus, X, Edit, Trash2, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
+const EMPTY_FORM = {
+  titel: '', typ: 'Umzug', datum: '', uhrzeit: '', ort: '',
+  beschreibung: '', anmeldeschluss: '', bus_erforderlich: false,
+  anmeldung_aktiv: true, status: 'Geplant',
+};
+
 export default function Umzuege() {
   const { user } = useAuth();
+  const admin = isAdmin(user);
   const [umzuege, setUmzuege] = useState([]);
   const [meineAnmeldungen, setMeineAnmeldungen] = useState([]);
   const [myMitglied, setMyMitglied] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editItem, setEditItem] = useState(null); // null = neu, sonst Objekt
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
   const today = new Date().toISOString().split('T')[0];
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     setLoading(true);
     try {
       const data = await base44.entities.Veranstaltung.list('datum', 500);
       const extern = data.filter(v => v.typ === 'Umzug' || v.typ === 'Abendveranstaltung');
-      const sorted = extern.sort((a, b) => a.datum.localeCompare(b.datum));
-      setUmzuege(sorted);
+      setUmzuege(extern.sort((a, b) => a.datum.localeCompare(b.datum)));
 
       const me = await base44.auth.me();
       const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
@@ -37,6 +45,46 @@ export default function Umzuege() {
     setLoading(false);
   };
 
+  const openNew = () => {
+    setEditItem(null);
+    setForm(EMPTY_FORM);
+    setShowForm(true);
+  };
+
+  const openEdit = (u) => {
+    setEditItem(u);
+    setForm({
+      titel: u.titel || '', typ: u.typ || 'Umzug', datum: u.datum || '',
+      uhrzeit: u.uhrzeit || '', ort: u.ort || '', beschreibung: u.beschreibung || '',
+      anmeldeschluss: u.anmeldeschluss || '', bus_erforderlich: u.bus_erforderlich || false,
+      anmeldung_aktiv: u.anmeldung_aktiv !== false, status: u.status || 'Geplant',
+    });
+    setShowForm(true);
+  };
+
+  const handleSave = async () => {
+    if (!form.titel || !form.datum) return;
+    setSaving(true);
+    try {
+      if (editItem) {
+        await base44.entities.Veranstaltung.update(editItem.id, form);
+      } else {
+        await base44.entities.Veranstaltung.create(form);
+      }
+      setShowForm(false);
+      await loadData();
+    } catch (e) {}
+    setSaving(false);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Termin wirklich löschen?')) return;
+    try {
+      await base44.entities.Veranstaltung.delete(id);
+      setUmzuege(prev => prev.filter(u => u.id !== id));
+    } catch (e) {}
+  };
+
   const getMeineAnmeldung = (veranstaltungId) =>
     meineAnmeldungen.find(a => a.veranstaltung_id === veranstaltungId);
 
@@ -44,10 +92,7 @@ export default function Umzuege() {
     if (!myMitglied) return;
     try {
       const t = await base44.entities.Teilnahme.create({
-        veranstaltung_id: veranstaltungId,
-        mitglied_id: myMitglied.id,
-        status: 'Angemeldet',
-        bus
+        veranstaltung_id: veranstaltungId, mitglied_id: myMitglied.id, status: 'Angemeldet', bus
       });
       setMeineAnmeldungen(prev => [...prev, t]);
     } catch (e) {}
@@ -71,9 +116,20 @@ export default function Umzuege() {
 
   return (
     <div className="px-4 lg:px-6 py-6 max-w-3xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Auswärtige Termine</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Umzüge & Abendveranstaltungen bei denen wir eingeladen sind · {kommende.length} kommend</p>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Auswärtige Termine</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Umzüge & Abendveranstaltungen · {kommende.length} kommend</p>
+        </div>
+        {admin && (
+          <button
+            onClick={openNew}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+          >
+            <Plus size={16} /> <span className="hidden sm:inline">Neuer Termin</span>
+          </button>
+        )}
       </div>
 
       {/* Kommende */}
@@ -105,35 +161,32 @@ export default function Umzuege() {
                         </div>
                         {isAngemeldet && (
                           <div className="flex items-center gap-2 mt-2">
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">
-                              ✓ Angemeldet
-                            </span>
-                            {anmeldung?.bus && (
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 flex items-center gap-1">
-                                <Bus size={10} /> Bus
-                              </span>
-                            )}
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">✓ Angemeldet</span>
+                            {anmeldung?.bus && <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 flex items-center gap-1"><Bus size={10} /> Bus</span>}
                           </div>
                         )}
                       </div>
+                      {admin && (
+                        <div className="flex flex-col gap-1 shrink-0">
+                          <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
+                            <Edit size={14} />
+                          </button>
+                          <button onClick={() => handleDelete(u.id)} className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  {/* Anmelde-Buttons */}
                   {myMitglied && u.anmeldung_aktiv && (
                     <div className="px-4 pb-4">
                       {!isAngemeldet ? (
                         <div className="flex gap-2">
-                          <button
-                            onClick={() => handleAnmelden(u.id, false)}
-                            className="flex-1 py-2.5 rounded-xl bg-secondary text-foreground text-sm font-semibold hover:bg-border transition-colors flex items-center justify-center gap-2"
-                          >
+                          <button onClick={() => handleAnmelden(u.id, false)} className="flex-1 py-2.5 rounded-xl bg-secondary text-foreground text-sm font-semibold hover:bg-border transition-colors flex items-center justify-center gap-2">
                             <Car size={14} /> Mit Auto
                           </button>
-                          <button
-                            onClick={() => handleAnmelden(u.id, true)}
-                            className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
-                          >
+                          <button onClick={() => handleAnmelden(u.id, true)} className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2">
                             <Bus size={14} /> Mit Bus
                           </button>
                         </div>
@@ -141,14 +194,9 @@ export default function Umzuege() {
                         <div className="space-y-2">
                           <div className="flex items-center justify-center gap-2 py-2 rounded-xl bg-green-500/10 border border-green-500/20">
                             <Check size={14} className="text-green-400" />
-                            <span className="text-sm text-green-400 font-medium">
-                              Angemeldet {anmeldung?.bus ? '· 🚌 Bus' : '· 🚗 Auto'}
-                            </span>
+                            <span className="text-sm text-green-400 font-medium">Angemeldet {anmeldung?.bus ? '· 🚌 Bus' : '· 🚗 Auto'}</span>
                           </div>
-                          <button
-                            onClick={() => handleAbsagen(anmeldung)}
-                            className="w-full py-2 rounded-xl bg-red-500/10 text-red-400 text-sm font-medium hover:bg-red-500/20 transition-colors"
-                          >
+                          <button onClick={() => handleAbsagen(anmeldung)} className="w-full py-2 rounded-xl bg-red-500/10 text-red-400 text-sm font-medium hover:bg-red-500/20 transition-colors">
                             Absagen
                           </button>
                         </div>
@@ -177,9 +225,14 @@ export default function Umzuege() {
                   <p className="text-sm font-medium text-foreground truncate">{u.titel}</p>
                   {u.ort && <p className="text-xs text-muted-foreground truncate">{u.ort}</p>}
                 </div>
-                {getMeineAnmeldung(u.id)?.status === 'Anwesend' && (
-                  <Check size={14} className="text-green-400 shrink-0" />
-                )}
+                <div className="flex items-center gap-1">
+                  {getMeineAnmeldung(u.id)?.status === 'Anwesend' && <Check size={14} className="text-green-400" />}
+                  {admin && (
+                    <button onClick={() => handleDelete(u.id)} className="p-1 rounded-lg text-muted-foreground hover:text-destructive transition-colors">
+                      <Trash2 size={13} />
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -190,6 +243,100 @@ export default function Umzuege() {
         <div className="text-center py-12">
           <Bus size={40} className="text-muted-foreground mx-auto mb-3" />
           <p className="text-muted-foreground">Keine auswärtigen Termine gefunden</p>
+          {admin && <button onClick={openNew} className="mt-3 text-sm text-primary hover:underline">Ersten Termin erstellen</button>}
+        </div>
+      )}
+
+      {/* Erstellen / Bearbeiten Modal */}
+      {showForm && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-bold text-foreground text-lg">{editItem ? 'Termin bearbeiten' : 'Neuer auswärtiger Termin'}</h3>
+              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <input
+                type="text"
+                placeholder="Titel *"
+                value={form.titel}
+                onChange={e => setForm(p => ({ ...p, titel: e.target.value }))}
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <select
+                  value={form.typ}
+                  onChange={e => setForm(p => ({ ...p, typ: e.target.value }))}
+                  className="px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+                >
+                  <option value="Umzug">Umzug</option>
+                  <option value="Abendveranstaltung">Abendveranstaltung</option>
+                </select>
+                <select
+                  value={form.status}
+                  onChange={e => setForm(p => ({ ...p, status: e.target.value }))}
+                  className="px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+                >
+                  {['Geplant', 'Aktiv', 'Abgeschlossen', 'Abgesagt'].map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Datum *</label>
+                  <input type="date" value={form.datum} onChange={e => setForm(p => ({ ...p, datum: e.target.value }))}
+                    className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Uhrzeit</label>
+                  <input type="time" value={form.uhrzeit} onChange={e => setForm(p => ({ ...p, uhrzeit: e.target.value }))}
+                    className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+                </div>
+              </div>
+              <input
+                type="text"
+                placeholder="Ort"
+                value={form.ort}
+                onChange={e => setForm(p => ({ ...p, ort: e.target.value }))}
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+              />
+              <textarea
+                placeholder="Beschreibung (optional)"
+                value={form.beschreibung}
+                onChange={e => setForm(p => ({ ...p, beschreibung: e.target.value }))}
+                rows={2}
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary resize-none"
+              />
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Anmeldeschluss</label>
+                <input type="date" value={form.anmeldeschluss} onChange={e => setForm(p => ({ ...p, anmeldeschluss: e.target.value }))}
+                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+              </div>
+              <div className="flex gap-6">
+                <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground">
+                  <input type="checkbox" checked={form.bus_erforderlich} onChange={e => setForm(p => ({ ...p, bus_erforderlich: e.target.checked }))} className="rounded" />
+                  Bus erforderlich
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground">
+                  <input type="checkbox" checked={form.anmeldung_aktiv} onChange={e => setForm(p => ({ ...p, anmeldung_aktiv: e.target.checked }))} className="rounded" />
+                  Anmeldung aktiv
+                </label>
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-5">
+              <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium">Abbrechen</button>
+              <button
+                onClick={handleSave}
+                disabled={saving || !form.titel || !form.datum}
+                className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <Save size={14} /> {saving ? 'Speichern...' : editItem ? 'Aktualisieren' : 'Erstellen'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
