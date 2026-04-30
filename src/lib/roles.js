@@ -1,76 +1,76 @@
 /**
  * Rollen-System für Narrenzunft App
- * 
+ *
  * Rollen (in user.role gespeichert):
- * - superadmin
- * - admin (Vorstand)
- * - verantwortlicher
- * - busverantwortlicher
- * - dienstverantwortlicher
+ * - vorstand
+ * - stellv_vorstand  (Stellvertretender Vorstand)
+ * - kassierer
+ * - spartenleiter
  * - mitglied
- * - eltern
+ *
+ * Um weitere Rollen hinzuzufügen:
+ * 1. Neuen Eintrag in ROLLEN und ROLLEN_LABELS ergänzen
+ * 2. Gewünschte Berechtigungsfunktionen unten erweitern
  */
 
 export const ROLLEN = {
-  SUPERADMIN: 'superadmin',
-  ADMIN: 'admin',
-  VERANTWORTLICHER: 'verantwortlicher',
-  BUSVERANTWORTLICHER: 'busverantwortlicher',
-  DIENSTVERANTWORTLICHER: 'dienstverantwortlicher',
-  MITGLIED: 'mitglied',
-  ELTERN: 'eltern',
+  VORSTAND:       'vorstand',
+  STELLV_VORSTAND:'stellv_vorstand',
+  KASSIERER:      'kassierer',
+  SPARTENLEITER:  'spartenleiter',
+  MITGLIED:       'mitglied',
 };
 
 export const ROLLEN_LABELS = {
-  superadmin: 'Superadmin',
-  admin: 'Vorstand/Admin',
-  verantwortlicher: 'Verantwortlicher',
-  busverantwortlicher: 'Busverantwortlicher',
-  dienstverantwortlicher: 'Dienstverantwortlicher',
-  mitglied: 'Mitglied',
-  eltern: 'Elternkonto',
-  user: 'Mitglied', // Legacy-Fallback
+  vorstand:        'Vorstand',
+  stellv_vorstand: 'Stv. Vorstand',
+  kassierer:       'Kassierer',
+  spartenleiter:   'Spartenleiter',
+  mitglied:        'Mitglied',
+  // Legacy-Fallbacks (Base44 Standard-Rollen)
+  admin:           'Admin',
+  user:            'Mitglied',
 };
 
-// Hilfsfunktionen
+// ── Hilfsfunktionen ──────────────────────────────────────────────────────────
+
+/** Vollzugriff: Vorstand + Stv. Vorstand */
 export function isAdmin(user) {
-  return user?.role === 'admin' || user?.role === 'superadmin';
+  return ['vorstand', 'stellv_vorstand', 'admin'].includes(user?.role);
 }
 
-export function isSuperAdmin(user) {
-  return user?.role === 'superadmin';
+/** Nur Vorstand */
+export function isVorstand(user) {
+  return user?.role === 'vorstand';
 }
 
-export function isVerantwortlicher(user) {
-  return ['admin', 'superadmin', 'verantwortlicher'].includes(user?.role);
-}
-
-export function isBusVerantwortlicher(user) {
-  return ['admin', 'superadmin', 'busverantwortlicher'].includes(user?.role);
-}
-
-export function isDienstVerantwortlicher(user) {
-  return ['admin', 'superadmin', 'dienstverantwortlicher', 'verantwortlicher'].includes(user?.role);
-}
-
-export function isEltern(user) {
-  return user?.role === 'eltern';
-}
-
-export function kannMitgliederlisteSehn(user) {
-  return ['admin', 'superadmin', 'verantwortlicher', 'dienstverantwortlicher', 'busverantwortlicher'].includes(user?.role);
-}
-
+/** Finanzzugriff: Vorstand + Kassierer */
 export function kannBankdatenSehn(user) {
-  return ['admin', 'superadmin'].includes(user?.role);
+  return ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'].includes(user?.role);
 }
 
-export function kannCheckinDurchfuehren(user) {
-  return ['admin', 'superadmin', 'verantwortlicher', 'busverantwortlicher'].includes(user?.role);
+export function kannBeitraegeVerwalten(user) {
+  return ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'].includes(user?.role);
 }
 
+/** Mitgliederliste sehen */
+export function kannMitgliederlisteSehn(user) {
+  return ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter', 'admin'].includes(user?.role);
+}
+
+/** Arbeitsdienste verwalten */
 export function kannArbeitsdiensteVerwalten(user) {
-  return ['admin', 'superadmin', 'dienstverantwortlicher', 'verantwortlicher'].includes(user?.role);
+  return ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'].includes(user?.role);
+}
+
+/** Check-In bei Veranstaltungen */
+export function kannCheckinDurchfuehren(user) {
+  return ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'].includes(user?.role);
+}
+
+/** Ehrungen verwalten */
+export function kannEhrungenVerwalten(user) {
+  return ['vorstand', 'stellv_vorstand', 'admin'].includes(user?.role);
 }
 
 export function getRollenLabel(role) {

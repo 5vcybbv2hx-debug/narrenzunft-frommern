@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
-import { isAdmin, isDienstVerantwortlicher, isBusVerantwortlicher, isVerantwortlicher, getRollenLabel } from '@/lib/roles';
+import { isAdmin, kannMitgliederlisteSehn, getRollenLabel } from '@/lib/roles';
 import {
   Users, Shirt, Award, CreditCard, Calendar, Bus,
   Briefcase, Bell, Search, LogOut, ChevronRight,
@@ -11,7 +11,7 @@ import { base44 } from '@/api/base44Client';
 export default function Mehr() {
   const { user } = useAuth();
   const admin = isAdmin(user);
-  const verantw = isVerantwortlicher(user);
+  const verantw = kannMitgliederlisteSehn(user);
 
   const handleLogout = () => base44.auth.logout('/');
 
