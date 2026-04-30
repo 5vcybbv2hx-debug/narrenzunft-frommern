@@ -9,6 +9,7 @@ import {
 import { format, differenceInYears } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { isAdmin, kannBankdatenSehn } from '@/lib/roles';
+import EhrungsStatus from '@/components/mitglied/EhrungsStatus';
 
 const ALLE_STATUS = ['Aktiv', 'Passiv', 'Passiv mit Häs', 'Leihäs', 'Jugendliche 11-14', 'Jungaktive 15-17', 'Kinder 4-10', 'Kleinkind 0-3', 'Ehrenmitglied'];
 
@@ -288,27 +289,8 @@ export default function MitgliedDetail() {
         </div>
       )}
 
-      {/* Ehrungen */}
-      {!isNew && ehrungen.length > 0 && (
-        <div className="bg-card border border-border rounded-xl p-5 mb-4">
-          <h2 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-            <Award size={16} className="text-primary" /> Ehrungen ({ehrungen.length})
-          </h2>
-          {ehrungen.map(e => (
-            <div key={e.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-              <div>
-                <p className="text-sm font-medium text-foreground">{e.typ} – {e.wert}</p>
-                {e.datum && <p className="text-xs text-muted-foreground">{format(new Date(e.datum), 'dd.MM.yyyy')}</p>}
-              </div>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                e.status === 'Verliehen' ? 'bg-green-500/20 text-green-400' :
-                e.status === 'Genehmigt' ? 'bg-blue-500/20 text-blue-400' :
-                'bg-yellow-500/20 text-yellow-400'
-              }`}>{e.status}</span>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Ehrungen & Teilnahmen – berechneter Status */}
+      {!isNew && <div className="mb-4"><EhrungsStatus mitglied={mitglied} /></div>}
 
       {/* Löschen */}
       {admin && !isNew && (

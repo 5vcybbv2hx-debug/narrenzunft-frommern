@@ -3,7 +3,8 @@
   "type": "object",
   "properties": {
     "mitglied_id": {
-      "type": "string"
+      "type": "string",
+      "description": "ID des Mitglieds"
     },
     "typ": {
       "type": "string",
@@ -11,30 +12,45 @@
         "Mitgliedsjahre",
         "Umzugsteilnahmen",
         "Sonderehrung"
-      ]
+      ],
+      "description": "Art der Ehrung"
     },
     "wert": {
-      "type": "number"
+      "type": "number",
+      "description": "Ehrungsstufe (z.B. 10, 20, 66, 99)"
     },
     "jahr": {
-      "type": "number"
-    },
-    "beschreibung": {
-      "type": "string"
+      "type": "number",
+      "description": "Jahr der Ehrung"
     },
     "status": {
       "type": "string",
       "enum": [
         "Vorgeschlagen",
-        "Genehmigt",
+        "Geplant",
         "Verliehen",
         "Abgelehnt"
       ],
-      "default": "Vorgeschlagen"
+      "default": "Vorgeschlagen",
+      "description": "Status der Ehrung"
     },
     "datum": {
       "type": "string",
-      "format": "date"
+      "format": "date",
+      "description": "Datum der Verleihung"
+    },
+    "verliehen_von": {
+      "type": "string",
+      "description": "Wer hat die Ehrung verliehen"
+    },
+    "beschreibung": {
+      "type": "string",
+      "description": "Notiz zur Ehrung"
+    },
+    "automatisch_berechnet": {
+      "type": "boolean",
+      "default": true,
+      "description": "Wurde die Ehrung automatisch berechnet"
     }
   },
   "required": [

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
+import { kannCheckinDurchfuehren, isAdmin as checkAdmin } from '@/lib/roles';
 import {
   ArrowLeft, Edit, Save, X, Calendar, MapPin, Clock, Users,
   Bus, Check, XCircle, Search, Trash2, CheckCircle
@@ -17,7 +18,8 @@ export default function VeranstaltungDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isNew = id === 'neu';
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = checkAdmin(user);
+  const kannCheckin = kannCheckinDurchfuehren(user);
 
   const [veranstaltung, setVeranstaltung] = useState({
     titel: '', typ: 'Umzug', datum: '', uhrzeit: '', ort: '',
@@ -104,9 +106,13 @@ export default function VeranstaltungDetail() {
     } catch (e) {}
   };
 
+  /**
+   * Check-In: Setzt Anwesenheit auf "Anwesend" (bestätigt) oder zurück.
+   * Nur "Anwesend" zählt für Umzugsehrungen.
+   */
   const toggleAnwesenheit = async (teilnahme) => {
     try {
-      const newStatus = teilnahme.status === 'Anwesend' ? 'Bestätigt' : 'Anwesend';
+      const newStatus = teilnahme.status === 'Anwesend' ? 'Angemeldet' : 'Anwesend';
       await base44.entities.Teilnahme.update(teilnahme.id, { status: newStatus });
       setTeilnahmen(prev => prev.map(t => t.id === teilnahme.id ? { ...t, status: newStatus } : t));
     } catch (e) {}
@@ -167,7 +173,9 @@ export default function VeranstaltungDetail() {
   );
 
   const angemeldete = teilnahmen.filter(t => ['Angemeldet', 'Bestätigt', 'Anwesend'].includes(t.status));
+  // "Anwesend" = einziger Status der für Ehrungen zählt
   const anwesende = teilnahmen.filter(t => t.status === 'Anwesend');
+  const abgesagte = teilnahmen.filter(t => t.status === 'Abgesagt');
 
   return (
     <div className="px-4 lg:px-6 py-6 max-w-3xl mx-auto">
@@ -349,38 +357,72 @@ export default function VeranstaltungDetail() {
       {/* Check-In Tab */}
       {activeTab === 'check-in' && !isNew && (
         <div>
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="bg-card border border-border rounded-xl p-4 text-center">
-              <p className="text-3xl font-bold text-primary">{anwesende.length}</p>
-              <p className="text-xs text-muted-foreground mt-1">Anwesend</p>
-            </div>
-            <div className="bg-card border border-border rounded-xl p-4 text-center">
-              <p className="text-3xl font-bold text-foreground">{angemeldete.length}</p>
-              <p className="text-xs text-muted-foreground mt-1">Angemeldet</p>
+          {/* Statuslegende */}
+          <div className="bg-card border border-border rounded-xl p-3 mb-4">
+            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Status-Bedeutung</p>
+            <div className="grid grid-cols-2 gap-1.5 text-xs">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-green-400" />
+                <span className="text-foreground">Anwesend bestätigt</span>
+                <span className="text-muted-foreground">(zählt für Ehrung)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-blue-400" />
+                <span className="text-foreground">Angemeldet</span>
+                <span className="text-muted-foreground">(zählt nicht)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-red-400" />
+                <span className="text-foreground">Abgesagt</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Bus size={10} className="text-blue-400" />
+                <span className="text-foreground">Bus angemeldet</span>
+              </div>
             </div>
           </div>
+
+          {/* Statistik */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3 text-center">
+              <p className="text-2xl font-bold text-green-400">{anwesende.length}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Anwesend ✓</p>
+            </div>
+            <div className="bg-card border border-border rounded-xl p-3 text-center">
+              <p className="text-2xl font-bold text-foreground">{angemeldete.length - anwesende.length}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Nicht eingecheckt</p>
+            </div>
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-center">
+              <p className="text-2xl font-bold text-red-400">{abgesagte.length}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Abgesagt</p>
+            </div>
+          </div>
+
           <div className="relative mb-4">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Name oder Häsnummer suchen..."
+              placeholder="Name suchen..."
               value={searchMember}
               onChange={e => setSearchMember(e.target.value)}
               className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
             />
           </div>
+
+          {/* Angemeldete Liste */}
           <div className="space-y-2">
             {filteredTeilnahmen
               .filter(t => ['Angemeldet', 'Bestätigt', 'Anwesend'].includes(t.status))
               .map(t => (
                 <button
                   key={t.id}
-                  onClick={() => toggleAnwesenheit(t)}
+                  onClick={() => kannCheckin && toggleAnwesenheit(t)}
+                  disabled={!kannCheckin}
                   className={`w-full flex items-center gap-3 rounded-xl px-4 py-4 border transition-all ${
                     t.status === 'Anwesend'
                       ? 'bg-green-500/10 border-green-500/30'
                       : 'bg-card border-border hover:border-primary/50'
-                  }`}
+                  } ${!kannCheckin ? 'cursor-default' : 'cursor-pointer'}`}
                 >
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
                     t.status === 'Anwesend' ? 'bg-green-500/20 text-green-400' : 'bg-primary/20 text-primary'
@@ -389,9 +431,22 @@ export default function VeranstaltungDetail() {
                   </div>
                   <div className="flex-1 text-left">
                     <p className="font-semibold text-foreground">{getMitgliedName(t.mitglied_id)}</p>
-                    <p className="text-xs text-muted-foreground">{t.status}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className={`text-xs font-medium ${
+                        t.status === 'Anwesend' ? 'text-green-400' : 'text-muted-foreground'
+                      }`}>
+                        {t.status === 'Anwesend' ? '✓ Anwesend bestätigt' : t.status}
+                      </span>
+                      {t.bus && <span className="text-xs text-blue-400 flex items-center gap-0.5"><Bus size={10} /> Bus</span>}
+                    </div>
                   </div>
-                  {t.bus && <Bus size={16} className="text-blue-400 shrink-0" />}
+                  {kannCheckin && (
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                      t.status === 'Anwesend' ? 'bg-green-500/30' : 'bg-secondary'
+                    }`}>
+                      <Check size={16} className={t.status === 'Anwesend' ? 'text-green-400' : 'text-muted-foreground'} />
+                    </div>
+                  )}
                 </button>
               ))}
           </div>

@@ -16,7 +16,7 @@ import MitgliedDetail from './pages/MitgliedDetail';
 import Veranstaltungen from './pages/Veranstaltungen';
 import VeranstaltungDetail from './pages/VeranstaltungDetail';
 import Arbeitsdienste from './pages/Arbeitsdienste';
-import Ehrungen from './pages/Ehrungen';
+import Ehrungen from './pages/Ehrungen.jsx';
 import Beitraege from './pages/Beitraege';
 import Haes from './pages/Haes';
 import Umzuege from './pages/Umzuege';

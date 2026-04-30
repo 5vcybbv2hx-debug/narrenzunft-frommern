@@ -1,26 +1,57 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { Award, Star, Search, Filter, Plus, Check, X } from 'lucide-react';
-import { format, differenceInYears } from 'date-fns';
+import { kannEhrungenVerwalten } from '@/lib/roles';
+import {
+  berechneEhrungsstatusGesamt,
+  isMitgliedsEhrungBaldFaellig,
+  isUmzugsEhrungBaldFaellig,
+  findeDataProbleme,
+  exportiereAlsCSV,
+} from '@/lib/ehrungsLogik';
+import {
+  Award, AlertTriangle, CheckCircle2, Clock, Download,
+  Star, TrendingUp, User, ChevronDown, ChevronUp, RefreshCw
+} from 'lucide-react';
+import { format } from 'date-fns';
+import { de } from 'date-fns/locale';
 
-const EHRUNGSSTUFEN_UMZUEGE = [66, 99, 133, 166, 199, 222, 266, 299, 333];
+const TABS = [
+  { id: 'faellig', label: 'Fällig', icon: AlertTriangle },
+  { id: 'bald', label: 'Bald fällig', icon: Clock },
+  { id: 'verliehen', label: 'Verliehen', icon: CheckCircle2 },
+  { id: 'probleme', label: 'Datenprobleme', icon: AlertTriangle },
+];
 
 const STATUS_COLORS = {
   'Vorgeschlagen': 'bg-yellow-500/20 text-yellow-400',
-  'Genehmigt': 'bg-blue-500/20 text-blue-400',
+  'Geplant': 'bg-blue-500/20 text-blue-400',
   'Verliehen': 'bg-green-500/20 text-green-400',
   'Abgelehnt': 'bg-red-500/20 text-red-400',
 };
 
+function EhrungsBadge({ typ, wert }) {
+  const isUmzug = typ === 'Umzugsteilnahmen';
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${
+      isUmzug ? 'bg-blue-500/20 text-blue-400' : 'bg-yellow-500/20 text-yellow-400'
+    }`}>
+      {isUmzug ? '🎪' : '⭐'} {typ === 'Mitgliedsjahre' ? `${wert} Jahre` : `${wert} Umzüge`}
+    </span>
+  );
+}
+
 export default function Ehrungen() {
   const { user } = useAuth();
-  const [ehrungen, setEhrungen] = useState([]);
-  const [mitglieder, setMitglieder] = useState([]);
-  const [filter, setFilter] = useState('Alle');
-  const [search, setSearch] = useState('');
+  const kannVerwalten = kannEhrungenVerwalten(user);
+
   const [loading, setLoading] = useState(true);
-  const isAdmin = user?.role === 'admin';
+  const [saving, setSaving] = useState(null);
+  const [activeTab, setActiveTab] = useState('faellig');
+  const [mitglieder, setMitglieder] = useState([]);
+  const [teilnahmen, setTeilnahmen] = useState([]);
+  const [veranstaltungen, setVeranstaltungen] = useState([]);
+  const [ehrungen, setEhrungen] = useState([]);
 
   useEffect(() => {
     loadData();
@@ -29,36 +60,164 @@ export default function Ehrungen() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [e, m] = await Promise.all([
-        base44.entities.Ehrung.list('-created_date', 500),
+      const [m, t, v, e] = await Promise.all([
         base44.entities.Mitglied.list('nachname', 500),
+        base44.entities.Teilnahme.list('-created_date', 5000),
+        base44.entities.Veranstaltung.list('datum', 500),
+        base44.entities.Ehrung.list('-created_date', 2000),
       ]);
-      setEhrungen(e);
       setMitglieder(m);
-    } catch (err) {}
+      setTeilnahmen(t);
+      setVeranstaltungen(v);
+      setEhrungen(e);
+    } catch (e) {}
     setLoading(false);
   };
+
+  // Vollständige Berechnung für alle Mitglieder
+  const alleAuswertungen = useMemo(() => {
+    if (loading) return [];
+    return mitglieder.map(m => {
+      const meineTeilnahmen = teilnahmen.filter(t => t.mitglied_id === m.id);
+      const meineEhrungen = ehrungen.filter(e => e.mitglied_id === m.id);
+      return berechneEhrungsstatusGesamt(m, meineTeilnahmen, veranstaltungen, meineEhrungen);
+    });
+  }, [mitglieder, teilnahmen, veranstaltungen, ehrungen, loading]);
+
+  // Tab-Daten
+  const faelligeEhrungen = useMemo(() => {
+    const result = [];
+    for (const auswertung of alleAuswertungen) {
+      for (const stufe of auswertung.mitgliedsEhrungen.faelligeStufen) {
+        result.push({
+          mitglied: auswertung.mitglied,
+          typ: 'Mitgliedsjahre',
+          stufe,
+          stand: `${auswertung.mitgliedsEhrungen.jahre} Jahre`,
+          auswertung,
+        });
+      }
+      for (const stufe of auswertung.umzugsEhrungen.faelligeStufen) {
+        result.push({
+          mitglied: auswertung.mitglied,
+          typ: 'Umzugsteilnahmen',
+          stufe,
+          stand: `${auswertung.umzugsEhrungen.erwachsenenUmzuege} Umzüge`,
+          auswertung,
+        });
+      }
+    }
+    return result;
+  }, [alleAuswertungen]);
+
+  const baldFaellige = useMemo(() => {
+    const result = [];
+    for (const auswertung of alleAuswertungen) {
+      if (isMitgliedsEhrungBaldFaellig(auswertung.mitgliedsEhrungen)) {
+        result.push({
+          mitglied: auswertung.mitglied,
+          typ: 'Mitgliedsjahre',
+          naechsteStufe: auswertung.mitgliedsEhrungen.naechsteStufe,
+          fehlend: `${auswertung.mitgliedsEhrungen.jahreZurNaechsten} Jahr(e)`,
+          stand: `${auswertung.mitgliedsEhrungen.jahre} Jahre`,
+        });
+      }
+      if (isUmzugsEhrungBaldFaellig(auswertung.umzugsEhrungen)) {
+        result.push({
+          mitglied: auswertung.mitglied,
+          typ: 'Umzugsteilnahmen',
+          naechsteStufe: auswertung.umzugsEhrungen.naechsteStufe,
+          fehlend: `${auswertung.umzugsEhrungen.fehlendeBisNaechste} Umzüge`,
+          stand: `${auswertung.umzugsEhrungen.erwachsenenUmzuege} Umzüge`,
+        });
+      }
+    }
+    return result;
+  }, [alleAuswertungen]);
+
+  const verlieheneEhrungen = useMemo(() => {
+    return ehrungen
+      .filter(e => e.status === 'Verliehen')
+      .sort((a, b) => (b.datum || '').localeCompare(a.datum || ''));
+  }, [ehrungen]);
+
+  const dataProbleme = useMemo(() => {
+    return findeDataProbleme(mitglieder, teilnahmen, veranstaltungen, ehrungen);
+  }, [mitglieder, teilnahmen, veranstaltungen, ehrungen]);
 
   const getMitgliedName = (id) => {
     const m = mitglieder.find(m => m.id === id);
     return m ? `${m.vorname} ${m.nachname}` : '–';
   };
 
-  const handleStatusUpdate = async (ehrung, newStatus) => {
+  // Ehrung als Geplant oder Verliehen markieren
+  const handleEhrungAktualisieren = async (mitglied, typ, stufe, neuerStatus) => {
+    setSaving(`${mitglied.id}-${typ}-${stufe}`);
     try {
-      await base44.entities.Ehrung.update(ehrung.id, { status: newStatus });
-      setEhrungen(prev => prev.map(e => e.id === ehrung.id ? { ...e, status: newStatus } : e));
+      // Vorhandene Ehrung suchen
+      const vorhandene = ehrungen.find(e =>
+        e.mitglied_id === mitglied.id &&
+        e.typ === typ &&
+        Number(e.wert) === stufe &&
+        ['Vorgeschlagen', 'Geplant'].includes(e.status)
+      );
+
+      if (vorhandene) {
+        await base44.entities.Ehrung.update(vorhandene.id, {
+          status: neuerStatus,
+          datum: neuerStatus === 'Verliehen' ? new Date().toISOString().split('T')[0] : vorhandene.datum,
+          verliehen_von: neuerStatus === 'Verliehen' ? user?.full_name : vorhandene.verliehen_von,
+        });
+      } else {
+        await base44.entities.Ehrung.create({
+          mitglied_id: mitglied.id,
+          typ,
+          wert: stufe,
+          status: neuerStatus,
+          datum: neuerStatus === 'Verliehen' ? new Date().toISOString().split('T')[0] : null,
+          verliehen_von: neuerStatus === 'Verliehen' ? user?.full_name : null,
+          automatisch_berechnet: true,
+          jahr: new Date().getFullYear(),
+        });
+      }
+      await loadData();
     } catch (e) {}
+    setSaving(null);
   };
 
-  const filtered = ehrungen.filter(e => {
-    if (filter !== 'Alle' && e.status !== filter) return false;
-    if (search) {
-      const name = getMitgliedName(e.mitglied_id).toLowerCase();
-      return name.includes(search.toLowerCase());
-    }
-    return true;
-  });
+  // CSV Exporte
+  const exportFaellig = () => {
+    const daten = faelligeEhrungen.map(e => ({
+      Name: `${e.mitglied.vorname} ${e.mitglied.nachname}`,
+      Typ: e.typ,
+      Stufe: e.stufe,
+      AktuellerStand: e.stand,
+    }));
+    exportiereAlsCSV(daten, 'faellige_ehrungen.csv');
+  };
+
+  const exportBaldFaellig = () => {
+    const daten = baldFaellige.map(e => ({
+      Name: `${e.mitglied.vorname} ${e.mitglied.nachname}`,
+      Typ: e.typ,
+      NaechsteStufe: e.naechsteStufe,
+      AktuellerStand: e.stand,
+      FehlendeEinheiten: e.fehlend,
+    }));
+    exportiereAlsCSV(daten, 'bald_faellige_ehrungen.csv');
+  };
+
+  const exportVerliehen = () => {
+    const daten = verlieheneEhrungen.map(e => ({
+      Name: getMitgliedName(e.mitglied_id),
+      Typ: e.typ,
+      Stufe: e.wert,
+      Datum: e.datum || '',
+      VerliehenenVon: e.verliehen_von || '',
+      Notiz: e.beschreibung || '',
+    }));
+    exportiereAlsCSV(daten, 'verliehene_ehrungen.csv');
+  };
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
@@ -66,116 +225,222 @@ export default function Ehrungen() {
     </div>
   );
 
-  const vorgeschlagene = ehrungen.filter(e => e.status === 'Vorgeschlagen');
-
   return (
     <div className="px-4 lg:px-6 py-6 max-w-4xl mx-auto">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Ehrungen</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{ehrungen.length} gesamt, {vorgeschlagene.length} offen</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {faelligeEhrungen.length} fällig · {verlieheneEhrungen.length} verliehen
+          </p>
         </div>
-        {isAdmin && (
+        <div className="flex items-center gap-2">
           <button
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+            onClick={loadData}
+            className="p-2 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+            title="Neu berechnen"
           >
-            <Plus size={16} />
-            <span className="hidden sm:inline">Neue Ehrung</span>
+            <RefreshCw size={16} />
           </button>
-        )}
-      </div>
-
-      {/* Ehrungsstufen Info */}
-      <div className="bg-card border border-border rounded-xl p-4 mb-4">
-        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-          <Star size={14} className="text-yellow-400" /> Umzugsteilnahmen-Stufen
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          {EHRUNGSSTUFEN_UMZUEGE.map(s => (
-            <span key={s} className="text-xs px-2 py-1 rounded-lg bg-yellow-500/10 text-yellow-400 font-mono font-semibold">
-              {s}
-            </span>
-          ))}
-        </div>
-        <p className="text-xs text-muted-foreground mt-2">
-          Mitgliedsjahre: alle 10 Jahre ab 18. Geburtstag
-        </p>
-      </div>
-
-      {/* Search & Filter */}
-      <div className="relative mb-3">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <input
-          type="text"
-          placeholder="Mitglied suchen..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
-        />
-      </div>
-
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
-        {['Alle', 'Vorgeschlagen', 'Genehmigt', 'Verliehen', 'Abgelehnt'].map(f => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-              filter === f ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground'
-            }`}
-          >
-            {f}
-          </button>
-        ))}
-      </div>
-
-      {/* Ehrungen Liste */}
-      <div className="space-y-2">
-        {filtered.map(e => (
-          <div key={e.id} className="bg-card border border-border rounded-xl p-4">
-            <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-lg bg-yellow-500/10 flex items-center justify-center shrink-0">
-                <Award size={18} className="text-yellow-400" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="font-semibold text-foreground text-sm">{getMitgliedName(e.mitglied_id)}</p>
-                  <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${STATUS_COLORS[e.status]}`}>
-                    {e.status}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground mt-0.5">{e.typ} – <span className="text-primary font-semibold">{e.wert}</span></p>
-                {e.datum && (
-                  <p className="text-xs text-muted-foreground mt-1">{format(new Date(e.datum), 'dd.MM.yyyy')}</p>
-                )}
-                {e.beschreibung && (
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{e.beschreibung}</p>
-                )}
+          {kannVerwalten && (
+            <div className="relative group">
+              <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary text-sm text-foreground hover:bg-border transition-colors">
+                <Download size={14} /> Export
+              </button>
+              <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-lg z-10 w-48 hidden group-hover:block">
+                <button onClick={exportFaellig} className="w-full px-4 py-2.5 text-left text-sm text-foreground hover:bg-secondary transition-colors rounded-t-xl">Fällige (CSV)</button>
+                <button onClick={exportBaldFaellig} className="w-full px-4 py-2.5 text-left text-sm text-foreground hover:bg-secondary transition-colors">Bald fällige (CSV)</button>
+                <button onClick={exportVerliehen} className="w-full px-4 py-2.5 text-left text-sm text-foreground hover:bg-secondary transition-colors rounded-b-xl">Verliehene (CSV)</button>
               </div>
             </div>
-            {isAdmin && e.status === 'Vorgeschlagen' && (
-              <div className="flex gap-2 mt-3 pt-3 border-t border-border">
-                <button
-                  onClick={() => handleStatusUpdate(e, 'Genehmigt')}
-                  className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors text-sm font-medium"
-                >
-                  <Check size={14} /> Genehmigen
-                </button>
-                <button
-                  onClick={() => handleStatusUpdate(e, 'Abgelehnt')}
-                  className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors text-sm font-medium"
-                >
-                  <X size={14} /> Ablehnen
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
+          )}
+        </div>
       </div>
 
-      {filtered.length === 0 && (
-        <div className="text-center py-12">
-          <Award size={40} className="text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">Keine Ehrungen gefunden</p>
+      {/* Kennzahlen */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        <div className={`bg-card border rounded-xl p-4 ${faelligeEhrungen.length > 0 ? 'border-yellow-500/30' : 'border-border'}`}>
+          <p className="text-xs text-muted-foreground">Fällig</p>
+          <p className={`text-2xl font-bold mt-1 ${faelligeEhrungen.length > 0 ? 'text-yellow-400' : 'text-foreground'}`}>
+            {faelligeEhrungen.length}
+          </p>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-4">
+          <p className="text-xs text-muted-foreground">Bald fällig</p>
+          <p className="text-2xl font-bold text-foreground mt-1">{baldFaellige.length}</p>
+        </div>
+        <div className="bg-card border border-green-500/20 rounded-xl p-4">
+          <p className="text-xs text-muted-foreground">Verliehen</p>
+          <p className="text-2xl font-bold text-green-400 mt-1">{verlieheneEhrungen.length}</p>
+        </div>
+        <div className={`bg-card border rounded-xl p-4 ${dataProbleme.length > 0 ? 'border-red-500/30' : 'border-border'}`}>
+          <p className="text-xs text-muted-foreground">Datenprobleme</p>
+          <p className={`text-2xl font-bold mt-1 ${dataProbleme.length > 0 ? 'text-red-400' : 'text-green-400'}`}>
+            {dataProbleme.length}
+          </p>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 bg-secondary rounded-xl p-1 mb-4 overflow-x-auto">
+        {TABS.map(tab => {
+          const Icon = tab.icon;
+          let count = 0;
+          if (tab.id === 'faellig') count = faelligeEhrungen.length;
+          if (tab.id === 'bald') count = baldFaellige.length;
+          if (tab.id === 'verliehen') count = verlieheneEhrungen.length;
+          if (tab.id === 'probleme') count = dataProbleme.length;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === tab.id ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {tab.label}
+              {count > 0 && (
+                <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
+                  activeTab === tab.id ? 'bg-primary text-primary-foreground' : 'bg-border text-muted-foreground'
+                }`}>{count}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Tab: Fällig */}
+      {activeTab === 'faellig' && (
+        <div className="space-y-3">
+          {faelligeEhrungen.length === 0 ? (
+            <div className="text-center py-12">
+              <CheckCircle2 size={40} className="text-green-400 mx-auto mb-3" />
+              <p className="text-foreground font-medium">Keine fälligen Ehrungen</p>
+              <p className="text-sm text-muted-foreground mt-1">Alle Ehrungen sind auf dem aktuellen Stand.</p>
+            </div>
+          ) : (
+            faelligeEhrungen.map((item, idx) => {
+              const key = `${item.mitglied.id}-${item.typ}-${item.stufe}`;
+              const isSaving = saving === key;
+              return (
+                <div key={idx} className="bg-card border border-yellow-500/20 rounded-xl p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-semibold text-foreground">{item.mitglied.vorname} {item.mitglied.nachname}</p>
+                        <EhrungsBadge typ={item.typ} wert={item.stufe} />
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Aktuell: <span className="text-foreground font-medium">{item.stand}</span>
+                      </p>
+                    </div>
+                  </div>
+                  {kannVerwalten && (
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        disabled={isSaving}
+                        onClick={() => handleEhrungAktualisieren(item.mitglied, item.typ, item.stufe, 'Geplant')}
+                        className="flex-1 py-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors text-sm font-medium disabled:opacity-50"
+                      >
+                        📅 Planen
+                      </button>
+                      <button
+                        disabled={isSaving}
+                        onClick={() => handleEhrungAktualisieren(item.mitglied, item.typ, item.stufe, 'Verliehen')}
+                        className="flex-1 py-2 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors text-sm font-medium disabled:opacity-50"
+                      >
+                        ✓ Verliehen
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {/* Tab: Bald fällig */}
+      {activeTab === 'bald' && (
+        <div className="space-y-3">
+          {baldFaellige.length === 0 ? (
+            <div className="text-center py-12">
+              <Clock size={40} className="text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground">Keine bald fälligen Ehrungen</p>
+            </div>
+          ) : (
+            baldFaellige.map((item, idx) => (
+              <div key={idx} className="bg-card border border-border rounded-xl p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <TrendingUp size={18} className="text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-foreground">{item.mitglied.vorname} {item.mitglied.nachname}</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      <EhrungsBadge typ={item.typ} wert={item.naechsteStufe} />
+                      <span className="ml-2 text-xs">Noch <span className="text-primary font-bold">{item.fehlend}</span> fehlend · Aktuell: {item.stand}</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Tab: Verliehen */}
+      {activeTab === 'verliehen' && (
+        <div className="space-y-2">
+          {verlieheneEhrungen.length === 0 ? (
+            <div className="text-center py-12">
+              <Award size={40} className="text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground">Noch keine verliehenen Ehrungen</p>
+            </div>
+          ) : (
+            verlieheneEhrungen.map(e => (
+              <div key={e.id} className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center shrink-0">
+                  <Award size={18} className="text-green-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-foreground">{getMitgliedName(e.mitglied_id)}</p>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <EhrungsBadge typ={e.typ} wert={e.wert} />
+                    {e.datum && (
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(e.datum), 'dd.MM.yyyy', { locale: de })}
+                      </span>
+                    )}
+                    {e.verliehen_von && (
+                      <span className="text-xs text-muted-foreground">· von {e.verliehen_von}</span>
+                    )}
+                  </div>
+                  {e.beschreibung && <p className="text-xs text-muted-foreground mt-1">{e.beschreibung}</p>}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Tab: Datenprobleme */}
+      {activeTab === 'probleme' && (
+        <div className="space-y-2">
+          {dataProbleme.length === 0 ? (
+            <div className="text-center py-12">
+              <CheckCircle2 size={40} className="text-green-400 mx-auto mb-3" />
+              <p className="text-green-400 font-medium">Keine Datenprobleme gefunden</p>
+            </div>
+          ) : (
+            dataProbleme.map((p, idx) => (
+              <div key={idx} className="bg-card border border-red-500/20 rounded-xl px-4 py-3 flex items-center gap-3">
+                <AlertTriangle size={16} className="text-red-400 shrink-0" />
+                <p className="text-sm text-foreground">{p.text}</p>
+              </div>
+            ))
+          )}
         </div>
       )}
     </div>
