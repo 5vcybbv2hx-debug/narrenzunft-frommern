@@ -188,7 +188,7 @@ export default function Haes() {
       {/* Häs Liste */}
       <div className="space-y-2">
         {filtered.map(h => (
-          <div key={h.id} className="bg-card border border-border rounded-xl px-4 py-3 flex items-center gap-3">
+          <Link key={h.id} to={`/haes/${h.id}`} className="bg-card border border-border rounded-xl px-4 py-3 flex items-center gap-3 hover:border-primary/50 transition-all group">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               <Shirt size={18} className="text-primary" />
             </div>
@@ -205,8 +205,8 @@ export default function Haes() {
                 )}
               </div>
             </div>
-            <ChevronRight size={16} className="text-muted-foreground shrink-0" />
-          </div>
+            <ChevronRight size={16} className="text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+          </Link>
         ))}
       </div>
 

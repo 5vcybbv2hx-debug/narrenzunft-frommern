@@ -16,6 +16,11 @@
       "type": "string",
       "format": "date"
     },
+    "aktiv": {
+      "type": "boolean",
+      "default": true,
+      "description": "Ob diese H\u00e4s-Zuweisung aktuell aktiv ist"
+    },
     "notizen": {
       "type": "string"
     }

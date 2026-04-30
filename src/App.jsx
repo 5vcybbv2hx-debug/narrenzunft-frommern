@@ -19,6 +19,7 @@ import Arbeitsdienste from './pages/Arbeitsdienste';
 import Ehrungen from './pages/Ehrungen.jsx';
 import Beitraege from './pages/Beitraege';
 import Haes from './pages/Haes';
+import HaesDetail from './pages/HaesDetail';
 import Umzuege from './pages/Umzuege';
 import Profil from './pages/Profil';
 import Benachrichtigungen from './pages/Benachrichtigungen';
@@ -62,6 +63,7 @@ const AuthenticatedApp = () => {
         <Route path="/ehrungen" element={<Ehrungen />} />
         <Route path="/beitraege" element={<Beitraege />} />
         <Route path="/haes" element={<Haes />} />
+        <Route path="/haes/:id" element={<HaesDetail />} />
         <Route path="/umzuege" element={<Umzuege />} />
         <Route path="/profil" element={<Profil />} />
         <Route path="/benachrichtigungen" element={<Benachrichtigungen />} />
