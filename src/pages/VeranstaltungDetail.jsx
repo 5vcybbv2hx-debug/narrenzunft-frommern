@@ -11,7 +11,7 @@ import ArbeitsdienstTab from '@/components/veranstaltung/ArbeitsdienstTab';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
-const TYPEN = ['Umzug', 'Abendveranstaltung', 'Intern', 'Arbeitsdienst'];
+const TYPEN = ['Intern', 'Fest', 'Probe', 'Hauptversammlung', 'Arbeitsdienst', 'Sonstiges'];
 const STATUS_LIST = ['Geplant', 'Aktiv', 'Abgeschlossen', 'Abgesagt'];
 
 export default function VeranstaltungDetail() {
@@ -23,7 +23,7 @@ export default function VeranstaltungDetail() {
   const kannCheckin = kannCheckinDurchfuehren(user);
 
   const [veranstaltung, setVeranstaltung] = useState({
-    titel: '', typ: 'Umzug', datum: '', uhrzeit: '', ort: '',
+    titel: '', typ: 'Intern', datum: '', uhrzeit: '', ort: '',
     beschreibung: '', anmeldeschluss: '', max_teilnehmer: '',
     bus_erforderlich: false, anmeldung_aktiv: true, status: 'Geplant'
   });

@@ -34,11 +34,13 @@ export default function Veranstaltungen() {
     loadData();
   }, []);
 
+  const INTERNE_TYPEN = ['Intern', 'Fest', 'Probe', 'Hauptversammlung', 'Arbeitsdienst', 'Sonstiges'];
+
   const loadData = async () => {
     setLoading(true);
     try {
       const data = await base44.entities.Veranstaltung.list('datum', 200);
-      setVeranstaltungen(data);
+      setVeranstaltungen(data.filter(v => INTERNE_TYPEN.includes(v.typ)));
     } catch (e) {}
     setLoading(false);
   };
