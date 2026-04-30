@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import {
   ArrowLeft, Edit, Save, X, Phone, Mail, MapPin, Calendar,
-  User, Shirt, Award, CreditCard, Trash2, AlertTriangle, Shield, Send
+  User, Shirt, Award, CreditCard, Trash2, AlertTriangle, Shield, Send, ChevronRight
 } from 'lucide-react';
 import { format, differenceInYears } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -389,13 +389,16 @@ export default function MitgliedDetail() {
             <Shirt size={16} className="text-primary" /> Häs ({haes.length})
           </h2>
           {haes.map(h => (
-            <div key={h.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+            <Link key={h.id} to={`/haes/${h.id}`} className="flex items-center justify-between py-2 border-b border-border last:border-0 hover:opacity-75 transition-opacity">
               <div>
                 <p className="text-sm font-medium text-foreground">Nr. {h.haesnummer}</p>
                 <p className="text-xs text-muted-foreground">{h.bezeichnung}</p>
               </div>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary">{h.status}</span>
-            </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary">{h.status}</span>
+                <ChevronRight size={14} className="text-muted-foreground" />
+              </div>
+            </Link>
           ))}
         </div>
       )}
