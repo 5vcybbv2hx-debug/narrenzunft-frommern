@@ -4,11 +4,11 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import {
   ArrowLeft, Edit, Save, X, Phone, Mail, MapPin, Calendar,
-  User, Shirt, Award, CreditCard, Trash2, AlertTriangle
+  User, Shirt, Award, CreditCard, Trash2, AlertTriangle, Shield
 } from 'lucide-react';
 import { format, differenceInYears } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { isAdmin, kannBankdatenSehn } from '@/lib/roles';
+import { isAdmin, kannBankdatenSehn, ROLLEN_LABELS } from '@/lib/roles';
 import EhrungsStatus from '@/components/mitglied/EhrungsStatus';
 
 const ALLE_STATUS = ['Aktiv', 'Passiv', 'Passiv mit Häs', 'Leihäs', 'Jugendliche 11-14', 'Jungaktive 15-17', 'Kinder 4-10', 'Kleinkind 0-3', 'Ehrenmitglied'];
@@ -72,6 +72,8 @@ export default function MitgliedDetail() {
   const [saving, setSaving] = useState(false);
   const [haes, setHaes] = useState([]);
   const [ehrungen, setEhrungen] = useState([]);
+  const [linkedUser, setLinkedUser] = useState(null);
+  const [roleSaving, setRoleSaving] = useState(false);
 
   useEffect(() => {
     if (!isNew) loadMitglied();
@@ -85,11 +87,29 @@ export default function MitgliedDetail() {
         base44.entities.Haes.filter({ aktueller_besitzer_id: id }),
         base44.entities.Ehrung.filter({ mitglied_id: id }),
       ]);
-      if (m[0]) setMitglied(m[0]);
+      if (m[0]) {
+        setMitglied(m[0]);
+        // Verknüpften User laden, wenn vorhanden
+        if (m[0].user_id) {
+          const users = await base44.entities.User.list();
+          const u = users.find(u => u.id === m[0].user_id);
+          if (u) setLinkedUser(u);
+        }
+      }
       setHaes(h);
       setEhrungen(e);
     } catch (e) {}
     setLoading(false);
+  };
+
+  const handleRoleChange = async (newRole) => {
+    if (!linkedUser) return;
+    setRoleSaving(true);
+    try {
+      await base44.entities.User.update(linkedUser.id, { role: newRole });
+      setLinkedUser(prev => ({ ...prev, role: newRole }));
+    } catch (e) {}
+    setRoleSaving(false);
   };
 
   const handleSave = async () => {
@@ -291,6 +311,58 @@ export default function MitgliedDetail() {
 
       {/* Ehrungen & Teilnahmen – berechneter Status */}
       {!isNew && <div className="mb-4"><EhrungsStatus mitglied={mitglied} /></div>}
+
+      {/* App-Zugang & Rolle */}
+      {admin && !isNew && (
+        <div className="bg-card border border-border rounded-xl p-5 mb-4">
+          <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+            <Shield size={16} className="text-primary" /> App-Zugang & Rolle
+          </h2>
+          {linkedUser ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                  {linkedUser.full_name?.[0] || '?'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{linkedUser.full_name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{linkedUser.email}</p>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground font-medium block mb-1">App-Rolle</label>
+                <div className="flex gap-2 items-center">
+                  <select
+                    value={linkedUser.role || 'mitglied'}
+                    onChange={e => handleRoleChange(e.target.value)}
+                    disabled={roleSaving}
+                    className="flex-1 px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary disabled:opacity-50"
+                  >
+                    <option value="mitglied">Mitglied</option>
+                    <option value="spartenleiter">Spartenleiter</option>
+                    <option value="kassierer">Kassierer</option>
+                    <option value="stellv_vorstand">Stv. Vorstand</option>
+                    <option value="vorstand">Vorstand</option>
+                  </select>
+                  {roleSaving && <div className="w-4 h-4 border-2 border-border border-t-primary rounded-full animate-spin shrink-0" />}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Aktuelle Rolle: <span className="text-primary font-medium">{ROLLEN_LABELS[linkedUser.role] || linkedUser.role}</span>
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-sm text-muted-foreground">
+                {mitglied.user_id ? 'Benutzer wird geladen...' : 'Kein App-Zugang verknüpft'}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Mitglieder erhalten App-Zugang durch eine Einladung per E-Mail.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Löschen */}
       {admin && !isNew && (
