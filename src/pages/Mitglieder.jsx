@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannMitgliederlisteSehn } from '@/lib/roles';
-import { Search, Plus, Filter, User, Phone, Mail, Calendar, ChevronRight } from 'lucide-react';
+import { Search, Plus, User, ChevronRight } from 'lucide-react';
 import { format, differenceInYears } from 'date-fns';
 
 const STATUS_COLORS = {
@@ -136,29 +136,36 @@ export default function Mitglieder() {
             <Link
               key={m.id}
               to={`/mitglieder/${m.id}`}
-              className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3 hover:border-primary/50 transition-all group"
+              className="flex items-center gap-4 bg-card border border-border rounded-xl px-4 py-3.5 hover:border-primary/50 transition-all group"
             >
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0 overflow-hidden">
+              {/* Avatar */}
+              <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm shrink-0 overflow-hidden">
                 {m.profilbild_url ? (
                   <img src={m.profilbild_url} alt="" className="w-full h-full object-cover" />
                 ) : (
                   `${m.vorname?.[0] || ''}${m.nachname?.[0] || ''}`
                 )}
               </div>
+              {/* Info */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
                     {m.vorname} {m.nachname}
                   </p>
                   {alter !== null && (
-                    <span className="text-xs text-muted-foreground">{alter} J.</span>
+                    <span className="text-xs text-muted-foreground font-normal">{alter} J.</span>
                   )}
                 </div>
-                <div className="flex items-center gap-2 mt-0.5">
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor}`}>
                     {m.mitgliedsstatus}
                   </span>
-                  {m.ort && <span className="text-xs text-muted-foreground truncate">{m.ort}</span>}
+                  {m.ort && <span className="text-xs text-muted-foreground">{m.ort}</span>}
+                  {m.eintrittsdatum && (
+                    <span className="text-xs text-muted-foreground">
+                      Eintrittsdatum: {format(new Date(m.eintrittsdatum), 'dd.MM.yyyy')}
+                    </span>
+                  )}
                 </div>
               </div>
               <ChevronRight size={16} className="text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
