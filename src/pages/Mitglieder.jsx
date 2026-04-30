@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
+import { isAdmin, kannMitgliederlisteSehn } from '@/lib/roles';
 import { Search, Plus, Filter, User, Phone, Mail, Calendar, ChevronRight } from 'lucide-react';
 import { format, differenceInYears } from 'date-fns';
 
@@ -26,7 +27,8 @@ export default function Mitglieder() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('Alle');
   const [loading, setLoading] = useState(true);
-  const isAdmin = user?.role === 'admin';
+  const isAdminUser = isAdmin(user);
+  const kannListe = kannMitgliederlisteSehn(user);
 
   useEffect(() => {
     loadMitglieder();
@@ -82,7 +84,7 @@ export default function Mitglieder() {
           <h1 className="text-2xl font-bold text-foreground">Mitglieder</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{mitglieder.length} Mitglieder gesamt</p>
         </div>
-        {isAdmin && (
+        {isAdminUser && (
           <Link
             to="/mitglieder/neu"
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"

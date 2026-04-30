@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
+import { isAdmin } from '@/lib/roles';
 import { CreditCard, Search, Filter, Plus, Check } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -32,7 +33,7 @@ export default function Beitraege() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const isAdmin = user?.role === 'admin';
+  const isAdminUser = isAdmin(user);
 
   useEffect(() => {
     loadData();
@@ -140,7 +141,7 @@ export default function Beitraege() {
       </div>
 
       {/* Jahresbeiträge erstellen */}
-      {isAdmin && (
+      {isAdminUser && (
         <div className="bg-card border border-border rounded-xl p-4 mb-4 flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <label className="text-sm text-muted-foreground">Jahr:</label>
@@ -197,7 +198,7 @@ export default function Beitraege() {
                 <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3 hidden sm:table-cell">Jahr</th>
                 <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Betrag</th>
                 <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Status</th>
-                {isAdmin && <th className="text-right text-xs font-medium text-muted-foreground px-4 py-3">Aktion</th>}
+                {isAdminUser && <th className="text-right text-xs font-medium text-muted-foreground px-4 py-3">Aktion</th>}
               </tr>
             </thead>
             <tbody>
@@ -220,7 +221,7 @@ export default function Beitraege() {
                         {b.zahlungsstatus}
                       </span>
                     </td>
-                    {isAdmin && (
+                    {isAdminUser && (
                       <td className="px-4 py-3 text-right">
                         {b.zahlungsstatus !== 'Bezahlt' && b.zahlungsstatus !== 'Erlassen' && (
                           <button

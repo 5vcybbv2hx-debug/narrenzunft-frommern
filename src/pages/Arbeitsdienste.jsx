@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
+import { isAdmin, kannArbeitsdiensteVerwalten } from '@/lib/roles';
 import { Briefcase, Plus, Calendar, MapPin, Users, Check, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -19,7 +20,8 @@ export default function Arbeitsdienste() {
   const [myMitglied, setMyMitglied] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('Alle');
-  const isAdmin = user?.role === 'admin';
+  const isAdminUser = isAdmin(user);
+  const kannVerwalten = kannArbeitsdiensteVerwalten(user);
   const today = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
@@ -73,7 +75,7 @@ export default function Arbeitsdienste() {
           <h1 className="text-2xl font-bold text-foreground">Arbeitsdienste</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{dienste.length} gesamt</p>
         </div>
-        {isAdmin && (
+        {kannVerwalten && (
           <Link
             to="/arbeitsdienste/neu"
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
@@ -164,7 +166,7 @@ export default function Arbeitsdienste() {
                 )}
 
                 {/* Admin: Teilnehmerliste */}
-                {isAdmin && zuws.length > 0 && (
+                {kannVerwalten && zuws.length > 0 && (
                   <div className="mt-3 pt-3 border-t border-border">
                     <p className="text-xs text-muted-foreground mb-2">Zugewiesen ({zuws.length}):</p>
                     <div className="flex flex-wrap gap-1">

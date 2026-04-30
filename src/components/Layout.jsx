@@ -1,38 +1,46 @@
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
+import { isAdmin, isVerantwortlicher, getRollenLabel } from '@/lib/roles';
 import {
   LayoutDashboard, Users, Shirt, Calendar, Briefcase,
   Award, CreditCard, Bus, Bell, Menu, X, ChevronRight,
-  LogOut, User, Settings, Search
+  LogOut, User, Search, MoreHorizontal, Shield
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { Badge } from '@/components/ui/badge';
 
-const navItems = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/mitglieder', label: 'Mitglieder', icon: Users },
-  { path: '/veranstaltungen', label: 'Veranstaltungen', icon: Calendar },
-  { path: '/arbeitsdienste', label: 'Arbeitsdienste', icon: Briefcase },
-  { path: '/ehrungen', label: 'Ehrungen', icon: Award },
-  { path: '/beitraege', label: 'Beiträge', icon: CreditCard },
-  { path: '/haes', label: 'Häs', icon: Shirt },
-  { path: '/umzuege', label: 'Umzüge', icon: Bus },
+// Desktop Sidebar - alle Links
+const sidebarNavItems = [
+  { path: '/', label: 'Dashboard', icon: LayoutDashboard, roles: null },
+  { path: '/mitglieder', label: 'Mitglieder', icon: Users, roles: ['admin', 'superadmin', 'verantwortlicher', 'dienstverantwortlicher', 'busverantwortlicher'] },
+  { path: '/veranstaltungen', label: 'Veranstaltungen', icon: Calendar, roles: null },
+  { path: '/umzuege', label: 'Umzüge', icon: Bus, roles: null },
+  { path: '/arbeitsdienste', label: 'Arbeitsdienste', icon: Briefcase, roles: null },
+  { path: '/ehrungen', label: 'Ehrungen', icon: Award, roles: ['admin', 'superadmin', 'verantwortlicher'] },
+  { path: '/beitraege', label: 'Beiträge', icon: CreditCard, roles: ['admin', 'superadmin'] },
+  { path: '/haes', label: 'Häs', icon: Shirt, roles: null },
 ];
 
+// Mobile Bottom-Nav: Start, Umzüge, Dienste, Profil, Mehr
 const bottomNavItems = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/mitglieder', label: 'Mitglieder', icon: Users },
-  { path: '/veranstaltungen', label: 'Events', icon: Calendar },
+  { path: '/', label: 'Start', icon: LayoutDashboard },
+  { path: '/umzuege', label: 'Umzüge', icon: Bus },
   { path: '/arbeitsdienste', label: 'Dienste', icon: Briefcase },
   { path: '/profil', label: 'Profil', icon: User },
+  { path: '/mehr', label: 'Mehr', icon: MoreHorizontal },
 ];
+
+function canSee(item, user) {
+  if (!item.roles) return true;
+  return item.roles.includes(user?.role);
+}
 
 export default function Layout() {
   const location = useLocation();
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifications, setNotifications] = useState(0);
+  const admin = isAdmin(user);
 
   useEffect(() => {
     loadNotifications();
@@ -45,14 +53,14 @@ export default function Layout() {
     } catch (e) {}
   };
 
-  const handleLogout = () => {
-    base44.auth.logout('/');
-  };
+  const handleLogout = () => base44.auth.logout('/');
 
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
   };
+
+  const visibleSidebarItems = sidebarNavItems.filter(item => canSee(item, user));
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -71,20 +79,20 @@ export default function Layout() {
 
         {/* Nav */}
         <nav className="flex-1 py-4 px-3 overflow-y-auto">
-          {navItems.map((item) => {
+          {visibleSidebarItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 transition-all duration-200 group ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 transition-all duration-200 ${
                   active
                     ? 'bg-primary text-primary-foreground'
                     : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                 }`}
               >
-                <Icon className="w-4.5 h-4.5 shrink-0" size={18} />
+                <Icon size={18} className="shrink-0" />
                 <span className="text-sm font-medium">{item.label}</span>
                 {active && <ChevronRight size={14} className="ml-auto" />}
               </Link>
@@ -94,13 +102,19 @@ export default function Layout() {
 
         {/* User */}
         <div className="px-3 py-4 border-t border-sidebar-border">
+          {admin && (
+            <div className="flex items-center gap-1.5 px-3 mb-2">
+              <Shield size={12} className="text-primary" />
+              <span className="text-xs text-primary font-medium">{getRollenLabel(user?.role)}</span>
+            </div>
+          )}
           <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-sidebar-accent">
             <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">
               {user?.full_name?.[0] || 'U'}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.full_name || 'Benutzer'}</p>
-              <p className="text-xs text-muted-foreground truncate">{user?.role || 'member'}</p>
+              <p className="text-xs text-muted-foreground truncate">{getRollenLabel(user?.role)}</p>
             </div>
             <button onClick={handleLogout} className="text-muted-foreground hover:text-destructive transition-colors">
               <LogOut size={16} />
@@ -121,7 +135,7 @@ export default function Layout() {
                 </div>
                 <div>
                   <p className="font-bold text-sm text-sidebar-foreground">Narrenzunft</p>
-                  <p className="text-xs text-muted-foreground">Verwaltung</p>
+                  <p className="text-xs text-muted-foreground">{getRollenLabel(user?.role)}</p>
                 </div>
               </div>
               <button onClick={() => setSidebarOpen(false)} className="text-muted-foreground hover:text-foreground">
@@ -129,7 +143,7 @@ export default function Layout() {
               </button>
             </div>
             <nav className="flex-1 py-4 px-3 overflow-y-auto">
-              {navItems.map((item) => {
+              {visibleSidebarItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.path);
                 return (
@@ -175,14 +189,14 @@ export default function Layout() {
           <div className="flex-1">
             <h1 className="text-sm font-semibold text-foreground lg:hidden">Narrenzunft</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <Link to="/suche" className="p-2 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors">
               <Search size={18} />
             </Link>
             <Link to="/benachrichtigungen" className="relative p-2 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors">
               <Bell size={18} />
               {notifications > 0 && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
               )}
             </Link>
             <Link to="/profil" className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm hover:bg-primary/30 transition-colors">
@@ -198,21 +212,23 @@ export default function Layout() {
 
         {/* Bottom Navigation (Mobile) */}
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-20 bg-sidebar border-t border-sidebar-border pb-safe">
-          <div className="flex items-center justify-around px-2 py-2">
+          <div className="flex items-center justify-around px-1 py-1.5">
             {bottomNavItems.map((item) => {
               const Icon = item.icon;
-              const active = isActive(item.path);
+              const active = item.path === '/mehr'
+                ? isActive('/mehr')
+                : isActive(item.path);
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all ${
+                  className={`flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl transition-all min-w-[56px] ${
                     active ? 'text-primary' : 'text-muted-foreground'
                   }`}
                 >
-                  <Icon size={20} className={active ? 'stroke-[2.5px]' : ''} />
-                  <span className="text-[10px] font-medium">{item.label}</span>
-                  {active && <div className="w-1 h-1 rounded-full bg-primary" />}
+                  <Icon size={22} strokeWidth={active ? 2.5 : 1.8} />
+                  <span className="text-[10px] font-medium leading-none mt-0.5">{item.label}</span>
+                  {active && <div className="w-1 h-1 rounded-full bg-primary mt-0.5" />}
                 </Link>
               );
             })}

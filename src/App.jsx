@@ -23,6 +23,7 @@ import Umzuege from './pages/Umzuege';
 import Profil from './pages/Profil';
 import Benachrichtigungen from './pages/Benachrichtigungen';
 import Suche from './pages/Suche';
+import Mehr from './pages/Mehr';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -64,6 +65,7 @@ const AuthenticatedApp = () => {
         <Route path="/profil" element={<Profil />} />
         <Route path="/benachrichtigungen" element={<Benachrichtigungen />} />
         <Route path="/suche" element={<Suche />} />
+        <Route path="/mehr" element={<Mehr />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

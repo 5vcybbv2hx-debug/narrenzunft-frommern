@@ -4,10 +4,11 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import {
   ArrowLeft, Edit, Save, X, Phone, Mail, MapPin, Calendar,
-  User, Shirt, Award, CreditCard, Trash2, Camera
+  User, Shirt, Award, CreditCard, Trash2, AlertTriangle
 } from 'lucide-react';
 import { format, differenceInYears } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { isAdmin, kannBankdatenSehn } from '@/lib/roles';
 
 const ALLE_STATUS = ['Aktiv', 'Passiv', 'Passiv mit Häs', 'Leihäs', 'Jugendliche 11-14', 'Jungaktive 15-17', 'Kinder 4-10', 'Kleinkind 0-3', 'Ehrenmitglied'];
 
@@ -56,7 +57,8 @@ export default function MitgliedDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isNew = id === 'neu';
-  const isAdmin = user?.role === 'admin';
+  const admin = isAdmin(user);
+  const kannBank = kannBankdatenSehn(user);
 
   const [mitglied, setMitglied] = useState({
     vorname: '', nachname: '', strasse: '', plz: '', ort: '',
@@ -113,6 +115,18 @@ export default function MitgliedDetail() {
 
   const alter = mitglied.geburtsdatum ? differenceInYears(new Date(), new Date(mitglied.geburtsdatum)) : null;
 
+  // Warnung wenn Status nicht zum Alter passt
+  const statusAltersWarnung = (() => {
+    if (!mitglied.geburtsdatum || !mitglied.mitgliedsstatus || alter === null) return null;
+    const s = mitglied.mitgliedsstatus;
+    if (s === 'Kleinkind 0-3' && alter > 3) return `Alter ${alter} passt nicht zu "Kleinkind 0–3"`;
+    if (s === 'Kinder 4-10' && (alter < 4 || alter > 10)) return `Alter ${alter} passt nicht zu "Kinder 4–10"`;
+    if (s === 'Jugendliche 11-14' && (alter < 11 || alter > 14)) return `Alter ${alter} passt nicht zu "Jugendliche 11–14"`;
+    if (s === 'Jungaktive 15-17' && (alter < 15 || alter > 17)) return `Alter ${alter} passt nicht zu "Jungaktive 15–17"`;
+    if (s === 'Aktiv' && alter < 18) return `Alter ${alter}: Mitglied ist noch nicht 18 Jahre alt`;
+    return null;
+  })();
+
   const handleFieldChange = (field, value) => setMitglied(p => ({ ...p, [field]: value }));
 
   if (loading) {
@@ -136,7 +150,7 @@ export default function MitgliedDetail() {
           </h1>
           {alter !== null && <p className="text-sm text-muted-foreground">{alter} Jahre alt</p>}
         </div>
-        {isAdmin && !editing && (
+        {admin && !editing && (
           <div className="flex gap-2">
             <button
               onClick={() => setEditing(true)}
@@ -146,7 +160,7 @@ export default function MitgliedDetail() {
             </button>
           </div>
         )}
-        {editing && (
+        {admin && editing && (
           <div className="flex gap-2">
             <button
               onClick={() => { setEditing(false); if (isNew) navigate(-1); }}
@@ -164,6 +178,14 @@ export default function MitgliedDetail() {
           </div>
         )}
       </div>
+
+      {/* Alters-Warnung */}
+      {statusAltersWarnung && (
+        <div className="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-3 mb-4">
+          <AlertTriangle size={16} className="text-yellow-400 shrink-0" />
+          <p className="text-sm text-yellow-400">{statusAltersWarnung}</p>
+        </div>
+      )}
 
       {/* Avatar */}
       {!isNew && (
@@ -231,7 +253,7 @@ export default function MitgliedDetail() {
       </div>
 
       {/* Bankverbindung */}
-      {isAdmin && (
+      {kannBank && (
         <div className="bg-card border border-border rounded-xl p-5 mb-4">
           <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
             <CreditCard size={16} className="text-primary" /> Bankverbindung (SEPA)
@@ -289,7 +311,7 @@ export default function MitgliedDetail() {
       )}
 
       {/* Löschen */}
-      {isAdmin && !isNew && (
+      {admin && !isNew && (
         <button
           onClick={handleDelete}
           className="flex items-center gap-2 text-sm text-destructive hover:text-destructive/80 transition-colors mt-2"
