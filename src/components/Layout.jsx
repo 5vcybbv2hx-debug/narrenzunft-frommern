@@ -14,8 +14,8 @@ const sidebarNavItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard, roles: null },
   { path: '/vorstand', label: 'Führungs-Dashboard', icon: ClipboardList, roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'] },
   { path: '/mitglieder', label: 'Mitglieder', icon: Users, roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter', 'admin'] },
-  { path: '/veranstaltungen', label: 'Veranstaltungen', icon: Calendar, roles: null },
-  { path: '/umzuege', label: 'Umzüge', icon: Bus, roles: null },
+  { path: '/veranstaltungen', label: 'Eigene Veranstaltungen', icon: Calendar, roles: null },
+  { path: '/umzuege', label: 'Auswärtige Termine', icon: Bus, roles: null },
   { path: '/arbeitsdienste', label: 'Arbeitsdienste', icon: Briefcase, roles: null },
   { path: '/ehrungen', label: 'Ehrungen', icon: Award, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
   { path: '/beitraege', label: 'Beiträge', icon: CreditCard, roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'] },
@@ -25,7 +25,7 @@ const sidebarNavItems = [
 // Mobile Bottom-Nav: Start, Umzüge, Dienste, Profil, Mehr
 const bottomNavItems = [
   { path: '/', label: 'Start', icon: LayoutDashboard },
-  { path: '/umzuege', label: 'Umzüge', icon: Bus },
+  { path: '/umzuege', label: 'Auswärts', icon: Bus },
   { path: '/arbeitsdienste', label: 'Dienste', icon: Briefcase },
   { path: '/profil', label: 'Profil', icon: User },
   { path: '/mehr', label: 'Mehr', icon: MoreHorizontal },

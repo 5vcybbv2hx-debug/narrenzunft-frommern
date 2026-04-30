@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { Bus, Calendar, MapPin, Clock, ChevronRight, Check } from 'lucide-react';
+import { Bus, Car, Calendar, MapPin, Clock, ChevronRight, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -21,8 +21,9 @@ export default function Umzuege() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = await base44.entities.Veranstaltung.filter({ typ: 'Umzug' });
-      const sorted = data.sort((a, b) => a.datum.localeCompare(b.datum));
+      const data = await base44.entities.Veranstaltung.list('datum', 500);
+      const extern = data.filter(v => v.typ === 'Umzug' || v.typ === 'Abendveranstaltung');
+      const sorted = extern.sort((a, b) => a.datum.localeCompare(b.datum));
       setUmzuege(sorted);
 
       const me = await base44.auth.me();
@@ -71,14 +72,14 @@ export default function Umzuege() {
   return (
     <div className="px-4 lg:px-6 py-6 max-w-3xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Umzüge</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{kommende.length} kommende Umzüge</p>
+        <h1 className="text-2xl font-bold text-foreground">Auswärtige Termine</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Umzüge & Abendveranstaltungen bei denen wir eingeladen sind · {kommende.length} kommend</p>
       </div>
 
       {/* Kommende */}
       {kommende.length > 0 && (
         <div className="mb-6">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Kommende Umzüge</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Kommende Termine</h2>
           <div className="space-y-3">
             {kommende.map(u => {
               const anmeldung = getMeineAnmeldung(u.id);
@@ -92,7 +93,12 @@ export default function Umzuege() {
                         <span className="text-xl font-bold text-primary">{format(new Date(u.datum), 'd')}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-foreground">{u.titel}</h3>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-semibold text-foreground">{u.titel}</h3>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${u.typ === 'Umzug' ? 'bg-primary/20 text-primary' : 'bg-purple-500/20 text-purple-400'}`}>
+                            {u.typ}
+                          </span>
+                        </div>
                         <div className="flex flex-wrap gap-2 mt-1 text-xs text-muted-foreground">
                           {u.uhrzeit && <span className="flex items-center gap-1"><Clock size={11} /> {u.uhrzeit}</span>}
                           {u.ort && <span className="flex items-center gap-1"><MapPin size={11} /> {u.ort}</span>}
@@ -120,26 +126,32 @@ export default function Umzuege() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleAnmelden(u.id, false)}
-                            className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+                            className="flex-1 py-2.5 rounded-xl bg-secondary text-foreground text-sm font-semibold hover:bg-border transition-colors flex items-center justify-center gap-2"
                           >
-                            Anmelden
+                            <Car size={14} /> Mit Auto
                           </button>
-                          {u.bus_erforderlich && (
-                            <button
-                              onClick={() => handleAnmelden(u.id, true)}
-                              className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-                            >
-                              <Bus size={14} /> Mit Bus
-                            </button>
-                          )}
+                          <button
+                            onClick={() => handleAnmelden(u.id, true)}
+                            className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+                          >
+                            <Bus size={14} /> Mit Bus
+                          </button>
                         </div>
                       ) : (
-                        <button
-                          onClick={() => handleAbsagen(anmeldung)}
-                          className="w-full py-2.5 rounded-xl bg-red-500/10 text-red-400 text-sm font-semibold hover:bg-red-500/20 transition-colors"
-                        >
-                          Absagen
-                        </button>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-center gap-2 py-2 rounded-xl bg-green-500/10 border border-green-500/20">
+                            <Check size={14} className="text-green-400" />
+                            <span className="text-sm text-green-400 font-medium">
+                              Angemeldet {anmeldung?.bus ? '· 🚌 Bus' : '· 🚗 Auto'}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => handleAbsagen(anmeldung)}
+                            className="w-full py-2 rounded-xl bg-red-500/10 text-red-400 text-sm font-medium hover:bg-red-500/20 transition-colors"
+                          >
+                            Absagen
+                          </button>
+                        </div>
                       )}
                     </div>
                   )}
@@ -153,7 +165,7 @@ export default function Umzuege() {
       {/* Vergangene */}
       {vergangene.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Vergangene Umzüge</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Vergangene Termine</h2>
           <div className="space-y-2">
             {vergangene.slice().reverse().slice(0, 10).map(u => (
               <div key={u.id} className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3 opacity-70">
@@ -177,7 +189,7 @@ export default function Umzuege() {
       {umzuege.length === 0 && (
         <div className="text-center py-12">
           <Bus size={40} className="text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">Keine Umzüge gefunden</p>
+          <p className="text-muted-foreground">Keine auswärtigen Termine gefunden</p>
         </div>
       )}
     </div>

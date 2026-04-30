@@ -7,10 +7,12 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
 const TYP_COLORS = {
-  'Umzug': 'bg-primary/20 text-primary',
-  'Abendveranstaltung': 'bg-purple-500/20 text-purple-400',
   'Intern': 'bg-blue-500/20 text-blue-400',
+  'Fest': 'bg-purple-500/20 text-purple-400',
+  'Probe': 'bg-cyan-500/20 text-cyan-400',
+  'Hauptversammlung': 'bg-yellow-500/20 text-yellow-400',
   'Arbeitsdienst': 'bg-orange-500/20 text-orange-400',
+  'Sonstiges': 'bg-gray-500/20 text-gray-400',
 };
 
 const STATUS_COLORS = {
@@ -41,7 +43,7 @@ export default function Veranstaltungen() {
     setLoading(false);
   };
 
-  const filters = ['Alle', 'Kommend', 'Vergangen', 'Umzug', 'Abendveranstaltung', 'Intern'];
+  const filters = ['Alle', 'Kommend', 'Vergangen', 'Intern', 'Fest', 'Probe', 'Hauptversammlung', 'Arbeitsdienst'];
 
   const filtered = veranstaltungen.filter(v => {
     if (filter === 'Alle') return true;
@@ -60,8 +62,8 @@ export default function Veranstaltungen() {
     <div className="px-4 lg:px-6 py-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Veranstaltungen</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{veranstaltungen.length} gesamt</p>
+          <h1 className="text-2xl font-bold text-foreground">Eigene Veranstaltungen</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Intern organisierte Termine · {veranstaltungen.length} gesamt</p>
         </div>
         {isAdmin && (
           <Link

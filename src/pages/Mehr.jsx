@@ -19,7 +19,7 @@ export default function Mehr() {
     {
       title: 'Navigation',
       items: [
-        { path: '/veranstaltungen', label: 'Veranstaltungen', icon: Calendar, show: true },
+        { path: '/veranstaltungen', label: 'Eigene Veranstaltungen', icon: Calendar, show: true },
         { path: '/haes', label: 'Häs & Masken', icon: Shirt, show: true },
         { path: '/suche', label: 'Suche', icon: Search, show: true },
         { path: '/benachrichtigungen', label: 'Benachrichtigungen', icon: Bell, show: true },
