@@ -10,6 +10,8 @@ import { format, differenceInYears } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { isAdmin, kannBankdatenSehn, ROLLEN_LABELS } from '@/lib/roles';
 import EhrungsStatus from '@/components/mitglied/EhrungsStatus';
+import AktivitaetTab from '@/components/mitglied/AktivitaetTab';
+import ArbeitsdiensteMitgliedTab from '@/components/mitglied/ArbeitsdiensteMitgliedTab';
 
 const ALLE_STATUS = ['Aktiv', 'Passiv', 'Passiv mit Häs', 'Leihäs', 'Jugendliche 11-14', 'Jungaktive 15-17', 'Kinder 4-10', 'Kleinkind 0-3', 'Ehrenmitglied'];
 
@@ -76,6 +78,7 @@ export default function MitgliedDetail() {
   const [roleSaving, setRoleSaving] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [inviteSent, setInviteSent] = useState(false);
+  const [activeTab, setActiveTab] = useState('profil');
 
   useEffect(() => {
     if (!isNew) loadMitglied();
@@ -230,22 +233,72 @@ export default function MitgliedDetail() {
 
       {/* Avatar */}
       {!isNew && (
-        <div className="flex items-center gap-4 mb-6 bg-card border border-border rounded-xl p-5">
-          <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-2xl overflow-hidden">
+        <div className="flex items-center gap-4 mb-4 bg-card border border-border rounded-xl p-5">
+          <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white font-bold text-2xl overflow-hidden shrink-0">
             {mitglied.profilbild_url ? (
               <img src={mitglied.profilbild_url} alt="" className="w-full h-full object-cover" />
             ) : (
               `${mitglied.vorname?.[0] || ''}${mitglied.nachname?.[0] || ''}`
             )}
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="font-bold text-foreground text-lg">{mitglied.vorname} {mitglied.nachname}</p>
-            <span className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary font-medium">
-              {mitglied.mitgliedsstatus}
-            </span>
+            {alter !== null && <p className="text-sm text-muted-foreground">{alter} Jahre alt</p>}
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
+                {mitglied.mitgliedsstatus}
+              </span>
+              {mitglied.ort && <span className="text-xs text-muted-foreground">{mitglied.ort}</span>}
+              {mitglied.eintrittsdatum && (
+                <span className="text-xs text-muted-foreground">
+                  seit {format(new Date(mitglied.eintrittsdatum), 'yyyy', { locale: de })}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       )}
+
+      {/* Tabs */}
+      {!isNew && (
+        <div className="flex gap-1 bg-secondary rounded-xl p-1 mb-4">
+          {[
+            { id: 'profil', label: 'Profil' },
+            { id: 'aktivitaet', label: 'Aktivität' },
+            { id: 'arbeitsdienste', label: 'Arbeitsdienste' },
+            { id: 'ehrungen', label: 'Ehrungen' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === tab.id ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Tab: Aktivität */}
+      {activeTab === 'aktivitaet' && !isNew && (
+        <AktivitaetTab mitgliedId={mitglied.id} />
+      )}
+
+      {/* Tab: Arbeitsdienste */}
+      {activeTab === 'arbeitsdienste' && !isNew && (
+        <ArbeitsdiensteMitgliedTab mitgliedId={mitglied.id} />
+      )}
+
+      {/* Tab: Ehrungen */}
+      {activeTab === 'ehrungen' && !isNew && (
+        <EhrungsStatus mitglied={mitglied} />
+      )}
+
+      {/* Tab: Profil */}
+      {(activeTab === 'profil' || isNew) && (
+      <div>
 
       {/* Persönliche Daten */}
       <div className="bg-card border border-border rounded-xl p-5 mb-4">
@@ -347,9 +400,6 @@ export default function MitgliedDetail() {
         </div>
       )}
 
-      {/* Ehrungen & Teilnahmen – berechneter Status */}
-      {!isNew && <div className="mb-4"><EhrungsStatus mitglied={mitglied} /></div>}
-
       {/* App-Zugang & Rolle */}
       {admin && !isNew && (
         <div className="bg-card border border-border rounded-xl p-5 mb-4">
@@ -420,6 +470,9 @@ export default function MitgliedDetail() {
         >
           <Trash2 size={14} /> Mitglied löschen
         </button>
+      )}
+
+      </div>
       )}
     </div>
   );
