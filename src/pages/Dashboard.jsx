@@ -5,10 +5,11 @@ import { useAuth } from '@/lib/AuthContext';
 import {
   Calendar, Users, Award, CreditCard, Briefcase, Bus,
   Shirt, TrendingUp, ArrowRight, Clock, CheckCircle,
-  AlertCircle, Star, ChevronRight
+  AlertCircle, Star, ChevronRight, Shield
 } from 'lucide-react';
 import { format, isAfter, isBefore, addDays, differenceInYears } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { isAdmin, kannArbeitsdiensteVerwalten } from '@/lib/roles';
 
 function StatCard({ icon: Icon, label, value, color = 'text-primary', onClick }) {
   return (
@@ -79,7 +80,8 @@ export default function Dashboard() {
   const [beitraegeStats, setBeitraegeStats] = useState({ offen: 0, ueberfaellig: 0, total: 0 });
   const [neueMitglieder, setNeueMitglieder] = useState([]);
   const [loading, setLoading] = useState(true);
-  const isAdmin = user?.role === 'admin';
+  const isAdminUser = isAdmin(user);
+  const kannVerwalten = kannArbeitsdiensteVerwalten(user);
 
   useEffect(() => {
     loadData();
@@ -144,10 +146,18 @@ export default function Dashboard() {
         <p className="text-muted-foreground text-sm mt-1">
           {format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}
         </p>
+        {kannVerwalten && (
+          <Link
+            to="/vorstand"
+            className="inline-flex items-center gap-2 mt-3 px-4 py-2 rounded-xl bg-primary/10 border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/20 transition-colors"
+          >
+            <Shield size={15} /> Führungs-Dashboard öffnen <ChevronRight size={14} />
+          </Link>
+        )}
       </div>
 
       {/* Stats Row */}
-      {isAdmin && (
+      {isAdminUser && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           <StatCard icon={Users} label="Mitglieder" value={stats.mitglieder} />
           <StatCard icon={Calendar} label="Nächste Events" value={stats.veranstaltungen} />
@@ -199,7 +209,7 @@ export default function Dashboard() {
         </SectionCard>
 
         {/* Offene Ehrungen */}
-        {isAdmin && (
+        {isAdminUser && (
           <SectionCard
             title="Offene Ehrungen"
             subtitle="Vorschläge & Genehmigungen"
@@ -258,7 +268,7 @@ export default function Dashboard() {
         </SectionCard>
 
         {/* Beiträge */}
-        {isAdmin && (
+        {isAdminUser && (
           <SectionCard
             title="Beiträge"
             subtitle="Zahlungsübersicht"

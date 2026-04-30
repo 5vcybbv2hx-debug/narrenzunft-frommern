@@ -24,6 +24,7 @@ import Profil from './pages/Profil';
 import Benachrichtigungen from './pages/Benachrichtigungen';
 import Suche from './pages/Suche';
 import Mehr from './pages/Mehr';
+import VorstandDashboard from './pages/VorstandDashboard';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -66,6 +67,7 @@ const AuthenticatedApp = () => {
         <Route path="/benachrichtigungen" element={<Benachrichtigungen />} />
         <Route path="/suche" element={<Suche />} />
         <Route path="/mehr" element={<Mehr />} />
+        <Route path="/vorstand" element={<VorstandDashboard />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

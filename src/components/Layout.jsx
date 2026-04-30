@@ -5,19 +5,20 @@ import { isAdmin, kannMitgliederlisteSehn, getRollenLabel } from '@/lib/roles';
 import {
   LayoutDashboard, Users, Shirt, Calendar, Briefcase,
   Award, CreditCard, Bus, Bell, Menu, X, ChevronRight,
-  LogOut, User, Search, MoreHorizontal, Shield
+  LogOut, User, Search, MoreHorizontal, Shield, ClipboardList
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 // Desktop Sidebar - alle Links
 const sidebarNavItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard, roles: null },
-  { path: '/mitglieder', label: 'Mitglieder', icon: Users, roles: ['admin', 'superadmin', 'verantwortlicher', 'dienstverantwortlicher', 'busverantwortlicher'] },
+  { path: '/vorstand', label: 'Führungs-Dashboard', icon: ClipboardList, roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'] },
+  { path: '/mitglieder', label: 'Mitglieder', icon: Users, roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter', 'admin'] },
   { path: '/veranstaltungen', label: 'Veranstaltungen', icon: Calendar, roles: null },
   { path: '/umzuege', label: 'Umzüge', icon: Bus, roles: null },
   { path: '/arbeitsdienste', label: 'Arbeitsdienste', icon: Briefcase, roles: null },
-  { path: '/ehrungen', label: 'Ehrungen', icon: Award, roles: ['admin', 'superadmin', 'verantwortlicher'] },
-  { path: '/beitraege', label: 'Beiträge', icon: CreditCard, roles: ['admin', 'superadmin'] },
+  { path: '/ehrungen', label: 'Ehrungen', icon: Award, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
+  { path: '/beitraege', label: 'Beiträge', icon: CreditCard, roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'] },
   { path: '/haes', label: 'Häs', icon: Shirt, roles: null },
 ];
 
