@@ -32,6 +32,10 @@
         "Abgeschlossen"
       ],
       "default": "Offen"
+    },
+    "veranstaltung_id": {
+      "type": "string",
+      "description": "Optionale Verkn\u00fcpfung mit einer Veranstaltung"
     }
   },
   "required": [

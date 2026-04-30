@@ -7,6 +7,7 @@ import {
   ArrowLeft, Edit, Save, X, Calendar, MapPin, Clock, Users,
   Bus, Check, XCircle, Search, Trash2, CheckCircle
 } from 'lucide-react';
+import ArbeitsdienstTab from '@/components/veranstaltung/ArbeitsdienstTab';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -212,7 +213,7 @@ export default function VeranstaltungDetail() {
       {/* Tabs */}
       {!isNew && (
         <div className="flex gap-1 bg-secondary rounded-xl p-1 mb-4">
-          {['info', 'teilnahmen', 'check-in'].map(tab => (
+          {['info', 'teilnahmen', 'check-in', 'arbeitsdienste'].map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -220,7 +221,7 @@ export default function VeranstaltungDetail() {
                 activeTab === tab ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              {tab === 'info' ? 'Info' : tab === 'teilnahmen' ? `Teilnahmen (${angemeldete.length})` : 'Check-In'}
+              {tab === 'info' ? 'Info' : tab === 'teilnahmen' ? `Teilnahmen (${angemeldete.length})` : tab === 'check-in' ? 'Check-In' : '🛠 Dienste'}
             </button>
           ))}
         </div>
@@ -352,6 +353,11 @@ export default function VeranstaltungDetail() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Arbeitsdienste Tab */}
+      {activeTab === 'arbeitsdienste' && !isNew && (
+        <ArbeitsdienstTab veranstaltung={veranstaltung} isAdmin={isAdmin} />
       )}
 
       {/* Check-In Tab */}
