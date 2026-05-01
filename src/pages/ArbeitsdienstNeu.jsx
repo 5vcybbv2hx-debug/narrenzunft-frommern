@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Save, Search, X, Users } from 'lucide-react';
+import AdresseAutocomplete from '@/components/AdresseAutocomplete';
 
 export default function ArbeitsdienstNeu() {
   const navigate = useNavigate();
@@ -93,7 +94,14 @@ export default function ArbeitsdienstNeu() {
           {field('Datum *', 'datum', 'date')}
           {field('Uhrzeit', 'uhrzeit', 'time')}
         </div>
-        {field('Ort', 'ort')}
+        <div>
+          <label className="text-xs text-muted-foreground font-medium block mb-1">Ort</label>
+          <AdresseAutocomplete
+            value={form.ort}
+            onChange={val => setForm(p => ({ ...p, ort: val }))}
+            placeholder="Adresse suchen..."
+          />
+        </div>
 
         <div>
           <label className="text-xs text-muted-foreground font-medium block mb-1">Status</label>
