@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -29,6 +31,10 @@ export default function Mitglieder() {
   const [loading, setLoading] = useState(true);
   const isAdminUser = isAdmin(user);
   const kannListe = kannMitgliederlisteSehn(user);
+
+  const { pullDistance, refreshing, containerRef } = usePullToRefresh(useCallback(async () => {
+    await loadMitglieder();
+  }, []));
 
   useEffect(() => {
     loadMitglieder();
@@ -77,7 +83,8 @@ export default function Mitglieder() {
   }
 
   return (
-    <div className="px-4 lg:px-6 py-6 max-w-7xl mx-auto">
+    <div ref={containerRef} className="px-4 lg:px-6 py-6 max-w-7xl mx-auto">
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>

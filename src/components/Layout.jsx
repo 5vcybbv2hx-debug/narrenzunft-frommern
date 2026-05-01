@@ -180,7 +180,7 @@ export default function Layout() {
       {/* Main Content */}
       <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
         {/* Top Bar */}
-        <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 lg:px-6 py-3 flex items-center gap-3">
+        <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 lg:px-6 py-3 flex items-center gap-3" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
           <button
             className="lg:hidden p-2 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
             onClick={() => setSidebarOpen(true)}

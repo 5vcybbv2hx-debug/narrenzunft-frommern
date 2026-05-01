@@ -50,6 +50,20 @@
 
   body {
     @apply bg-background text-foreground font-inter antialiased;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevent text selection on UI elements for native app feel */
+  button, a, nav, header, [role="tab"], [role="button"] {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Allow text selection in content areas */
+  input, textarea, p, span, h1, h2, h3, h4, h5, h6 {
+    -webkit-user-select: text;
+    user-select: text;
   }
 }
 

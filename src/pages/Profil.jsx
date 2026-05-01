@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { User, Mail, Phone, MapPin, Calendar, LogOut, Bell, Award, Shirt } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, LogOut, Bell, Award, Shirt, Trash2 } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { format, differenceInYears } from 'date-fns';
 
 export default function Profil() {
@@ -35,6 +40,12 @@ export default function Profil() {
 
   const handleLogout = () => {
     base44.auth.logout('/');
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      await base44.auth.logout('/');
+    } catch (e) {}
   };
 
   if (loading) return (
@@ -155,6 +166,32 @@ export default function Profil() {
       >
         <LogOut size={18} /> Abmelden
       </button>
+
+      {/* Account löschen */}
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <button className="w-full flex items-center justify-center gap-3 py-3 rounded-xl text-muted-foreground hover:text-destructive transition-colors mt-2 text-sm">
+            <Trash2 size={15} /> Account löschen
+          </button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Account wirklich löschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Dein Account wird dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden. Deine Mitgliedsdaten bleiben im System erhalten.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Account löschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

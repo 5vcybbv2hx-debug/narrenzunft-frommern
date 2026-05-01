@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 import { useAuth } from '@/lib/AuthContext';
 import {
   Calendar, Users, Award, CreditCard, Briefcase, Bus,
@@ -83,6 +85,10 @@ export default function Dashboard() {
   const isAdminUser = isAdmin(user);
   const kannVerwalten = kannArbeitsdiensteVerwalten(user);
 
+  const { pullDistance, refreshing, containerRef } = usePullToRefresh(useCallback(async () => {
+    await loadData();
+  }, []));
+
   useEffect(() => {
     loadData();
   }, []);
@@ -137,7 +143,8 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="px-4 lg:px-6 py-6 max-w-7xl mx-auto">
+    <div ref={containerRef} className="px-4 lg:px-6 py-6 max-w-7xl mx-auto">
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground">
