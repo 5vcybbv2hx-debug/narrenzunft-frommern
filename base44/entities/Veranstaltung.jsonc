@@ -11,7 +11,8 @@
         "Umzug",
         "Abendveranstaltung",
         "Intern",
-        "Arbeitsdienst"
+        "Arbeitsdienst",
+        "Fest"
       ],
       "default": "Umzug"
     },
@@ -52,6 +53,62 @@
         "Abgesagt"
       ],
       "default": "Geplant"
+    },
+    "busparkplatz_adresse": {
+      "type": "string",
+      "description": "Adresse des Busparkplatzes"
+    },
+    "busparkplatz_treffzeit": {
+      "type": "string",
+      "description": "Treffzeit am Busparkplatz (z.B. 09:30)"
+    },
+    "umzugsaufstellung_ort": {
+      "type": "string",
+      "description": "Ort/Adresse der Umzugsaufstellung"
+    },
+    "umzugsaufstellung_zeit": {
+      "type": "string",
+      "description": "Zeit der Umzugsaufstellung"
+    },
+    "festakt_ort": {
+      "type": "string",
+      "description": "Ort des Festakts nach dem Umzug"
+    },
+    "festakt_adresse": {
+      "type": "string",
+      "description": "Adresse des Festakts"
+    },
+    "festakt_zeit": {
+      "type": "string",
+      "description": "Beginn des Festakts"
+    },
+    "veranstaltungsort_adresse": {
+      "type": "string",
+      "description": "Vollst\u00e4ndige Adresse des Veranstaltungsorts (f\u00fcr Navigation)"
+    },
+    "einlass_zeit": {
+      "type": "string",
+      "description": "Einlasszeit"
+    },
+    "beginn_zeit": {
+      "type": "string",
+      "description": "Beginn der Veranstaltung"
+    },
+    "programmablauf": {
+      "type": "string",
+      "description": "Programmablauf / Ablaufplan (Freitext)"
+    },
+    "dresscode": {
+      "type": "string",
+      "description": "Dresscode / Kleidungshinweise"
+    },
+    "hinweise": {
+      "type": "string",
+      "description": "Allgemeine Hinweise und Infos"
+    },
+    "kontakt_vor_ort": {
+      "type": "string",
+      "description": "Ansprechpartner vor Ort (Name + Tel)"
     }
   },
   "required": [

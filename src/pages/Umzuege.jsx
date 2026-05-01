@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
-import { Bus, Car, Clock, MapPin, Check, Plus, X, Edit, Trash2, Save } from 'lucide-react';
+import { Bus, Car, Clock, MapPin, Check, Plus, X, Edit, Trash2, Save, ChevronDown, ChevronUp } from 'lucide-react';
+import { VeranstaltungsDetailsForm, VeranstaltungsDetailsView } from '@/components/veranstaltung/VeranstaltungsDetails';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -23,6 +24,7 @@ export default function Umzuege() {
   const [editItem, setEditItem] = useState(null); // null = neu, sonst Objekt
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [expandedId, setExpandedId] = useState(null);
   const today = new Date().toISOString().split('T')[0];
 
   useEffect(() => { loadData(); }, []);
@@ -165,6 +167,14 @@ export default function Umzuege() {
                             {anmeldung?.bus && <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 flex items-center gap-1"><Bus size={10} /> Bus</span>}
                           </div>
                         )}
+                        {/* Detailinfos-Toggle */}
+                        <button
+                          onClick={() => setExpandedId(expandedId === u.id ? null : u.id)}
+                          className="flex items-center gap-1 mt-2 text-xs text-primary hover:text-primary/80 transition-colors"
+                        >
+                          {expandedId === u.id ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                          {expandedId === u.id ? 'Infos einklappen' : 'Infos anzeigen'}
+                        </button>
                       </div>
                       {admin && (
                         <div className="flex flex-col gap-1 shrink-0">
@@ -178,6 +188,13 @@ export default function Umzuege() {
                       )}
                     </div>
                   </div>
+
+                  {/* Detailinfos ausgeklappt */}
+                  {expandedId === u.id && (
+                    <div className="px-4 pb-3">
+                      <VeranstaltungsDetailsView data={u} />
+                    </div>
+                  )}
 
                   {myMitglied && u.anmeldung_aktiv && (
                     <div className="px-4 pb-4">
@@ -309,6 +326,18 @@ export default function Umzuege() {
                 rows={2}
                 className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary resize-none"
               />
+
+              {/* Typ-spezifische Detailfelder */}
+              <div className="border-t border-border pt-3">
+                <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-3">
+                  {form.typ === 'Umzug' ? '🎪 Umzugsinfos' : '🎭 Veranstaltungsinfos'}
+                </p>
+                <VeranstaltungsDetailsForm
+                  data={form}
+                  onChange={(field, val) => setForm(p => ({ ...p, [field]: val }))}
+                  typ={form.typ}
+                />
+              </div>
               <div>
                 <label className="text-xs text-muted-foreground block mb-1">Anmeldeschluss</label>
                 <input type="date" value={form.anmeldeschluss} onChange={e => setForm(p => ({ ...p, anmeldeschluss: e.target.value }))}

@@ -5,9 +5,10 @@ import { useAuth } from '@/lib/AuthContext';
 import { kannCheckinDurchfuehren, isAdmin as checkAdmin } from '@/lib/roles';
 import {
   ArrowLeft, Edit, Save, X, Calendar, MapPin, Clock, Users,
-  Bus, Check, XCircle, Search, Trash2, CheckCircle
+  Bus, Check, XCircle, Search, Trash2, CheckCircle, Send
 } from 'lucide-react';
 import ArbeitsdienstTab from '@/components/veranstaltung/ArbeitsdienstTab';
+import { VeranstaltungsDetailsForm, VeranstaltungsDetailsView } from '@/components/veranstaltung/VeranstaltungsDetails';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -36,7 +37,9 @@ export default function VeranstaltungDetail() {
   const [searchMember, setSearchMember] = useState('');
   const [myMitglied, setMyMitglied] = useState(null);
   const [activeTab, setActiveTab] = useState('info');
-  const [busFilter, setBusFilter] = useState('alle'); // 'alle' | 'nur-bus' | 'unbestaetigt'
+  const [busFilter, setBusFilter] = useState('alle');
+  const [sending, setSending] = useState(false);
+  const [sendResult, setSendResult] = useState(null);
 
   useEffect(() => {
     if (!isNew) loadData();
@@ -118,6 +121,18 @@ export default function VeranstaltungDetail() {
       await base44.entities.Teilnahme.update(teilnahme.id, { status: newStatus });
       setTeilnahmen(prev => prev.map(t => t.id === teilnahme.id ? { ...t, status: newStatus } : t));
     } catch (e) {}
+  };
+
+  const handleSendInfobrief = async () => {
+    setSending(true);
+    setSendResult(null);
+    try {
+      const res = await base44.functions.invoke('sendeInfobrief', { veranstaltung_id: id });
+      setSendResult(res.data);
+    } catch (e) {
+      setSendResult({ error: e.message });
+    }
+    setSending(false);
   };
 
   const getMitgliedName = (id) => {
@@ -327,6 +342,47 @@ export default function VeranstaltungDetail() {
               ) : (
                 <p className="text-sm text-foreground whitespace-pre-wrap">{veranstaltung.beschreibung}</p>
               )}
+            </div>
+          )}
+
+          {/* Typ-spezifische Detailinfos */}
+          <div className="bg-card border border-border rounded-xl p-5">
+            <h2 className="font-semibold text-foreground mb-4">
+              {veranstaltung.typ === 'Umzug' ? '🎪 Umzugsinfos' : veranstaltung.typ === 'Abendveranstaltung' ? '🎭 Veranstaltungsinfos' : veranstaltung.typ === 'Fest' ? '🎉 Festinfos' : '📋 Details'}
+            </h2>
+            {editing ? (
+              <VeranstaltungsDetailsForm
+                data={veranstaltung}
+                onChange={(field, val) => setVeranstaltung(p => ({ ...p, [field]: val }))}
+                typ={veranstaltung.typ}
+              />
+            ) : (
+              <VeranstaltungsDetailsView data={veranstaltung} />
+            )}
+          </div>
+
+          {/* Infobrief versenden – nur für Admins, nur bei existierenden Veranstaltungen */}
+          {isAdmin && !isNew && (
+            <div className="bg-card border border-border rounded-xl p-5">
+              <h2 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                <Send size={16} className="text-primary" /> Infobrief versenden
+              </h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                Sendet alle eingetragenen Infos als formatierten Infobrief per E-Mail an alle {angemeldete.length} angemeldeten Mitglieder mit E-Mail-Adresse.
+              </p>
+              {sendResult && (
+                <div className={`mb-3 px-4 py-2.5 rounded-lg text-sm ${sendResult.error ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-400'}`}>
+                  {sendResult.error ? `❌ Fehler: ${sendResult.error}` : `✓ ${sendResult.message}`}
+                </div>
+              )}
+              <button
+                onClick={handleSendInfobrief}
+                disabled={sending || angemeldete.length === 0}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                <Send size={14} />
+                {sending ? 'Wird gesendet...' : `Infobrief an ${angemeldete.length} Mitglieder senden`}
+              </button>
             </div>
           )}
         </div>
