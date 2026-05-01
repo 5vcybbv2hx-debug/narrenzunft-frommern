@@ -283,22 +283,48 @@ export default function Umzuege() {
                 onChange={e => setForm(p => ({ ...p, titel: e.target.value }))}
                 className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
               />
-              <div className="grid grid-cols-2 gap-2">
-                <select
-                  value={form.typ}
-                  onChange={e => setForm(p => ({ ...p, typ: e.target.value }))}
-                  className="px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
-                >
-                  <option value="Umzug">Umzug</option>
-                  <option value="Abendveranstaltung">Abendveranstaltung</option>
-                </select>
-                <select
-                  value={form.status}
-                  onChange={e => setForm(p => ({ ...p, status: e.target.value }))}
-                  className="px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
-                >
-                  {['Geplant', 'Aktiv', 'Abgeschlossen', 'Abgesagt'].map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
+              <div>
+                <label className="text-xs text-muted-foreground font-medium block mb-1">Typ</label>
+                <div className="flex gap-2">
+                  {[{ value: 'Umzug', emoji: '🎪' }, { value: 'Abendveranstaltung', emoji: '🎭' }].map(t => (
+                    <button
+                      key={t.value}
+                      type="button"
+                      onClick={() => setForm(p => ({ ...p, typ: t.value }))}
+                      className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all border ${
+                        form.typ === t.value
+                          ? 'bg-primary/20 text-primary border-primary/40'
+                          : 'bg-secondary text-muted-foreground border-border hover:border-primary/40 hover:text-foreground'
+                      }`}
+                    >
+                      {t.emoji} {t.value}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground font-medium block mb-1">Status</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: 'Geplant', emoji: '📅' },
+                    { value: 'Aktiv', emoji: '✅' },
+                    { value: 'Abgeschlossen', emoji: '🏁' },
+                    { value: 'Abgesagt', emoji: '❌' },
+                  ].map(s => (
+                    <button
+                      key={s.value}
+                      type="button"
+                      onClick={() => setForm(p => ({ ...p, status: s.value }))}
+                      className={`py-2.5 rounded-lg text-sm font-medium transition-all border ${
+                        form.status === s.value
+                          ? 'bg-primary/20 text-primary border-primary/40'
+                          : 'bg-secondary text-muted-foreground border-border hover:border-primary/40 hover:text-foreground'
+                      }`}
+                    >
+                      {s.emoji} {s.value}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
