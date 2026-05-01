@@ -17,6 +17,7 @@ import MitgliedDetail from './pages/MitgliedDetail';
 import Veranstaltungen from './pages/Veranstaltungen';
 import VeranstaltungDetail from './pages/VeranstaltungDetail';
 import Arbeitsdienste from './pages/Arbeitsdienste';
+import ArbeitsdienstNeu from './pages/ArbeitsdienstNeu';
 import Ehrungen from './pages/Ehrungen.jsx';
 import Beitraege from './pages/Beitraege';
 import Haes from './pages/Haes';
@@ -73,6 +74,7 @@ const AuthenticatedApp = () => {
         <Route path="/veranstaltungen" element={<Veranstaltungen />} />
         <Route path="/veranstaltungen/:id" element={<VeranstaltungDetail />} />
         <Route path="/arbeitsdienste" element={<Arbeitsdienste />} />
+        <Route path="/arbeitsdienste/neu" element={<ArbeitsdienstNeu />} />
         <Route path="/ehrungen" element={<Ehrungen />} />
         <Route path="/beitraege" element={<Beitraege />} />
         <Route path="/haes" element={<Haes />} />
