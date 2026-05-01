@@ -63,15 +63,24 @@ export default function ArbeitsdienstNeu() {
 
         <div>
           <label className="text-xs text-muted-foreground font-medium block mb-1">Status</label>
-          <select
-            value={form.status}
-            onChange={e => setForm(p => ({ ...p, status: e.target.value }))}
-            className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
-          >
-            <option value="Offen">Offen</option>
-            <option value="In Planung">In Planung</option>
-            <option value="Abgeschlossen">Abgeschlossen</option>
-          </select>
+          <div className="flex gap-2">
+            {['Offen', 'In Planung', 'Abgeschlossen'].map(s => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setForm(p => ({ ...p, status: s }))}
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all border ${
+                  form.status === s
+                    ? s === 'Offen' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/40'
+                    : s === 'In Planung' ? 'bg-blue-500/20 text-blue-400 border-blue-500/40'
+                    : 'bg-green-500/20 text-green-400 border-green-500/40'
+                    : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'
+                }`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div>
