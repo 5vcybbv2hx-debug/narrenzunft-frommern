@@ -67,7 +67,7 @@ export default function EhrungsStatus({ mitglied }) {
 
   if (!status) return null;
 
-  const { mitgliedsEhrungen, jugendUmzuege, umzugsEhrungen, warnungen } = status;
+  const { mitgliedsEhrungen, jugendUmzuege, umzugsEhrungen, warnungen, erwachsenenUmzuegeDigital, umzuegeHistorisch } = status;
   const verliehene = ehrungen.filter(e => e.status === 'Verliehen');
   const istKindOderJugend = mitglied?.mitgliedsstatus &&
     ['Kinder 4-10', 'Kleinkind 0-3', 'Jugendliche 11-14', 'Jungaktive 15-17'].includes(mitglied.mitgliedsstatus);
@@ -132,8 +132,12 @@ export default function EhrungsStatus({ mitglied }) {
         </p>
         <div className="bg-secondary/50 rounded-lg px-3">
           <InfoRow label="Jugend-Umzüge (unter 18)" value={jugendUmzuege} />
+          {umzuegeHistorisch > 0 && (
+            <InfoRow label="Historisch (vor App)" value={umzuegeHistorisch} />
+          )}
+          <InfoRow label="Digital erfasst (ab 18)" value={erwachsenenUmzuegeDigital} />
           <InfoRow
-            label="Erwachsenen-Umzüge (ab 18)"
+            label="Gesamt Erwachsenen-Umzüge"
             value={umzugsEhrungen.erwachsenenUmzuege}
             highlight
           />

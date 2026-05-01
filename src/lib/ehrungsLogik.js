@@ -138,7 +138,7 @@ export function zaehleUmzugsteilnahmen(mitglied, teilnahmen, veranstaltungen) {
   const geburtsdatum = parseDate(mitglied?.geburtsdatum);
 
   if (!geburtsdatum) {
-    return { jugendUmzuege: 0, erwachsenenUmzuege: 0, fehler: 'Geburtsdatum fehlt' };
+    return { jugendUmzuege: 0, erwachsenenUmzuege: 0, erwachsenenUmzuegeDigital: 0, fehler: 'Geburtsdatum fehlt' };
   }
 
   const veranstaltungMap = {};
@@ -147,7 +147,7 @@ export function zaehleUmzugsteilnahmen(mitglied, teilnahmen, veranstaltungen) {
   }
 
   let jugendUmzuege = 0;
-  let erwachsenenUmzuege = 0;
+  let erwachsenenUmzuegeDigital = 0;
   const datumFehler = [];
 
   for (const t of teilnahmen) {
@@ -171,13 +171,19 @@ export function zaehleUmzugsteilnahmen(mitglied, teilnahmen, veranstaltungen) {
     if (alterAmUmzug < 18) {
       jugendUmzuege += 1;
     } else {
-      erwachsenenUmzuege += 1;
+      erwachsenenUmzuegeDigital += 1;
     }
   }
+
+  // Historischer Bestand (vor Digitalisierung) dazuaddieren
+  const historisch = Number(mitglied?.umzuege_vor_digitalisierung) || 0;
+  const erwachsenenUmzuege = erwachsenenUmzuegeDigital + historisch;
 
   return {
     jugendUmzuege,
     erwachsenenUmzuege,
+    erwachsenenUmzuegeDigital,
+    umzuegeHistorisch: historisch,
     fehler: datumFehler.length > 0 ? datumFehler : null,
   };
 }
@@ -244,7 +250,7 @@ export function berechneUmzugsEhrungen(erwachsenenUmzuege, verlieheneEhrungen = 
 export function berechneEhrungsstatusGesamt(mitglied, teilnahmen, veranstaltungen, ehrungen) {
   const mitgliedsEhrungen = berechneMitgliedsEhrungen(mitglied, ehrungen);
 
-  const { jugendUmzuege, erwachsenenUmzuege, fehler: umzugFehler } =
+  const { jugendUmzuege, erwachsenenUmzuege, erwachsenenUmzuegeDigital, umzuegeHistorisch, fehler: umzugFehler } =
     zaehleUmzugsteilnahmen(mitglied, teilnahmen, veranstaltungen);
 
   const umzugsEhrungen = berechneUmzugsEhrungen(erwachsenenUmzuege, ehrungen);
@@ -265,6 +271,8 @@ export function berechneEhrungsstatusGesamt(mitglied, teilnahmen, veranstaltunge
     mitglied,
     mitgliedsEhrungen,
     jugendUmzuege,
+    erwachsenenUmzuegeDigital,
+    umzuegeHistorisch,
     umzugsEhrungen,
     warnungen,
     hatFaelligeEhrungen:

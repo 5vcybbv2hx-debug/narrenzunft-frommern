@@ -90,6 +90,11 @@
       "type": "string",
       "format": "date",
       "description": "Hochzeitstag des Mitglieds"
+    },
+    "umzuege_vor_digitalisierung": {
+      "type": "number",
+      "description": "Anzahl Umz\u00fcge als Erwachsener vor Einf\u00fchrung der digitalen Verwaltung (historischer Anfangsbestand)",
+      "default": 0
     }
   },
   "required": [

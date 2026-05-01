@@ -344,6 +344,21 @@ export default function MitgliedDetail() {
           <Field label="Eintrittsdatum" field="eintrittsdatum" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           <Field label="Austrittsdatum" field="austrittsdatum" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           <Field label="Hochzeitstag" field="hochzeitstag" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+          <div>
+            <label className="text-xs text-muted-foreground font-medium block mb-1">Umzüge vor Digitalisierung</label>
+            {editing ? (
+              <input
+                type="number"
+                min="0"
+                value={mitglied.umzuege_vor_digitalisierung || 0}
+                onChange={e => handleFieldChange('umzuege_vor_digitalisierung', parseInt(e.target.value) || 0)}
+                className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+              />
+            ) : (
+              <p className="text-sm text-foreground py-1">{mitglied.umzuege_vor_digitalisierung || 0} Umzüge (historisch)</p>
+            )}
+            {editing && <p className="text-xs text-muted-foreground mt-1">Anzahl Erwachsenen-Umzüge vor Einführung dieser App</p>}
+          </div>
         </div>
       </div>
 
