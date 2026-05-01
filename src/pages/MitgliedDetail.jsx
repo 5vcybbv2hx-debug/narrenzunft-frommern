@@ -455,36 +455,59 @@ export default function MitgliedDetail() {
             <Shield size={16} className="text-primary" /> App-Zugang & Rolle
           </h2>
           {linkedUser ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
+              {/* User-Info */}
               <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
-                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0">
                   {linkedUser.full_name?.[0] || '?'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{linkedUser.full_name}</p>
+                  <p className="text-sm font-semibold text-foreground truncate">{linkedUser.full_name}</p>
                   <p className="text-xs text-muted-foreground truncate">{linkedUser.email}</p>
                 </div>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium shrink-0">Aktiv</span>
               </div>
+
+              {/* Rollen-Auswahl als Kacheln */}
               <div>
-                <label className="text-xs text-muted-foreground font-medium block mb-1">App-Rolle</label>
-                <div className="flex gap-2 items-center">
-                  <select
-                    value={linkedUser.role || 'mitglied'}
-                    onChange={e => handleRoleChange(e.target.value)}
-                    disabled={roleSaving}
-                    className="flex-1 px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary disabled:opacity-50"
-                  >
-                    <option value="mitglied">Mitglied</option>
-                    <option value="spartenleiter">Spartenleiter</option>
-                    <option value="kassierer">Kassierer</option>
-                    <option value="stellv_vorstand">Stv. Vorstand</option>
-                    <option value="vorstand">Vorstand</option>
-                  </select>
-                  {roleSaving && <div className="w-4 h-4 border-2 border-border border-t-primary rounded-full animate-spin shrink-0" />}
+                <label className="text-xs text-muted-foreground font-medium block mb-2">App-Rolle / Zugriffsrechte</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: 'mitglied', label: 'Mitglied', desc: 'Grundzugang', icon: '👤' },
+                    { value: 'elternkonto', label: 'Elternkonto', desc: 'Für Erziehungsberechtigte', icon: '👨‍👩‍👧' },
+                    { value: 'spartenleiter', label: 'Spartenleiter', desc: 'Dienste & Check-In', icon: '📋' },
+                    { value: 'kassierer', label: 'Kassierer', desc: 'Finanzen & Beiträge', icon: '💰' },
+                    { value: 'stellv_vorstand', label: 'Stv. Vorstand', desc: 'Vollzugriff (ohne Admin)', icon: '🎭' },
+                    { value: 'vorstand', label: 'Vorstand', desc: 'Vollzugriff', icon: '👑' },
+                  ].map(rolle => {
+                    const isSelected = (linkedUser.role || 'mitglied') === rolle.value;
+                    return (
+                      <button
+                        key={rolle.value}
+                        onClick={() => !roleSaving && handleRoleChange(rolle.value)}
+                        disabled={roleSaving}
+                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all disabled:opacity-50 ${
+                          isSelected
+                            ? 'bg-primary/15 border-primary text-foreground'
+                            : 'bg-secondary/40 border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                        }`}
+                      >
+                        <span className="text-base shrink-0">{rolle.icon}</span>
+                        <div className="min-w-0">
+                          <p className={`text-xs font-semibold truncate ${isSelected ? 'text-primary' : ''}`}>{rolle.label}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{rolle.desc}</p>
+                        </div>
+                        {isSelected && <div className="ml-auto w-2 h-2 rounded-full bg-primary shrink-0" />}
+                      </button>
+                    );
+                  })}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1.5">
-                  Aktuelle Rolle: <span className="text-primary font-medium">{ROLLEN_LABELS[linkedUser.role] || linkedUser.role}</span>
-                </p>
+                {roleSaving && (
+                  <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                    <div className="w-3 h-3 border-2 border-border border-t-primary rounded-full animate-spin" />
+                    Wird gespeichert...
+                  </div>
+                )}
               </div>
             </div>
           ) : (
