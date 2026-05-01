@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
-import { ArrowLeft, Shirt, Plus, Trash2, UserCheck, UserX, Save, X } from 'lucide-react';
+import { ArrowLeft, Shirt, Plus, Trash2, UserCheck, UserX, Save, X, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -31,6 +31,7 @@ export default function HaesDetail() {
   const [showAddMitglied, setShowAddMitglied] = useState(false);
   const [newZuweisung, setNewZuweisung] = useState({ mitglied_id: '', von_datum: '', aktiv: true, notizen: '' });
   const [saving, setSaving] = useState(false);
+  const [eigentuemerSuche, setEigentuemerSuche] = useState('');
 
   useEffect(() => {
     loadData();
@@ -244,16 +245,57 @@ export default function HaesDetail() {
               {!editData.vereinseigentum && (
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">Privateigentümer (Person)</label>
-                  <select
-                    value={editData.privat_eigentuemer_id || ''}
-                    onChange={e => setEditData(p => ({ ...p, privat_eigentuemer_id: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
-                  >
-                    <option value="">– Keine Person verknüpft –</option>
-                    {mitglieder.map(m => (
-                      <option key={m.id} value={m.id}>{m.vorname} {m.nachname}</option>
-                    ))}
-                  </select>
+                  {editData.privat_eigentuemer_id ? (
+                    <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-primary/10 border border-primary/30">
+                      <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                        {getMitgliedName(editData.privat_eigentuemer_id)[0]}
+                      </div>
+                      <span className="text-sm font-medium text-foreground flex-1">{getMitgliedName(editData.privat_eigentuemer_id)}</span>
+                      <button
+                        onClick={() => { setEditData(p => ({ ...p, privat_eigentuemer_id: '' })); setEigentuemerSuche(''); }}
+                        className="text-muted-foreground hover:text-destructive transition-colors"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      <input
+                        type="text"
+                        placeholder="Name eingeben..."
+                        value={eigentuemerSuche}
+                        onChange={e => setEigentuemerSuche(e.target.value)}
+                        className="w-full pl-8 pr-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+                      />
+                      {eigentuemerSuche.length >= 1 && (
+                        <div className="absolute z-20 left-0 right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-xl max-h-48 overflow-y-auto">
+                          {mitglieder
+                            .filter(m => `${m.vorname} ${m.nachname}`.toLowerCase().includes(eigentuemerSuche.toLowerCase()))
+                            .slice(0, 8)
+                            .map(m => (
+                              <button
+                                key={m.id}
+                                type="button"
+                                onClick={() => { setEditData(p => ({ ...p, privat_eigentuemer_id: m.id })); setEigentuemerSuche(''); }}
+                                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary transition-colors text-left"
+                              >
+                                <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                                  {m.vorname?.[0]}{m.nachname?.[0]}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-foreground">{m.vorname} {m.nachname}</p>
+                                  {m.mitgliedsstatus && <p className="text-xs text-muted-foreground">{m.mitgliedsstatus}</p>}
+                                </div>
+                              </button>
+                            ))}
+                          {mitglieder.filter(m => `${m.vorname} ${m.nachname}`.toLowerCase().includes(eigentuemerSuche.toLowerCase())).length === 0 && (
+                            <p className="text-sm text-muted-foreground text-center py-4">Keine Ergebnisse</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
