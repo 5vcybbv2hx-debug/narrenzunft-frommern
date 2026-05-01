@@ -112,7 +112,9 @@ export default function MitgliedDetail() {
     if (!mitglied.email) return;
     setInviting(true);
     try {
-      await base44.users.inviteUser(mitglied.email, mitglied.app_rolle || 'mitglied');
+      // inviteUser akzeptiert nur "user" oder "admin" – Feinrolle wird via app_rolle gesetzt
+      const baseRolle = ['vorstand', 'stellv_vorstand'].includes(mitglied.app_rolle) ? 'admin' : 'user';
+      await base44.users.inviteUser(mitglied.email, baseRolle);
       const today = new Date().toISOString().split('T')[0];
       await base44.entities.Mitglied.update(mitglied.id, { einladung_gesendet_am: today });
       setMitglied(p => ({ ...p, einladung_gesendet_am: today }));
