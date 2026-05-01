@@ -343,11 +343,7 @@ export default function Umzuege() {
                     className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
                 </div>
               </div>
-              <div>
-                <label className="text-xs text-muted-foreground block mb-1">Bus-Rückfahrtszeit (vom Heimatpunkt zurück)</label>
-                <input type="time" value={form.bus_rueckfahrtszeit} onChange={e => setForm(p => ({ ...p, bus_rueckfahrtszeit: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
-              </div>
+
               <input
                 type="text"
                 placeholder="Ort"
@@ -374,6 +370,25 @@ export default function Umzuege() {
                   typ={form.typ}
                 />
               </div>
+              
+              {/* Bus Rückfahrt */}
+              {form.bus_erforderlich && (
+                <div className="border-t border-border pt-3">
+                  <p className="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-3">🚌 Bus-Rückfahrt</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-muted-foreground font-medium block mb-1">Rückfahrtszeit vom Heimatpunkt</label>
+                      <input
+                        type="time"
+                        value={form.bus_rueckfahrtszeit}
+                        onChange={e => setForm(p => ({ ...p, bus_rueckfahrtszeit: e.target.value }))}
+                        placeholder="z.B. 18:00"
+                        className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
               <div>
                 <label className="text-xs text-muted-foreground block mb-1">Anmeldeschluss</label>
                 <input type="date" value={form.anmeldeschluss} onChange={e => setForm(p => ({ ...p, anmeldeschluss: e.target.value }))}
