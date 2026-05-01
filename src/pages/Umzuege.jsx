@@ -4,6 +4,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
 import { Bus, Car, Clock, MapPin, Check, Plus, X, Edit, Trash2, Save, ChevronDown, ChevronUp } from 'lucide-react';
 import { VeranstaltungsDetailsForm, VeranstaltungsDetailsView } from '@/components/veranstaltung/VeranstaltungsDetails';
+import AdresseAutocomplete from '@/components/AdresseAutocomplete';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -344,12 +345,10 @@ export default function Umzuege() {
                 </div>
               </div>
 
-              <input
-                type="text"
-                placeholder="Ort"
+              <AdresseAutocomplete
                 value={form.ort}
-                onChange={e => setForm(p => ({ ...p, ort: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+                onChange={(val) => setForm(p => ({ ...p, ort: val }))}
+                placeholder="Ort suchen..."
               />
               <textarea
                 placeholder="Beschreibung (optional)"
