@@ -50,6 +50,19 @@
       ],
       "default": "Aktiv"
     },
+    "app_rolle": {
+      "type": "string",
+      "enum": [
+        "mitglied",
+        "elternkonto",
+        "spartenleiter",
+        "kassierer",
+        "stellv_vorstand",
+        "vorstand"
+      ],
+      "default": "mitglied",
+      "description": "Gew\u00fcnschte App-Rolle \u2013 wird beim ersten Login automatisch gesetzt"
+    },
     "notizen": {
       "type": "string"
     },

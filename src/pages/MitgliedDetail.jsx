@@ -112,10 +112,25 @@ export default function MitgliedDetail() {
     if (!mitglied.email) return;
     setInviting(true);
     try {
-      await base44.users.inviteUser(mitglied.email, 'mitglied');
+      await base44.users.inviteUser(mitglied.email, mitglied.app_rolle || 'mitglied');
       setInviteSent(true);
     } catch (e) {}
     setInviting(false);
+  };
+
+  const handleAppRolleChange = async (newRole) => {
+    // Immer auf dem Mitglied-Datensatz speichern
+    setMitglied(p => ({ ...p, app_rolle: newRole }));
+    await base44.entities.Mitglied.update(mitglied.id, { app_rolle: newRole });
+    // Falls bereits ein User verknüpft: auch dort direkt setzen
+    if (linkedUser) {
+      setRoleSaving(true);
+      try {
+        await base44.entities.User.update(linkedUser.id, { role: newRole });
+        setLinkedUser(prev => ({ ...prev, role: newRole }));
+      } catch (e) {}
+      setRoleSaving(false);
+    }
   };
 
   const getWhatsAppLink = (telefon) => {
@@ -451,81 +466,80 @@ export default function MitgliedDetail() {
       {/* App-Zugang & Rolle */}
       {admin && !isNew && (
         <div className="bg-card border border-border rounded-xl p-5 mb-4">
-          <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+          <h2 className="font-semibold text-foreground mb-1 flex items-center gap-2">
             <Shield size={16} className="text-primary" /> App-Zugang & Rolle
           </h2>
-          {linkedUser ? (
-            <div className="space-y-4">
-              {/* User-Info */}
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
-                <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-                  {linkedUser.full_name?.[0] || '?'}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate">{linkedUser.full_name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{linkedUser.email}</p>
-                </div>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium shrink-0">Aktiv</span>
-              </div>
+          <p className="text-xs text-muted-foreground mb-4">
+            Rolle jetzt festlegen – wird beim ersten Login automatisch übernommen.
+          </p>
 
-              {/* Rollen-Auswahl als Kacheln */}
-              <div>
-                <label className="text-xs text-muted-foreground font-medium block mb-2">App-Rolle / Zugriffsrechte</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { value: 'mitglied', label: 'Mitglied', desc: 'Grundzugang', icon: '👤' },
-                    { value: 'elternkonto', label: 'Elternkonto', desc: 'Für Erziehungsberechtigte', icon: '👨‍👩‍👧' },
-                    { value: 'spartenleiter', label: 'Spartenleiter', desc: 'Dienste & Check-In', icon: '📋' },
-                    { value: 'kassierer', label: 'Kassierer', desc: 'Finanzen & Beiträge', icon: '💰' },
-                    { value: 'stellv_vorstand', label: 'Stv. Vorstand', desc: 'Vollzugriff (ohne Admin)', icon: '🎭' },
-                    { value: 'vorstand', label: 'Vorstand', desc: 'Vollzugriff', icon: '👑' },
-                  ].map(rolle => {
-                    const isSelected = (linkedUser.role || 'mitglied') === rolle.value;
-                    return (
-                      <button
-                        key={rolle.value}
-                        onClick={() => !roleSaving && handleRoleChange(rolle.value)}
-                        disabled={roleSaving}
-                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all disabled:opacity-50 ${
-                          isSelected
-                            ? 'bg-primary/15 border-primary text-foreground'
-                            : 'bg-secondary/40 border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'
-                        }`}
-                      >
-                        <span className="text-base shrink-0">{rolle.icon}</span>
-                        <div className="min-w-0">
-                          <p className={`text-xs font-semibold truncate ${isSelected ? 'text-primary' : ''}`}>{rolle.label}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">{rolle.desc}</p>
-                        </div>
-                        {isSelected && <div className="ml-auto w-2 h-2 rounded-full bg-primary shrink-0" />}
-                      </button>
-                    );
-                  })}
-                </div>
-                {roleSaving && (
-                  <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                    <div className="w-3 h-3 border-2 border-border border-t-primary rounded-full animate-spin" />
-                    Wird gespeichert...
-                  </div>
-                )}
+          {/* Verknüpfter User (falls vorhanden) */}
+          {linkedUser && (
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 mb-4">
+              <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                {linkedUser.full_name?.[0] || '?'}
               </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground truncate">{linkedUser.full_name}</p>
+                <p className="text-xs text-muted-foreground truncate">{linkedUser.email}</p>
+              </div>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium shrink-0">Aktiv</span>
             </div>
-          ) : (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                {mitglied.user_id ? 'Benutzer wird geladen...' : 'Kein App-Zugang verknüpft.'}
-              </p>
-              {mitglied.email && !mitglied.user_id && (
+          )}
+
+          {/* Rollen-Kacheln – immer sichtbar */}
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            {[
+              { value: 'mitglied', label: 'Mitglied', desc: 'Grundzugang', icon: '👤' },
+              { value: 'elternkonto', label: 'Elternkonto', desc: 'Für Erziehungsberechtigte', icon: '👨‍👩‍👧' },
+              { value: 'spartenleiter', label: 'Spartenleiter', desc: 'Dienste & Check-In', icon: '📋' },
+              { value: 'kassierer', label: 'Kassierer', desc: 'Finanzen & Beiträge', icon: '💰' },
+              { value: 'stellv_vorstand', label: 'Stv. Vorstand', desc: 'Vollzugriff (ohne Admin)', icon: '🎭' },
+              { value: 'vorstand', label: 'Vorstand', desc: 'Vollzugriff', icon: '👑' },
+            ].map(rolle => {
+              const currentRole = linkedUser ? (linkedUser.role || 'mitglied') : (mitglied.app_rolle || 'mitglied');
+              const isSelected = currentRole === rolle.value;
+              return (
+                <button
+                  key={rolle.value}
+                  onClick={() => handleAppRolleChange(rolle.value)}
+                  disabled={roleSaving}
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all disabled:opacity-50 ${
+                    isSelected
+                      ? 'bg-primary/15 border-primary'
+                      : 'bg-secondary/40 border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                  }`}
+                >
+                  <span className="text-base shrink-0">{rolle.icon}</span>
+                  <div className="min-w-0">
+                    <p className={`text-xs font-semibold truncate ${isSelected ? 'text-primary' : ''}`}>{rolle.label}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{rolle.desc}</p>
+                  </div>
+                  {isSelected && <div className="ml-auto w-2 h-2 rounded-full bg-primary shrink-0" />}
+                </button>
+              );
+            })}
+          </div>
+          {roleSaving && (
+            <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
+              <div className="w-3 h-3 border-2 border-border border-t-primary rounded-full animate-spin" />
+              Wird gespeichert...
+            </div>
+          )}
+
+          {/* Einladung – nur wenn noch kein User verknüpft */}
+          {!linkedUser && (
+            <div className="border-t border-border pt-3">
+              {mitglied.email ? (
                 <button
                   onClick={handleInvite}
                   disabled={inviting || inviteSent}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60 w-full justify-center"
                 >
                   <Send size={14} />
                   {inviteSent ? '✓ Einladung gesendet!' : inviting ? 'Sende...' : `Einladung senden an ${mitglied.email}`}
                 </button>
-              )}
-              {!mitglied.email && (
+              ) : (
                 <p className="text-xs text-muted-foreground">Keine E-Mail-Adresse hinterlegt – Einladung nicht möglich.</p>
               )}
             </div>
