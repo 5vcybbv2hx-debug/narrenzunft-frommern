@@ -335,8 +335,44 @@ export default function VeranstaltungDetail() {
               <div className="sm:col-span-2">
                 <Field label="Titel" field="titel" />
               </div>
-              <Field label="Typ" field="typ" options={TYPEN} />
-              <Field label="Status" field="status" options={STATUS_LIST} />
+              <div>
+                <label className="text-xs text-muted-foreground font-medium block mb-1">Typ</label>
+                <div className="flex gap-2 flex-wrap">
+                  {TYPEN.map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setVeranstaltung(p => ({ ...p, typ: t }))}
+                      className={`flex-1 min-w-[120px] py-2.5 rounded-lg text-sm font-medium transition-all border ${
+                        veranstaltung.typ === t
+                          ? 'bg-primary/20 text-primary border-primary/40'
+                          : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground font-medium block mb-1">Status</label>
+                <div className="flex gap-2 flex-wrap">
+                  {STATUS_LIST.map(s => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setVeranstaltung(p => ({ ...p, status: s }))}
+                      className={`flex-1 min-w-[100px] py-2.5 rounded-lg text-sm font-medium transition-all border ${
+                        veranstaltung.status === s
+                          ? 'bg-primary/20 text-primary border-primary/40'
+                          : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <Field label="Datum" field="datum" type="date" />
               <Field label="Uhrzeit" field="uhrzeit" type="time" />
               <div>
@@ -353,9 +389,29 @@ export default function VeranstaltungDetail() {
               </div>
               <Field label="Anmeldeschluss" field="anmeldeschluss" type="date" />
               <Field label="Max. Teilnehmer" field="max_teilnehmer" type="number" />
-              <div className="sm:col-span-2 flex gap-6">
-                <Field label="Bus erforderlich" field="bus_erforderlich" type="checkbox" />
-                <Field label="Anmeldung aktiv" field="anmeldung_aktiv" type="checkbox" />
+              <div className="sm:col-span-2 space-y-3">
+                <div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={veranstaltung.bus_erforderlich || false}
+                      onChange={e => setVeranstaltung(p => ({ ...p, bus_erforderlich: e.target.checked }))}
+                      className="rounded"
+                    />
+                    <span className="text-sm text-foreground">Bus erforderlich</span>
+                  </label>
+                </div>
+                <div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={veranstaltung.anmeldung_aktiv || false}
+                      onChange={e => setVeranstaltung(p => ({ ...p, anmeldung_aktiv: e.target.checked }))}
+                      className="rounded"
+                    />
+                    <span className="text-sm text-foreground">Anmeldung aktiv</span>
+                  </label>
+                </div>
               </div>
             </div>
           </div>
