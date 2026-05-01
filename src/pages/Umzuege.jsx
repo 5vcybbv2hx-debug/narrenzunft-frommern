@@ -9,7 +9,7 @@ import { de } from 'date-fns/locale';
 
 const EMPTY_FORM = {
   titel: '', typ: 'Umzug', datum: '', uhrzeit: '', ort: '',
-  beschreibung: '', anmeldeschluss: '', bus_erforderlich: false,
+  beschreibung: '', anmeldeschluss: '', bus_erforderlich: true,
   anmeldung_aktiv: true, status: 'Geplant',
 };
 
@@ -51,7 +51,7 @@ export default function Umzuege() {
     setEditItem(null);
     setForm({
       titel: '', typ: 'Umzug', datum: '', uhrzeit: '', ort: '',
-      beschreibung: '', anmeldeschluss: '', bus_erforderlich: false,
+      beschreibung: '', anmeldeschluss: '', bus_erforderlich: true,
       anmeldung_aktiv: true, status: 'Geplant', bus_rueckfahrtszeit: ''
     });
     setShowForm(true);
