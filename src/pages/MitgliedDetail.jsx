@@ -12,6 +12,7 @@ import { isAdmin, kannBankdatenSehn, ROLLEN_LABELS } from '@/lib/roles';
 import EhrungsStatus from '@/components/mitglied/EhrungsStatus';
 import AktivitaetTab from '@/components/mitglied/AktivitaetTab';
 import ArbeitsdiensteMitgliedTab from '@/components/mitglied/ArbeitsdiensteMitgliedTab';
+import FamilieTab from '@/components/mitglied/FamilieTab';
 
 const ALLE_STATUS = ['Aktiv', 'Passiv', 'Passiv mit Häs', 'Leihäs', 'Jugendliche 11-14', 'Jungaktive 15-17', 'Kinder 4-10', 'Kleinkind 0-3', 'Ehrenmitglied'];
 
@@ -264,6 +265,7 @@ export default function MitgliedDetail() {
         <div className="flex gap-1 bg-secondary rounded-xl p-1 mb-4">
           {[
             { id: 'profil', label: 'Profil' },
+            { id: 'familie', label: 'Familie' },
             { id: 'aktivitaet', label: 'Aktivität' },
             { id: 'arbeitsdienste', label: 'Arbeitsdienste' },
             { id: 'ehrungen', label: 'Ehrungen' },
@@ -279,6 +281,15 @@ export default function MitgliedDetail() {
             </button>
           ))}
         </div>
+      )}
+
+      {/* Tab: Familie */}
+      {activeTab === 'familie' && !isNew && (
+        <FamilieTab
+          mitglied={mitglied}
+          isAdmin={admin}
+          onFamilieChanged={(familieId) => setMitglied(p => ({ ...p, familie_id: familieId }))}
+        />
       )}
 
       {/* Tab: Aktivität */}
