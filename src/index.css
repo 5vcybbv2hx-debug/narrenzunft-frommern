@@ -41,6 +41,39 @@
     --chart-5: 340 75% 55%;
     --font-inter: 'Inter', sans-serif;
   }
+
+  /* This app uses a dark theme by default. Keep it consistent regardless of system preference. */
+  @media (prefers-color-scheme: light) {
+    :root {
+      --background: 222 20% 11%;
+      --foreground: 210 20% 92%;
+      --card: 222 18% 15%;
+      --card-foreground: 210 20% 92%;
+      --popover: 222 18% 15%;
+      --popover-foreground: 210 20% 92%;
+      --primary: 28 100% 49%;
+      --primary-foreground: 0 0% 100%;
+      --secondary: 222 15% 20%;
+      --secondary-foreground: 210 15% 75%;
+      --muted: 222 15% 18%;
+      --muted-foreground: 210 10% 55%;
+      --accent: 28 100% 49%;
+      --accent-foreground: 0 0% 100%;
+      --destructive: 0 72% 51%;
+      --destructive-foreground: 0 0% 100%;
+      --border: 222 15% 22%;
+      --input: 222 15% 20%;
+      --ring: 28 100% 49%;
+      --sidebar-background: 222 22% 9%;
+      --sidebar-foreground: 210 15% 75%;
+      --sidebar-primary: 28 100% 49%;
+      --sidebar-primary-foreground: 0 0% 100%;
+      --sidebar-accent: 222 15% 16%;
+      --sidebar-accent-foreground: 210 20% 92%;
+      --sidebar-border: 222 15% 18%;
+      --sidebar-ring: 28 100% 49%;
+    }
+  }
 }
 
 @layer base {
@@ -86,4 +119,11 @@
 /* Bottom nav safe area */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Minimum tap target size for accessibility (mobile only) */
+@media (max-width: 1023px) {
+  button, [role="button"], [role="tab"] {
+    min-height: 44px;
+  }
 }

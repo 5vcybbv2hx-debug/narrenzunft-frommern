@@ -15,6 +15,7 @@ export default function Profil() {
   const [haes, setHaes] = useState([]);
   const [ehrungen, setEhrungen] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -43,9 +44,20 @@ export default function Profil() {
   };
 
   const handleDeleteAccount = async () => {
+    setDeleting(true);
     try {
-      await base44.auth.logout('/');
-    } catch (e) {}
+      // Send deletion request notification before logging out
+      const me = await base44.auth.me();
+      await base44.integrations.Core.SendEmail({
+        to: me?.email || '',
+        subject: 'Account-Löschung beantragt',
+        body: `Hallo ${me?.full_name || ''},\n\nDeine Anfrage zur Account-Löschung wurde eingereicht und wird von einem Administrator bearbeitet. Du wirst in Kürze abgemeldet.\n\nNarrenzunft Verwaltung`,
+      });
+    } catch (e) {
+      // Proceed even if email fails
+    }
+    setDeleting(false);
+    base44.auth.logout('/');
   };
 
   if (loading) return (
@@ -178,16 +190,17 @@ export default function Profil() {
           <AlertDialogHeader>
             <AlertDialogTitle>Account wirklich löschen?</AlertDialogTitle>
             <AlertDialogDescription>
-              Dein Account wird dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden. Deine Mitgliedsdaten bleiben im System erhalten.
+              Eine Löschungsanfrage wird an einen Administrator gesendet. Du wirst danach abgemeldet. Deine Mitgliedsdaten bleiben im System erhalten.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>Abbrechen</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteAccount}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-60"
             >
-              Account löschen
+              {deleting ? 'Anfrage wird gesendet...' : 'Account löschen'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

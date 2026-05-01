@@ -1,4 +1,4 @@
-import { Outlet, useLocation, Link } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannMitgliederlisteSehn, getRollenLabel } from '@/lib/roles';
@@ -31,6 +31,9 @@ const bottomNavItems = [
   { path: '/mehr', label: 'Mehr', icon: MoreHorizontal },
 ];
 
+// Which top-level path each bottom tab "owns"
+const TAB_ROOTS = ['/', '/umzuege', '/arbeitsdienste', '/profil', '/mehr'];
+
 function canSee(item, user) {
   if (!item.roles) return true;
   return item.roles.includes(user?.role);
@@ -38,10 +41,24 @@ function canSee(item, user) {
 
 export default function Layout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifications, setNotifications] = useState(0);
   const admin = isAdmin(user);
+
+  // Preserve last-visited path per bottom tab
+  const [tabHistory, setTabHistory] = useState(() =>
+    Object.fromEntries(TAB_ROOTS.map(r => [r, r]))
+  );
+
+  // Update history whenever location changes
+  const currentTabRoot = TAB_ROOTS.find(root =>
+    root === '/' ? location.pathname === '/' : location.pathname.startsWith(root)
+  );
+  if (currentTabRoot && tabHistory[currentTabRoot] !== location.pathname + location.search) {
+    setTabHistory(prev => ({ ...prev, [currentTabRoot]: location.pathname + location.search }));
+  }
 
   useEffect(() => {
     loadNotifications();
@@ -219,18 +236,19 @@ export default function Layout() {
               const active = item.path === '/mehr'
                 ? isActive('/mehr')
                 : isActive(item.path);
+              const destination = tabHistory[item.path] || item.path;
               return (
-                <Link
+                <button
                   key={item.path}
-                  to={item.path}
-                  className={`flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl transition-all min-w-[56px] ${
+                  onClick={() => navigate(destination)}
+                  className={`flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl transition-all min-w-[56px] min-h-[44px] ${
                     active ? 'text-primary' : 'text-muted-foreground'
                   }`}
                 >
                   <Icon size={22} strokeWidth={active ? 2.5 : 1.8} />
                   <span className="text-[10px] font-medium leading-none mt-0.5">{item.label}</span>
                   {active && <div className="w-1 h-1 rounded-full bg-primary mt-0.5" />}
-                </Link>
+                </button>
               );
             })}
           </div>
