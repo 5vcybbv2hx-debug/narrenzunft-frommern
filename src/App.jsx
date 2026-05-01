@@ -28,6 +28,7 @@ import Suche from './pages/Suche';
 import Mehr from './pages/Mehr';
 import VorstandDashboard from './pages/VorstandDashboard';
 import Datenqualitaet from './pages/Datenqualitaet';
+import BusfahrerInfo from './pages/BusfahrerInfo';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -84,6 +85,7 @@ const AuthenticatedApp = () => {
         <Route path="/vorstand" element={<VorstandDashboard />} />
         <Route path="/datenqualitaet" element={<Datenqualitaet />} />
       </Route>
+      <Route path="/busfahrer/:token" element={<BusfahrerInfo />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
     </motion.div>

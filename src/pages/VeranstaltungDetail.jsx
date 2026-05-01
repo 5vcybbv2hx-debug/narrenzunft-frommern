@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { kannCheckinDurchfuehren, isAdmin as checkAdmin } from '@/lib/roles';
 import {
   ArrowLeft, Edit, Save, X, Calendar, MapPin, Clock, Users,
-  Bus, Check, XCircle, Search, Trash2, CheckCircle, Send
+  Bus, Check, XCircle, Search, Trash2, CheckCircle, Send, Link, Copy, RefreshCw
 } from 'lucide-react';
 import ArbeitsdienstTab from '@/components/veranstaltung/ArbeitsdienstTab';
 import { VeranstaltungsDetailsForm, VeranstaltungsDetailsView } from '@/components/veranstaltung/VeranstaltungsDetails';
@@ -40,6 +40,8 @@ export default function VeranstaltungDetail() {
   const [busFilter, setBusFilter] = useState('alle');
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState(null);
+  const [tokenCopied, setTokenCopied] = useState(false);
+  const [generatingToken, setGeneratingToken] = useState(false);
 
   useEffect(() => {
     if (!isNew) loadData();
@@ -121,6 +123,23 @@ export default function VeranstaltungDetail() {
       await base44.entities.Teilnahme.update(teilnahme.id, { status: newStatus });
       setTeilnahmen(prev => prev.map(t => t.id === teilnahme.id ? { ...t, status: newStatus } : t));
     } catch (e) {}
+  };
+
+  const handleGenerateToken = async () => {
+    setGeneratingToken(true);
+    try {
+      const token = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
+      await base44.entities.Veranstaltung.update(veranstaltung.id, { busfahrer_token: token });
+      setVeranstaltung(prev => ({ ...prev, busfahrer_token: token }));
+    } catch (e) {}
+    setGeneratingToken(false);
+  };
+
+  const handleCopyBusLink = () => {
+    const url = `${window.location.origin}/busfahrer/${veranstaltung.busfahrer_token}`;
+    navigator.clipboard.writeText(url);
+    setTokenCopied(true);
+    setTimeout(() => setTokenCopied(false), 2000);
   };
 
   const handleSendInfobrief = async () => {
@@ -360,6 +379,55 @@ export default function VeranstaltungDetail() {
               <VeranstaltungsDetailsView data={veranstaltung} />
             )}
           </div>
+
+          {/* Busfahrer-Link – nur für Admins */}
+          {isAdmin && !isNew && (
+            <div className="bg-card border border-border rounded-xl p-5">
+              <h2 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                <Bus size={16} className="text-primary" /> Busfahrer-Zugang
+              </h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                Erstelle einen öffentlichen Link mit allen Busfahrer-Infos – ohne Login, ideal für eigene und fremde Busfahrer.
+              </p>
+              {veranstaltung.busfahrer_token ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-secondary border border-border">
+                    <Link size={13} className="text-muted-foreground shrink-0" />
+                    <span className="text-xs text-muted-foreground truncate flex-1">
+                      {window.location.origin}/busfahrer/{veranstaltung.busfahrer_token}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleCopyBusLink}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+                    >
+                      <Copy size={14} />
+                      {tokenCopied ? '✓ Kopiert!' : 'Link kopieren'}
+                    </button>
+                    <button
+                      onClick={handleGenerateToken}
+                      disabled={generatingToken}
+                      title="Neuen Link generieren (macht alten Link ungültig)"
+                      className="px-3 py-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <RefreshCw size={14} />
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">⚠ Neuer Link macht den alten ungültig.</p>
+                </div>
+              ) : (
+                <button
+                  onClick={handleGenerateToken}
+                  disabled={generatingToken}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  <Bus size={14} />
+                  {generatingToken ? 'Wird erstellt...' : 'Busfahrer-Link erstellen'}
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Infobrief versenden – nur für Admins, nur bei existierenden Veranstaltungen */}
           {isAdmin && !isNew && (

@@ -109,6 +109,10 @@
     "kontakt_vor_ort": {
       "type": "string",
       "description": "Ansprechpartner vor Ort (Name + Tel)"
+    },
+    "busfahrer_token": {
+      "type": "string",
+      "description": "Einmaliger Token f\u00fcr den \u00f6ffentlichen Busfahrer-Zugang"
     }
   },
   "required": [
