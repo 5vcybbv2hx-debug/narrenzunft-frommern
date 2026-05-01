@@ -56,11 +56,15 @@
     },
     "busparkplatz_adresse": {
       "type": "string",
-      "description": "Adresse des Busparkplatzes"
+      "description": "Adresse des Busparkplatzes / Heimatpunkt"
     },
     "busparkplatz_treffzeit": {
       "type": "string",
-      "description": "Treffzeit am Busparkplatz (z.B. 09:30)"
+      "description": "Abfahrtszeit vom Heimatpunkt (z.B. 09:30)"
+    },
+    "bus_rueckfahrtszeit": {
+      "type": "string",
+      "description": "R\u00fcckfahrtszeit von der Veranstaltung zum Heimatpunkt (z.B. 18:00)"
     },
     "umzugsaufstellung_ort": {
       "type": "string",

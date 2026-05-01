@@ -167,11 +167,12 @@ export function VeranstaltungsDetailsView({ data }) {
     <div className="space-y-3">
       {isUmzug && (
         <>
-          {(data.busparkplatz_adresse || data.busparkplatz_treffzeit) && (
-            <InfoBlock color="orange" emoji="🅿️" title="Busparkplatz">
-              <InfoRow label="Treffzeit" value={data.busparkplatz_treffzeit ? data.busparkplatz_treffzeit + ' Uhr' : null} />
+          {(data.busparkplatz_adresse || data.busparkplatz_treffzeit || data.bus_rueckfahrtszeit) && (
+            <InfoBlock color="orange" emoji="🅿️" title="Bus & Heimatpunkt">
+              <InfoRow label="Abfahrtszeit" value={data.busparkplatz_treffzeit ? data.busparkplatz_treffzeit + ' Uhr' : null} />
+              <InfoRow label="Rückfahrtszeit" value={data.bus_rueckfahrtszeit ? data.bus_rueckfahrtszeit + ' Uhr' : null} />
               <InfoRow label="Adresse" value={data.busparkplatz_adresse} />
-              <NavButton adresse={data.busparkplatz_adresse} label="Zum Busparkplatz navigieren" />
+              <NavButton adresse={data.busparkplatz_adresse} label="Zum Heimatpunkt navigieren" />
             </InfoBlock>
           )}
           {(data.umzugsaufstellung_ort || data.umzugsaufstellung_zeit) && (

@@ -22,7 +22,7 @@ export default function Umzuege() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState(null); // null = neu, sonst Objekt
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [form, setForm] = useState({ ...EMPTY_FORM, bus_rueckfahrtszeit: '' });
   const [saving, setSaving] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
   const today = new Date().toISOString().split('T')[0];
@@ -49,7 +49,11 @@ export default function Umzuege() {
 
   const openNew = () => {
     setEditItem(null);
-    setForm(EMPTY_FORM);
+    setForm({
+      titel: '', typ: 'Umzug', datum: '', uhrzeit: '', ort: '',
+      beschreibung: '', anmeldeschluss: '', bus_erforderlich: false,
+      anmeldung_aktiv: true, status: 'Geplant', bus_rueckfahrtszeit: ''
+    });
     setShowForm(true);
   };
 
@@ -60,6 +64,7 @@ export default function Umzuege() {
       uhrzeit: u.uhrzeit || '', ort: u.ort || '', beschreibung: u.beschreibung || '',
       anmeldeschluss: u.anmeldeschluss || '', bus_erforderlich: u.bus_erforderlich || false,
       anmeldung_aktiv: u.anmeldung_aktiv !== false, status: u.status || 'Geplant',
+      bus_rueckfahrtszeit: u.bus_rueckfahrtszeit || ''
     });
     setShowForm(true);
   };
@@ -337,6 +342,11 @@ export default function Umzuege() {
                   <input type="time" value={form.uhrzeit} onChange={e => setForm(p => ({ ...p, uhrzeit: e.target.value }))}
                     className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
                 </div>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Bus-Rückfahrtszeit (vom Heimatpunkt zurück)</label>
+                <input type="time" value={form.bus_rueckfahrtszeit} onChange={e => setForm(p => ({ ...p, bus_rueckfahrtszeit: e.target.value }))}
+                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
               </div>
               <input
                 type="text"
