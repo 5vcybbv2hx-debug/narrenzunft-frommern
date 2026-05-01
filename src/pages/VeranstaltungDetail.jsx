@@ -11,8 +11,7 @@ import ArbeitsdienstTab from '@/components/veranstaltung/ArbeitsdienstTab';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
-// #8 – Vereinheitlichte Typen
-const TYPEN = ['Umzug', 'Abendveranstaltung', 'Intern', 'Arbeitsdienst'];
+const TYPEN = ['Umzug', 'Abendveranstaltung', 'Intern', 'Arbeitsdienst', 'Fest'];
 const STATUS_LIST = ['Geplant', 'Aktiv', 'Abgeschlossen', 'Abgesagt'];
 
 export default function VeranstaltungDetail() {
