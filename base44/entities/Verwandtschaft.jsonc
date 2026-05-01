@@ -1,0 +1,38 @@
+{
+  "name": "Verwandtschaft",
+  "type": "object",
+  "properties": {
+    "mitglied_id": {
+      "type": "string",
+      "description": "Das Mitglied, von dem aus die Beziehung definiert wird"
+    },
+    "verwandter_id": {
+      "type": "string",
+      "description": "Das verwandte Mitglied"
+    },
+    "beziehung": {
+      "type": "string",
+      "enum": [
+        "Elternteil",
+        "Kind",
+        "Geschwister",
+        "Gro\u00dfelternteil",
+        "Enkel",
+        "Onkel/Tante",
+        "Nichte/Neffe",
+        "Ehepartner/in",
+        "Sonstige"
+      ],
+      "description": "Art der Verwandtschaft von mitglied_id aus gesehen"
+    },
+    "notizen": {
+      "type": "string",
+      "description": "Optionale Anmerkung zur Beziehung"
+    }
+  },
+  "required": [
+    "mitglied_id",
+    "verwandter_id",
+    "beziehung"
+  ]
+}

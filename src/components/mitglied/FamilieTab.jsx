@@ -1,74 +1,124 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Users, Plus, X, ChevronRight } from 'lucide-react';
+import { Users, Plus, X, ChevronRight, Phone, Mail, Trash2 } from 'lucide-react';
 import { differenceInYears } from 'date-fns';
 
-export default function FamilieTab({ mitglied, isAdmin, onFamilieChanged }) {
-  const [familien, setFamilien] = useState([]);
-  const [familienmitglieder, setFamilienmitglieder] = useState([]);
+const BEZIEHUNGEN = [
+  'Elternteil', 'Kind', 'Geschwister', 'Großelternteil',
+  'Enkel', 'Onkel/Tante', 'Nichte/Neffe', 'Ehepartner/in', 'Sonstige'
+];
+
+// Gruppierung für die Anzeige
+const GRUPPEN = [
+  { label: '👴 Großeltern', typen: ['Großelternteil'] },
+  { label: '👨‍👩‍ Eltern / Partner', typen: ['Elternteil', 'Ehepartner/in'] },
+  { label: '👫 Geschwister', typen: ['Geschwister'] },
+  { label: '👶 Kinder', typen: ['Kind'] },
+  { label: '🧒 Enkel', typen: ['Enkel'] },
+  { label: '👨‍👧 Onkel / Tante', typen: ['Onkel/Tante'] },
+  { label: '👦 Nichten / Neffen', typen: ['Nichte/Neffe'] },
+  { label: '📎 Sonstige', typen: ['Sonstige'] },
+];
+
+const BEZIEHUNG_FARBEN = {
+  'Elternteil': 'bg-blue-500/20 text-blue-400',
+  'Kind': 'bg-green-500/20 text-green-400',
+  'Geschwister': 'bg-purple-500/20 text-purple-400',
+  'Großelternteil': 'bg-orange-500/20 text-orange-400',
+  'Enkel': 'bg-teal-500/20 text-teal-400',
+  'Onkel/Tante': 'bg-yellow-500/20 text-yellow-400',
+  'Nichte/Neffe': 'bg-pink-500/20 text-pink-400',
+  'Ehepartner/in': 'bg-red-500/20 text-red-400',
+  'Sonstige': 'bg-gray-500/20 text-gray-400',
+};
+
+export default function FamilieTab({ mitglied, isAdmin }) {
+  const [verwandtschaften, setVerwandtschaften] = useState([]);
+  const [alleMitglieder, setAlleMitglieder] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showNeuForm, setShowNeuForm] = useState(false);
-  const [neueName, setNeueName] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ verwandter_id: '', beziehung: 'Elternteil', notizen: '' });
 
   useEffect(() => {
     loadData();
-  }, [mitglied.familie_id]);
+  }, [mitglied.id]);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const f = await base44.entities.Familie.list('name', 200);
-      setFamilien(f);
-
-      if (mitglied.familie_id) {
-        const members = await base44.entities.Mitglied.filter({ familie_id: mitglied.familie_id });
-        setFamilienmitglieder(members.filter(m => m.id !== mitglied.id));
-      } else {
-        setFamilienmitglieder([]);
-      }
+      const [v, m] = await Promise.all([
+        // Beziehungen in beide Richtungen laden
+        base44.entities.Verwandtschaft.filter({ mitglied_id: mitglied.id }),
+        base44.entities.Mitglied.list('nachname', 1000),
+      ]);
+      // Auch umgekehrte Beziehungen laden (wo dieses Mitglied der Verwandte ist)
+      const vUmgekehrt = await base44.entities.Verwandtschaft.filter({ verwandter_id: mitglied.id });
+      setVerwandtschaften([...v, ...vUmgekehrt]);
+      setAlleMitglieder(m);
     } catch (e) {}
     setLoading(false);
   };
 
-  const handleFamilieChange = async (familieId) => {
+  const handleAdd = async () => {
+    if (!form.verwandter_id || !form.beziehung) return;
     setSaving(true);
     try {
-      await base44.entities.Mitglied.update(mitglied.id, { familie_id: familieId || null });
-      onFamilieChanged(familieId || null);
+      await base44.entities.Verwandtschaft.create({
+        mitglied_id: mitglied.id,
+        verwandter_id: form.verwandter_id,
+        beziehung: form.beziehung,
+        notizen: form.notizen || undefined,
+      });
+      setForm({ verwandter_id: '', beziehung: 'Elternteil', notizen: '' });
+      setShowForm(false);
+      await loadData();
     } catch (e) {}
     setSaving(false);
   };
 
-  const handleNeueFamilie = async () => {
-    if (!neueName.trim()) return;
-    setSaving(true);
+  const handleDelete = async (id) => {
+    if (!window.confirm('Beziehung wirklich entfernen?')) return;
     try {
-      const neu = await base44.entities.Familie.create({ name: neueName.trim() });
-      await base44.entities.Mitglied.update(mitglied.id, { familie_id: neu.id });
-      onFamilieChanged(neu.id);
-      setShowNeuForm(false);
-      setNeueName('');
+      await base44.entities.Verwandtschaft.delete(id);
+      setVerwandtschaften(prev => prev.filter(v => v.id !== id));
     } catch (e) {}
-    setSaving(false);
   };
 
-  const aktueleFamilie = familien.find(f => f.id === mitglied.familie_id);
+  const getMitglied = (id) => alleMitglieder.find(m => m.id === id);
+  const getAlter = (geb) => geb ? differenceInYears(new Date(), new Date(geb)) : null;
 
-  const getAlter = (geb) => {
-    if (!geb) return null;
-    return differenceInYears(new Date(), new Date(geb));
+  // Beziehung aus Sicht dieses Mitglieds ermitteln
+  const getBeziehungLabel = (v) => {
+    if (v.mitglied_id === mitglied.id) return v.beziehung;
+    // Umgekehrte Richtung – Gegenbezeichnung
+    const umkehr = {
+      'Elternteil': 'Kind',
+      'Kind': 'Elternteil',
+      'Geschwister': 'Geschwister',
+      'Großelternteil': 'Enkel',
+      'Enkel': 'Großelternteil',
+      'Onkel/Tante': 'Nichte/Neffe',
+      'Nichte/Neffe': 'Onkel/Tante',
+      'Ehepartner/in': 'Ehepartner/in',
+      'Sonstige': 'Sonstige',
+    };
+    return umkehr[v.beziehung] || v.beziehung;
   };
 
-  const STATUS_COLORS = {
-    'Aktiv': 'text-green-400',
-    'Passiv': 'text-yellow-400',
-    'Kinder 4-10': 'text-pink-400',
-    'Kleinkind 0-3': 'text-rose-400',
-    'Jugendliche 11-14': 'text-blue-400',
-    'Jungaktive 15-17': 'text-cyan-400',
-  };
+  const getVerwandterMitgliedId = (v) =>
+    v.mitglied_id === mitglied.id ? v.verwandter_id : v.mitglied_id;
+
+  // Bereits verknüpfte IDs (für Dropdown-Filter)
+  const verknuepfteIds = new Set(verwandtschaften.map(v => getVerwandterMitgliedId(v)));
+  const verfuegbareMitglieder = alleMitglieder.filter(m => m.id !== mitglied.id && !verknuepfteIds.has(m.id));
+
+  // Nach Gruppen sortieren
+  const gruppenMitDaten = GRUPPEN.map(gruppe => ({
+    ...gruppe,
+    eintraege: verwandtschaften.filter(v => gruppe.typen.includes(getBeziehungLabel(v))),
+  })).filter(g => g.eintraege.length > 0);
 
   if (loading) return (
     <div className="flex items-center justify-center py-8">
@@ -78,119 +128,149 @@ export default function FamilieTab({ mitglied, isAdmin, onFamilieChanged }) {
 
   return (
     <div className="space-y-4">
-      {/* Familienzuweisung */}
-      <div className="bg-card border border-border rounded-xl p-5">
-        <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-          <Users size={16} className="text-primary" /> Familienzugehörigkeit
-        </h2>
 
-        {isAdmin ? (
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs text-muted-foreground font-medium block mb-1">Familie auswählen</label>
-              <select
-                value={mitglied.familie_id || ''}
-                onChange={e => handleFamilieChange(e.target.value)}
-                disabled={saving}
-                className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary disabled:opacity-50"
-              >
-                <option value="">– Keine Familie –</option>
-                {familien.map(f => (
-                  <option key={f.id} value={f.id}>{f.name}</option>
-                ))}
-              </select>
-            </div>
+      {/* Verwandtschafts-Gruppen */}
+      {gruppenMitDaten.length === 0 && (
+        <div className="bg-card border border-border rounded-xl p-8 text-center">
+          <Users size={36} className="text-muted-foreground mx-auto mb-3" />
+          <p className="text-sm text-muted-foreground">Noch keine Verwandtschaften eingetragen.</p>
+        </div>
+      )}
 
-            {/* Neue Familie anlegen */}
-            {!showNeuForm ? (
-              <button
-                onClick={() => setShowNeuForm(true)}
-                className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors"
-              >
-                <Plus size={13} /> Neue Familie anlegen
-              </button>
-            ) : (
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="z.B. Familie Mustermann"
-                  value={neueName}
-                  onChange={e => setNeueName(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleNeueFamilie()}
-                  autoFocus
-                  className="flex-1 px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
-                />
-                <button
-                  onClick={handleNeueFamilie}
-                  disabled={saving || !neueName.trim()}
-                  className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
-                >
-                  {saving ? '...' : 'Erstellen'}
-                </button>
-                <button
-                  onClick={() => { setShowNeuForm(false); setNeueName(''); }}
-                  className="p-2 rounded-lg bg-secondary text-muted-foreground"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            )}
-
-            {aktueleFamilie && (
-              <p className="text-xs text-muted-foreground">
-                Zugewiesen zu: <span className="text-primary font-medium">{aktueleFamilie.name}</span>
-              </p>
-            )}
+      {gruppenMitDaten.map(gruppe => (
+        <div key={gruppe.label} className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="px-5 py-3 border-b border-border bg-secondary/30">
+            <h3 className="text-sm font-semibold text-foreground">{gruppe.label}</h3>
           </div>
-        ) : (
-          <p className="text-sm text-foreground">
-            {aktueleFamilie ? aktueleFamilie.name : <span className="text-muted-foreground">Keine Familie zugewiesen</span>}
-          </p>
-        )}
-      </div>
-
-      {/* Familienmitglieder */}
-      {mitglied.familie_id && (
-        <div className="bg-card border border-border rounded-xl p-5">
-          <h2 className="font-semibold text-foreground mb-4">
-            Weitere Familienmitglieder
-            {familienmitglieder.length > 0 && (
-              <span className="ml-2 text-xs font-normal text-muted-foreground">({familienmitglieder.length})</span>
-            )}
-          </h2>
-
-          {familienmitglieder.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Noch keine weiteren Mitglieder in dieser Familie.</p>
-          ) : (
-            <div className="space-y-2">
-              {familienmitglieder.map(m => {
-                const alter = getAlter(m.geburtsdatum);
-                return (
-                  <Link
-                    key={m.id}
-                    to={`/mitglieder/${m.id}`}
-                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary/50 transition-colors group"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0 overflow-hidden">
-                      {m.profilbild_url ? (
-                        <img src={m.profilbild_url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        `${m.vorname?.[0] || ''}${m.nachname?.[0] || ''}`
+          <div className="divide-y divide-border">
+            {gruppe.eintraege.map(v => {
+              const verwandterId = getVerwandterMitgliedId(v);
+              const beziehungLabel = getBeziehungLabel(v);
+              const m = getMitglied(verwandterId);
+              if (!m) return null;
+              const alter = getAlter(m.geburtsdatum);
+              return (
+                <div key={v.id} className="flex items-center gap-3 px-4 py-3.5">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0 overflow-hidden">
+                    {m.profilbild_url
+                      ? <img src={m.profilbild_url} alt="" className="w-full h-full object-cover" />
+                      : `${m.vorname?.[0] || ''}${m.nachname?.[0] || ''}`}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Link
+                        to={`/mitglieder/${m.id}`}
+                        className="text-sm font-semibold text-foreground hover:text-primary transition-colors"
+                      >
+                        {m.vorname} {m.nachname}
+                      </Link>
+                      {alter !== null && <span className="text-xs text-muted-foreground">{alter} J.</span>}
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${BEZIEHUNG_FARBEN[beziehungLabel] || 'bg-gray-500/20 text-gray-400'}`}>
+                        {beziehungLabel}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-1 flex-wrap">
+                      {m.telefon && (
+                        <a href={`tel:${m.telefon}`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors">
+                          <Phone size={11} /> {m.telefon}
+                        </a>
+                      )}
+                      {m.email && (
+                        <a href={`mailto:${m.email}`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors">
+                          <Mail size={11} /> {m.email}
+                        </a>
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
-                        {m.vorname} {m.nachname}
-                        {alter !== null && <span className="ml-1.5 text-muted-foreground font-normal text-xs">{alter} J.</span>}
-                      </p>
-                      <p className={`text-xs ${STATUS_COLORS[m.mitgliedsstatus] || 'text-muted-foreground'}`}>
-                        {m.mitgliedsstatus}
-                      </p>
-                    </div>
-                    <ChevronRight size={14} className="text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
-                  </Link>
-                );
-              })}
+                    {v.notizen && <p className="text-xs text-muted-foreground mt-0.5 italic">{v.notizen}</p>}
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Link
+                      to={`/mitglieder/${m.id}`}
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                    >
+                      <ChevronRight size={14} />
+                    </Link>
+                    {isAdmin && (
+                      <button
+                        onClick={() => handleDelete(v.id)}
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+
+      {/* Beziehung hinzufügen */}
+      {isAdmin && (
+        <div className="bg-card border border-border rounded-xl p-5">
+          {!showForm ? (
+            <button
+              onClick={() => setShowForm(true)}
+              className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors font-medium"
+            >
+              <Plus size={16} /> Verwandtschaft hinzufügen
+            </button>
+          ) : (
+            <div className="space-y-3">
+              <h3 className="font-semibold text-foreground text-sm">Neue Verwandtschaft</h3>
+
+              <div>
+                <label className="text-xs text-muted-foreground font-medium block mb-1">Mitglied *</label>
+                <select
+                  value={form.verwandter_id}
+                  onChange={e => setForm(p => ({ ...p, verwandter_id: e.target.value }))}
+                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+                >
+                  <option value="">Bitte wählen...</option>
+                  {verfuegbareMitglieder.map(m => (
+                    <option key={m.id} value={m.id}>{m.vorname} {m.nachname}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs text-muted-foreground font-medium block mb-1">Beziehung (von diesem Mitglied aus) *</label>
+                <select
+                  value={form.beziehung}
+                  onChange={e => setForm(p => ({ ...p, beziehung: e.target.value }))}
+                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+                >
+                  {BEZIEHUNGEN.map(b => <option key={b} value={b}>{b}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs text-muted-foreground font-medium block mb-1">Notiz (optional)</label>
+                <input
+                  type="text"
+                  value={form.notizen}
+                  onChange={e => setForm(p => ({ ...p, notizen: e.target.value }))}
+                  placeholder="z.B. Stiefvater, Pflegeeltern..."
+                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setShowForm(false); setForm({ verwandter_id: '', beziehung: 'Elternteil', notizen: '' }); }}
+                  className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium"
+                >
+                  Abbrechen
+                </button>
+                <button
+                  onClick={handleAdd}
+                  disabled={saving || !form.verwandter_id}
+                  className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+                >
+                  {saving ? 'Speichern...' : 'Hinzufügen'}
+                </button>
+              </div>
             </div>
           )}
         </div>
