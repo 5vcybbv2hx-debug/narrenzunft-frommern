@@ -232,6 +232,17 @@ export default function HaesDetail() {
               </select>
             </div>
             <div>
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editData.vereinseigentum || false}
+                  onChange={e => setEditData(p => ({ ...p, vereinseigentum: e.target.checked }))}
+                  className="rounded"
+                />
+                <span className="text-sm text-foreground">Vereinseigentum</span>
+              </label>
+            </div>
+            <div>
               <label className="text-xs text-muted-foreground font-medium block mb-1">Notizen</label>
               <textarea
                 value={editData.notizen || ''}
@@ -246,6 +257,12 @@ export default function HaesDetail() {
             {haes.haesgruppe_id && (
               <p className="text-muted-foreground">Gruppe: <span className="text-foreground">{gruppen.find(g => g.id === haes.haesgruppe_id)?.name || '–'}</span></p>
             )}
+            <p className="text-muted-foreground">
+              Eigentümer:{' '}
+              <span className={`font-medium ${haes.vereinseigentum ? 'text-primary' : 'text-foreground'}`}>
+                {haes.vereinseigentum ? '🏛 Verein' : 'Privat'}
+              </span>
+            </p>
             {haes.notizen && <p className="text-muted-foreground text-xs mt-2 whitespace-pre-wrap">{haes.notizen}</p>}
           </div>
         )}

@@ -30,6 +30,11 @@
     },
     "bild_url": {
       "type": "string"
+    },
+    "vereinseigentum": {
+      "type": "boolean",
+      "default": false,
+      "description": "Gibt an, ob das H\u00e4s dem Verein geh\u00f6rt"
     }
   },
   "required": [
