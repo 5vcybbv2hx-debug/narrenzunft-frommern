@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Users, Plus, X, ChevronRight, Phone, Mail, Trash2 } from 'lucide-react';
+import { Users, Plus, X, ChevronRight, Phone, Mail, Trash2, Search } from 'lucide-react';
 import { differenceInYears } from 'date-fns';
 
 const BEZIEHUNGEN = [
@@ -40,6 +40,8 @@ export default function FamilieTab({ mitglied, isAdmin }) {
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ verwandter_id: '', beziehung: 'Elternteil', notizen: '' });
+  const [suchbegriff, setSuchbegriff] = useState('');
+  const [ausgewaehlt, setAusgewaehlt] = useState(null); // { id, vorname, nachname }
 
   useEffect(() => {
     loadData();
@@ -222,16 +224,60 @@ export default function FamilieTab({ mitglied, isAdmin }) {
 
               <div>
                 <label className="text-xs text-muted-foreground font-medium block mb-1">Mitglied *</label>
-                <select
-                  value={form.verwandter_id}
-                  onChange={e => setForm(p => ({ ...p, verwandter_id: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
-                >
-                  <option value="">Bitte wählen...</option>
-                  {verfuegbareMitglieder.map(m => (
-                    <option key={m.id} value={m.id}>{m.vorname} {m.nachname}</option>
-                  ))}
-                </select>
+                {ausgewaehlt ? (
+                  <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-primary/10 border border-primary/30">
+                    <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                      {ausgewaehlt.vorname?.[0]}{ausgewaehlt.nachname?.[0]}
+                    </div>
+                    <span className="text-sm font-medium text-foreground flex-1">{ausgewaehlt.vorname} {ausgewaehlt.nachname}</span>
+                    <button onClick={() => { setAusgewaehlt(null); setForm(p => ({ ...p, verwandter_id: '' })); setSuchbegriff(''); }}
+                      className="text-muted-foreground hover:text-destructive transition-colors">
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Name eingeben..."
+                      value={suchbegriff}
+                      onChange={e => setSuchbegriff(e.target.value)}
+                      autoFocus
+                      className="w-full pl-8 pr-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+                    />
+                    {suchbegriff.length >= 1 && (
+                      <div className="absolute z-20 left-0 right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-xl max-h-52 overflow-y-auto">
+                        {verfuegbareMitglieder
+                          .filter(m => `${m.vorname} ${m.nachname}`.toLowerCase().includes(suchbegriff.toLowerCase()))
+                          .slice(0, 10)
+                          .map(m => (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() => {
+                                setAusgewaehlt(m);
+                                setForm(p => ({ ...p, verwandter_id: m.id }));
+                                setSuchbegriff('');
+                              }}
+                              className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary transition-colors text-left"
+                            >
+                              <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                                {m.vorname?.[0]}{m.nachname?.[0]}
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-foreground">{m.vorname} {m.nachname}</p>
+                                {m.mitgliedsstatus && <p className="text-xs text-muted-foreground">{m.mitgliedsstatus}</p>}
+                              </div>
+                            </button>
+                          ))}
+                        {verfuegbareMitglieder.filter(m => `${m.vorname} ${m.nachname}`.toLowerCase().includes(suchbegriff.toLowerCase())).length === 0 && (
+                          <p className="text-sm text-muted-foreground text-center py-4">Keine Ergebnisse</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -258,7 +304,7 @@ export default function FamilieTab({ mitglied, isAdmin }) {
 
               <div className="flex gap-2">
                 <button
-                  onClick={() => { setShowForm(false); setForm({ verwandter_id: '', beziehung: 'Elternteil', notizen: '' }); }}
+                  onClick={() => { setShowForm(false); setForm({ verwandter_id: '', beziehung: 'Elternteil', notizen: '' }); setAusgewaehlt(null); setSuchbegriff(''); }}
                   className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium"
                 >
                   Abbrechen
