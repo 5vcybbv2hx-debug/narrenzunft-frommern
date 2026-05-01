@@ -231,16 +231,31 @@ export default function HaesDetail() {
                 {gruppen.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
               </select>
             </div>
-            <div>
+            <div className="space-y-2">
               <label className="flex items-center gap-2.5 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={editData.vereinseigentum || false}
-                  onChange={e => setEditData(p => ({ ...p, vereinseigentum: e.target.checked }))}
+                  onChange={e => setEditData(p => ({ ...p, vereinseigentum: e.target.checked, privat_eigentuemer_id: e.target.checked ? '' : p.privat_eigentuemer_id }))}
                   className="rounded"
                 />
                 <span className="text-sm text-foreground">Vereinseigentum</span>
               </label>
+              {!editData.vereinseigentum && (
+                <div>
+                  <label className="text-xs text-muted-foreground font-medium block mb-1">Privateigentümer (Person)</label>
+                  <select
+                    value={editData.privat_eigentuemer_id || ''}
+                    onChange={e => setEditData(p => ({ ...p, privat_eigentuemer_id: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+                  >
+                    <option value="">– Keine Person verknüpft –</option>
+                    {mitglieder.map(m => (
+                      <option key={m.id} value={m.id}>{m.vorname} {m.nachname}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
             <div>
               <label className="text-xs text-muted-foreground font-medium block mb-1">Notizen</label>
@@ -260,7 +275,11 @@ export default function HaesDetail() {
             <p className="text-muted-foreground">
               Eigentümer:{' '}
               <span className={`font-medium ${haes.vereinseigentum ? 'text-primary' : 'text-foreground'}`}>
-                {haes.vereinseigentum ? '🏛 Verein' : 'Privat'}
+                {haes.vereinseigentum
+                  ? '🏛 Verein'
+                  : haes.privat_eigentuemer_id
+                    ? `👤 ${getMitgliedName(haes.privat_eigentuemer_id)}`
+                    : 'Privat (keine Person verknüpft)'}
               </span>
             </p>
             {haes.notizen && <p className="text-muted-foreground text-xs mt-2 whitespace-pre-wrap">{haes.notizen}</p>}

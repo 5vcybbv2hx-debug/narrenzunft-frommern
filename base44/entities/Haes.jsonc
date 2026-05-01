@@ -35,6 +35,10 @@
       "type": "boolean",
       "default": false,
       "description": "Gibt an, ob das H\u00e4s dem Verein geh\u00f6rt"
+    },
+    "privat_eigentuemer_id": {
+      "type": "string",
+      "description": "Mitglied, dem das H\u00e4s privat geh\u00f6rt (nur wenn kein Vereinseigentum)"
     }
   },
   "required": [
