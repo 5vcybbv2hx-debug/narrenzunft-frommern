@@ -77,6 +77,19 @@
     },
     "bankname": {
       "type": "string"
+    },
+    "notfallkontakt_name": {
+      "type": "string",
+      "description": "Name des Notfallkontakts"
+    },
+    "notfallkontakt_telefon": {
+      "type": "string",
+      "description": "Telefonnummer des Notfallkontakts"
+    },
+    "hochzeitstag": {
+      "type": "string",
+      "format": "date",
+      "description": "Hochzeitstag des Mitglieds"
     }
   },
   "required": [

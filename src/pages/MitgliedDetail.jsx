@@ -343,6 +343,7 @@ export default function MitgliedDetail() {
           <Field label="Mitgliedsstatus" field="mitgliedsstatus" options={getVerfuegbareStatus(mitglied.geburtsdatum)} editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           <Field label="Eintrittsdatum" field="eintrittsdatum" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           <Field label="Austrittsdatum" field="austrittsdatum" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+          <Field label="Hochzeitstag" field="hochzeitstag" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
         </div>
       </div>
 
@@ -357,6 +358,24 @@ export default function MitgliedDetail() {
           </div>
           <Field label="PLZ" field="plz" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           <Field label="Ort" field="ort" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+        </div>
+      </div>
+
+      {/* Notfallkontakt */}
+      <div className="bg-card border border-border rounded-xl p-5 mb-4">
+        <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+          🚨 Notfallkontakt
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Name" field="notfallkontakt_name" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+          <div>
+            <Field label="Telefon" field="notfallkontakt_telefon" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+            {!editing && mitglied.notfallkontakt_telefon && (
+              <a href={`tel:${mitglied.notfallkontakt_telefon}`} className="inline-flex items-center gap-1 mt-1 text-xs text-primary hover:text-primary/80 transition-colors">
+                📞 Anrufen
+              </a>
+            )}
+          </div>
         </div>
       </div>
 
