@@ -45,9 +45,15 @@ export default function AdresseAutocomplete({ value, onChange, placeholder = 'Ad
   };
 
   const handleSelect = (item) => {
-    const label = item.display_name;
+    const a = item.address || {};
+    // Kurze lesbare Adresse: Straße Hausnr, PLZ Ort
+    const parts = [
+      [a.road, a.house_number].filter(Boolean).join(' '),
+      [a.postcode, a.city || a.town || a.village || a.municipality].filter(Boolean).join(' '),
+    ].filter(Boolean);
+    const label = parts.length > 0 ? parts.join(', ') : item.display_name;
     setQuery(label);
-    onChange(label);
+    onChange(label, item.address);
     setSuggestions([]);
     setOpen(false);
   };

@@ -4,6 +4,7 @@
  */
 
 import { MapPin, Clock, Navigation } from 'lucide-react';
+import AdresseAutocomplete from '@/components/AdresseAutocomplete';
 
 function NavButton({ adresse, label }) {
   if (!adresse) return null;
@@ -72,17 +73,25 @@ function TextAreaField({ label, field, value, onChange, rows = 3, placeholder })
   );
 }
 
-function InputField({ label, field, value, onChange, placeholder, type = 'text' }) {
+function InputField({ label, field, value, onChange, placeholder, type = 'text', isAddress = false }) {
   return (
     <div>
       <label className="text-xs text-muted-foreground font-medium block mb-1">{label}</label>
-      <input
-        type={type}
-        value={value || ''}
-        onChange={e => onChange(field, e.target.value)}
-        placeholder={placeholder}
-        className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
-      />
+      {isAddress ? (
+        <AdresseAutocomplete
+          value={value || ''}
+          onChange={(val) => onChange(field, val)}
+          placeholder={placeholder}
+        />
+      ) : (
+        <input
+          type={type}
+          value={value || ''}
+          onChange={e => onChange(field, e.target.value)}
+          placeholder={placeholder}
+          className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+        />
+      )}
     </div>
   );
 }
@@ -99,13 +108,13 @@ export function VeranstaltungsDetailsForm({ data, onChange, typ }) {
           <div className="text-xs font-semibold text-orange-400 uppercase tracking-wide">🅿️ Busparkplatz</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <InputField label="Treffzeit am Bus" field="busparkplatz_treffzeit" value={data.busparkplatz_treffzeit} onChange={onChange} placeholder="z.B. 09:30" />
-            <InputField label="Adresse Busparkplatz" field="busparkplatz_adresse" value={data.busparkplatz_adresse} onChange={onChange} placeholder="Straße, Ort" />
+            <InputField label="Adresse Busparkplatz" field="busparkplatz_adresse" value={data.busparkplatz_adresse} onChange={onChange} placeholder="Straße, Ort" isAddress />
           </div>
 
           <div className="text-xs font-semibold text-blue-400 uppercase tracking-wide">📋 Umzugsaufstellung</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <InputField label="Zeit Aufstellung" field="umzugsaufstellung_zeit" value={data.umzugsaufstellung_zeit} onChange={onChange} placeholder="z.B. 10:00" />
-            <InputField label="Ort / Adresse Aufstellung" field="umzugsaufstellung_ort" value={data.umzugsaufstellung_ort} onChange={onChange} placeholder="Straße, Ort" />
+            <InputField label="Ort / Adresse Aufstellung" field="umzugsaufstellung_ort" value={data.umzugsaufstellung_ort} onChange={onChange} placeholder="Straße, Ort" isAddress />
           </div>
 
           <div className="text-xs font-semibold text-purple-400 uppercase tracking-wide">🎉 Festakt / Abschluss</div>
@@ -113,7 +122,7 @@ export function VeranstaltungsDetailsForm({ data, onChange, typ }) {
             <InputField label="Beginn Festakt" field="festakt_zeit" value={data.festakt_zeit} onChange={onChange} placeholder="z.B. 14:00" />
             <InputField label="Name des Festakts" field="festakt_ort" value={data.festakt_ort} onChange={onChange} placeholder="z.B. Festhalle XY" />
             <div className="sm:col-span-2">
-              <InputField label="Adresse Festakt" field="festakt_adresse" value={data.festakt_adresse} onChange={onChange} placeholder="Straße, Ort" />
+              <InputField label="Adresse Festakt" field="festakt_adresse" value={data.festakt_adresse} onChange={onChange} placeholder="Straße, Ort" isAddress />
             </div>
           </div>
         </>
@@ -122,7 +131,7 @@ export function VeranstaltungsDetailsForm({ data, onChange, typ }) {
       {isAbend && (
         <>
           <div className="text-xs font-semibold text-green-400 uppercase tracking-wide">📍 Veranstaltungsort</div>
-          <InputField label="Vollständige Adresse (für Navigation)" field="veranstaltungsort_adresse" value={data.veranstaltungsort_adresse} onChange={onChange} placeholder="Musterstraße 1, 78050 VS-Villingen" />
+          <InputField label="Vollständige Adresse (für Navigation)" field="veranstaltungsort_adresse" value={data.veranstaltungsort_adresse} onChange={onChange} placeholder="Musterstraße 1, 78050 VS-Villingen" isAddress />
 
           <div className="text-xs font-semibold text-yellow-400 uppercase tracking-wide">🕐 Zeiten</div>
           <div className="grid grid-cols-2 gap-3">

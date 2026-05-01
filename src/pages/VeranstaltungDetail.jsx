@@ -8,6 +8,7 @@ import {
   Bus, Check, XCircle, Search, Trash2, CheckCircle, Send, Link, Copy, RefreshCw
 } from 'lucide-react';
 import ArbeitsdienstTab from '@/components/veranstaltung/ArbeitsdienstTab';
+import AdresseAutocomplete from '@/components/AdresseAutocomplete';
 import { VeranstaltungsDetailsForm, VeranstaltungsDetailsView } from '@/components/veranstaltung/VeranstaltungsDetails';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -338,7 +339,18 @@ export default function VeranstaltungDetail() {
               <Field label="Status" field="status" options={STATUS_LIST} />
               <Field label="Datum" field="datum" type="date" />
               <Field label="Uhrzeit" field="uhrzeit" type="time" />
-              <Field label="Ort" field="ort" />
+              <div>
+                <label className="text-xs text-muted-foreground font-medium block mb-1">Ort</label>
+                {editing ? (
+                  <AdresseAutocomplete
+                    value={veranstaltung.ort || ''}
+                    onChange={(val) => setVeranstaltung(p => ({ ...p, ort: val }))}
+                    placeholder="Ort suchen..."
+                  />
+                ) : (
+                  <p className="text-sm text-foreground py-1">{veranstaltung.ort || '–'}</p>
+                )}
+              </div>
               <Field label="Anmeldeschluss" field="anmeldeschluss" type="date" />
               <Field label="Max. Teilnehmer" field="max_teilnehmer" type="number" />
               <div className="sm:col-span-2 flex gap-6">

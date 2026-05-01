@@ -10,6 +10,7 @@ import { format, differenceInYears } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { isAdmin, kannBankdatenSehn, ROLLEN_LABELS } from '@/lib/roles';
 import EhrungsStatus from '@/components/mitglied/EhrungsStatus';
+import AdresseAutocomplete from '@/components/AdresseAutocomplete';
 import AktivitaetTab from '@/components/mitglied/AktivitaetTab';
 import ArbeitsdiensteMitgliedTab from '@/components/mitglied/ArbeitsdiensteMitgliedTab';
 import FamilieTab from '@/components/mitglied/FamilieTab';
@@ -387,13 +388,49 @@ export default function MitgliedDetail() {
         <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
           <MapPin size={16} className="text-primary" /> Adresse
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="sm:col-span-2">
-            <Field label="Straße" field="strasse" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+        {editing ? (
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs text-muted-foreground font-medium block mb-1">Adresse suchen</label>
+              <AdresseAutocomplete
+                value=""
+                onChange={(val, addr) => {
+                  if (addr) {
+                    const strasse = [addr.road, addr.house_number].filter(Boolean).join(' ');
+                    handleFieldChange('strasse', strasse || mitglied.strasse);
+                    handleFieldChange('plz', addr.postcode || mitglied.plz);
+                    handleFieldChange('ort', addr.city || addr.town || addr.village || addr.municipality || mitglied.ort);
+                  }
+                }}
+                placeholder="Adresse suchen und übernehmen..."
+              />
+              <p className="text-xs text-muted-foreground mt-1">Suche befüllt die Felder automatisch – oder manuell eingeben:</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="sm:col-span-2">
+                <Field label="Straße & Hausnummer" field="strasse" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+              </div>
+              <Field label="PLZ" field="plz" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+              <Field label="Ort" field="ort" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+            </div>
           </div>
-          <Field label="PLZ" field="plz" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
-          <Field label="Ort" field="ort" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
-        </div>
+        ) : (
+          <div className="space-y-1">
+            {mitglied.strasse && <p className="text-sm text-foreground">{mitglied.strasse}</p>}
+            {(mitglied.plz || mitglied.ort) && <p className="text-sm text-foreground">{[mitglied.plz, mitglied.ort].filter(Boolean).join(' ')}</p>}
+            {!mitglied.strasse && !mitglied.ort && <p className="text-sm text-muted-foreground">–</p>}
+            {mitglied.strasse && (
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([mitglied.strasse, mitglied.plz, mitglied.ort].filter(Boolean).join(' '))}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors mt-1"
+              >
+                <MapPin size={11} /> Navigation öffnen
+              </a>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Notfallkontakt */}
