@@ -34,7 +34,8 @@ export default function Veranstaltungen() {
     loadData();
   }, []);
 
-  const INTERNE_TYPEN = ['Intern', 'Fest', 'Probe', 'Hauptversammlung', 'Arbeitsdienst', 'Sonstiges'];
+  // #8 – Vereinheitlichte Typen
+  const INTERNE_TYPEN = ['Intern', 'Arbeitsdienst'];
 
   const loadData = async () => {
     setLoading(true);
@@ -45,7 +46,7 @@ export default function Veranstaltungen() {
     setLoading(false);
   };
 
-  const filters = ['Alle', 'Kommend', 'Vergangen', 'Intern', 'Fest', 'Probe', 'Hauptversammlung', 'Arbeitsdienst'];
+  const filters = ['Alle', 'Kommend', 'Vergangen', 'Intern', 'Arbeitsdienst'];
 
   const filtered = veranstaltungen.filter(v => {
     if (filter === 'Alle') return true;

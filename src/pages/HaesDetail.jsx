@@ -75,13 +75,24 @@ export default function HaesDetail() {
     if (!newZuweisung.mitglied_id) return;
     setSaving(true);
     try {
+      const heute = new Date().toISOString().split('T')[0];
+
+      // #3 – Häs-Konsistenz: alle bisherigen aktiven Zuweisungen beenden
+      if (newZuweisung.aktiv) {
+        const aktive = historien.filter(h => h.aktiv);
+        await Promise.all(aktive.map(h =>
+          base44.entities.HaesHistorie.update(h.id, { aktiv: false, bis_datum: heute })
+        ));
+      }
+
       await base44.entities.HaesHistorie.create({
         haes_id: id,
         mitglied_id: newZuweisung.mitglied_id,
-        von_datum: newZuweisung.von_datum || new Date().toISOString().split('T')[0],
+        von_datum: newZuweisung.von_datum || heute,
         aktiv: newZuweisung.aktiv,
         notizen: newZuweisung.notizen,
       });
+
       // aktueller_besitzer_id aktualisieren falls aktiv
       if (newZuweisung.aktiv) {
         await base44.entities.Haes.update(id, { aktueller_besitzer_id: newZuweisung.mitglied_id, status: 'Verliehen' });

@@ -11,7 +11,8 @@ import ArbeitsdienstTab from '@/components/veranstaltung/ArbeitsdienstTab';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
-const TYPEN = ['Intern', 'Fest', 'Probe', 'Hauptversammlung', 'Arbeitsdienst', 'Sonstiges'];
+// #8 – Vereinheitlichte Typen
+const TYPEN = ['Umzug', 'Abendveranstaltung', 'Intern', 'Arbeitsdienst'];
 const STATUS_LIST = ['Geplant', 'Aktiv', 'Abgeschlossen', 'Abgesagt'];
 
 export default function VeranstaltungDetail() {
@@ -36,6 +37,7 @@ export default function VeranstaltungDetail() {
   const [searchMember, setSearchMember] = useState('');
   const [myMitglied, setMyMitglied] = useState(null);
   const [activeTab, setActiveTab] = useState('info');
+  const [busFilter, setBusFilter] = useState('alle'); // 'alle' | 'nur-bus' | 'unbestaetigt'
 
   useEffect(() => {
     if (!isNew) loadData();
@@ -212,16 +214,22 @@ export default function VeranstaltungDetail() {
 
       {/* Tabs */}
       {!isNew && (
-        <div className="flex gap-1 bg-secondary rounded-xl p-1 mb-4">
-          {['info', 'teilnahmen', 'check-in', 'arbeitsdienste'].map(tab => (
+        <div className="flex gap-1 bg-secondary rounded-xl p-1 mb-4 overflow-x-auto">
+          {[
+            { id: 'info', label: 'Info' },
+            { id: 'teilnahmen', label: `Teilnahmen (${angemeldete.length})` },
+            { id: 'check-in', label: 'Check-In' },
+            { id: 'bus', label: `Bus (${teilnahmen.filter(t => t.bus).length})` },
+            { id: 'arbeitsdienste', label: '🛠 Dienste' },
+          ].map(tab => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeTab === tab ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === tab.id ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              {tab === 'info' ? 'Info' : tab === 'teilnahmen' ? `Teilnahmen (${angemeldete.length})` : tab === 'check-in' ? 'Check-In' : '🛠 Dienste'}
+              {tab.label}
             </button>
           ))}
         </div>
@@ -248,26 +256,42 @@ export default function VeranstaltungDetail() {
                     </button>
                   )}
                 </div>
-              ) : veranstaltung.anmeldung_aktiv ? (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleAnmelden(false)}
-                    className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
-                  >
-                    Anmelden
-                  </button>
-                  {veranstaltung.bus_erforderlich && (
-                    <button
-                      onClick={() => handleAnmelden(true)}
-                      className="flex-1 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-                    >
-                      <Bus size={14} /> Mit Bus
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">Anmeldung geschlossen</p>
-              )}
+              ) : (() => {
+                // #5 – Anmeldeschluss erzwingen
+                const heute = new Date().toISOString().split('T')[0];
+                const schlussVorbei = veranstaltung.anmeldeschluss && heute > veranstaltung.anmeldeschluss;
+                const anmeldungMoeglich = veranstaltung.anmeldung_aktiv && !schlussVorbei;
+                if (anmeldungMoeglich) {
+                  return (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleAnmelden(false)}
+                        className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+                      >
+                        Anmelden
+                      </button>
+                      {veranstaltung.bus_erforderlich && (
+                        <button
+                          onClick={() => handleAnmelden(true)}
+                          className="flex-1 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                        >
+                          <Bus size={14} /> Mit Bus
+                        </button>
+                      )}
+                    </div>
+                  );
+                }
+                return (
+                  <div className="py-2 px-3 rounded-lg bg-secondary text-center">
+                    <p className="text-sm text-muted-foreground font-medium">
+                      {schlussVorbei ? `⏰ Anmeldeschluss war ${veranstaltung.anmeldeschluss}` : 'Anmeldung geschlossen'}
+                    </p>
+                    {isAdmin && (
+                      <p className="text-xs text-primary mt-0.5">Admins können weiterhin manuell hinzufügen</p>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           )}
 
@@ -351,6 +375,85 @@ export default function VeranstaltungDetail() {
                 )}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Bus Check-In Tab – #4 */}
+      {activeTab === 'bus' && !isNew && (
+        <div>
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 mb-4 text-sm text-blue-400">
+            🚌 Bus-Anwesenheit und Umzugsteilnahme werden <strong>separat</strong> erfasst. Bitte beide bestätigen.
+          </div>
+
+          {/* Bus Filter */}
+          <div className="flex gap-2 mb-4">
+            {[
+              { id: 'alle', label: 'Alle Busfahrer' },
+              { id: 'unbestaetigt', label: 'Nicht bestätigt' },
+            ].map(f => (
+              <button key={f.id} onClick={() => setBusFilter(f.id)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${busFilter === f.id ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground'}`}>
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Bus Statistik */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 text-center">
+              <p className="text-2xl font-bold text-blue-400">{teilnahmen.filter(t => t.bus).length}</p>
+              <p className="text-xs text-muted-foreground">Bus angemeldet</p>
+            </div>
+            <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3 text-center">
+              <p className="text-2xl font-bold text-green-400">{teilnahmen.filter(t => t.bus && t.bus_anwesend).length}</p>
+              <p className="text-xs text-muted-foreground">Bus bestätigt</p>
+            </div>
+            <div className="bg-card border border-border rounded-xl p-3 text-center">
+              <p className="text-2xl font-bold text-yellow-400">{teilnahmen.filter(t => t.bus && !t.bus_anwesend).length}</p>
+              <p className="text-xs text-muted-foreground">Ausstehend</p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {teilnahmen
+              .filter(t => t.bus)
+              .filter(t => busFilter === 'unbestaetigt' ? !t.bus_anwesend : true)
+              .filter(t => {
+                const name = getMitgliedName(t.mitglied_id).toLowerCase();
+                return name.includes(searchMember.toLowerCase());
+              })
+              .map(t => (
+                <div key={t.id} className={`flex items-center gap-3 rounded-xl px-4 py-3.5 border transition-all ${t.bus_anwesend ? 'bg-green-500/10 border-green-500/30' : 'bg-card border-border'}`}>
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${t.bus_anwesend ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                    {getMitgliedName(t.mitglied_id)[0]}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-foreground text-sm">{getMitgliedName(t.mitglied_id)}</p>
+                    <p className={`text-xs mt-0.5 ${t.bus_anwesend ? 'text-green-400' : 'text-muted-foreground'}`}>
+                      {t.bus_anwesend ? '✓ Im Bus bestätigt' : '🚌 Angemeldet, noch nicht bestätigt'}
+                    </p>
+                  </div>
+                  {kannCheckin && (
+                    <button
+                      onClick={async () => {
+                        const newVal = !t.bus_anwesend;
+                        await base44.entities.Teilnahme.update(t.id, { bus_anwesend: newVal });
+                        setTeilnahmen(prev => prev.map(p => p.id === t.id ? { ...p, bus_anwesend: newVal } : p));
+                      }}
+                      className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${t.bus_anwesend ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20'}`}
+                    >
+                      {t.bus_anwesend ? '✓ Da' : 'Bestätigen'}
+                    </button>
+                  )}
+                </div>
+              ))}
+            {teilnahmen.filter(t => t.bus).length === 0 && (
+              <div className="text-center py-12">
+                <Bus size={40} className="text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground">Keine Busanmeldungen</p>
+              </div>
+            )}
           </div>
         </div>
       )}

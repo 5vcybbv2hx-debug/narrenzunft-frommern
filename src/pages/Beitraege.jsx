@@ -42,11 +42,18 @@ export default function Beitraege() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [b, m] = await Promise.all([
-        base44.entities.Beitrag.list('-jahr', 1000),
-        base44.entities.Mitglied.list('nachname', 500),
-      ]);
-      setBeitraege(b);
+      // #1 – Datenschutz: nur Kassierer/Vorstand sehen alle Beiträge
+      let bData;
+      if (isAdminUser) {
+        bData = await base44.entities.Beitrag.list('-jahr', 1000);
+      } else {
+        // Normales Mitglied sieht nur eigene Beiträge
+        const me = await base44.auth.me();
+        const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
+        bData = myM[0] ? await base44.entities.Beitrag.filter({ mitglied_id: myM[0].id }) : [];
+      }
+      const m = await base44.entities.Mitglied.list('nachname', 500);
+      setBeitraege(bData);
       setMitglieder(m);
     } catch (e) {}
     setLoading(false);

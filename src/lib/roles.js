@@ -14,11 +14,12 @@
  */
 
 export const ROLLEN = {
-  VORSTAND:       'vorstand',
-  STELLV_VORSTAND:'stellv_vorstand',
-  KASSIERER:      'kassierer',
-  SPARTENLEITER:  'spartenleiter',
-  MITGLIED:       'mitglied',
+  VORSTAND:        'vorstand',
+  STELLV_VORSTAND: 'stellv_vorstand',
+  KASSIERER:       'kassierer',
+  SPARTENLEITER:   'spartenleiter',
+  MITGLIED:        'mitglied',
+  ELTERNKONTO:     'elternkonto',
 };
 
 export const ROLLEN_LABELS = {
@@ -27,6 +28,7 @@ export const ROLLEN_LABELS = {
   kassierer:       'Kassierer',
   spartenleiter:   'Spartenleiter',
   mitglied:        'Mitglied',
+  elternkonto:     'Elternkonto',
   // Legacy-Fallbacks (Base44 Standard-Rollen)
   admin:           'Admin',
   user:            'Mitglied',
