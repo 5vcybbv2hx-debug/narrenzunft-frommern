@@ -63,6 +63,11 @@
       "default": "mitglied",
       "description": "Gew\u00fcnschte App-Rolle \u2013 wird beim ersten Login automatisch gesetzt"
     },
+    "einladung_gesendet_am": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum an dem die App-Einladung per E-Mail verschickt wurde"
+    },
     "notizen": {
       "type": "string"
     },

@@ -113,6 +113,9 @@ export default function MitgliedDetail() {
     setInviting(true);
     try {
       await base44.users.inviteUser(mitglied.email, mitglied.app_rolle || 'mitglied');
+      const today = new Date().toISOString().split('T')[0];
+      await base44.entities.Mitglied.update(mitglied.id, { einladung_gesendet_am: today });
+      setMitglied(p => ({ ...p, einladung_gesendet_am: today }));
       setInviteSent(true);
     } catch (e) {}
     setInviting(false);
@@ -529,7 +532,15 @@ export default function MitgliedDetail() {
 
           {/* Einladung – nur wenn noch kein User verknüpft */}
           {!linkedUser && (
-            <div className="border-t border-border pt-3">
+            <div className="border-t border-border pt-3 space-y-2">
+              {mitglied.einladung_gesendet_am && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                  <span className="text-yellow-400 text-xs">📧</span>
+                  <p className="text-xs text-yellow-400">
+                    Einladung gesendet am {format(new Date(mitglied.einladung_gesendet_am), 'dd.MM.yyyy', { locale: de })} – noch nicht angemeldet
+                  </p>
+                </div>
+              )}
               {mitglied.email ? (
                 <button
                   onClick={handleInvite}
@@ -537,7 +548,7 @@ export default function MitgliedDetail() {
                   className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60 w-full justify-center"
                 >
                   <Send size={14} />
-                  {inviteSent ? '✓ Einladung gesendet!' : inviting ? 'Sende...' : `Einladung senden an ${mitglied.email}`}
+                  {inviteSent ? '✓ Einladung gesendet!' : inviting ? 'Sende...' : mitglied.einladung_gesendet_am ? 'Einladung erneut senden' : `Einladung senden an ${mitglied.email}`}
                 </button>
               ) : (
                 <p className="text-xs text-muted-foreground">Keine E-Mail-Adresse hinterlegt – Einladung nicht möglich.</p>
