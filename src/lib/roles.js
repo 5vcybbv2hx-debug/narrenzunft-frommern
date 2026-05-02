@@ -38,7 +38,7 @@ export const ROLLEN_LABELS = {
 
 /** Developer-Status (Sonderstatus für App-Entwickler – nur diese Email) */
 export function isDeveloper(user) {
-  return user?.email === 'pierre.hugendubel@gmail.com';
+  return user?.email === 'info@savo-lounge-club.de';
 }
 
 /** Vollzugriff: Vorstand + Stv. Vorstand + Developer */
