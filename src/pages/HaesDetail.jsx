@@ -169,6 +169,14 @@ export default function HaesDetail() {
     } catch (e) {}
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm('Häs wirklich löschen?')) return;
+    try {
+      await base44.entities.Haes.delete(haes.id);
+      navigate('/haes');
+    } catch (e) {}
+  };
+
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="w-8 h-8 border-4 border-border border-t-primary rounded-full animate-spin" />
@@ -196,9 +204,14 @@ export default function HaesDetail() {
           <p className="text-sm text-muted-foreground">{haes.bezeichnung || 'Keine Bezeichnung'}</p>
         </div>
         {admin && !editing && (
-          <button onClick={() => setEditing(true)} className="px-3 py-2 rounded-lg bg-secondary text-sm text-foreground hover:bg-border transition-colors">
-            Bearbeiten
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => setEditing(true)} className="px-3 py-2 rounded-lg bg-secondary text-sm text-foreground hover:bg-border transition-colors">
+              Bearbeiten
+            </button>
+            <button onClick={handleDelete} className="p-2 rounded-lg text-destructive hover:bg-destructive/10 transition-colors">
+              <Trash2 size={18} />
+            </button>
+          </div>
         )}
         {editing && (
           <div className="flex gap-2">
