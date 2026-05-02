@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import {
   ArrowLeft, Edit, Save, X, Phone, Mail, MapPin, Calendar,
-  User, Shirt, Award, CreditCard, Trash2, AlertTriangle, Shield, Send, ChevronRight
+  User, Shirt, Award, CreditCard, Trash2, AlertTriangle, Shield, Send, ChevronRight, Plus, Search
 } from 'lucide-react';
 import { format, differenceInYears } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -83,10 +83,15 @@ export default function MitgliedDetail() {
   const [inviting, setInviting] = useState(false);
   const [inviteSent, setInviteSent] = useState(false);
   const [activeTab, setActiveTab] = useState('profil');
+  const [showHaesModal, setShowHaesModal] = useState(false);
+  const [allHaes, setAllHaes] = useState([]);
+  const [haessuche, setHaessuche] = useState('');
+  const [assigningHaes, setAssigningHaes] = useState(false);
 
   useEffect(() => {
     if (!isNew) loadMitglied();
     base44.entities.Haesgruppe.list('name', 50).then(setHaesgruppen).catch(() => {});
+    base44.entities.Haes.list('haesnummer', 500).then(setAllHaes).catch(() => {});
   }, [id]);
 
   const loadMitglied = async () => {
@@ -510,23 +515,37 @@ export default function MitgliedDetail() {
       )}
 
       {/* Häs */}
-      {!isNew && haes.length > 0 && (
+      {!isNew && (
         <div className="bg-card border border-border rounded-xl p-5 mb-4">
-          <h2 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-            <Shirt size={16} className="text-primary" /> Häs ({haes.length})
-          </h2>
-          {haes.map(h => (
-            <Link key={h.id} to={`/haes/${h.id}`} className="flex items-center justify-between py-2 border-b border-border last:border-0 hover:opacity-75 transition-opacity">
-              <div>
-                <p className="text-sm font-medium text-foreground">Nr. {h.haesnummer}</p>
-                <p className="text-xs text-muted-foreground">{h.bezeichnung}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary">{h.status}</span>
-                <ChevronRight size={14} className="text-muted-foreground" />
-              </div>
-            </Link>
-          ))}
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-foreground flex items-center gap-2">
+              <Shirt size={16} className="text-primary" /> Häs ({haes.length})
+            </h2>
+            {admin && (
+              <button
+                onClick={() => setShowHaesModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
+              >
+                <Plus size={13} /> Zuweisen
+              </button>
+            )}
+          </div>
+          {haes.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Noch kein Häs zugewiesen</p>
+          ) : (
+            haes.map(h => (
+              <Link key={h.id} to={`/haes/${h.id}`} className="flex items-center justify-between py-2 border-b border-border last:border-0 hover:opacity-75 transition-opacity">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Nr. {h.haesnummer}</p>
+                  <p className="text-xs text-muted-foreground">{h.bezeichnung}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary">{h.status}</span>
+                  <ChevronRight size={14} className="text-muted-foreground" />
+                </div>
+              </Link>
+            ))
+          )}
         </div>
       )}
 
@@ -652,6 +671,87 @@ export default function MitgliedDetail() {
       )}
 
       </div>
+      )}
+
+      {/* Häs Zuweisungs-Modal */}
+      {showHaesModal && !isNew && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-foreground">Häs zuweisen</h3>
+              <button onClick={() => { setShowHaesModal(false); setHaessuche(''); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"><X size={16} /></button>
+            </div>
+            <div className="space-y-3">
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Häs-Nummer oder Bezeichnung..."
+                  value={haessuche}
+                  onChange={e => setHaessuche(e.target.value)}
+                  autoFocus
+                  className="w-full pl-8 pr-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {allHaes
+                  .filter(h =>
+                    !haes.some(m => m.id === h.id) &&
+                    (haessuche === '' ||
+                      h.haesnummer.toLowerCase().includes(haessuche.toLowerCase()) ||
+                      (h.bezeichnung || '').toLowerCase().includes(haessuche.toLowerCase()))
+                  )
+                  .slice(0, 20)
+                  .map(h => (
+                    <button
+                      key={h.id}
+                      onClick={async () => {
+                        setAssigningHaes(true);
+                        try {
+                          const heute = new Date().toISOString().split('T')[0];
+                          await base44.entities.HaesHistorie.create({
+                            haes_id: h.id,
+                            mitglied_id: mitglied.id,
+                            von_datum: heute,
+                            aktiv: true,
+                            notizen: '',
+                          });
+                          await base44.entities.Haes.update(h.id, {
+                            aktueller_besitzer_id: mitglied.id,
+                            status: 'Verliehen',
+                          });
+                          setShowHaesModal(false);
+                          setHaessuche('');
+                          loadMitglied();
+                        } catch (e) {}
+                        setAssigningHaes(false);
+                      }}
+                      disabled={assigningHaes}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary border border-border text-left transition-colors disabled:opacity-50"
+                    >
+                      <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                        {h.haesnummer[0]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground">#{h.haesnummer}</p>
+                        {h.bezeichnung && <p className="text-xs text-muted-foreground truncate">{h.bezeichnung}</p>}
+                      </div>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">{h.status}</span>
+                    </button>
+                  ))}
+                {allHaes.filter(h =>
+                  !haes.some(m => m.id === h.id) &&
+                  (haessuche === '' ||
+                    h.haesnummer.toLowerCase().includes(haessuche.toLowerCase()) ||
+                    (h.bezeichnung || '').toLowerCase().includes(haessuche.toLowerCase()))
+                ).length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-4">Keine verfügbaren Häs gefunden</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
