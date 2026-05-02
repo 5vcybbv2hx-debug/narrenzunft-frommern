@@ -244,26 +244,54 @@ export default function HaesDetail() {
             </div>
             <div>
               <label className="text-xs text-muted-foreground font-medium block mb-1">Status</label>
-              <select
-                value={editData.status || 'Frei'}
-                onChange={e => setEditData(p => ({ ...p, status: e.target.value }))}
-                className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
-              >
+              <div className="grid grid-cols-2 gap-2">
                 {['Aktiv', 'Verliehen', 'Frei', 'Verkauft', 'Stillgelegt'].map(s => (
-                  <option key={s} value={s}>{s}</option>
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setEditData(p => ({ ...p, status: s }))}
+                    className={`py-2.5 rounded-lg text-sm font-medium transition-all border ${
+                      editData.status === s
+                        ? 'bg-primary/20 text-primary border-primary/40'
+                        : 'bg-secondary text-muted-foreground border-border hover:border-primary/40 hover:text-foreground'
+                    }`}
+                  >
+                    {s}
+                  </button>
                 ))}
-              </select>
+              </div>
             </div>
             <div>
               <label className="text-xs text-muted-foreground font-medium block mb-1">Häsgruppe</label>
-              <select
-                value={editData.haesgruppe_id || ''}
-                onChange={e => setEditData(p => ({ ...p, haesgruppe_id: e.target.value }))}
-                className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
-              >
-                <option value="">Keine Gruppe</option>
-                {gruppen.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-              </select>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setEditData(p => ({ ...p, haesgruppe_id: '' }))}
+                  className={`w-full py-2.5 rounded-lg text-sm font-medium transition-all border ${
+                    !editData.haesgruppe_id
+                      ? 'bg-primary/20 text-primary border-primary/40'
+                      : 'bg-secondary text-muted-foreground border-border hover:border-primary/40 hover:text-foreground'
+                  }`}
+                >
+                  – Keine Gruppe
+                </button>
+                <div className="grid grid-cols-2 gap-2">
+                  {gruppen.map(g => (
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => setEditData(p => ({ ...p, haesgruppe_id: g.id }))}
+                      className={`py-2.5 rounded-lg text-sm font-medium transition-all border ${
+                        editData.haesgruppe_id === g.id
+                          ? 'bg-primary/20 text-primary border-primary/40'
+                          : 'bg-secondary text-muted-foreground border-border hover:border-primary/40 hover:text-foreground'
+                      }`}
+                    >
+                      {g.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
             <div className="space-y-2">
               <label className="flex items-center gap-2.5 cursor-pointer">
