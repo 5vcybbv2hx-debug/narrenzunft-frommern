@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
@@ -74,22 +74,76 @@ export default function Kalender() {
     setLoading(true);
     try {
       const me = await base44.auth.me();
-      const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
-      if (myM[0]) {
-        setMyMitglied(myM[0]);
-        const anm = await base44.entities.KalenderAnmeldung.filter({ mitglied_id: myM[0].id });
+      const [myMArr, kalenderTermine, veranstaltungen] = await Promise.all([
+        base44.entities.Mitglied.filter({ user_id: me?.id }),
+        base44.entities.KalenderTermin.list('datum', 500),
+        base44.entities.Veranstaltung.list('datum', 500),
+      ]);
+
+      const myM = myMArr[0] || null;
+      setMyMitglied(myM);
+
+      if (myM) {
+        const anm = await base44.entities.KalenderAnmeldung.filter({ mitglied_id: myM.id });
         setAnmeldungen(anm);
       }
-      const alleTermine = await base44.entities.KalenderTermin.list('datum', 500);
-      // Clientseitig filtern (Serverseitig erzwingt ICS-Feed die Sicherheit)
-      const sichtbar = alleTermine.filter(t => {
+
+      // KalenderTermin – rollenbasiert filtern
+      const sichtbar = kalenderTermine.filter(t => {
         const s = t.sichtbarkeit || 'alle';
         if (!erlaubteSichtbarkeiten.includes(s)) return false;
-        if (s === 'eingeladen') return myM[0] && (t.eingeladene_ids || []).includes(myM[0].id);
-        if (s === 'verantwortliche') return myM[0] && (t.verantwortliche_ids || []).includes(myM[0].id);
+        if (s === 'eingeladen') return myM && (t.eingeladene_ids || []).includes(myM.id);
+        if (s === 'verantwortliche') return myM && (t.verantwortliche_ids || []).includes(myM.id);
         return true;
       });
-      setTermine(sichtbar);
+
+      // Veranstaltungen (eigene & auswärtige) als synthetische Kalendereinträge
+      const TYP_MAP = {
+        'Umzug':             'Umzug',
+        'Abendveranstaltung':'Abendveranstaltung',
+        'Intern':            'Intern',
+        'Arbeitsdienst':     'Arbeitsdienst',
+        'Fest':              'Sonstiges',
+      };
+      const fromVeranstaltungen = veranstaltungen
+        .filter(v => v.datum && v.status !== 'Abgesagt')
+        .map(v => ({
+          id: `v-${v.id}`,
+          _veranstaltung_id: v.id,
+          _quelle: 'veranstaltung',
+          titel: v.titel,
+          datum: v.datum,
+          startzeit: v.uhrzeit || '',
+          endzeit: '',
+          ort: v.ort || '',
+          beschreibung: v.beschreibung || '',
+          terminart: TYP_MAP[v.typ] || 'Sonstiges',
+          sichtbarkeit: 'alle',
+          status: v.status || 'Geplant',
+          anmeldbar: false,
+          abonnierbar: true,
+          // Detailinfos aus Veranstaltung
+          _bus: v.bus_erforderlich,
+          _busparkplatz_treffzeit: v.busparkplatz_treffzeit,
+          _busparkplatz_adresse: v.busparkplatz_adresse,
+          _umzugsaufstellung_ort: v.umzugsaufstellung_ort,
+          _umzugsaufstellung_zeit: v.umzugsaufstellung_zeit,
+          _festakt_ort: v.festakt_ort,
+          _festakt_zeit: v.festakt_zeit,
+          _dresscode: v.dresscode,
+          _hinweise: v.hinweise,
+          _veranstaltungsort_adresse: v.veranstaltungsort_adresse,
+          _einlass_zeit: v.einlass_zeit,
+          _beginn_zeit: v.beginn_zeit,
+        }));
+
+      // Duplikate vermeiden: wenn schon ein KalenderTermin mit gleichem Datum & Titel existiert, nicht doppelt zeigen
+      const existierendeTitel = new Set(sichtbar.map(t => `${t.datum}|${t.titel.toLowerCase()}`));
+      const neueTermine = fromVeranstaltungen.filter(t =>
+        !existierendeTitel.has(`${t.datum}|${t.titel.toLowerCase()}`)
+      );
+
+      setTermine([...sichtbar, ...neueTermine]);
     } catch (e) {}
     setLoading(false);
   };
@@ -397,10 +451,19 @@ export default function Kalender() {
 function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, compact = false }) {
   const farbeClass = TERMINART_FARBEN[termin.terminart] || TERMINART_FARBEN['Sonstiges'];
   const isAngemeldet = anmeldung?.status === 'Angemeldet';
+  const istVonVeranstaltung = termin._quelle === 'veranstaltung';
+  const [detailsOffen, setDetailsOffen] = useState(false);
+
+  const hatDetails = istVonVeranstaltung && (
+    termin._busparkplatz_adresse || termin._busparkplatz_treffzeit ||
+    termin._umzugsaufstellung_ort || termin._festakt_ort ||
+    termin._veranstaltungsort_adresse || termin._einlass_zeit ||
+    termin._dresscode || termin._hinweise
+  );
 
   return (
     <div className={`bg-card border border-border rounded-xl overflow-hidden ${compact ? '' : 'hover:border-primary/30 transition-colors'}`}>
-      <div className={`flex gap-3 p-4`}>
+      <div className="flex gap-3 p-4">
         {/* Datum */}
         <div className="w-12 h-12 rounded-xl bg-primary/10 flex flex-col items-center justify-center shrink-0">
           <span className="text-[9px] text-muted-foreground leading-none">
@@ -417,6 +480,9 @@ function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, compact = false })
             <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${farbeClass}`}>
               {termin.terminart}
             </span>
+            {istVonVeranstaltung && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Veranstaltung</span>
+            )}
             {isAngemeldet && (
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">✓ Angemeldet</span>
             )}
@@ -433,18 +499,91 @@ function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, compact = false })
                 <MapPin size={10} /> {termin.ort}
               </span>
             )}
+            {termin._bus && <span className="text-blue-400">🚌 Bus</span>}
           </div>
           {!compact && termin.beschreibung && (
             <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{termin.beschreibung}</p>
           )}
+          {/* Details-Toggle für Veranstaltungen */}
+          {hatDetails && !compact && (
+            <button
+              onClick={() => setDetailsOffen(v => !v)}
+              className="mt-2 flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
+            >
+              <ChevronRight size={12} className={`transition-transform ${detailsOffen ? 'rotate-90' : ''}`} />
+              {detailsOffen ? 'Details einklappen' : 'Details anzeigen'}
+            </button>
+          )}
         </div>
 
-        {onEdit && (
-          <button onClick={onEdit} className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
-            ✏️
-          </button>
-        )}
+        <div className="flex flex-col gap-1 shrink-0">
+          {istVonVeranstaltung && (
+            <Link
+              to={`/veranstaltungen/${termin._veranstaltung_id}`}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors text-xs"
+              title="Zur Veranstaltung"
+            >
+              →
+            </Link>
+          )}
+          {onEdit && !istVonVeranstaltung && (
+            <button onClick={onEdit} className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
+              ✏️
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Veranstaltungs-Detailinfos */}
+      {detailsOffen && hatDetails && (
+        <div className="px-4 pb-4 space-y-2 border-t border-border pt-3">
+          {(termin._busparkplatz_treffzeit || termin._busparkplatz_adresse) && (
+            <DetailBlock emoji="🅿️" title="Bus / Heimatpunkt">
+              {termin._busparkplatz_treffzeit && <p className="text-xs text-foreground">Abfahrt: {termin._busparkplatz_treffzeit} Uhr</p>}
+              {termin._busparkplatz_adresse && <p className="text-xs text-muted-foreground">{termin._busparkplatz_adresse}</p>}
+            </DetailBlock>
+          )}
+          {(termin._umzugsaufstellung_ort || termin._umzugsaufstellung_zeit) && (
+            <DetailBlock emoji="📋" title="Aufstellung">
+              {termin._umzugsaufstellung_zeit && <p className="text-xs text-foreground">{termin._umzugsaufstellung_zeit} Uhr</p>}
+              {termin._umzugsaufstellung_ort && <p className="text-xs text-muted-foreground">{termin._umzugsaufstellung_ort}</p>}
+            </DetailBlock>
+          )}
+          {termin._festakt_ort && (
+            <DetailBlock emoji="🎉" title="Festakt">
+              {termin._festakt_zeit && <p className="text-xs text-foreground">{termin._festakt_zeit} Uhr</p>}
+              <p className="text-xs text-muted-foreground">{termin._festakt_ort}</p>
+            </DetailBlock>
+          )}
+          {termin._veranstaltungsort_adresse && (
+            <DetailBlock emoji="📍" title="Veranstaltungsort">
+              <p className="text-xs text-muted-foreground">{termin._veranstaltungsort_adresse}</p>
+            </DetailBlock>
+          )}
+          {(termin._einlass_zeit || termin._beginn_zeit) && (
+            <DetailBlock emoji="🕐" title="Zeiten">
+              {termin._einlass_zeit && <p className="text-xs text-foreground">Einlass: {termin._einlass_zeit} Uhr</p>}
+              {termin._beginn_zeit && <p className="text-xs text-foreground">Beginn: {termin._beginn_zeit} Uhr</p>}
+            </DetailBlock>
+          )}
+          {termin._dresscode && (
+            <DetailBlock emoji="👗" title="Dresscode">
+              <p className="text-xs text-foreground">{termin._dresscode}</p>
+            </DetailBlock>
+          )}
+          {termin._hinweise && (
+            <DetailBlock emoji="📝" title="Hinweise">
+              <p className="text-xs text-muted-foreground whitespace-pre-line">{termin._hinweise}</p>
+            </DetailBlock>
+          )}
+          <Link
+            to={`/veranstaltungen/${termin._veranstaltung_id}`}
+            className="inline-flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors mt-1"
+          >
+            Zur vollständigen Veranstaltungsseite →
+          </Link>
+        </div>
+      )}
 
       {termin.anmeldbar && onAnmelden && (
         <div className="px-4 pb-3">
@@ -460,6 +599,18 @@ function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, compact = false })
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+function DetailBlock({ emoji, title, children }) {
+  return (
+    <div className="flex gap-2.5">
+      <span className="text-sm shrink-0">{emoji}</span>
+      <div>
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">{title}</p>
+        {children}
+      </div>
     </div>
   );
 }
