@@ -36,9 +36,14 @@ export const ROLLEN_LABELS = {
 
 // ── Hilfsfunktionen ──────────────────────────────────────────────────────────
 
-/** Vollzugriff: Vorstand + Stv. Vorstand */
+/** Developer-Status (Sonderstatus für App-Entwickler – nur diese Email) */
+export function isDeveloper(user) {
+  return user?.email === 'pierre.hugendubel@gmail.com';
+}
+
+/** Vollzugriff: Vorstand + Stv. Vorstand + Developer */
 export function isAdmin(user) {
-  return ['vorstand', 'stellv_vorstand', 'admin'].includes(user?.role);
+  return ['vorstand', 'stellv_vorstand', 'admin'].includes(user?.role) || isDeveloper(user);
 }
 
 /** Nur Vorstand */
@@ -46,41 +51,42 @@ export function isVorstand(user) {
   return user?.role === 'vorstand';
 }
 
-/** Finanzzugriff: Vorstand + Kassierer */
+/** Finanzzugriff: Vorstand + Kassierer + Developer */
 export function kannBankdatenSehn(user) {
-  return ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'].includes(user?.role);
+  return ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'].includes(user?.role) || isDeveloper(user);
 }
 
 export function kannBeitraegeVerwalten(user) {
-  return ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'].includes(user?.role);
+  return ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'].includes(user?.role) || isDeveloper(user);
 }
 
 /** Mitgliederliste sehen */
 export function kannMitgliederlisteSehn(user) {
-  return ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter', 'admin'].includes(user?.role);
+  return ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter', 'admin'].includes(user?.role) || isDeveloper(user);
 }
 
 /** Arbeitsdienste verwalten */
 export function kannArbeitsdiensteVerwalten(user) {
-  return ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'].includes(user?.role);
+  return ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'].includes(user?.role) || isDeveloper(user);
 }
 
 /** Check-In bei Veranstaltungen */
 export function kannCheckinDurchfuehren(user) {
-  return ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'].includes(user?.role);
+  return ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'].includes(user?.role) || isDeveloper(user);
 }
 
 /** Ehrungen verwalten */
 export function kannEhrungenVerwalten(user) {
-  return ['vorstand', 'stellv_vorstand', 'admin'].includes(user?.role);
+  return ['vorstand', 'stellv_vorstand', 'admin'].includes(user?.role) || isDeveloper(user);
 }
 
 export function getRollenLabel(role) {
   return ROLLEN_LABELS[role] || role || 'Mitglied';
 }
 
-/** Nur einfaches Mitglied oder Elternkonto – kein erweiterter Zugriff */
+/** Nur einfaches Mitglied oder Elternkonto – kein erweiterter Zugriff (Developer hat Zugriff) */
 export function istNurMitglied(user) {
+  if (isDeveloper(user)) return false; // Developer hat immer Zugriff
   return ['mitglied', 'elternkonto', 'user'].includes(user?.role);
 }
 
