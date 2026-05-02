@@ -1,0 +1,68 @@
+{
+  "name": "Veranstaltungsvorlage",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name der Vorlage"
+    },
+    "typ": {
+      "type": "string",
+      "enum": [
+        "Umzug",
+        "Abendveranstaltung",
+        "Intern",
+        "Arbeitsdienst",
+        "Fest"
+      ],
+      "default": "Intern"
+    },
+    "ort": {
+      "type": "string"
+    },
+    "uhrzeit": {
+      "type": "string"
+    },
+    "beschreibung": {
+      "type": "string"
+    },
+    "bus_erforderlich": {
+      "type": "boolean",
+      "default": false
+    },
+    "anmeldung_aktiv": {
+      "type": "boolean",
+      "default": true
+    },
+    "busparkplatz_adresse": {
+      "type": "string"
+    },
+    "busparkplatz_treffzeit": {
+      "type": "string"
+    },
+    "hinweise": {
+      "type": "string"
+    },
+    "arbeitsdienst_vorlagen": {
+      "type": "array",
+      "description": "Vordefinierte Arbeitsdienste, die automatisch angelegt werden",
+      "items": {
+        "type": "object",
+        "properties": {
+          "titel": {
+            "type": "string"
+          },
+          "beschreibung": {
+            "type": "string"
+          },
+          "benoetigte_personen": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "name"
+  ]
+}
