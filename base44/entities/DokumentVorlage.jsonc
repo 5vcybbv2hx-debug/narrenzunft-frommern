@@ -1,0 +1,32 @@
+{
+  "name": "DokumentVorlage",
+  "type": "object",
+  "properties": {
+    "titel": {
+      "type": "string",
+      "description": "Name der Vorlage"
+    },
+    "typ": {
+      "type": "string",
+      "enum": [
+        "Einkaufsliste",
+        "Checkliste",
+        "Notiz",
+        "Nachbericht",
+        "Sonstiges"
+      ],
+      "default": "Checkliste"
+    },
+    "inhalt": {
+      "type": "string",
+      "description": "Vorlagen-Inhalt (Freitext)"
+    },
+    "beschreibung": {
+      "type": "string",
+      "description": "Kurzbeschreibung wof\u00fcr die Vorlage gedacht ist"
+    }
+  },
+  "required": [
+    "titel"
+  ]
+}

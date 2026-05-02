@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import {
   FileText, Plus, X, Save, Trash2, Upload, Download,
-  ShoppingCart, CheckSquare, FileEdit, Sparkles, Loader2
+  ShoppingCart, CheckSquare, FileEdit, Sparkles, Loader2, LayoutTemplate
 } from 'lucide-react';
+import VorlagenModal from './VorlagenModal';
 
 const TYP_ICONS = {
   'Einkaufsliste': ShoppingCart,
@@ -25,8 +26,10 @@ const TYPEN = ['Einkaufsliste', 'Checkliste', 'Notiz', 'Nachbericht', 'Sonstiges
 
 export default function DokumenteTab({ veranstaltung, isAdmin, veranstaltungsName }) {
   const [dokumente, setDokumente] = useState([]);
+  const [vorlagen, setVorlagen] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showVorlagenModal, setShowVorlagenModal] = useState(false);
   const [editDoc, setEditDoc] = useState(null);
   const [form, setForm] = useState({ titel: '', typ: 'Notiz', inhalt: '' });
   const [saving, setSaving] = useState(false);
@@ -34,7 +37,7 @@ export default function DokumenteTab({ veranstaltung, isAdmin, veranstaltungsNam
   const [aiLoading, setAiLoading] = useState(false);
   const [aiErgebnis, setAiErgebnis] = useState(null);
 
-  useEffect(() => { loadDokumente(); }, [veranstaltung.id]);
+  useEffect(() => { loadDokumente(); loadVorlagen(); }, [veranstaltung.id]);
 
   const loadDokumente = async () => {
     setLoading(true);
@@ -43,6 +46,28 @@ export default function DokumenteTab({ veranstaltung, isAdmin, veranstaltungsNam
       setDokumente(docs.sort((a, b) => new Date(b.created_date) - new Date(a.created_date)));
     } catch (e) {}
     setLoading(false);
+  };
+
+  const loadVorlagen = async () => {
+    try {
+      const v = await base44.entities.DokumentVorlage.list('titel', 100);
+      setVorlagen(v);
+    } catch (e) {}
+  };
+
+  const handleVorlageAnwenden = async (vorlage) => {
+    setSaving(true);
+    try {
+      await base44.entities.VeranstaltungsDokument.create({
+        veranstaltung_id: veranstaltung.id,
+        titel: vorlage.titel,
+        typ: vorlage.typ,
+        inhalt: vorlage.inhalt || '',
+      });
+      loadDokumente();
+      setShowVorlagenModal(false);
+    } catch (e) {}
+    setSaving(false);
   };
 
   const openNew = () => {
@@ -164,6 +189,12 @@ export default function DokumenteTab({ veranstaltung, isAdmin, veranstaltungsNam
         <div className="flex items-center gap-2">
           {isAdmin && (
             <>
+              <button
+                onClick={() => setShowVorlagenModal(true)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-secondary text-foreground text-sm font-medium hover:bg-border transition-colors"
+              >
+                <LayoutTemplate size={14} /> Vorlage
+              </button>
               <label className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium cursor-pointer transition-colors ${uploading ? 'bg-secondary text-muted-foreground' : 'bg-secondary text-foreground hover:bg-border'}`}>
                 {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
                 {uploading ? 'Lädt...' : 'Datei'}
@@ -280,6 +311,17 @@ export default function DokumenteTab({ veranstaltung, isAdmin, veranstaltungsNam
             </div>
           )}
         </div>
+      )}
+
+      {/* Vorlagen Modal */}
+      {showVorlagenModal && (
+        <VorlagenModal
+          vorlagen={vorlagen}
+          onAnwenden={handleVorlageAnwenden}
+          onClose={() => setShowVorlagenModal(false)}
+          onVorlagenChanged={loadVorlagen}
+          saving={saving}
+        />
       )}
 
       {/* Formular Modal */}
