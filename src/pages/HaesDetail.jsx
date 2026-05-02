@@ -33,6 +33,7 @@ export default function HaesDetail() {
   const [saving, setSaving] = useState(false);
   const [eigentuemerSuche, setEigentuemerSuche] = useState('');
   const [zuweisung_suche, setZuweisungSuche] = useState('');
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -73,7 +74,7 @@ export default function HaesDetail() {
     setSaving(false);
   };
 
-  const handleAddMitglied = async () => {
+  const handleAddMitglied = async (alsoSetEigentuemer = false) => {
     if (!newZuweisung.mitglied_id) return;
     setSaving(true);
     try {
@@ -97,13 +98,44 @@ export default function HaesDetail() {
 
       // aktueller_besitzer_id aktualisieren falls aktiv
       if (newZuweisung.aktiv) {
-        await base44.entities.Haes.update(id, { aktueller_besitzer_id: newZuweisung.mitglied_id, status: 'Verliehen' });
+        await base44.entities.Haes.update(id, { 
+          aktueller_besitzer_id: newZuweisung.mitglied_id, 
+          status: 'Verliehen',
+          ...(alsoSetEigentuemer && { privat_eigentuemer_id: newZuweisung.mitglied_id })
+        });
       }
       setNewZuweisung({ mitglied_id: '', von_datum: '', aktiv: true, notizen: '' });
       setShowAddMitglied(false);
+      setConfirmDialog(null);
       loadData();
     } catch (e) {}
     setSaving(false);
+  };
+
+  const onSelectMitgliedZuweisung = (mitgliedId) => {
+    setNewZuweisung(p => ({ ...p, mitglied_id: mitgliedId }));
+    setZuweisungSuche('');
+    // Automatik-Dialog: Falls Privateigentümer leer, fragen ob auch setzen
+    if (!editData.privat_eigentuemer_id) {
+      setConfirmDialog({
+        type: 'zuweisung_eigentuemer',
+        mitgliedId,
+        mitgliedName: getMitgliedName(mitgliedId)
+      });
+    }
+  };
+
+  const onSelectEigentuemer = (mitgliedId) => {
+    setEditData(p => ({ ...p, privat_eigentuemer_id: mitgliedId }));
+    setEigentuemerSuche('');
+    // Automatik-Dialog: Falls noch keine aktive Zuweisung, fragen ob anlegen
+    if (historien.filter(h => h.aktiv).length === 0) {
+      setConfirmDialog({
+        type: 'eigentuemer_zuweisung',
+        mitgliedId,
+        mitgliedName: getMitgliedName(mitgliedId)
+      });
+    }
   };
 
   const handleToggleAktiv = async (historie) => {
@@ -278,7 +310,7 @@ export default function HaesDetail() {
                               <button
                                 key={m.id}
                                 type="button"
-                                onClick={() => { setEditData(p => ({ ...p, privat_eigentuemer_id: m.id })); setEigentuemerSuche(''); }}
+                                onClick={() => onSelectEigentuemer(m.id)}
                                 className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary transition-colors text-left"
                               >
                                 <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
@@ -470,7 +502,7 @@ export default function HaesDetail() {
                             <button
                               key={m.id}
                               type="button"
-                              onClick={() => { setNewZuweisung(p => ({ ...p, mitglied_id: m.id })); setZuweisungSuche(''); }}
+                              onClick={() => onSelectMitgliedZuweisung(m.id)}
                               className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary transition-colors text-left"
                             >
                               <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
@@ -529,8 +561,78 @@ export default function HaesDetail() {
             </div>
             <div className="flex gap-2 mt-4">
               <button onClick={() => setShowAddMitglied(false)} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium">Abbrechen</button>
-              <button onClick={handleAddMitglied} disabled={saving || !newZuweisung.mitglied_id} className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">
+              <button onClick={() => handleAddMitglied()} disabled={saving || !newZuweisung.mitglied_id} className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">
                 {saving ? 'Speichern...' : 'Zuweisen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Dialogs */}
+      {confirmDialog?.type === 'zuweisung_eigentuemer' && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-sm">
+            <h3 className="font-bold text-foreground mb-2">Privateigentümer auch setzen?</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              {confirmDialog.mitgliedName} wird als Mitglied zugewiesen. Auch als Privateigentümer des Häs eintragen?
+            </p>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => { handleAddMitglied(false); }}
+                disabled={saving}
+                className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium disabled:opacity-50"
+              >
+                Nur zuweisen
+              </button>
+              <button 
+                onClick={() => { handleAddMitglied(true); }}
+                disabled={saving}
+                className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+              >
+                Beides setzen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmDialog?.type === 'eigentuemer_zuweisung' && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-sm">
+            <h3 className="font-bold text-foreground mb-2">Neue Zuweisung anlegen?</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              {confirmDialog.mitgliedName} ist als Privateigentümer eingetragen. Auch eine neue aktive Zuweisung für diese Person anlegen?
+            </p>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setConfirmDialog(null)}
+                className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium"
+              >
+                Nur Eigentümer
+              </button>
+              <button 
+                onClick={async () => {
+                  const heute = new Date().toISOString().split('T')[0];
+                  setSaving(true);
+                  try {
+                    await base44.entities.HaesHistorie.create({
+                      haes_id: id,
+                      mitglied_id: confirmDialog.mitgliedId,
+                      von_datum: heute,
+                      aktiv: true,
+                      notizen: '',
+                    });
+                    await base44.entities.Haes.update(id, { aktueller_besitzer_id: confirmDialog.mitgliedId, status: 'Verliehen' });
+                    setConfirmDialog(null);
+                    loadData();
+                  } catch (e) {}
+                  setSaving(false);
+                }}
+                disabled={saving}
+                className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+              >
+                Zuweisung anlegen
               </button>
             </div>
           </div>
