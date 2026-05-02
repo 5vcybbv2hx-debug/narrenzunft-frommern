@@ -23,9 +23,9 @@ Deno.serve(async (req) => {
     
     // Spalten nach Position (0-basiert)
     const hasnummerIdx = 0;   // Spalte A
-    const vornameIdx = 1;     // Spalte B
-    const nachnameIdx = 2;    // Spalte C
-    const gruppeIdx = 2;      // Spalte C (Sparte)
+    const gruppeIdx = 2;      // Spalte C (Sparte/Maskengruppe)
+    const nachnameIdx = 3;    // Spalte D
+    const vornameIdx = 4;     // Spalte E
 
     // Lade Häsgruppen, Häs und Mitglieder
     const [allGruppen, allHaes, allMitglieder] = await Promise.all([
