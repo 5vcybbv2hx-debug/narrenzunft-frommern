@@ -32,6 +32,7 @@ export default function HaesDetail() {
   const [newZuweisung, setNewZuweisung] = useState({ mitglied_id: '', von_datum: '', aktiv: true, notizen: '' });
   const [saving, setSaving] = useState(false);
   const [eigentuemerSuche, setEigentuemerSuche] = useState('');
+  const [zuweisung_suche, setZuweisungSuche] = useState('');
 
   useEffect(() => {
     loadData();
@@ -436,16 +437,58 @@ export default function HaesDetail() {
             <div className="space-y-3">
               <div>
                 <label className="text-xs text-muted-foreground font-medium block mb-1">Mitglied *</label>
-                <select
-                  value={newZuweisung.mitglied_id}
-                  onChange={e => setNewZuweisung(p => ({ ...p, mitglied_id: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
-                >
-                  <option value="">Bitte wählen...</option>
-                  {mitglieder.map(m => (
-                    <option key={m.id} value={m.id}>{m.vorname} {m.nachname}</option>
-                  ))}
-                </select>
+                {newZuweisung.mitglied_id ? (
+                  <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-primary/10 border border-primary/30">
+                    <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                      {getMitgliedName(newZuweisung.mitglied_id)[0]}
+                    </div>
+                    <span className="text-sm font-medium text-foreground flex-1">{getMitgliedName(newZuweisung.mitglied_id)}</span>
+                    <button
+                      type="button"
+                      onClick={() => { setNewZuweisung(p => ({ ...p, mitglied_id: '' })); setZuweisungSuche(''); }}
+                      className="text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Name eingeben..."
+                      value={zuweisung_suche}
+                      onChange={e => setZuweisungSuche(e.target.value)}
+                      className="w-full pl-8 pr-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+                    />
+                    {zuweisung_suche.length >= 1 && (
+                      <div className="absolute z-20 left-0 right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-xl max-h-48 overflow-y-auto">
+                        {mitglieder
+                          .filter(m => `${m.vorname} ${m.nachname}`.toLowerCase().includes(zuweisung_suche.toLowerCase()))
+                          .slice(0, 8)
+                          .map(m => (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() => { setNewZuweisung(p => ({ ...p, mitglied_id: m.id })); setZuweisungSuche(''); }}
+                              className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary transition-colors text-left"
+                            >
+                              <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                                {m.vorname?.[0]}{m.nachname?.[0]}
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-foreground">{m.vorname} {m.nachname}</p>
+                                {m.mitgliedsstatus && <p className="text-xs text-muted-foreground">{m.mitgliedsstatus}</p>}
+                              </div>
+                            </button>
+                          ))}
+                        {mitglieder.filter(m => `${m.vorname} ${m.nachname}`.toLowerCase().includes(zuweisung_suche.toLowerCase())).length === 0 && (
+                          <p className="text-sm text-muted-foreground text-center py-4">Keine Ergebnisse</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               <div>
                 <label className="text-xs text-muted-foreground font-medium block mb-1">Von Datum</label>
