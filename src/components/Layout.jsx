@@ -24,6 +24,7 @@ const sidebarNavItems = [
   { path: '/datenqualitaet', label: 'Datenqualität', icon: AlertTriangle, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
   { path: '/kalender', label: 'Kalender', icon: Calendar, roles: null },
   { path: '/ausschuss', label: 'Ausschussbereich', icon: Lock, roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'] },
+  { path: '/familie', label: 'Familie', icon: Users, roles: ['elternkonto'] },
 ];
 
 // Mobile Bottom-Nav: Start, Umzüge, Dienste, Profil, Mehr

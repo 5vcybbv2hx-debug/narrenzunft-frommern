@@ -34,6 +34,7 @@ import Kalender from './pages/Kalender';
 import Ausschuss from './pages/Ausschuss';
 import BusfahrerInfo from './pages/BusfahrerInfo';
 import SitzungDetail from './pages/SitzungDetail';
+import FamilienDashboard from './pages/FamilienDashboard';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -94,6 +95,7 @@ const AuthenticatedApp = () => {
         <Route path="/kalender" element={<Kalender />} />
         <Route path="/ausschuss" element={<Ausschuss />} />
         <Route path="/ausschuss/sitzung/:id" element={<SitzungDetail />} />
+        <Route path="/familie" element={<FamilienDashboard />} />
       </Route>
       <Route path="/busfahrer/:token" element={<BusfahrerInfo />} />
       <Route path="*" element={<PageNotFound />} />
