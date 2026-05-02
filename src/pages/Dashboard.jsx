@@ -11,7 +11,8 @@ import {
 } from 'lucide-react';
 import { format, isAfter, isBefore, addDays, differenceInYears } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { isAdmin, kannArbeitsdiensteVerwalten } from '@/lib/roles';
+import { isAdmin, kannArbeitsdiensteVerwalten, istNurMitglied } from '@/lib/roles';
+import MitgliedDashboard from '@/components/dashboard/MitgliedDashboard';
 
 function StatCard({ icon: Icon, label, value, color = 'text-primary', onClick }) {
   return (
@@ -72,6 +73,7 @@ function StatusDot({ status }) {
 
 export default function Dashboard() {
   const { user } = useAuth();
+
   const [stats, setStats] = useState({
     mitglieder: 0, veranstaltungen: 0, offeneEhrungen: 0,
     offeneBeitraege: 0, arbeitsdienste: 0
@@ -133,6 +135,11 @@ export default function Dashboard() {
     }
     setLoading(false);
   };
+
+  // Normale Mitglieder & Elternkonten bekommen ihr eigenes Dashboard
+  if (istNurMitglied(user)) {
+    return <MitgliedDashboard />;
+  }
 
   if (loading) {
     return (
