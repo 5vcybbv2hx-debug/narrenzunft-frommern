@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { Shirt, Plus, Search, ChevronRight } from 'lucide-react';
+import { Shirt, Plus, Search, ChevronRight, Calendar } from 'lucide-react';
+import HaesGroupTokenModal from '@/components/haes/HaesGroupTokenModal';
 
 const STATUS_COLORS = {
   'Aktiv': 'bg-green-500/20 text-green-400',
@@ -25,6 +26,7 @@ export default function Haes() {
   const [showNewHaes, setShowNewHaes] = useState(false);
   const [newGruppe, setNewGruppe] = useState({ name: '', beschreibung: '' });
   const [newHaes, setNewHaes] = useState({ haesnummer: '', haesgruppe_id: '', bezeichnung: '', status: 'Frei' });
+  const [selectedGruppeToken, setSelectedGruppeToken] = useState(null);
   const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
@@ -149,13 +151,23 @@ export default function Haes() {
             Alle Gruppen
           </button>
           {gruppen.map(g => (
-            <button
-              key={g.id}
-              onClick={() => setGruppeFilter(g.id)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${gruppeFilter === g.id ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground'}`}
-            >
-              {g.name}
-            </button>
+            <div key={g.id} className="flex-shrink-0 relative group">
+              <button
+                onClick={() => setGruppeFilter(g.id)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${gruppeFilter === g.id ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground'}`}
+              >
+                {g.name}
+              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => setSelectedGruppeToken(g)}
+                  title="Kalender-Feed-Token anzeigen"
+                  className="absolute -right-1 -top-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg bg-primary text-primary-foreground text-[10px] hover:bg-primary/90"
+                >
+                  <Calendar size={12} />
+                </button>
+              )}
+            </div>
           ))}
         </div>
       )}
@@ -286,6 +298,14 @@ export default function Haes() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Token Modal */}
+      {selectedGruppeToken && (
+        <HaesGroupTokenModal
+          gruppe={selectedGruppeToken}
+          onClose={() => setSelectedGruppeToken(null)}
+        />
       )}
     </div>
   );
