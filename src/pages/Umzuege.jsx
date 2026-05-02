@@ -9,7 +9,7 @@ import UmzugCheckinModal from '@/components/umzug/UmzugCheckinModal';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
-function VerantwortlicheAuswahl({ mitglieder, selected, onChange }) {
+function VerantwortlicheAuswahl({ mitglieder, selected, onChange, haeufige }) {
   const [suche, setSuche] = useState('');
   const aktive = mitglieder.filter(m => ['Aktiv', 'Passiv mit Häs'].includes(m.mitgliedsstatus));
   const gefiltert = aktive.filter(m =>
@@ -19,27 +19,55 @@ function VerantwortlicheAuswahl({ mitglieder, selected, onChange }) {
     if (selected.includes(id)) onChange(selected.filter(s => s !== id));
     else onChange([...selected, id]);
   };
+
+  // Häufige Verantwortliche als Quick-Chips (außer bereits ausgewählte)
+  const quickChips = haeufige?.filter(id => !selected.includes(id)).slice(0, 6) || [];
+
   return (
-    <div>
+    <div className="space-y-2">
+      {/* Ausgewählte */}
       {selected.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-2">
+        <div className="flex flex-wrap gap-1.5">
           {selected.map(id => {
             const m = mitglieder.find(m => m.id === id);
             return m ? (
-              <span key={id} className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/20 text-primary text-xs font-medium">
+              <span key={id} className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/20 text-primary text-xs font-medium">
                 {m.vorname} {m.nachname}
-                <button onClick={() => toggle(id)} className="hover:text-destructive transition-colors"><X size={10} /></button>
+                <button onClick={() => toggle(id)} className="hover:text-destructive transition-colors ml-0.5"><X size={10} /></button>
               </span>
             ) : null;
           })}
         </div>
       )}
+
+      {/* Häufig verwendete Quick-Chips */}
+      {quickChips.length > 0 && (
+        <div>
+          <p className="text-[10px] text-muted-foreground mb-1.5">Zuletzt verwendet:</p>
+          <div className="flex flex-wrap gap-1.5">
+            {quickChips.map(id => {
+              const m = mitglieder.find(m => m.id === id);
+              return m ? (
+                <button key={id} onClick={() => toggle(id)}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary border border-border text-xs text-foreground hover:border-primary/50 hover:text-primary transition-colors">
+                  <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[8px] font-bold shrink-0">
+                    {m.vorname?.[0]}{m.nachname?.[0]}
+                  </div>
+                  {m.vorname} {m.nachname}
+                </button>
+              ) : null;
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Suche für weitere */}
       <input
         type="text"
-        placeholder="Mitglied suchen..."
+        placeholder="Weiteres Mitglied suchen..."
         value={suche}
         onChange={e => setSuche(e.target.value)}
-        className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary mb-1"
+        className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
       />
       {suche.length > 0 && (
         <div className="bg-card border border-border rounded-xl max-h-36 overflow-y-auto">
@@ -187,6 +215,19 @@ export default function Umzuege() {
 
   const kommende = umzuege.filter(u => u.datum >= today);
   const vergangene = umzuege.filter(u => u.datum < today);
+
+  // Häufigste Verantwortliche aus allen Terminen berechnen
+  const haeufigsteVerantwortliche = (() => {
+    const counts = {};
+    umzuege.forEach(u => {
+      (u.verantwortliche_ids || []).forEach(id => {
+        counts[id] = (counts[id] || 0) + 1;
+      });
+    });
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([id]) => id);
+  })();
 
   return (
     <div className="px-4 lg:px-6 py-6 max-w-3xl mx-auto">
@@ -500,6 +541,7 @@ export default function Umzuege() {
                   mitglieder={alleMitglieder}
                   selected={form.verantwortliche_ids || []}
                   onChange={(ids) => setForm(p => ({ ...p, verantwortliche_ids: ids }))}
+                  haeufige={haeufigsteVerantwortliche}
                 />
               </div>
             </div>
