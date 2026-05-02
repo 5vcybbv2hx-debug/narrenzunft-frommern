@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { format, differenceInYears } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { isAdmin, kannBankdatenSehn, ROLLEN_LABELS } from '@/lib/roles';
+import { isAdmin, kannBankdatenSehn, ROLLEN_LABELS, istNurMitglied, kannMitgliedProfilSehn } from '@/lib/roles';
 import EhrungsStatus from '@/components/mitglied/EhrungsStatus';
 import AdresseAutocomplete from '@/components/AdresseAutocomplete';
 import AktivitaetTab from '@/components/mitglied/AktivitaetTab';
@@ -74,6 +74,7 @@ export default function MitgliedDetail() {
   const [editing, setEditing] = useState(isNew);
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false);
   const [haes, setHaes] = useState([]);
   const [ehrungen, setEhrungen] = useState([]);
   const [linkedUser, setLinkedUser] = useState(null);
@@ -95,8 +96,17 @@ export default function MitgliedDetail() {
         base44.entities.Ehrung.filter({ mitglied_id: id }),
       ]);
       if (m[0]) {
+        // Zugriffsschutz: Mitglied darf nur eigenes Profil sehen
+        if (istNurMitglied(user)) {
+          const me = await base44.auth.me();
+          const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
+          if (!kannMitgliedProfilSehn(user, myM[0], m[0])) {
+            setAccessDenied(true);
+            setLoading(false);
+            return;
+          }
+        }
         setMitglied(m[0]);
-        // Verknüpften User laden, wenn vorhanden
         if (m[0].user_id) {
           const users = await base44.entities.User.list();
           const u = users.find(u => u.id === m[0].user_id);
@@ -199,6 +209,19 @@ export default function MitgliedDetail() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="w-8 h-8 border-4 border-border border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (accessDenied) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+        <div className="text-5xl mb-4">🔒</div>
+        <h2 className="text-xl font-bold text-foreground mb-2">Kein Zugriff</h2>
+        <p className="text-sm text-muted-foreground text-center mb-4">Du hast keine Berechtigung, dieses Mitgliederprofil zu öffnen.</p>
+        <button onClick={() => navigate(-1)} className="px-4 py-2 rounded-lg bg-secondary text-sm text-foreground hover:bg-border transition-colors">
+          Zurück
+        </button>
       </div>
     );
   }

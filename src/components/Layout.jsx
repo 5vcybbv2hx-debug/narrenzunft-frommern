@@ -67,7 +67,16 @@ export default function Layout() {
 
   const loadNotifications = async () => {
     try {
-      const notifs = await base44.entities.Benachrichtigung.filter({ gelesen: false });
+      let notifs;
+      if (admin) {
+        notifs = await base44.entities.Benachrichtigung.filter({ gelesen: false });
+      } else {
+        const me = await base44.auth.me();
+        const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
+        notifs = myM[0]
+          ? await base44.entities.Benachrichtigung.filter({ mitglied_id: myM[0].id, gelesen: false })
+          : [];
+      }
       setNotifications(notifs.length);
     } catch (e) {}
   };

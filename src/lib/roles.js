@@ -78,3 +78,22 @@ export function kannEhrungenVerwalten(user) {
 export function getRollenLabel(role) {
   return ROLLEN_LABELS[role] || role || 'Mitglied';
 }
+
+/** Nur einfaches Mitglied oder Elternkonto – kein erweiterter Zugriff */
+export function istNurMitglied(user) {
+  return ['mitglied', 'elternkonto', 'user'].includes(user?.role);
+}
+
+/** Darf dieses Mitglied-Profil sehen?
+ *  - Admin/Vorstand: immer
+ *  - Spartenleiter/Kassierer: immer
+ *  - Elternkonto: nur wenn gleiche familie_id
+ *  - Mitglied: nur eigenes Profil
+ */
+export function kannMitgliedProfilSehn(user, myMitglied, zielMitglied) {
+  if (!istNurMitglied(user)) return true; // Admin etc. dürfen alles
+  if (!myMitglied || !zielMitglied) return false;
+  if (myMitglied.id === zielMitglied.id) return true; // eigenes Profil
+  if (user?.role === 'elternkonto' && myMitglied.familie_id && myMitglied.familie_id === zielMitglied.familie_id) return true;
+  return false;
+}

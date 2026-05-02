@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
+import { isAdmin } from '@/lib/roles';
 import { Bell, Check, Info, Award, Briefcase, Calendar, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -23,6 +25,7 @@ const TYP_COLORS = {
 };
 
 export default function Benachrichtigungen() {
+  const { user } = useAuth();
   const [notifs, setNotifs] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +36,21 @@ export default function Benachrichtigungen() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = await base44.entities.Benachrichtigung.list('-created_date', 100);
+      let data;
+      if (isAdmin(user)) {
+        // Admins sehen alle
+        data = await base44.entities.Benachrichtigung.list('-created_date', 100);
+      } else {
+        // Mitglieder sehen nur ihre eigenen
+        const me = await base44.auth.me();
+        const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
+        if (myM[0]) {
+          data = await base44.entities.Benachrichtigung.filter({ mitglied_id: myM[0].id });
+          data = data.sort((a, b) => new Date(b.created_date) - new Date(a.created_date)).slice(0, 100);
+        } else {
+          data = [];
+        }
+      }
       setNotifs(data);
     } catch (e) {}
     setLoading(false);
