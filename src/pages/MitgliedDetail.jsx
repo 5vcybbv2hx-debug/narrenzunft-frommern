@@ -78,6 +78,7 @@ export default function MitgliedDetail() {
   const [haes, setHaes] = useState([]);
   const [ehrungen, setEhrungen] = useState([]);
   const [linkedUser, setLinkedUser] = useState(null);
+  const [haesgruppen, setHaesgruppen] = useState([]);
   const [roleSaving, setRoleSaving] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [inviteSent, setInviteSent] = useState(false);
@@ -85,6 +86,7 @@ export default function MitgliedDetail() {
 
   useEffect(() => {
     if (!isNew) loadMitglied();
+    base44.entities.Haesgruppe.list('name', 50).then(setHaesgruppen).catch(() => {});
   }, [id]);
 
   const loadMitglied = async () => {
@@ -585,6 +587,25 @@ export default function MitgliedDetail() {
               );
             })}
           </div>
+          {/* Häsgruppe für Spartenleiter */}
+          {(mitglied.app_rolle === 'spartenleiter' || linkedUser?.role === 'spartenleiter') && (
+            <div className="mb-3">
+              <label className="text-xs text-muted-foreground font-medium block mb-1">Zuständige Häsgruppe</label>
+              <select
+                value={mitglied.spartenleiter_haesgruppe_id || ''}
+                onChange={async (e) => {
+                  const val = e.target.value;
+                  handleFieldChange('spartenleiter_haesgruppe_id', val);
+                  await base44.entities.Mitglied.update(mitglied.id, { spartenleiter_haesgruppe_id: val });
+                }}
+                className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+              >
+                <option value="">– keine Gruppe zugeordnet –</option>
+                {haesgruppen.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+              </select>
+            </div>
+          )}
+
           {roleSaving && (
             <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
               <div className="w-3 h-3 border-2 border-border border-t-primary rounded-full animate-spin" />

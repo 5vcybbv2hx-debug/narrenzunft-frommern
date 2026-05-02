@@ -16,6 +16,7 @@ const ROLLE_FARBEN = {
 
 export default function AusschussMitgliederTab({ mitglieder, isAdmin }) {
   const [ausschussMitglieder, setAusschussMitglieder] = useState([]);
+  const [haesgruppen, setHaesgruppen] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ mitglied_id: '', rolle: 'Beisitzer', notizen: '' });
@@ -26,10 +27,16 @@ export default function AusschussMitgliederTab({ mitglieder, isAdmin }) {
 
   const load = async () => {
     setLoading(true);
-    const data = await base44.entities.AusschussMitglied.list('-created_date', 100);
+    const [data, gruppen] = await Promise.all([
+      base44.entities.AusschussMitglied.list('-created_date', 100),
+      base44.entities.Haesgruppe.list('name', 50),
+    ]);
     setAusschussMitglieder(data);
+    setHaesgruppen(gruppen);
     setLoading(false);
   };
+
+  const getGruppenName = (id) => haesgruppen.find(g => g.id === id)?.name || null;
 
   const getMitgliedName = (id) => {
     const m = mitglieder.find(m => m.id === id);
@@ -139,6 +146,34 @@ export default function AusschussMitgliederTab({ mitglieder, isAdmin }) {
           <p className="text-sm text-muted-foreground">Noch keine Ausschussmitglieder</p>
         </div>
       )}
+
+      {/* Spartenleiter */}
+      {(() => {
+        const spartenleiter = mitglieder.filter(m => m.app_rolle === 'spartenleiter');
+        if (spartenleiter.length === 0) return null;
+        return (
+          <div className="mb-5">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Spartenleiter</p>
+            <div className="space-y-2">
+              {spartenleiter.map(m => (
+                <div key={m.id} className="bg-card border border-border rounded-xl px-4 py-3 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 font-bold text-sm shrink-0">
+                    {m.vorname?.[0]}{m.nachname?.[0]}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{m.vorname} {m.nachname}</p>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400">
+                      {m.spartenleiter_haesgruppe_id ? `Spartenleiter · ${getGruppenName(m.spartenleiter_haesgruppe_id) || '–'}` : 'Spartenleiter'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-border mt-4 mb-4" />
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Ausschussmitglieder</p>
+          </div>
+        );
+      })()}
 
       <div className="space-y-2">
         {ausschussMitglieder.map(am => (
