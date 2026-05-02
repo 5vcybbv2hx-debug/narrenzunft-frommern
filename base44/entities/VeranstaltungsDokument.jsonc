@@ -1,0 +1,40 @@
+{
+  "name": "VeranstaltungsDokument",
+  "type": "object",
+  "properties": {
+    "veranstaltung_id": {
+      "type": "string",
+      "description": "ID der verkn\u00fcpften Veranstaltung"
+    },
+    "titel": {
+      "type": "string"
+    },
+    "typ": {
+      "type": "string",
+      "enum": [
+        "Einkaufsliste",
+        "Checkliste",
+        "Notiz",
+        "Nachbericht",
+        "Sonstiges"
+      ],
+      "default": "Notiz"
+    },
+    "inhalt": {
+      "type": "string",
+      "description": "Freitext-Inhalt (Notizen, Listen etc.)"
+    },
+    "datei_url": {
+      "type": "string",
+      "description": "URL einer hochgeladenen Datei"
+    },
+    "datei_name": {
+      "type": "string",
+      "description": "Dateiname f\u00fcr die Anzeige"
+    }
+  },
+  "required": [
+    "veranstaltung_id",
+    "titel"
+  ]
+}

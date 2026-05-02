@@ -8,6 +8,7 @@ import {
   Bus, Check, XCircle, Search, Trash2, CheckCircle, Send, Link, Copy, RefreshCw
 } from 'lucide-react';
 import ArbeitsdienstTab from '@/components/veranstaltung/ArbeitsdienstTab';
+import DokumenteTab from '@/components/veranstaltung/DokumenteTab';
 import AdresseAutocomplete from '@/components/AdresseAutocomplete';
 import { VeranstaltungsDetailsForm, VeranstaltungsDetailsView } from '@/components/veranstaltung/VeranstaltungsDetails';
 import { format } from 'date-fns';
@@ -263,6 +264,7 @@ export default function VeranstaltungDetail() {
             { id: 'check-in', label: 'Check-In' },
             { id: 'bus', label: `Bus (${teilnahmen.filter(t => t.bus).length})` },
             { id: 'arbeitsdienste', label: '🛠 Dienste' },
+            { id: 'dokumente', label: '📎 Dokumente' },
           ].map(tab => (
             <button
               key={tab.id}
@@ -678,6 +680,11 @@ export default function VeranstaltungDetail() {
       {/* Arbeitsdienste Tab */}
       {activeTab === 'arbeitsdienste' && !isNew && (
         <ArbeitsdienstTab veranstaltung={veranstaltung} isAdmin={isAdmin} />
+      )}
+
+      {/* Dokumente Tab */}
+      {activeTab === 'dokumente' && !isNew && (
+        <DokumenteTab veranstaltung={veranstaltung} isAdmin={isAdmin} veranstaltungsName={veranstaltung.titel} />
       )}
 
       {/* Check-In Tab */}
