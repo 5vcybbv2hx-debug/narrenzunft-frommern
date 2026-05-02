@@ -1,0 +1,20 @@
+{
+  "name": "AppEinstellung",
+  "type": "object",
+  "properties": {
+    "schluessel": {
+      "type": "string",
+      "description": "Eindeutiger Schl\u00fcssel der Einstellung (z.B. 'busverantwortliche')"
+    },
+    "wert_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Liste von IDs (z.B. Mitglied-IDs)"
+    }
+  },
+  "required": [
+    "schluessel"
+  ]
+}

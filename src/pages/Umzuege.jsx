@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
-import { Bus, Car, Clock, MapPin, Check, Plus, X, Edit, Trash2, Save, ChevronDown, ChevronUp, ClipboardCheck } from 'lucide-react';
+import { Bus, Car, Clock, MapPin, Check, Plus, X, Edit, Trash2, Save, ChevronDown, ChevronUp, ClipboardCheck, Settings } from 'lucide-react';
 import { VeranstaltungsDetailsForm, VeranstaltungsDetailsView } from '@/components/veranstaltung/VeranstaltungsDetails';
 import AdresseAutocomplete from '@/components/AdresseAutocomplete';
 import UmzugCheckinModal from '@/components/umzug/UmzugCheckinModal';
+import BusverantwortlicheModal from '@/components/umzug/BusverantwortlicheModal';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -108,6 +109,8 @@ export default function Umzuege() {
   const [expandedId, setExpandedId] = useState(null);
   const [checkinVeranstaltung, setCheckinVeranstaltung] = useState(null);
   const [alleMitglieder, setAlleMitglieder] = useState([]);
+  const [busverantwortlicheIds, setBusverantwortlicheIds] = useState([]);
+  const [showBusverantwortliche, setShowBusverantwortliche] = useState(false);
   const today = new Date().toISOString().split('T')[0];
 
   useEffect(() => { loadData(); }, []);
@@ -115,10 +118,12 @@ export default function Umzuege() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [data, mitglieder] = await Promise.all([
+      const [data, mitglieder, einstellungen] = await Promise.all([
         base44.entities.Veranstaltung.list('datum', 500),
         base44.entities.Mitglied.list('nachname', 500),
+        base44.entities.AppEinstellung.filter({ schluessel: 'busverantwortliche' }),
       ]);
+      if (einstellungen[0]) setBusverantwortlicheIds(einstellungen[0].wert_ids || []);
       const extern = data.filter(v => v.typ === 'Umzug' || v.typ === 'Abendveranstaltung');
       setUmzuege(extern.sort((a, b) => a.datum.localeCompare(b.datum)));
       setAlleMitglieder(mitglieder);
@@ -140,7 +145,7 @@ export default function Umzuege() {
       titel: '', typ: 'Umzug', datum: '', uhrzeit: '', ort: '',
       beschreibung: '', anmeldeschluss: '', bus_erforderlich: true,
       anmeldung_aktiv: true, status: 'Geplant', bus_rueckfahrtszeit: '',
-      verantwortliche_ids: [],
+      verantwortliche_ids: [...busverantwortlicheIds],
     });
     setShowForm(true);
   };
@@ -158,10 +163,11 @@ export default function Umzuege() {
     setShowForm(true);
   };
 
-  // Ist der aktuelle User Verantwortlicher für einen Termin?
+  // Ist der aktuelle User Verantwortlicher? (termin-spezifisch ODER globaler Busverantwortlicher)
   const istVerantwortlicher = (veranstaltung) => {
     if (!myMitglied) return false;
-    return (veranstaltung.verantwortliche_ids || []).includes(myMitglied.id);
+    return (veranstaltung.verantwortliche_ids || []).includes(myMitglied.id)
+      || busverantwortlicheIds.includes(myMitglied.id);
   };
 
   const handleSave = async () => {
@@ -238,12 +244,21 @@ export default function Umzuege() {
           <p className="text-sm text-muted-foreground mt-0.5">Umzüge & Abendveranstaltungen · {kommende.length} kommend</p>
         </div>
         {admin && (
-          <button
-            onClick={openNew}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
-          >
-            <Plus size={16} /> <span className="hidden sm:inline">Neuer Termin</span>
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowBusverantwortliche(true)}
+              title="Busverantwortliche verwalten"
+              className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground hover:bg-border transition-colors"
+            >
+              <Settings size={16} />
+            </button>
+            <button
+              onClick={openNew}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+            >
+              <Plus size={16} /> <span className="hidden sm:inline">Neuer Termin</span>
+            </button>
+          </div>
         )}
       </div>
 
@@ -387,6 +402,17 @@ export default function Umzuege() {
           <p className="text-muted-foreground">Keine auswärtigen Termine gefunden</p>
           {admin && <button onClick={openNew} className="mt-3 text-sm text-primary hover:underline">Ersten Termin erstellen</button>}
         </div>
+      )}
+
+      {/* Busverantwortliche Modal */}
+      {showBusverantwortliche && (
+        <BusverantwortlicheModal
+          mitglieder={alleMitglieder}
+          onClose={(newIds) => {
+            setShowBusverantwortliche(false);
+            if (newIds !== null) setBusverantwortlicheIds(newIds);
+          }}
+        />
       )}
 
       {/* Check-In Modal */}
