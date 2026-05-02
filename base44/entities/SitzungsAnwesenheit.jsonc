@@ -1,0 +1,25 @@
+{
+  "name": "SitzungsAnwesenheit",
+  "type": "object",
+  "properties": {
+    "termin_id": {
+      "type": "string"
+    },
+    "mitglied_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Anwesend",
+        "Entschuldigt",
+        "Unentschuldigt"
+      ],
+      "default": "Anwesend"
+    }
+  },
+  "required": [
+    "termin_id",
+    "mitglied_id"
+  ]
+}

@@ -4,10 +4,11 @@ import { useAuth } from '@/lib/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import {
   ClipboardList, CheckSquare, FileText, Lock, Plus, X, Save,
-  Trash2, ChevronDown, ChevronUp, Circle, CheckCircle2, Clock, AlertCircle
+  Trash2, ChevronDown, ChevronUp, Circle, CheckCircle2, Clock, AlertCircle, Users, ChevronRight
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import AusschussMitgliederTab from '@/components/ausschuss/AusschussMitgliederTab';
 
 const AUSSCHUSS_ROLLEN = ['vorstand', 'stellv_vorstand', 'admin', 'ausschuss', 'spartenleiter'];
 
@@ -35,6 +36,7 @@ export default function Ausschuss() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('sitzungen');
+  const isAdmin = user?.role === 'admin' || user?.role === 'vorstand' || user?.role === 'stellv_vorstand';
   const [termine, setTermine] = useState([]);
   const [aufgaben, setAufgaben] = useState([]);
   const [beschluesse, setBeschluesse] = useState([]);
@@ -121,6 +123,7 @@ export default function Ausschuss() {
           { id: 'sitzungen', label: '📋 Sitzungen' },
           { id: 'aufgaben', label: `✅ Aufgaben (${offeneAufgaben.length})` },
           { id: 'beschluesse', label: '⚖️ Beschlüsse' },
+          { id: 'mitglieder', label: '👥 Ausschuss' },
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}>
@@ -160,6 +163,11 @@ export default function Ausschuss() {
             </div>
           )}
         </div>
+      )}
+
+      {/* AUSSCHUSSMITGLIEDER */}
+      {activeTab === 'mitglieder' && (
+        <AusschussMitgliederTab mitglieder={mitglieder} isAdmin={isAdmin} />
       )}
 
       {/* AUFGABEN */}
@@ -263,10 +271,10 @@ export default function Ausschuss() {
 }
 
 function SitzungsKarte({ termin, aufgaben, vergangen }) {
-  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden">
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 px-4 py-3 text-left">
+    <div className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary/40 transition-colors">
+      <button onClick={() => navigate(`/ausschuss/sitzung/${termin.id}`)} className="w-full flex items-center gap-3 px-4 py-3 text-left">
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex flex-col items-center justify-center shrink-0">
           <span className="text-[9px] text-muted-foreground">{format(new Date(termin.datum), 'MMM', { locale: de })}</span>
           <span className="text-sm font-bold text-primary">{format(new Date(termin.datum), 'd')}</span>
@@ -279,13 +287,8 @@ function SitzungsKarte({ termin, aufgaben, vergangen }) {
             {aufgaben.length > 0 && <span className="text-orange-400">📋 {aufgaben.length} Aufgaben</span>}
           </div>
         </div>
-        {open ? <ChevronUp size={14} className="text-muted-foreground shrink-0" /> : <ChevronDown size={14} className="text-muted-foreground shrink-0" />}
+        <ChevronRight size={15} className="text-muted-foreground shrink-0" />
       </button>
-      {open && termin.beschreibung && (
-        <div className="px-4 pb-3">
-          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{termin.beschreibung}</p>
-        </div>
-      )}
     </div>
   );
 }

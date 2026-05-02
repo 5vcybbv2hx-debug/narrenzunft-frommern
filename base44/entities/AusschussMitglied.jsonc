@@ -1,0 +1,33 @@
+{
+  "name": "AusschussMitglied",
+  "type": "object",
+  "properties": {
+    "mitglied_id": {
+      "type": "string",
+      "description": "ID des verkn\u00fcpften Mitglieds"
+    },
+    "rolle": {
+      "type": "string",
+      "enum": [
+        "Vorsitzender",
+        "Stellv. Vorsitzender",
+        "Schriftf\u00fchrer",
+        "Kassierer",
+        "Beisitzer",
+        "Jugendleiter",
+        "Sonstiges"
+      ],
+      "default": "Beisitzer"
+    },
+    "aktiv": {
+      "type": "boolean",
+      "default": true
+    },
+    "notizen": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "mitglied_id"
+  ]
+}

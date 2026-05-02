@@ -33,6 +33,7 @@ import Datenqualitaet from './pages/Datenqualitaet';
 import Kalender from './pages/Kalender';
 import Ausschuss from './pages/Ausschuss';
 import BusfahrerInfo from './pages/BusfahrerInfo';
+import SitzungDetail from './pages/SitzungDetail';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -92,6 +93,7 @@ const AuthenticatedApp = () => {
         <Route path="/datenqualitaet" element={<Datenqualitaet />} />
         <Route path="/kalender" element={<Kalender />} />
         <Route path="/ausschuss" element={<Ausschuss />} />
+        <Route path="/ausschuss/sitzung/:id" element={<SitzungDetail />} />
       </Route>
       <Route path="/busfahrer/:token" element={<BusfahrerInfo />} />
       <Route path="*" element={<PageNotFound />} />

@@ -1,0 +1,40 @@
+{
+  "name": "Tagesordnungspunkt",
+  "type": "object",
+  "properties": {
+    "termin_id": {
+      "type": "string",
+      "description": "ID des KalenderTermins (Sitzung)"
+    },
+    "reihenfolge": {
+      "type": "number",
+      "default": 1
+    },
+    "titel": {
+      "type": "string"
+    },
+    "beschreibung": {
+      "type": "string"
+    },
+    "notizen": {
+      "type": "string",
+      "description": "Ergebnis / Protokollnotiz"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Offen",
+        "Besprochen",
+        "Vertagt"
+      ],
+      "default": "Offen"
+    },
+    "verantwortlicher_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "termin_id",
+    "titel"
+  ]
+}

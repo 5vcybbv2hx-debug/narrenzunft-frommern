@@ -1,0 +1,25 @@
+{
+  "name": "AbstimmungsStimme",
+  "type": "object",
+  "properties": {
+    "abstimmung_id": {
+      "type": "string"
+    },
+    "mitglied_id": {
+      "type": "string"
+    },
+    "stimme": {
+      "type": "string",
+      "enum": [
+        "Ja",
+        "Nein",
+        "Enthaltung"
+      ],
+      "default": "Enthaltung"
+    }
+  },
+  "required": [
+    "abstimmung_id",
+    "mitglied_id"
+  ]
+}
