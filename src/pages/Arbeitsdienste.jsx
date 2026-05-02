@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannArbeitsdiensteVerwalten } from '@/lib/roles';
-import { Briefcase, Plus, Calendar, MapPin, Users, Edit, X, Save, Trash2, Search, UserPlus } from 'lucide-react';
+import { Briefcase, Plus, Calendar, MapPin, Users, Edit, X, Save, Trash2, Search, UserPlus, Bookmark } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -238,6 +238,34 @@ function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen, onClose, onSa
   const [saving, setSaving] = useState(false);
   const [suche, setSuche] = useState('');
   const [addingId, setAddingId] = useState(null);
+  const [vorlagen, setVorlagen] = useState([]);
+  const [selectedVorlage, setSelectedVorlage] = useState('');
+  const [vorlageSaving, setVorlageSaving] = useState(false);
+  const [vorlageSaved, setVorlageSaved] = useState(false);
+
+  useEffect(() => {
+    base44.entities.Veranstaltungsvorlage.list('name', 100).then(setVorlagen).catch(() => {});
+  }, []);
+
+  const handleUebertrageInVorlage = async () => {
+    if (!selectedVorlage) return;
+    setVorlageSaving(true);
+    try {
+      const vorlage = vorlagen.find(v => v.id === selectedVorlage);
+      if (!vorlage) return;
+      const vorhandene = vorlage.arbeitsdienst_vorlagen || [];
+      // Existierenden Eintrag mit gleichem Titel ersetzen, sonst anhängen
+      const idx = vorhandene.findIndex(a => a.titel?.toLowerCase() === form.titel?.toLowerCase());
+      const neuerEintrag = { titel: form.titel, beschreibung: form.beschreibung || '', benoetigte_personen: form.benoetigte_personen || '' };
+      const aktualisiert = idx >= 0
+        ? vorhandene.map((a, i) => i === idx ? neuerEintrag : a)
+        : [...vorhandene, neuerEintrag];
+      await base44.entities.Veranstaltungsvorlage.update(selectedVorlage, { arbeitsdienst_vorlagen: aktualisiert });
+      setVorlageSaved(true);
+      setTimeout(() => setVorlageSaved(false), 2500);
+    } catch (e) {}
+    setVorlageSaving(false);
+  };
 
   const set = (f, v) => setForm(p => ({ ...p, [f]: v }));
 
@@ -349,6 +377,35 @@ function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen, onClose, onSa
                 rows={2} className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary resize-none" />
             </div>
           </div>
+
+          {/* In Veranstaltungsvorlage übertragen */}
+          {vorlagen.length > 0 && (
+            <div className="border-t border-border pt-4">
+              <p className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                <Bookmark size={15} className="text-primary" /> In Veranstaltungsvorlage übertragen
+              </p>
+              <p className="text-xs text-muted-foreground mb-2">Aktualisiert diesen Arbeitsdienst in der gewählten Vorlage (oder fügt ihn neu hinzu).</p>
+              <div className="flex gap-2">
+                <select
+                  value={selectedVorlage}
+                  onChange={e => setSelectedVorlage(e.target.value)}
+                  className="flex-1 px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+                >
+                  <option value="">Vorlage wählen...</option>
+                  {vorlagen.map(v => (
+                    <option key={v.id} value={v.id}>{v.name}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleUebertrageInVorlage}
+                  disabled={!selectedVorlage || vorlageSaving}
+                  className="px-3 py-2 rounded-lg bg-primary/10 text-primary text-sm font-semibold hover:bg-primary/20 transition-colors disabled:opacity-50 shrink-0"
+                >
+                  {vorlageSaved ? '✓ Gespeichert' : vorlageSaving ? '...' : 'Übertragen'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Mitglieder einteilen */}
           <div className="border-t border-border pt-4">
