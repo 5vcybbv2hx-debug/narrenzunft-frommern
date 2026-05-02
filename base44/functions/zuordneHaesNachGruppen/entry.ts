@@ -23,33 +23,42 @@ Deno.serve(async (req) => {
     
     // Spalten nach Position (0-basiert)
     const hasnummerIdx = 0;   // Spalte A
+    const vornameIdx = 1;     // Spalte B
+    const nachnameIdx = 2;    // Spalte C
     const gruppeIdx = 2;      // Spalte C (Sparte)
 
-    // Lade Häsgruppen und Häs
-    const [allGruppen, allHaes] = await Promise.all([
+    // Lade Häsgruppen, Häs und Mitglieder
+    const [allGruppen, allHaes, allMitglieder] = await Promise.all([
       base44.entities.Haesgruppe.list("name", 100),
       base44.entities.Haes.list("haesnummer", 1000),
+      base44.entities.Mitglied.list("nachname", 500),
     ]);
 
     // Maps erstellen
     const gruppeMap = new Map(allGruppen.map(g => [g.name.toLowerCase(), g.id]));
     const haesMap = new Map(allHaes.map(h => [h.haesnummer, h.id]));
+    const mitgliedMap = new Map(allMitglieder.map(m => [
+      `${m.nachname.toLowerCase()}|${m.vorname.toLowerCase()}`,
+      m.id
+    ]));
 
     let results = {
-      haesGruppe_updated: 0,
-      haesGruppe_failed: 0,
+      haes_updated: 0,
+      haes_failed: 0,
       processed: 0,
     };
 
     // Sammle alle Updates
     const updates = [];
     
-    for (let i = 99; i < lines.length; i++) {
+    for (let i = 1; i < lines.length; i++) {
       const cols = lines[i].split(",").map(c => c.trim());
       const hasnummernRaw = cols[hasnummerIdx]?.trim();
       
       if (!hasnummernRaw || hasnummernRaw === "0") continue;
       
+      const vornameRaw = cols[vornameIdx]?.trim();
+      const nachnameRaw = cols[nachnameIdx]?.trim();
       const gruppeRaw = cols[gruppeIdx]?.trim();
 
       // Parse Häsnummern (komma- oder & separiert)
@@ -58,6 +67,13 @@ Deno.serve(async (req) => {
         : [];
 
       if (hasnummern.length === 0) continue;
+
+      // Mitglied finden
+      let mitgliedId = null;
+      if (vornameRaw && nachnameRaw) {
+        const key = `${nachnameRaw.toLowerCase()}|${vornameRaw.toLowerCase()}`;
+        mitgliedId = mitgliedMap.get(key);
+      }
 
       // Häsgruppe aus Name ermitteln
       let gruppeId = null;
@@ -75,11 +91,11 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Sammle Updates
+      // Sammle Updates (nur wenn beide vorhanden)
       for (const hasNum of hasnummern) {
         const haesId = haesMap.get(hasNum);
-        if (haesId && gruppeId) {
-          updates.push({ haesId, hasNum, gruppeId });
+        if (haesId && gruppeId && mitgliedId) {
+          updates.push({ haesId, hasNum, gruppeId, mitgliedId });
         }
       }
 
@@ -94,12 +110,13 @@ Deno.serve(async (req) => {
       await Promise.all(batch.map(async (upd) => {
         try {
           await base44.entities.Haes.update(upd.haesId, {
-            status: "Aktiv",
+            status: "Verliehen",
             haesgruppe_id: upd.gruppeId,
+            aktueller_besitzer_id: upd.mitgliedId,
           });
-          results.haesGruppe_updated++;
+          results.haes_updated++;
         } catch (e) {
-          results.haesGruppe_failed++;
+          results.haes_failed++;
           console.log(`Fehler bei Häs ${upd.hasNum}:`, e.message);
         }
       }));
