@@ -92,7 +92,7 @@ function VerantwortlicheAuswahl({ mitglieder, selected, onChange, haeufige }) {
 const EMPTY_FORM = {
   titel: '', typ: 'Umzug', datum: '', uhrzeit: '', ort: '',
   beschreibung: '', anmeldeschluss: '', bus_erforderlich: true,
-  anmeldung_aktiv: true, status: 'Geplant',
+  anmeldung_aktiv: true, status: 'Geplant', externer_verein_id: '',
 };
 
 export default function Umzuege() {
@@ -111,6 +111,7 @@ export default function Umzuege() {
   const [alleMitglieder, setAlleMitglieder] = useState([]);
   const [busverantwortlicheIds, setBusverantwortlicheIds] = useState([]);
   const [showBusverantwortliche, setShowBusverantwortliche] = useState(false);
+  const [externe_vereine, setExterneVereine] = useState([]);
   const today = new Date().toISOString().split('T')[0];
 
   useEffect(() => { loadData(); }, []);
@@ -118,14 +119,16 @@ export default function Umzuege() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [data, mitglieder, einstellungen] = await Promise.all([
+      const [data, mitglieder, einstellungen, vereine] = await Promise.all([
         base44.entities.Veranstaltung.list('datum', 500),
         base44.entities.Mitglied.list('nachname', 500),
         base44.entities.AppEinstellung.filter({ schluessel: 'busverantwortliche' }),
+        base44.entities.ExternerVerein.list('name', 500),
       ]);
       if (einstellungen[0]) setBusverantwortlicheIds(einstellungen[0].wert_ids || []);
       const extern = data.filter(v => v.typ === 'Umzug' || v.typ === 'Abendveranstaltung');
       setUmzuege(extern.sort((a, b) => a.datum.localeCompare(b.datum)));
+      setExterneVereine(vereine);
       setAlleMitglieder(mitglieder);
 
       const me = await base44.auth.me();
@@ -145,7 +148,7 @@ export default function Umzuege() {
       titel: '', typ: 'Umzug', datum: '', uhrzeit: '', ort: '',
       beschreibung: '', anmeldeschluss: '', bus_erforderlich: true,
       anmeldung_aktiv: true, status: 'Geplant', bus_rueckfahrtszeit: '',
-      verantwortliche_ids: [...busverantwortlicheIds],
+      verantwortliche_ids: [...busverantwortlicheIds], externer_verein_id: '',
     });
     setShowForm(true);
   };
@@ -158,7 +161,7 @@ export default function Umzuege() {
       anmeldeschluss: u.anmeldeschluss || '', bus_erforderlich: u.bus_erforderlich || false,
       anmeldung_aktiv: u.anmeldung_aktiv !== false, status: u.status || 'Geplant',
       bus_rueckfahrtszeit: u.bus_rueckfahrtszeit || '',
-      verantwortliche_ids: u.verantwortliche_ids || [],
+      verantwortliche_ids: u.verantwortliche_ids || [], externer_verein_id: u.externer_verein_id || '',
     });
     setShowForm(true);
   };
@@ -555,6 +558,22 @@ export default function Umzuege() {
                   <input type="checkbox" checked={form.anmeldung_aktiv} onChange={e => setForm(p => ({ ...p, anmeldung_aktiv: e.target.checked }))} className="rounded" />
                   Anmeldung aktiv
                 </label>
+              </div>
+
+              {/* Externer Verein */}
+              <div className="border-t border-border pt-3 pb-3">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block mb-2">
+                  🤝 Einladung von Verein
+                </label>
+                <select
+                  value={form.externer_verein_id || ''}
+                  onChange={e => setForm(p => ({ ...p, externer_verein_id: e.target.value }))}
+                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary mb-2"
+                >
+                  <option value="">– Kein externer Verein –</option>
+                  {externe_vereine.map(v => <option key={v.id} value={v.id}>{v.name} ({v.stadt})</option>)}
+                </select>
+                <p className="text-xs text-muted-foreground">Oder <a href="/vereine" target="_blank" className="text-primary hover:underline">neuen Verein hinzufügen</a></p>
               </div>
 
               {/* Verantwortliche */}

@@ -35,6 +35,7 @@ import Ausschuss from './pages/Ausschuss';
 import BusfahrerInfo from './pages/BusfahrerInfo';
 import SitzungDetail from './pages/SitzungDetail';
 import FamilienDashboard from './pages/FamilienDashboard';
+import Vereine from './pages/Vereine';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -96,6 +97,7 @@ const AuthenticatedApp = () => {
         <Route path="/ausschuss" element={<Ausschuss />} />
         <Route path="/ausschuss/sitzung/:id" element={<SitzungDetail />} />
         <Route path="/familie" element={<FamilienDashboard />} />
+        <Route path="/vereine" element={<Vereine />} />
       </Route>
       <Route path="/busfahrer/:token" element={<BusfahrerInfo />} />
       <Route path="*" element={<PageNotFound />} />

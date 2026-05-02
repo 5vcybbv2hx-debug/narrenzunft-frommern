@@ -1,0 +1,33 @@
+{
+  "name": "ExternerVerein",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name des Vereins/der Zunft"
+    },
+    "stadt": {
+      "type": "string",
+      "description": "Stadt/Ort des Vereins"
+    },
+    "telefon": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "kontaktperson": {
+      "type": "string",
+      "description": "Name des Ansprechpartners"
+    },
+    "website": {
+      "type": "string"
+    },
+    "notizen": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}
