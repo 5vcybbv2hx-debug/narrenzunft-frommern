@@ -27,11 +27,12 @@ export default function Arbeitsdienste() {
   const [dienste, setDienste] = useState([]);
   const [zuweisungen, setZuweisungen] = useState([]);
   const [mitglieder, setMitglieder] = useState([]);
+  const [veranstaltungen, setVeranstaltungen] = useState([]);
   const [myMitglied, setMyMitglied] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('Alle');
   const [editDienst, setEditDienst] = useState(null);
-  const [expandedDates, setExpandedDates] = useState({});
+  const [expandedEvents, setExpandedEvents] = useState({});
   const kannVerwalten = kannArbeitsdiensteVerwalten(user);
   const today = new Date().toISOString().split('T')[0];
 
@@ -40,14 +41,16 @@ export default function Arbeitsdienste() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [d, z, m] = await Promise.all([
+      const [d, z, m, v] = await Promise.all([
         base44.entities.Arbeitsdienst.list('datum', 200),
         base44.entities.ArbeitsdienstZuweisung.list('-created_date', 500),
         base44.entities.Mitglied.list('nachname', 500),
+        base44.entities.Veranstaltung.list('datum', 200),
       ]);
       setDienste(d);
       setZuweisungen(z);
       setMitglieder(m);
+      setVeranstaltungen(v);
 
       const me = await base44.auth.me();
       const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
@@ -79,15 +82,22 @@ export default function Arbeitsdienste() {
       return aKey.localeCompare(bKey);
     });
 
-  // Gruppiere nach Datum
+  // Gruppiere nach Veranstaltung (und nicht zugeordnete Dienste)
   const grouped = filtered.reduce((acc, d) => {
-    const datum = d.datum || 'Kein Datum';
-    if (!acc[datum]) acc[datum] = [];
-    acc[datum].push(d);
+    const key = d.veranstaltung_id || '_keine';
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(d);
     return acc;
   }, {});
 
-  const sortedDates = Object.keys(grouped).sort();
+  // Sortiere nach Veranstaltungsdatum oder Dienstdatum
+  const sortedKeys = Object.keys(grouped).sort((a, b) => {
+    const aEvent = a === '_keine' ? null : veranstaltungen.find(v => v.id === a);
+    const bEvent = b === '_keine' ? null : veranstaltungen.find(v => v.id === b);
+    const aDate = aEvent?.datum || grouped[a][0]?.datum || '9999-12-31';
+    const bDate = bEvent?.datum || grouped[b][0]?.datum || '9999-12-31';
+    return aDate.localeCompare(bDate);
+  });
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
@@ -129,31 +139,34 @@ export default function Arbeitsdienste() {
       </div>
 
       <div className="space-y-3">
-        {sortedDates.map(datum => {
-          const diensteAmDatum = grouped[datum];
-          const isExpanded = expandedDates[datum] !== false; // Default: expanded
-          const allZuweisungen = diensteAmDatum.reduce((sum, d) => sum + getZuweisungen(d.id).filter(z => z.status !== 'Abgesagt').length, 0);
+        {sortedKeys.map(eventKey => {
+          const dienste_event = grouped[eventKey];
+          const event = eventKey === '_keine' ? null : veranstaltungen.find(v => v.id === eventKey);
+          const isExpanded = expandedEvents[eventKey] !== false; // Default: expanded
+          const allZuweisungen = dienste_event.reduce((sum, d) => sum + getZuweisungen(d.id).filter(z => z.status !== 'Abgesagt').length, 0);
           
           return (
-            <div key={datum}>
-              {/* Datum Header (Klappbar) */}
+            <div key={eventKey}>
+              {/* Veranstaltungs Header (Klappbar) */}
               <button
-                onClick={() => setExpandedDates(p => ({ ...p, [datum]: !p[datum] }))}
+                onClick={() => setExpandedEvents(p => ({ ...p, [eventKey]: !p[eventKey] }))}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary/50 border border-border hover:border-primary/40 transition-all group"
               >
                 {isExpanded ? <ChevronUp size={18} className="text-primary" /> : <ChevronDown size={18} className="text-muted-foreground" />}
                 <div className="flex-1 text-left">
                   <p className="font-semibold text-foreground">
-                    {datum === 'Kein Datum' ? 'Kein Datum' : format(new Date(datum), 'EEEE, dd. MMMM yyyy', { locale: de })}
+                    {event ? event.titel : 'Keine Veranstaltung zugeordnet'}
                   </p>
-                  <p className="text-xs text-muted-foreground">{diensteAmDatum.length} Dienst{diensteAmDatum.length !== 1 ? 'e' : ''} · {allZuweisungen} eingeteilt</p>
+                  <p className="text-xs text-muted-foreground">
+                    {event ? format(new Date(event.datum), 'dd.MM.yyyy', { locale: de }) : 'N/A'} · {dienste_event.length} Dienst{dienste_event.length !== 1 ? 'e' : ''} · {allZuweisungen} eingeteilt
+                  </p>
                 </div>
               </button>
 
               {/* Dienste (Ausgeklappt) */}
               {isExpanded && (
                 <div className="space-y-2 mt-2 ml-1 pl-3 border-l border-primary/30">
-                  {diensteAmDatum.map(d => {
+                  {dienste_event.map(d => {
                     const zuws = getZuweisungen(d.id);
                     const meineZ = meineZuweisung(d.id);
 
