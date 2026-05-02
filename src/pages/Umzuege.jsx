@@ -2,11 +2,63 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
-import { Bus, Car, Clock, MapPin, Check, Plus, X, Edit, Trash2, Save, ChevronDown, ChevronUp } from 'lucide-react';
+import { Bus, Car, Clock, MapPin, Check, Plus, X, Edit, Trash2, Save, ChevronDown, ChevronUp, ClipboardCheck } from 'lucide-react';
 import { VeranstaltungsDetailsForm, VeranstaltungsDetailsView } from '@/components/veranstaltung/VeranstaltungsDetails';
 import AdresseAutocomplete from '@/components/AdresseAutocomplete';
+import UmzugCheckinModal from '@/components/umzug/UmzugCheckinModal';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+
+function VerantwortlicheAuswahl({ mitglieder, selected, onChange }) {
+  const [suche, setSuche] = useState('');
+  const aktive = mitglieder.filter(m => ['Aktiv', 'Passiv mit Häs'].includes(m.mitgliedsstatus));
+  const gefiltert = aktive.filter(m =>
+    `${m.vorname} ${m.nachname}`.toLowerCase().includes(suche.toLowerCase())
+  );
+  const toggle = (id) => {
+    if (selected.includes(id)) onChange(selected.filter(s => s !== id));
+    else onChange([...selected, id]);
+  };
+  return (
+    <div>
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {selected.map(id => {
+            const m = mitglieder.find(m => m.id === id);
+            return m ? (
+              <span key={id} className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/20 text-primary text-xs font-medium">
+                {m.vorname} {m.nachname}
+                <button onClick={() => toggle(id)} className="hover:text-destructive transition-colors"><X size={10} /></button>
+              </span>
+            ) : null;
+          })}
+        </div>
+      )}
+      <input
+        type="text"
+        placeholder="Mitglied suchen..."
+        value={suche}
+        onChange={e => setSuche(e.target.value)}
+        className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary mb-1"
+      />
+      {suche.length > 0 && (
+        <div className="bg-card border border-border rounded-xl max-h-36 overflow-y-auto">
+          {gefiltert.slice(0, 8).map(m => (
+            <button key={m.id} onClick={() => { toggle(m.id); setSuche(''); }}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left border-b border-border last:border-0 transition-colors ${selected.includes(m.id) ? 'bg-primary/10 text-primary' : 'hover:bg-secondary text-foreground'}`}>
+              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[10px] font-bold shrink-0">
+                {m.vorname?.[0]}{m.nachname?.[0]}
+              </div>
+              {m.vorname} {m.nachname}
+              {selected.includes(m.id) && <Check size={12} className="ml-auto text-primary" />}
+            </button>
+          ))}
+          {gefiltert.length === 0 && <p className="text-xs text-muted-foreground px-3 py-2">Keine Ergebnisse</p>}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const EMPTY_FORM = {
   titel: '', typ: 'Umzug', datum: '', uhrzeit: '', ort: '',
@@ -26,6 +78,8 @@ export default function Umzuege() {
   const [form, setForm] = useState({ ...EMPTY_FORM, bus_rueckfahrtszeit: '' });
   const [saving, setSaving] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
+  const [checkinVeranstaltung, setCheckinVeranstaltung] = useState(null);
+  const [alleMitglieder, setAlleMitglieder] = useState([]);
   const today = new Date().toISOString().split('T')[0];
 
   useEffect(() => { loadData(); }, []);
@@ -33,12 +87,16 @@ export default function Umzuege() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = await base44.entities.Veranstaltung.list('datum', 500);
+      const [data, mitglieder] = await Promise.all([
+        base44.entities.Veranstaltung.list('datum', 500),
+        base44.entities.Mitglied.list('nachname', 500),
+      ]);
       const extern = data.filter(v => v.typ === 'Umzug' || v.typ === 'Abendveranstaltung');
       setUmzuege(extern.sort((a, b) => a.datum.localeCompare(b.datum)));
+      setAlleMitglieder(mitglieder);
 
       const me = await base44.auth.me();
-      const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
+      const myM = mitglieder.filter(m => m.user_id === me?.id);
       if (myM[0]) {
         setMyMitglied(myM[0]);
         const anmeldungen = await base44.entities.Teilnahme.filter({ mitglied_id: myM[0].id });
@@ -53,7 +111,8 @@ export default function Umzuege() {
     setForm({
       titel: '', typ: 'Umzug', datum: '', uhrzeit: '', ort: '',
       beschreibung: '', anmeldeschluss: '', bus_erforderlich: true,
-      anmeldung_aktiv: true, status: 'Geplant', bus_rueckfahrtszeit: ''
+      anmeldung_aktiv: true, status: 'Geplant', bus_rueckfahrtszeit: '',
+      verantwortliche_ids: [],
     });
     setShowForm(true);
   };
@@ -65,9 +124,16 @@ export default function Umzuege() {
       uhrzeit: u.uhrzeit || '', ort: u.ort || '', beschreibung: u.beschreibung || '',
       anmeldeschluss: u.anmeldeschluss || '', bus_erforderlich: u.bus_erforderlich || false,
       anmeldung_aktiv: u.anmeldung_aktiv !== false, status: u.status || 'Geplant',
-      bus_rueckfahrtszeit: u.bus_rueckfahrtszeit || ''
+      bus_rueckfahrtszeit: u.bus_rueckfahrtszeit || '',
+      verantwortliche_ids: u.verantwortliche_ids || [],
     });
     setShowForm(true);
+  };
+
+  // Ist der aktuelle User Verantwortlicher für einen Termin?
+  const istVerantwortlicher = (veranstaltung) => {
+    if (!myMitglied) return false;
+    return (veranstaltung.verantwortliche_ids || []).includes(myMitglied.id);
   };
 
   const handleSave = async () => {
@@ -202,6 +268,18 @@ export default function Umzuege() {
                     </div>
                   )}
 
+                  {/* Check-In Button für Admins und Verantwortliche */}
+                  {(admin || istVerantwortlicher(u)) && (
+                    <div className="px-4 pb-3">
+                      <button
+                        onClick={() => setCheckinVeranstaltung(u)}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary/10 border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/20 transition-colors"
+                      >
+                        <ClipboardCheck size={15} /> Anwesenheit erfassen
+                      </button>
+                    </div>
+                  )}
+
                   {myMitglied && u.anmeldung_aktiv && (
                     <div className="px-4 pb-4">
                       {!isAngemeldet ? (
@@ -268,6 +346,14 @@ export default function Umzuege() {
           <p className="text-muted-foreground">Keine auswärtigen Termine gefunden</p>
           {admin && <button onClick={openNew} className="mt-3 text-sm text-primary hover:underline">Ersten Termin erstellen</button>}
         </div>
+      )}
+
+      {/* Check-In Modal */}
+      {checkinVeranstaltung && (
+        <UmzugCheckinModal
+          veranstaltung={checkinVeranstaltung}
+          onClose={() => setCheckinVeranstaltung(null)}
+        />
       )}
 
       {/* Erstellen / Bearbeiten Modal */}
@@ -402,6 +488,19 @@ export default function Umzuege() {
                   <input type="checkbox" checked={form.anmeldung_aktiv} onChange={e => setForm(p => ({ ...p, anmeldung_aktiv: e.target.checked }))} className="rounded" />
                   Anmeldung aktiv
                 </label>
+              </div>
+
+              {/* Verantwortliche */}
+              <div className="border-t border-border pt-3">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block mb-2">
+                  👤 Verantwortliche
+                </label>
+                <p className="text-xs text-muted-foreground mb-2">Verantwortliche können die Anwesenheit erfassen.</p>
+                <VerantwortlicheAuswahl
+                  mitglieder={alleMitglieder}
+                  selected={form.verantwortliche_ids || []}
+                  onChange={(ids) => setForm(p => ({ ...p, verantwortliche_ids: ids }))}
+                />
               </div>
             </div>
 
