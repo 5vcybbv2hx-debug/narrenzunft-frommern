@@ -21,30 +21,11 @@ Deno.serve(async (req) => {
     // Header parsen (Semicolon-separated)
     const header = lines[0].split(";").map(h => h.trim());
     
-    // Position der Spalten ermitteln (hardcoded nach Analyse)
-    const vornameIdx = 8; // Vorname
-    const nachnameIdx = 7; // Nachname
-    const statusIdx = 6; // Status
-    const hasnummerIdx = 17; // H*snummer(n) - encoding kaputt
-    const gruppeIdx = 31; // Maskengruppe
-
-    // Gebe Detail-Log zurück
-    const logIndices = {
-      hasnummerIdx,
-      gruppeIdx,
-      vornameIdx,
-      nachnameIdx,
-      statusIdx,
-      headerLength: header.length,
-      header: header.slice(0, 20), // First 20 columns
-    };
-    
-    if (hasnummerIdx === -1 || gruppeIdx === -1 || vornameIdx === -1 || nachnameIdx === -1) {
-      return Response.json({
-        error: "CSV-Spalten fehlen",
-        indices: logIndices,
-      }, { status: 400 });
-    }
+    // Spalten nach Position (0-basiert): A=0, B=1, C=2, D=3, E=4, ...
+    const hasnummerIdx = 0;   // Spalte A
+    const gruppeIdx = 2;      // Spalte C
+    const nachnameIdx = 3;    // Spalte D
+    const vornameIdx = 4;     // Spalte E
 
     // Lade alle Häsgruppen und Häs
     const [allGruppen, allHaes, allMitglieder] = await Promise.all([
@@ -71,12 +52,15 @@ Deno.serve(async (req) => {
       processed: 0,
     };
 
-    // Verarbeite CSV-Zeilen
-    for (let i = 1; i < lines.length; i++) {
+    // Verarbeite CSV-Zeilen (ab Zeile 99 = Index 98 haben Häsnummern)
+    for (let i = 99; i < lines.length; i++) {
       const cols = lines[i].split(";").map(c => c.trim());
+      const hasnummernRaw = cols[hasnummerIdx]?.trim();
+      
+      if (!hasnummernRaw || hasnummernRaw === "0") continue;
+      
       const vorname = cols[vornameIdx]?.trim();
       const nachname = cols[nachnameIdx]?.trim();
-      const hasnummernRaw = cols[hasnummerIdx]?.trim();
       const gruppeRaw = cols[gruppeIdx]?.trim();
 
       if (!vorname || !nachname) continue;
