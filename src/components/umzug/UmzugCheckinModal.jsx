@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { X, Check, Search, QrCode, Users, CheckCircle2, Circle } from 'lucide-react';
+import { X, Check, Search, QrCode, Users, CheckCircle2, UserPlus } from 'lucide-react';
 
 export default function UmzugCheckinModal({ veranstaltung, onClose }) {
   const [teilnahmen, setTeilnahmen] = useState([]);
@@ -8,7 +8,8 @@ export default function UmzugCheckinModal({ veranstaltung, onClose }) {
   const [loading, setLoading] = useState(true);
   const [suche, setSuche] = useState('');
   const [showQr, setShowQr] = useState(false);
-  const [saving, setSaving] = useState(null); // id of currently saving entry
+  const [saving, setSaving] = useState(null);
+  const [addingSpontan, setAddingSpontan] = useState(null); // mitglied_id being added
 
   useEffect(() => { load(); }, [veranstaltung.id]);
 
@@ -33,6 +34,19 @@ export default function UmzugCheckinModal({ veranstaltung, onClose }) {
     setSaving(null);
   };
 
+  const addSpontan = async (mitglied) => {
+    setAddingSpontan(mitglied.id);
+    const neu = await base44.entities.Teilnahme.create({
+      veranstaltung_id: veranstaltung.id,
+      mitglied_id: mitglied.id,
+      status: 'Anwesend',
+      bus: false,
+    });
+    setTeilnahmen(prev => [...prev, neu]);
+    setSuche('');
+    setAddingSpontan(null);
+  };
+
   const aktive = teilnahmen.filter(t => t.status !== 'Abgesagt');
   const anwesend = aktive.filter(t => t.status === 'Anwesend');
 
@@ -42,6 +56,15 @@ export default function UmzugCheckinModal({ veranstaltung, onClose }) {
     const name = `${m.vorname} ${m.nachname}`.toLowerCase();
     return name.includes(suche.toLowerCase());
   });
+
+  // Mitglieder die noch NICHT angemeldet sind und zum Suchbegriff passen
+  const bereitsAngemeldetIds = new Set(teilnahmen.map(t => t.mitglied_id));
+  const spontanVorschlaege = suche.length >= 2
+    ? mitglieder.filter(m =>
+        !bereitsAngemeldetIds.has(m.id) &&
+        `${m.vorname} ${m.nachname}`.toLowerCase().includes(suche.toLowerCase())
+      ).slice(0, 5)
+    : [];
 
   // QR-Code URL – öffnet öffentliche Check-In Seite (wenn vorhanden) oder einfach die App
   const qrUrl = `${window.location.origin}/checkin/${veranstaltung.id}`;
@@ -118,10 +141,11 @@ export default function UmzugCheckinModal({ veranstaltung, onClose }) {
               <div className="w-6 h-6 border-4 border-border border-t-primary rounded-full animate-spin" />
             </div>
           )}
-          {!loading && gefiltert.length === 0 && (
+          {!loading && gefiltert.length === 0 && spontanVorschlaege.length === 0 && (
             <div className="text-center py-8">
               <Users size={28} className="text-muted-foreground mx-auto mb-2" />
               <p className="text-sm text-muted-foreground">Keine Anmeldungen</p>
+              {suche.length >= 2 && <p className="text-xs text-muted-foreground mt-1">Person nicht gefunden oder bereits abgesagt</p>}
             </div>
           )}
           {gefiltert
@@ -171,6 +195,36 @@ export default function UmzugCheckinModal({ veranstaltung, onClose }) {
                 </button>
               );
             })}
+          {/* Spontan-Hinzufügen: nicht angemeldete Mitglieder */}
+          {!loading && spontanVorschlaege.length > 0 && (
+            <div className="mt-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 px-1">
+                Nicht angemeldet – trotzdem einchecken:
+              </p>
+              {spontanVorschlaege.map(m => (
+                <button
+                  key={m.id}
+                  onClick={() => addSpontan(m)}
+                  disabled={addingSpontan === m.id}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 transition-all mb-1.5 disabled:opacity-60"
+                >
+                  <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center font-bold text-sm shrink-0 text-primary">
+                    {m.vorname?.[0]}{m.nachname?.[0]}
+                  </div>
+                  <div className="flex-1 text-left min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{m.vorname} {m.nachname}</p>
+                    <p className="text-xs text-muted-foreground">{m.mitgliedsstatus} · nicht angemeldet</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-primary text-xs font-semibold shrink-0">
+                    {addingSpontan === m.id
+                      ? <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                      : <><UserPlus size={14} /> Einchecken</>
+                    }
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
