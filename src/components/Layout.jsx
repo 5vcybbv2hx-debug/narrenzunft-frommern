@@ -5,9 +5,10 @@ import { isAdmin, kannMitgliederlisteSehn, getRollenLabel } from '@/lib/roles';
 import {
   LayoutDashboard, Users, Shirt, Calendar, Briefcase,
   Award, CreditCard, Bus, Bell, Menu, X, ChevronRight,
-  LogOut, User, Search, MoreHorizontal, Shield, ClipboardList, AlertTriangle, Lock
+  LogOut, User, MoreHorizontal, Shield, ClipboardList, AlertTriangle, Lock
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import SecureSearch from './SecureSearch';
 
 // Desktop Sidebar - alle Links
 const sidebarNavItems = [
@@ -216,13 +217,13 @@ export default function Layout() {
           >
             <Menu size={20} />
           </button>
-          <div className="flex-1">
-            <h1 className="text-sm font-semibold text-foreground lg:hidden">Narrenzunft</h1>
+          <div className="hidden md:flex flex-1 max-w-sm">
+            <SecureSearch />
+          </div>
+          <div className="flex md:hidden flex-1">
+            <h1 className="text-sm font-semibold text-foreground">Narrenzunft</h1>
           </div>
           <div className="flex items-center gap-1">
-            <Link to="/suche" className="p-2 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors">
-              <Search size={18} />
-            </Link>
             <Link to="/benachrichtigungen" className="relative p-2 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors">
               <Bell size={18} />
               {notifications > 0 && (
