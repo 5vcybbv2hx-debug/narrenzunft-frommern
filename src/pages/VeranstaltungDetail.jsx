@@ -92,6 +92,14 @@ export default function VeranstaltungDetail() {
     setSaving(false);
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm('Veranstaltung wirklich löschen? Alle Teilnahmen und Arbeitsdienste bleiben erhalten.')) return;
+    try {
+      await base44.entities.Veranstaltung.delete(veranstaltung.id);
+      navigate('/veranstaltungen');
+    } catch (e) {}
+  };
+
   const handleAnmelden = async (bus = false) => {
     if (!myMitglied) return;
     try {
@@ -494,6 +502,24 @@ export default function VeranstaltungDetail() {
                   {generatingToken ? 'Wird erstellt...' : 'Busfahrer-Link erstellen'}
                 </button>
               )}
+            </div>
+          )}
+
+          {/* Löschen – nur für Admins */}
+          {isAdmin && !isNew && (
+            <div className="bg-card border border-destructive/30 rounded-xl p-5">
+              <h2 className="font-semibold text-foreground mb-1 flex items-center gap-2">
+                <Trash2 size={16} className="text-destructive" /> Veranstaltung löschen
+              </h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                Die Veranstaltung wird dauerhaft gelöscht. Tipp: Status auf „Abgeschlossen" setzen um sie zu archivieren.
+              </p>
+              <button
+                onClick={handleDelete}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-destructive/10 text-destructive text-sm font-semibold hover:bg-destructive/20 transition-colors"
+              >
+                <Trash2 size={14} /> Veranstaltung löschen
+              </button>
             </div>
           )}
 
