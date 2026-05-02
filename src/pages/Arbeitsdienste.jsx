@@ -65,12 +65,18 @@ export default function Arbeitsdienste() {
     } catch (e) {}
   };
 
-  const filtered = dienste.filter(d => {
-    if (filter === 'Alle') return true;
-    if (filter === 'Kommend') return d.datum >= today;
-    if (filter === 'Vergangen') return d.datum < today;
-    return d.status === filter;
-  });
+  const filtered = dienste
+    .filter(d => {
+      if (filter === 'Alle') return true;
+      if (filter === 'Kommend') return d.datum >= today;
+      if (filter === 'Vergangen') return d.datum < today;
+      return d.status === filter;
+    })
+    .sort((a, b) => {
+      const aKey = `${a.datum || ''}T${a.uhrzeit || '00:00'}`;
+      const bKey = `${b.datum || ''}T${b.uhrzeit || '00:00'}`;
+      return aKey.localeCompare(bKey);
+    });
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
