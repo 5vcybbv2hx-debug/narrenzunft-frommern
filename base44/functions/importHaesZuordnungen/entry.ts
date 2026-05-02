@@ -1,4 +1,3 @@
-import { parse } from "npm:csv-parse@5";
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.25";
 
 Deno.serve(async (req) => {
@@ -12,21 +11,42 @@ Deno.serve(async (req) => {
 
     const csvResponse = await fetch(csv_url);
     const csvText = await csvResponse.text();
+    const lines = csvText.split("\n").filter(l => l.trim());
 
-    const records = [];
-    await new Promise((resolve, reject) => {
-      parse(csvText, {
-        columns: true,
-        delimiter: ";",
-        skip_empty_lines: true,
-        on_record: (record) => records.push(record),
-        on_error: reject,
-        on_end: resolve,
-      });
-    });
+    if (lines.length < 2) {
+      return Response.json({ error: "CSV leer oder ungültig" }, { status: 400 });
+    }
 
-    // Verarbeite nur ein Batch
-    const batch = records.slice(offset, offset + limit);
+    // Parse Header
+    const header = lines[0].split(";").map(h => h.trim());
+    console.log("CSV Header:", header);
+
+    // Finde Spalten flexibel
+    const vornameIdx = header.findIndex(h => h.includes("Vorname"));
+    const nachnameIdx = header.findIndex(h => h.includes("Nachname"));
+    const hasnummerIdx = header.findIndex(h => h.includes("snummer"));
+
+    console.log("Indices:", { vornameIdx, nachnameIdx, hasnummerIdx });
+
+    if (vornameIdx === -1 || nachnameIdx === -1 || hasnummerIdx === -1) {
+      return Response.json({ 
+        error: "CSV-Spalten fehlen",
+        header: header,
+        expected: ["Vorname", "Nachname", "Hsnummer"]
+      }, { status: 400 });
+    }
+
+    // Lade alle Häs und Mitglieder
+    const [allHaes, allMitglieder] = await Promise.all([
+      base44.entities.Haes.list("haesnummer", 1000),
+      base44.entities.Mitglied.list("nachname", 500),
+    ]);
+
+    const haesMap = new Map(allHaes.map(h => [h.haesnummer, h.id]));
+    const mitgliedMap = new Map(
+      allMitglieder.map(m => [m.nachname.toLowerCase() + "|" + m.vorname.toLowerCase(), m.id])
+    );
+
     const results = {
       created: 0,
       updated: 0,
@@ -34,62 +54,42 @@ Deno.serve(async (req) => {
       processed: 0,
     };
 
-    for (const record of batch) {
-      if (!record.Mitgliedsnummer || !record["Hsnummer(n)"]) continue;
+    // Verarbeite Batch
+    for (let i = offset + 1; i < Math.min(offset + limit + 1, lines.length); i++) {
+      const cols = lines[i].split(";").map(c => c.trim());
+      const vorname = cols[vornameIdx]?.trim();
+      const nachname = cols[nachnameIdx]?.trim();
+      const hasnummernRaw = cols[hasnummerIdx]?.trim();
+      const hasnummern = hasnummernRaw?.split("&").map(h => h.trim()).filter(h => h && h !== "0") || [];
 
-      const hasnummern = record["Hsnummer(n)"]
-        .split("&")
-        .map((h) => h.trim())
-        .filter((h) => h && h !== "0");
+      if (!vorname || !nachname || hasnummern.length === 0) continue;
 
-      if (hasnummern.length === 0) continue;
-
-      try {
-        // Suche das Mitglied
-        const mitglieder = await base44.entities.Mitglied.filter({
-          "Mitgliedsnummer": record.Mitgliedsnummer
-        });
-
-        if (mitglieder.length === 0) {
-          results.failed++;
-          continue;
-        }
-
-        const mitglied = mitglieder[0];
-
-        // Für jede Häs-Nummer: finde die Häs und setze den Besitzer
-        for (const hasNum of hasnummern) {
-          const haes = await base44.entities.Haes.filter({
-            haesnummer: hasNum
-          });
-
-          if (haes.length > 0) {
-            await base44.entities.Haes.update(haes[0].id, {
-              aktueller_besitzer_id: mitglied.id
-            });
-            results.updated++;
-          }
-        }
-
-        results.processed++;
-      } catch (e) {
-        console.error(`Fehler bei Mitglied ${record.Mitgliedsnummer}:`, e.message);
+      const mitgliedId = mitgliedMap.get(nachname.toLowerCase() + "|" + vorname.toLowerCase());
+      if (!mitgliedId) {
         results.failed++;
+        continue;
       }
+
+      for (const hasNum of hasnummern) {
+        const haesId = haesMap.get(hasNum);
+        if (haesId) {
+          await base44.entities.Haes.update(haesId, { aktueller_besitzer_id: mitgliedId });
+          results.updated++;
+        }
+      }
+
+      results.processed++;
     }
 
     return Response.json({
       success: true,
       ...results,
-      total: records.length,
+      total: lines.length - 1,
       next_offset: offset + limit,
-      done: offset + limit >= records.length,
-      message: `Batch ${offset}-${offset + limit} von ${records.length} verarbeitet`
+      done: offset + limit >= lines.length - 1,
+      message: `Batch ${offset + 1}-${Math.min(offset + limit, lines.length - 1)} von ${lines.length - 1} verarbeitet`
     });
   } catch (error) {
-    return Response.json(
-      { error: error.message },
-      { status: 500 }
-    );
+    return Response.json({ error: error.message }, { status: 500 });
   }
 });
