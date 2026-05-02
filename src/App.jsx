@@ -30,6 +30,8 @@ import Suche from './pages/Suche';
 import Mehr from './pages/Mehr';
 import VorstandDashboard from './pages/VorstandDashboard';
 import Datenqualitaet from './pages/Datenqualitaet';
+import Kalender from './pages/Kalender';
+import Ausschuss from './pages/Ausschuss';
 import BusfahrerInfo from './pages/BusfahrerInfo';
 
 const AuthenticatedApp = () => {
@@ -88,6 +90,8 @@ const AuthenticatedApp = () => {
         <Route path="/mehr" element={<Mehr />} />
         <Route path="/vorstand" element={<VorstandDashboard />} />
         <Route path="/datenqualitaet" element={<Datenqualitaet />} />
+        <Route path="/kalender" element={<Kalender />} />
+        <Route path="/ausschuss" element={<Ausschuss />} />
       </Route>
       <Route path="/busfahrer/:token" element={<BusfahrerInfo />} />
       <Route path="*" element={<PageNotFound />} />

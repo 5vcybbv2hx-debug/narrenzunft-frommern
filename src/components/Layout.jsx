@@ -5,7 +5,7 @@ import { isAdmin, kannMitgliederlisteSehn, getRollenLabel } from '@/lib/roles';
 import {
   LayoutDashboard, Users, Shirt, Calendar, Briefcase,
   Award, CreditCard, Bus, Bell, Menu, X, ChevronRight,
-  LogOut, User, Search, MoreHorizontal, Shield, ClipboardList, AlertTriangle
+  LogOut, User, Search, MoreHorizontal, Shield, ClipboardList, AlertTriangle, Lock
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -21,6 +21,8 @@ const sidebarNavItems = [
   { path: '/beitraege', label: 'Beiträge', icon: CreditCard, roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'] },
   { path: '/haes', label: 'Häs', icon: Shirt, roles: null },
   { path: '/datenqualitaet', label: 'Datenqualität', icon: AlertTriangle, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
+  { path: '/kalender', label: 'Kalender', icon: Calendar, roles: null },
+  { path: '/ausschuss', label: 'Ausschussbereich', icon: Lock, roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'] },
 ];
 
 // Mobile Bottom-Nav: Start, Umzüge, Dienste, Profil, Mehr

@@ -1,0 +1,28 @@
+{
+  "name": "KalenderAnmeldung",
+  "type": "object",
+  "properties": {
+    "termin_id": {
+      "type": "string"
+    },
+    "mitglied_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Angemeldet",
+        "Abgesagt",
+        "Warteliste"
+      ],
+      "default": "Angemeldet"
+    },
+    "notizen": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "termin_id",
+    "mitglied_id"
+  ]
+}

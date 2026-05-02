@@ -1,0 +1,109 @@
+{
+  "name": "KalenderTermin",
+  "type": "object",
+  "properties": {
+    "titel": {
+      "type": "string"
+    },
+    "beschreibung": {
+      "type": "string"
+    },
+    "datum": {
+      "type": "string",
+      "format": "date"
+    },
+    "startzeit": {
+      "type": "string",
+      "description": "HH:MM"
+    },
+    "endzeit": {
+      "type": "string",
+      "description": "HH:MM"
+    },
+    "ort": {
+      "type": "string"
+    },
+    "terminart": {
+      "type": "string",
+      "enum": [
+        "Umzug",
+        "Abendveranstaltung",
+        "Arbeitsdienst",
+        "Ausschusssitzung",
+        "Vorstandssitzung",
+        "Jugendtermin",
+        "Gruppen-Termin",
+        "Intern",
+        "Sonstiges"
+      ],
+      "default": "Intern"
+    },
+    "sichtbarkeit": {
+      "type": "string",
+      "enum": [
+        "alle",
+        "admin",
+        "ausschuss",
+        "verantwortliche",
+        "haesgruppe",
+        "eingeladen"
+      ],
+      "default": "alle"
+    },
+    "zielgruppe_rollen": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Rollen die diesen Termin sehen d\u00fcrfen"
+    },
+    "haesgruppe_id": {
+      "type": "string",
+      "description": "Nur wenn Sichtbarkeit = haesgruppe"
+    },
+    "verantwortliche_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Mitglied-IDs der Verantwortlichen"
+    },
+    "eingeladene_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Mitglied-IDs bei Sichtbarkeit eingeladen"
+    },
+    "abonnierbar": {
+      "type": "boolean",
+      "default": true
+    },
+    "anmeldbar": {
+      "type": "boolean",
+      "default": false
+    },
+    "anmeldeschluss": {
+      "type": "string",
+      "format": "date"
+    },
+    "max_teilnehmer": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Geplant",
+        "Aktiv",
+        "Abgeschlossen",
+        "Abgesagt"
+      ],
+      "default": "Geplant"
+    }
+  },
+  "required": [
+    "titel",
+    "datum",
+    "terminart"
+  ]
+}

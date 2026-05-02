@@ -1,0 +1,40 @@
+{
+  "name": "Beschluss",
+  "type": "object",
+  "properties": {
+    "titel": {
+      "type": "string"
+    },
+    "inhalt": {
+      "type": "string"
+    },
+    "datum": {
+      "type": "string",
+      "format": "date"
+    },
+    "termin_id": {
+      "type": "string",
+      "description": "Sitzungs-ID"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Offen",
+        "Umgesetzt",
+        "Verworfen"
+      ],
+      "default": "Offen"
+    },
+    "vertraulich": {
+      "type": "boolean",
+      "default": false
+    },
+    "notizen": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "titel",
+    "datum"
+  ]
+}
