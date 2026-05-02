@@ -9,18 +9,29 @@ Deno.serve(async (req) => {
       return Response.json({ error: "file_url erforderlich" }, { status: 400 });
     }
 
-    // XLSX laden
-    const xlsx = await import("npm:xlsx@0.18.5");
-    const response = await fetch(file_url);
-    const buffer = await response.arrayBuffer();
-    const workbook = xlsx.read(buffer, { type: "array" });
-    const sheet = workbook.Sheets["AdresseExcel"];
-    
-    if (!sheet) {
-      return Response.json({ error: "Sheet 'AdresseExcel' nicht gefunden" }, { status: 400 });
+    // Extrahiere Daten aus Excel via Integration
+    const extractRes = await base44.integrations.Core.ExtractDataFromUploadedFile({
+      file_url,
+      json_schema: {
+        type: "object",
+        properties: {
+          Häsnummer: { type: "string" },
+          Sparte: { type: "string" },
+          Name: { type: "string" },
+          Vorname: { type: "string" },
+          Status: { type: "string" },
+        }
+      }
+    });
+
+    if (extractRes.status !== "success" || !Array.isArray(extractRes.output)) {
+      return Response.json({ 
+        error: "Excel-Extraktion fehlgeschlagen", 
+        details: extractRes.details 
+      }, { status: 400 });
     }
 
-    const data = xlsx.utils.sheet_to_json(sheet);
+    const data = extractRes.output;
 
     // Lade alle Häsgruppen und aktuellen Mitglieder
     const [allGruppen, allMitglieder, allHaes] = await Promise.all([
