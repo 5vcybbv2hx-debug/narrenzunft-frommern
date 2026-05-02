@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannArbeitsdiensteVerwalten } from '@/lib/roles';
-import { Briefcase, Plus, Calendar, MapPin, Users, Edit, X } from 'lucide-react';
+import { Briefcase, Plus, Calendar, MapPin, Users, Edit, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import ArbeitsdienstEditModal from '@/components/arbeitsdienst/ArbeitsdienstEditModal';
@@ -31,6 +31,7 @@ export default function Arbeitsdienste() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('Alle');
   const [editDienst, setEditDienst] = useState(null);
+  const [expandedDates, setExpandedDates] = useState({});
   const kannVerwalten = kannArbeitsdiensteVerwalten(user);
   const today = new Date().toISOString().split('T')[0];
 
@@ -78,6 +79,16 @@ export default function Arbeitsdienste() {
       return aKey.localeCompare(bKey);
     });
 
+  // Gruppiere nach Datum
+  const grouped = filtered.reduce((acc, d) => {
+    const datum = d.datum || 'Kein Datum';
+    if (!acc[datum]) acc[datum] = [];
+    acc[datum].push(d);
+    return acc;
+  }, {});
+
+  const sortedDates = Object.keys(grouped).sort();
+
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="w-8 h-8 border-4 border-border border-t-primary rounded-full animate-spin" />
@@ -118,94 +129,120 @@ export default function Arbeitsdienste() {
       </div>
 
       <div className="space-y-3">
-        {filtered.map(d => {
-          const zuws = getZuweisungen(d.id);
-          const meineZ = meineZuweisung(d.id);
-
+        {sortedDates.map(datum => {
+          const diensteAmDatum = grouped[datum];
+          const isExpanded = expandedDates[datum] !== false; // Default: expanded
+          const allZuweisungen = diensteAmDatum.reduce((sum, d) => sum + getZuweisungen(d.id).filter(z => z.status !== 'Abgesagt').length, 0);
+          
           return (
-            <div key={d.id} className="bg-card border border-border rounded-xl overflow-hidden">
-              <div className="p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-semibold text-foreground">{d.titel}</h3>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[d.status] || 'bg-gray-500/20 text-gray-400'}`}>
-                        {d.status}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Calendar size={11} /> {format(new Date(d.datum), 'dd.MM.yyyy', { locale: de })}
-                        {d.uhrzeit && ` – ${d.uhrzeit}`}
-                      </span>
-                      {d.ort && <span className="flex items-center gap-1"><MapPin size={11} /> {d.ort}</span>}
-                      <span className="flex items-center gap-1">
-                        <Users size={11} /> {zuws.filter(z => z.status !== 'Abgesagt').length}{d.benoetigte_personen ? `/${d.benoetigte_personen}` : ''} eingeteilt
-                      </span>
-                    </div>
-                    {d.beschreibung && (
-                      <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{d.beschreibung}</p>
-                    )}
-                  </div>
-                  {kannVerwalten && (
-                    <button
-                      onClick={() => setEditDienst(d)}
-                      className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors shrink-0"
-                    >
-                      <Edit size={15} />
-                    </button>
-                  )}
+            <div key={datum}>
+              {/* Datum Header (Klappbar) */}
+              <button
+                onClick={() => setExpandedDates(p => ({ ...p, [datum]: !p[datum] }))}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary/50 border border-border hover:border-primary/40 transition-all group"
+              >
+                {isExpanded ? <ChevronUp size={18} className="text-primary" /> : <ChevronDown size={18} className="text-muted-foreground" />}
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-foreground">
+                    {datum === 'Kein Datum' ? 'Kein Datum' : format(new Date(datum), 'EEEE, dd. MMMM yyyy', { locale: de })}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{diensteAmDatum.length} Dienst{diensteAmDatum.length !== 1 ? 'e' : ''} · {allZuweisungen} eingeteilt</p>
                 </div>
+              </button>
 
-                {/* Meine Zuweisung */}
-                {meineZ && (
-                  <div className="mt-3 pt-3 border-t border-border">
-                    <p className="text-xs text-muted-foreground mb-2">Meine Zuweisung:</p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleStatusChange(meineZ, 'Bestätigt')}
-                        className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                          meineZ.status === 'Bestätigt' || meineZ.status === 'Erledigt'
-                            ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                            : 'bg-secondary text-muted-foreground hover:bg-green-500/10 hover:text-green-400'
-                        }`}
-                      >
-                        ✓ Bestätigen
-                      </button>
-                      <button
-                        onClick={() => handleStatusChange(meineZ, 'Abgesagt')}
-                        className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                          meineZ.status === 'Abgesagt'
-                            ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                            : 'bg-secondary text-muted-foreground hover:bg-red-500/10 hover:text-red-400'
-                        }`}
-                      >
-                        ✗ Absagen
-                      </button>
-                    </div>
-                  </div>
-                )}
+              {/* Dienste (Ausgeklappt) */}
+              {isExpanded && (
+                <div className="space-y-2 mt-2 ml-1 pl-3 border-l border-primary/30">
+                  {diensteAmDatum.map(d => {
+                    const zuws = getZuweisungen(d.id);
+                    const meineZ = meineZuweisung(d.id);
 
-                {/* Zugewiesene Personen */}
-                {zuws.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-border">
-                    <p className="text-xs text-muted-foreground mb-2">Eingeteilt ({zuws.length}):</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {zuws.map(z => {
-                        const m = mitglieder.find(m => m.id === z.mitglied_id);
-                        return (
-                          <span
-                            key={z.id}
-                            className={`text-xs px-2 py-0.5 rounded-full ${ZUWEISUNG_COLORS[z.status] || ZUWEISUNG_COLORS['Offen']}`}
-                          >
-                            {m ? `${m.vorname} ${m.nachname}` : '–'}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
+                    return (
+                      <div key={d.id} className="bg-card border border-border rounded-lg overflow-hidden">
+                        <div className="p-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="font-semibold text-foreground text-sm">{d.titel}</h3>
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${STATUS_COLORS[d.status] || 'bg-gray-500/20 text-gray-400'}`}>
+                                  {d.status}
+                                </span>
+                              </div>
+                              <div className="flex flex-wrap gap-3 mt-1.5 text-[11px] text-muted-foreground">
+                                {d.uhrzeit && <span>{d.uhrzeit} Uhr</span>}
+                                {d.ort && <span className="flex items-center gap-1"><MapPin size={10} /> {d.ort}</span>}
+                                <span className="flex items-center gap-1">
+                                  <Users size={10} /> {zuws.filter(z => z.status !== 'Abgesagt').length}{d.benoetigte_personen ? `/${d.benoetigte_personen}` : ''}
+                                </span>
+                              </div>
+                              {d.beschreibung && (
+                                <p className="text-[11px] text-muted-foreground mt-1.5 line-clamp-2">{d.beschreibung}</p>
+                              )}
+                            </div>
+                            {kannVerwalten && (
+                              <button
+                                onClick={() => setEditDienst(d)}
+                                className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors shrink-0"
+                              >
+                                <Edit size={13} />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Meine Zuweisung */}
+                          {meineZ && (
+                            <div className="mt-2 pt-2 border-t border-border/50">
+                              <p className="text-[10px] text-muted-foreground mb-1.5">Meine Zuweisung:</p>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleStatusChange(meineZ, 'Bestätigt')}
+                                  className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                                    meineZ.status === 'Bestätigt' || meineZ.status === 'Erledigt'
+                                      ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                      : 'bg-secondary text-muted-foreground hover:bg-green-500/10 hover:text-green-400'
+                                  }`}
+                                >
+                                  ✓ OK
+                                </button>
+                                <button
+                                  onClick={() => handleStatusChange(meineZ, 'Abgesagt')}
+                                  className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                                    meineZ.status === 'Abgesagt'
+                                      ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                      : 'bg-secondary text-muted-foreground hover:bg-red-500/10 hover:text-red-400'
+                                  }`}
+                                >
+                                  ✗ Absage
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Zugewiesene Personen */}
+                          {zuws.length > 0 && (
+                            <div className="mt-2 pt-2 border-t border-border/50">
+                              <p className="text-[10px] text-muted-foreground mb-1">Eingeteilt ({zuws.length}):</p>
+                              <div className="flex flex-wrap gap-1">
+                                {zuws.map(z => {
+                                  const m = mitglieder.find(m => m.id === z.mitglied_id);
+                                  return (
+                                    <span
+                                      key={z.id}
+                                      className={`text-[10px] px-1.5 py-0.5 rounded-full ${ZUWEISUNG_COLORS[z.status] || ZUWEISUNG_COLORS['Offen']}`}
+                                    >
+                                      {m ? `${m.vorname}` : '–'}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           );
         })}
