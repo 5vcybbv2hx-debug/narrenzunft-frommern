@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { X, Save, Trash2, Search, Bookmark } from 'lucide-react';
+import { X, Save, Trash2, Search, Bookmark, GripVertical } from 'lucide-react';
+import { DndContext, DragEndEvent, closestCorners } from '@hello-pangea/dnd';
 
 const ZUWEISUNG_STATUS = ['Offen', 'Bestätigt', 'Erledigt', 'Abgesagt', 'Nicht erledigt'];
 
@@ -40,27 +41,37 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
     (suche.length === 0 || `${m.vorname} ${m.nachname}`.toLowerCase().includes(suche.toLowerCase()))
   );
 
-  const toggleAuswahl = (id) => {
-    setAusgewaehlt(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+    if (!over) return;
 
-  const handleAddAusgewaehlt = async () => {
-    if (ausgewaehlt.size === 0) return;
-    setAdding(true);
-    const neu = await Promise.all([...ausgewaehlt].map(id =>
-      base44.entities.ArbeitsdienstZuweisung.create({
-        arbeitsdienst_id: dienst.id,
-        mitglied_id: id,
-        status: 'Offen',
-      })
-    ));
-    setZuweisungen(prev => [...prev, ...neu]);
-    setAusgewaehlt(new Set());
-    setAdding(false);
+    const mitgliedId = active.id;
+    const isMovingToEingeteilt = over.id === 'eingeteilt-drop';
+    const isMovingToVerfuegbar = over.id === 'verfuegbar-drop';
+
+    if (isMovingToEingeteilt) {
+      // Verfügbar → Eingeteilt
+      if (zugewieseneIds.has(mitgliedId)) return; // Already assigned
+      setAdding(true);
+      try {
+        const neu = await base44.entities.ArbeitsdienstZuweisung.create({
+          arbeitsdienst_id: dienst.id,
+          mitglied_id: mitgliedId,
+          status: 'Offen',
+        });
+        setZuweisungen(prev => [...prev, neu]);
+      } catch (e) {}
+      setAdding(false);
+    } else if (isMovingToVerfuegbar) {
+      // Eingeteilt → Verfügbar
+      const zuweisung = zuweisungen.find(z => z.mitglied_id === mitgliedId);
+      if (zuweisung) {
+        try {
+          await base44.entities.ArbeitsdienstZuweisung.delete(zuweisung.id);
+          setZuweisungen(prev => prev.filter(z => z.id !== zuweisung.id));
+        } catch (e) {}
+      }
+    }
   };
 
   const handleRemove = async (zuweisungId) => {
@@ -185,47 +196,40 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
             )}
           </div>
 
-          {/* Rechte Spalte: 2-Spalten Mitglieder-Einteilung */}
-          <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden border-t lg:border-t-0 border-border">
+          {/* Rechte Spalte: Drag & Drop Einteilung */}
+          <DndContext collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+            <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden border-t lg:border-t-0 border-border">
 
-            {/* Verfügbare Mitglieder */}
-            <div className="flex-1 flex flex-col border-r border-border min-h-0">
-              <div className="px-4 pt-4 pb-2 shrink-0">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                  Verfügbar ({verfuegbar.length})
-                </p>
-                <div className="relative">
-                  <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    type="text"
-                    placeholder="Suchen..."
-                    value={suche}
-                    onChange={e => { setSuche(e.target.value); setAusgewaehlt(new Set()); }}
-                    className="w-full pl-7 pr-3 py-2 rounded-lg bg-secondary border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
-                  />
+              {/* Verfügbare Mitglieder */}
+              <div className="flex-1 flex flex-col border-r border-border min-h-0">
+                <div className="px-4 pt-4 pb-2 shrink-0">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                    Verfügbar ({verfuegbar.length})
+                  </p>
+                  <div className="relative">
+                    <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Suchen..."
+                      value={suche}
+                      onChange={e => setSuche(e.target.value)}
+                      className="w-full pl-7 pr-3 py-2 rounded-lg bg-secondary border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-2">💡 Ziehe Mitglieder nach rechts</p>
                 </div>
-                {ausgewaehlt.size > 0 && (
-                  <button
-                    onClick={handleAddAusgewaehlt}
-                    disabled={adding}
-                    className="mt-2 w-full py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
-                  >
-                    {adding ? '...' : `${ausgewaehlt.size} → Einteilen`}
-                  </button>
-                )}
-              </div>
-              <div className="flex-1 overflow-y-auto px-2 pb-2">
-                {verfuegbar.map(m => {
-                  const selected = ausgewaehlt.has(m.id);
-                  return (
-                    <button
+                <div id="verfuegbar-drop" className="flex-1 overflow-y-auto px-2 pb-2 min-h-0">
+                  {verfuegbar.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center mt-4">Alle eingeteilt</p>
+                  )}
+                  {verfuegbar.map(m => (
+                    <div
                       key={m.id}
-                      onClick={() => toggleAuswahl(m.id)}
-                      className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg mb-0.5 transition-colors text-left ${selected ? 'bg-primary/15 border border-primary/30' : 'hover:bg-secondary'}`}
+                      draggable
+                      onDragStart={() => {}}
+                      className="flex items-center gap-2 px-2 py-2 rounded-lg mb-0.5 hover:bg-secondary cursor-move bg-secondary/30 border border-border/50"
                     >
-                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 ${selected ? 'bg-primary border-primary' : 'border-border'}`}>
-                        {selected && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                      </div>
+                      <GripVertical size={12} className="text-muted-foreground shrink-0" />
                       <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-[10px] shrink-0">
                         {m.vorname?.[0]}{m.nachname?.[0]}
                       </div>
@@ -233,52 +237,55 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
                         <p className="text-xs font-medium text-foreground truncate">{m.vorname} {m.nachname}</p>
                         <p className="text-[10px] text-muted-foreground truncate">{m.mitgliedsstatus}</p>
                       </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Eingeteilt */}
-            <div className="flex-1 flex flex-col min-h-0">
-              <div className="px-4 pt-4 pb-2 shrink-0">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                  Eingeteilt ({zuweisungen.length}{form.benoetigte_personen ? `/${form.benoetigte_personen}` : ''})
-                </p>
-              </div>
-              <div className="flex-1 overflow-y-auto px-2 pb-2">
-                {zuweisungen.length === 0 && (
-                  <p className="text-xs text-muted-foreground text-center mt-4">Noch niemand eingeteilt</p>
-                )}
-                {zuweisungen.map(z => {
-                  const m = mitglieder.find(m => m.id === z.mitglied_id);
-                  return (
-                    <div key={z.id} className="flex items-center gap-2 px-2 py-2 rounded-lg mb-0.5 hover:bg-secondary group">
-                      <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-[10px] shrink-0">
-                        {m?.vorname?.[0]}{m?.nachname?.[0]}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-foreground truncate">{m ? `${m.vorname} ${m.nachname}` : '–'}</p>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${STATUS_COLORS[z.status] || STATUS_COLORS['Offen']}`}>
-                          {z.status}
-                        </span>
-                      </div>
-                      <select
-                        value={z.status}
-                        onChange={e => handleZuweisungStatus(z, e.target.value)}
-                        className="text-[10px] px-1.5 py-1 rounded-lg bg-secondary border border-border text-foreground focus:outline-none focus:border-primary shrink-0"
-                      >
-                        {ZUWEISUNG_STATUS.map(s => <option key={s}>{s}</option>)}
-                      </select>
-                      <button onClick={() => handleRemove(z.id)} className="p-1 rounded text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 shrink-0">
-                        <X size={12} />
-                      </button>
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
+              </div>
+
+              {/* Eingeteilt */}
+              <div className="flex-1 flex flex-col min-h-0">
+                <div className="px-4 pt-4 pb-2 shrink-0">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                    Eingeteilt ({zuweisungen.length}{form.benoetigte_personen ? `/${form.benoetigte_personen}` : ''})
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">💡 Ziehe zurück nach links</p>
+                </div>
+                <div id="eingeteilt-drop" className="flex-1 overflow-y-auto px-2 pb-2 min-h-0 bg-primary/5 rounded-lg">
+                  {zuweisungen.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center mt-4">Noch niemand eingeteilt</p>
+                  )}
+                  {zuweisungen.map(z => {
+                    const m = mitglieder.find(m => m.id === z.mitglied_id);
+                    return (
+                      <div key={z.id} draggable className="flex items-center gap-2 px-2 py-2 rounded-lg mb-0.5 hover:bg-secondary/50 group cursor-move bg-card border border-primary/20">
+                        <GripVertical size={12} className="text-muted-foreground shrink-0" />
+                        <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-[10px] shrink-0">
+                          {m?.vorname?.[0]}{m?.nachname?.[0]}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-foreground truncate">{m ? `${m.vorname} ${m.nachname}` : '–'}</p>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${STATUS_COLORS[z.status] || STATUS_COLORS['Offen']}`}>
+                            {z.status}
+                          </span>
+                        </div>
+                        <select
+                          value={z.status}
+                          onChange={e => handleZuweisungStatus(z, e.target.value)}
+                          className="text-[10px] px-1.5 py-1 rounded-lg bg-secondary border border-border text-foreground focus:outline-none focus:border-primary shrink-0"
+                          onDragStart={e => e.stopPropagation()}
+                        >
+                          {ZUWEISUNG_STATUS.map(s => <option key={s}>{s}</option>)}
+                        </select>
+                        <button onClick={() => handleRemove(z.id)} className="p-1 rounded text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 shrink-0">
+                          <X size={12} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
+          </DndContext>
         </div>
 
         {/* Footer */}
