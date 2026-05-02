@@ -10,7 +10,7 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import AusschussMitgliederTab from '@/components/ausschuss/AusschussMitgliederTab';
 
-const AUSSCHUSS_ROLLEN = ['vorstand', 'stellv_vorstand', 'admin', 'ausschuss', 'spartenleiter'];
+const AUSSCHUSS_ROLLEN = ['vorstand', 'stellv_vorstand', 'admin', 'spartenleiter'];
 
 const PRIO_FARBEN = {
   'Niedrig':  'bg-gray-500/20 text-gray-400',

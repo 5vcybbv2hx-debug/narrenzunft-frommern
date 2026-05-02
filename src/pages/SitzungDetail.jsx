@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import {
   ArrowLeft, Plus, X, Save, Trash2, ChevronUp, ChevronDown,
-  Users, ClipboardList, Vote, CheckCircle2, Circle, Clock
+  Users, ClipboardList, Vote, CheckCircle2, Circle, Clock, Lock
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -32,6 +32,9 @@ export default function SitzungDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'vorstand' || user?.role === 'stellv_vorstand';
+  
+  // Zugriffsschutz: nur Ausschuss-Rollen
+  const hatZugriff = ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'].includes(user?.role);
 
   const [termin, setTermin] = useState(null);
   const [ausschussMitglieder, setAusschussMitglieder] = useState([]);
@@ -88,6 +91,16 @@ export default function SitzungDetail() {
   // Anwesende für Quorum
   const anwesend = anwesenheiten.filter(a => a.status === 'Anwesend').length;
   const quorum = ausschussMitglieder.length > 0 ? Math.ceil(ausschussMitglieder.length / 2) : 0;
+
+  if (!hatZugriff) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+        <Lock size={40} className="text-muted-foreground mb-3" />
+        <h2 className="text-xl font-bold text-foreground mb-2">Kein Zugriff</h2>
+        <p className="text-sm text-muted-foreground">Dieser Bereich ist nur für Vorstand und Ausschuss zugänglich.</p>
+      </div>
+    );
+  }
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
