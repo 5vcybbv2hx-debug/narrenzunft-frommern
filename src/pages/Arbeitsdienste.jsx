@@ -238,6 +238,8 @@ function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen, onClose, onSa
   const [saving, setSaving] = useState(false);
   const [suche, setSuche] = useState('');
   const [addingId, setAddingId] = useState(null);
+  const [ausgewaehlt, setAusgewaehlt] = useState(new Set());
+  const [addingMultiple, setAddingMultiple] = useState(false);
   const [vorlagen, setVorlagen] = useState([]);
   const [selectedVorlage, setSelectedVorlage] = useState('');
   const [vorlageSaving, setVorlageSaving] = useState(false);
@@ -307,6 +309,33 @@ function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen, onClose, onSa
     setSuche('');
   };
 
+  const toggleAuswahl = (mitgliedId) => {
+    setAusgewaehlt(prev => {
+      const next = new Set(prev);
+      if (next.has(mitgliedId)) next.delete(mitgliedId);
+      else next.add(mitgliedId);
+      return next;
+    });
+  };
+
+  const handleAddMehrere = async () => {
+    if (ausgewaehlt.size === 0) return;
+    setAddingMultiple(true);
+    try {
+      await Promise.all([...ausgewaehlt].map(id =>
+        base44.entities.ArbeitsdienstZuweisung.create({
+          arbeitsdienst_id: dienst.id,
+          mitglied_id: id,
+          status: 'Offen',
+        })
+      ));
+      setAusgewaehlt(new Set());
+      setSuche('');
+      onSaved();
+    } catch (e) {}
+    setAddingMultiple(false);
+  };
+
   const handleRemoveZuweisung = async (zuweisungId) => {
     await base44.entities.ArbeitsdienstZuweisung.delete(zuweisungId);
     onSaved();
@@ -321,7 +350,7 @@ function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen, onClose, onSa
   const suchErgebnisse = suche.length >= 1
     ? mitglieder
         .filter(m => !zugewieseneIds.has(m.id) && `${m.vorname} ${m.nachname}`.toLowerCase().includes(suche.toLowerCase()))
-        .slice(0, 6)
+        .slice(0, 10)
     : [];
 
   return (
@@ -445,20 +474,27 @@ function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen, onClose, onSa
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Mitglied suchen und hinzufügen..."
+                placeholder="Mitglieder suchen..."
                 value={suche}
-                onChange={e => setSuche(e.target.value)}
+                onChange={e => { setSuche(e.target.value); setAusgewaehlt(new Set()); }}
                 className="w-full pl-8 pr-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
               />
-              {suchErgebnisse.length > 0 && (
-                <div className="absolute z-20 left-0 right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-xl overflow-hidden">
-                  {suchErgebnisse.map(m => (
+            </div>
+
+            {/* Suchergebnisse als Checkbox-Liste */}
+            {suchErgebnisse.length > 0 && (
+              <div className="mt-2 bg-card border border-border rounded-xl overflow-hidden">
+                {suchErgebnisse.map(m => {
+                  const selected = ausgewaehlt.has(m.id);
+                  return (
                     <button
                       key={m.id}
-                      onClick={() => handleAddMitglied(m.id)}
-                      disabled={addingId === m.id}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary transition-colors text-left"
+                      onClick={() => toggleAuswahl(m.id)}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 transition-colors text-left border-b border-border last:border-0 ${selected ? 'bg-primary/10' : 'hover:bg-secondary'}`}
                     >
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${selected ? 'bg-primary border-primary' : 'border-border'}`}>
+                        {selected && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                      </div>
                       <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
                         {m.vorname?.[0]}{m.nachname?.[0]}
                       </div>
@@ -466,12 +502,22 @@ function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen, onClose, onSa
                         <p className="text-sm font-medium text-foreground">{m.vorname} {m.nachname}</p>
                         <p className="text-xs text-muted-foreground">{m.mitgliedsstatus}</p>
                       </div>
-                      <Plus size={14} className="text-primary shrink-0" />
                     </button>
-                  ))}
-                </div>
-              )}
-            </div>
+                  );
+                })}
+                {ausgewaehlt.size > 0 && (
+                  <div className="px-3 py-2 bg-primary/5 border-t border-border">
+                    <button
+                      onClick={handleAddMehrere}
+                      disabled={addingMultiple}
+                      className="w-full py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    >
+                      {addingMultiple ? '...' : `${ausgewaehlt.size} Person${ausgewaehlt.size > 1 ? 'en' : ''} hinzufügen`}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
