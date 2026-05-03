@@ -15,27 +15,30 @@ export default function Sparte({ gruppe, alleMitglieder, isAdmin, onEdit, onDele
   const [showAddSearch, setShowAddSearch] = useState(false);
   const [suche, setSuche] = useState('');
 
-  const gruppenMitglieder = alleMitglieder.filter(m => m.spartenleiter_haesgruppe_id === gruppe.id || false);
-  // Mitglieder dieser Gruppe: alle die haesgruppe_id ODER spartenleiter_haesgruppe_id haben
-  // Wir nutzen das Mitglied-Feld für die Zugehörigkeit zur Häsgruppe
-  const mitglieder = alleMitglieder.filter(m => m.haesgruppe_id === gruppe.id);
+  // Mitglieder dieser Gruppe: haesgruppen_ids enthält die Gruppen-ID (mit Legacy-Fallback auf haesgruppe_id)
+  const mitglieder = alleMitglieder.filter(m =>
+    (m.haesgruppen_ids || []).includes(gruppe.id) || m.haesgruppe_id === gruppe.id
+  );
 
-  // Für die Suche: noch nicht zugeordnete Mitglieder
+  // Für die Suche: Mitglieder die noch NICHT in dieser Gruppe sind
   const verfuegbar = alleMitglieder.filter(m =>
-    !m.haesgruppe_id &&
+    !(m.haesgruppen_ids || []).includes(gruppe.id) &&
+    m.haesgruppe_id !== gruppe.id &&
     `${m.vorname} ${m.nachname}`.toLowerCase().includes(suche.toLowerCase()) &&
     suche.length >= 1
   );
 
   const handleAdd = async (mitglied) => {
-    await base44.entities.Mitglied.update(mitglied.id, { haesgruppe_id: gruppe.id });
+    const aktuelle = mitglied.haesgruppen_ids || (mitglied.haesgruppe_id ? [mitglied.haesgruppe_id] : []);
+    await base44.entities.Mitglied.update(mitglied.id, { haesgruppen_ids: [...aktuelle, gruppe.id] });
     setSuche('');
     setShowAddSearch(false);
     onMitgliederChanged();
   };
 
   const handleRemove = async (mitglied) => {
-    await base44.entities.Mitglied.update(mitglied.id, { haesgruppe_id: '' });
+    const aktuelle = mitglied.haesgruppen_ids || (mitglied.haesgruppe_id ? [mitglied.haesgruppe_id] : []);
+    await base44.entities.Mitglied.update(mitglied.id, { haesgruppen_ids: aktuelle.filter(id => id !== gruppe.id) });
     onMitgliederChanged();
   };
 

@@ -65,7 +65,14 @@
     },
     "haesgruppe_id": {
       "type": "string",
-      "description": "ID der Gruppe/Sparte, der dieses Mitglied angeh\u00f6rt"
+      "description": "Prim\u00e4re Gruppe (Legacy-Feld, wird durch haesgruppen_ids ersetzt)"
+    },
+    "haesgruppen_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs aller Gruppen/Sparten, denen dieses Mitglied angeh\u00f6rt"
     },
     "spartenleiter_haesgruppe_id": {
       "type": "string",
