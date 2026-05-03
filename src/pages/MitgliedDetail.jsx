@@ -300,6 +300,10 @@ export default function MitgliedDetail() {
               <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
                 {mitglied.mitgliedsstatus}
               </span>
+              {mitglied.haesgruppe_id && (() => {
+                const g = haesgruppen.find(g => g.id === mitglied.haesgruppe_id);
+                return g ? <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">📍 {g.name}</span> : null;
+              })()}
               {mitglied.ort && <span className="text-xs text-muted-foreground">{mitglied.ort}</span>}
               {mitglied.eintrittsdatum && (
                 <span className="text-xs text-muted-foreground">
@@ -381,6 +385,23 @@ export default function MitgliedDetail() {
           <Field label="Eintrittsdatum" field="eintrittsdatum" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           <Field label="Austrittsdatum" field="austrittsdatum" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           <Field label="Hochzeitstag" field="hochzeitstag" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+          <div>
+            <label className="text-xs text-muted-foreground font-medium block mb-1">Gruppe / Sparte</label>
+            {editing ? (
+              <select
+                value={mitglied.haesgruppe_id || ''}
+                onChange={e => handleFieldChange('haesgruppe_id', e.target.value)}
+                className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+              >
+                <option value="">– keine Gruppe –</option>
+                {haesgruppen.map(g => <option key={g.id} value={g.id}>{g.name} {g.typ && g.typ !== 'Häsgruppe' ? `(${g.typ})` : ''}</option>)}
+              </select>
+            ) : (
+              <p className="text-sm text-foreground py-1">
+                {mitglied.haesgruppe_id ? (haesgruppen.find(g => g.id === mitglied.haesgruppe_id)?.name || '–') : '–'}
+              </p>
+            )}
+          </div>
           <div>
             <label className="text-xs text-muted-foreground font-medium block mb-1">Umzüge vor Digitalisierung</label>
             {editing ? (
