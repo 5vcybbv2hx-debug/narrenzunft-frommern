@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Bus, Plus, ChevronDown, ChevronUp, X, Check, Trash2 } from 'lucide-react';
+import { Bus, Plus, ChevronDown, ChevronUp, X, Check, Trash2, Settings } from 'lucide-react';
+import BuskostenEinstellungen from '@/components/beitraege/BuskostenEinstellungen';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -20,6 +21,8 @@ export default function Buskosten({ isAdmin }) {
   const [showAddModal, setShowAddModal] = useState(null); // veranstaltung_id
   const [addForm, setAddForm] = useState({ betrag: 10, mitglied_ids: [], alle_busfahrer: true });
   const [saving, setSaving] = useState(false);
+  const [showEinstellungen, setShowEinstellungen] = useState(false);
+  const [standardBetrag, setStandardBetrag] = useState(10);
 
   useEffect(() => {
     loadData();
@@ -28,12 +31,14 @@ export default function Buskosten({ isAdmin }) {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [v, b, t, m] = await Promise.all([
+      const [v, b, t, m, einst] = await Promise.all([
         base44.entities.Veranstaltung.list('datum', 500),
         base44.entities.Buskostenbeitrag.list('-created_date', 1000),
         base44.entities.Teilnahme.list('-created_date', 2000),
         base44.entities.Mitglied.list('nachname', 500),
+        base44.entities.AppEinstellung.filter({ schluessel: 'buskosten_einstellungen' }),
       ]);
+      if (einst[0]?.wert_json?.pauschalbetrag) setStandardBetrag(einst[0].wert_json.pauschalbetrag);
       // Nur Veranstaltungen mit Bus
       setVeranstaltungen(v.filter(x => x.bus_erforderlich).sort((a, b) => b.datum.localeCompare(a.datum)));
       setBuskostenbeitraege(b);
@@ -110,8 +115,9 @@ export default function Buskosten({ isAdmin }) {
 
   return (
     <div className="space-y-4">
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* Stats + Einstellungen */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="grid grid-cols-2 gap-3 flex-1">
         <div className="bg-card border border-green-500/20 rounded-xl p-4">
           <p className="text-xs text-muted-foreground">Bezahlt</p>
           <p className="text-xl font-bold text-green-400 mt-1">{totalBezahlt.toFixed(0)} €</p>
@@ -120,6 +126,16 @@ export default function Buskosten({ isAdmin }) {
           <p className="text-xs text-muted-foreground">Offen</p>
           <p className="text-xl font-bold text-yellow-400 mt-1">{totalOffen.toFixed(0)} €</p>
         </div>
+        </div>
+        {isAdmin && (
+          <button
+            onClick={() => setShowEinstellungen(true)}
+            className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground hover:bg-border transition-colors shrink-0"
+            title="Buskosten Einstellungen"
+          >
+            <Settings size={18} />
+          </button>
+        )}
       </div>
 
       {/* Veranstaltungen */}
@@ -169,7 +185,7 @@ export default function Buskosten({ isAdmin }) {
                   {isAdmin && (
                     <button
                       onClick={() => {
-                        setAddForm({ betrag: 10, mitglied_ids: [], alle_busfahrer: true });
+                        setAddForm({ betrag: standardBetrag, mitglied_ids: [], alle_busfahrer: true });
                         setShowAddModal(v.id);
                       }}
                       className="flex items-center gap-2 text-xs text-primary hover:text-primary/80 font-medium"
@@ -214,6 +230,13 @@ export default function Buskosten({ isAdmin }) {
           );
         })}
       </div>
+
+      {showEinstellungen && (
+        <BuskostenEinstellungen
+          onClose={() => setShowEinstellungen(false)}
+          onSaved={(s) => { setStandardBetrag(s.pauschalbetrag); setShowEinstellungen(false); }}
+        />
+      )}
 
       {/* Modal: Beiträge erstellen */}
       {showAddModal && (
