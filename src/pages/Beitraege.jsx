@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
-import { CreditCard, Search, Filter, Plus, Check, Settings } from 'lucide-react';
+import { CreditCard, Search, Plus, Settings, Bus } from 'lucide-react';
 import { format } from 'date-fns';
 import BeitraegeEinstellungen from '@/components/beitraege/BeitraegeEinstellungen';
+import Buskosten from '@/components/beitraege/Buskosten';
 
 const STATUS_COLORS = {
   'Offen': 'bg-yellow-500/20 text-yellow-400',
@@ -36,6 +37,7 @@ export default function Beitraege() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [showEinstellungen, setShowEinstellungen] = useState(false);
   const [beitraegeSatz, setBeitraegeSatz] = useState(DEFAULT_BEITRAEGE_SATZ);
+  const [activeTab, setActiveTab] = useState('jahresbeitraege');
   const isAdminUser = isAdmin(user);
 
   useEffect(() => {
@@ -131,7 +133,7 @@ export default function Beitraege() {
           <h1 className="text-2xl font-bold text-foreground">Beiträge</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{beitraege.length} Einträge</p>
         </div>
-        {isAdminUser && (
+        {isAdminUser && activeTab === 'jahresbeitraege' && (
           <button
             onClick={() => setShowEinstellungen(true)}
             className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground hover:bg-border transition-colors"
@@ -141,6 +143,29 @@ export default function Beitraege() {
           </button>
         )}
       </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 bg-secondary rounded-xl p-1 mb-5">
+        <button
+          onClick={() => setActiveTab('jahresbeitraege')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'jahresbeitraege' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          <CreditCard size={14} /> Jahresbeiträge
+        </button>
+        <button
+          onClick={() => setActiveTab('buskosten')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'buskosten' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          <Bus size={14} /> Buskosten
+        </button>
+      </div>
+
+      {/* Buskosten Tab */}
+      {activeTab === 'buskosten' && (
+        <Buskosten isAdmin={isAdminUser} />
+      )}
+
+      {activeTab !== 'buskosten' && <>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
@@ -276,6 +301,8 @@ export default function Beitraege() {
           <p className="text-muted-foreground text-sm">Keine Beiträge gefunden</p>
         </div>
       )}
+
+      </> }
     </div>
   );
 }

@@ -1,0 +1,39 @@
+{
+  "name": "Buskostenbeitrag",
+  "type": "object",
+  "properties": {
+    "veranstaltung_id": {
+      "type": "string",
+      "description": "ID der Veranstaltung"
+    },
+    "mitglied_id": {
+      "type": "string",
+      "description": "ID des Mitglieds"
+    },
+    "betrag": {
+      "type": "number",
+      "description": "Pauschalbetrag in Euro"
+    },
+    "zahlungsstatus": {
+      "type": "string",
+      "enum": [
+        "Offen",
+        "Bezahlt",
+        "Erlassen"
+      ],
+      "default": "Offen"
+    },
+    "zahlungsdatum": {
+      "type": "string",
+      "format": "date"
+    },
+    "notizen": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "veranstaltung_id",
+    "mitglied_id",
+    "betrag"
+  ]
+}
