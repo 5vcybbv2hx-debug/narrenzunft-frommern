@@ -10,6 +10,21 @@
     },
     "farbe": {
       "type": "string"
+    },
+    "typ": {
+      "type": "string",
+      "enum": [
+        "H\u00e4sgruppe",
+        "Tanzgruppe",
+        "Musikgruppe",
+        "Sonstige"
+      ],
+      "default": "H\u00e4sgruppe",
+      "description": "Art der Gruppe/Sparte"
+    },
+    "aktiv": {
+      "type": "boolean",
+      "default": true
     }
   },
   "required": [

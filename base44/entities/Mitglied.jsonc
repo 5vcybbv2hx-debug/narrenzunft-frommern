@@ -63,6 +63,10 @@
       "default": "mitglied",
       "description": "Gew\u00fcnschte App-Rolle \u2013 wird beim ersten Login automatisch gesetzt"
     },
+    "haesgruppe_id": {
+      "type": "string",
+      "description": "ID der Gruppe/Sparte, der dieses Mitglied angeh\u00f6rt"
+    },
     "spartenleiter_haesgruppe_id": {
       "type": "string",
       "description": "H\u00e4sgruppe, f\u00fcr die dieses Mitglied als Spartenleiter zust\u00e4ndig ist"
