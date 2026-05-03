@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { ChevronDown, ChevronUp, Edit, Trash2, Plus, UserMinus, Search, Users } from 'lucide-react';
+import { ChevronDown, ChevronUp, Edit, Trash2, Plus, UserMinus, Search, Users, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import SpartenKalender from './SpartenKalender';
 
 const TYP_EMOJI = {
   'Häsgruppe': '🎭',
@@ -10,8 +11,9 @@ const TYP_EMOJI = {
   'Sonstige': '👥',
 };
 
-export default function Sparte({ gruppe, alleMitglieder, isAdmin, onEdit, onDelete, onMitgliederChanged }) {
+export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten, onEdit, onDelete, onMitgliederChanged }) {
   const [expanded, setExpanded] = useState(false);
+  const [activeTab, setActiveTab] = useState('mitglieder');
   const [showAddSearch, setShowAddSearch] = useState(false);
   const [suche, setSuche] = useState('');
 
@@ -85,7 +87,30 @@ export default function Sparte({ gruppe, alleMitglieder, isAdmin, onEdit, onDele
 
       {/* Body */}
       {expanded && (
-        <div className="border-t border-border p-4 space-y-3 bg-secondary/10">
+        <div className="border-t border-border bg-secondary/10">
+          {/* Tabs */}
+          <div className="flex gap-1 p-2 bg-secondary/50">
+            <button
+              onClick={() => setActiveTab('mitglieder')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'mitglieder' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <Users size={12} /> Mitglieder ({mitglieder.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('kalender')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'kalender' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <Calendar size={12} /> Termine
+            </button>
+          </div>
+
+          {activeTab === 'kalender' && (
+            <div className="p-4">
+              <SpartenKalender gruppe={gruppe} kannBearbeiten={isAdmin || kannBearbeiten} />
+            </div>
+          )}
+
+          {activeTab === 'mitglieder' && <div className="p-4 space-y-3">
           {mitglieder.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-2">Noch keine Mitglieder zugeordnet</p>
           ) : (
@@ -156,6 +181,7 @@ export default function Sparte({ gruppe, alleMitglieder, isAdmin, onEdit, onDele
               )}
             </div>
           )}
+          </div>}
         </div>
       )}
     </div>

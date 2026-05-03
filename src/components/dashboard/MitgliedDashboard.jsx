@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { Calendar, Briefcase, CreditCard, Bell, ChevronRight, Bus, Check, Clock, MapPin } from 'lucide-react';
+import { Calendar, Briefcase, CreditCard, Bell, ChevronRight, Bus, Check, Clock, MapPin, Music } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -52,6 +52,8 @@ export default function MitgliedDashboard() {
   const [ungeleseneNotifs, setUngeleseneNotifs] = useState([]);
   const [veranstaltungen, setVeranstaltungen] = useState([]);
   const [arbeitsdienste, setArbeitsdienste] = useState([]);
+  const [spartenTermine, setSpartenTermine] = useState([]);
+  const [meineSpartenGruppen, setMeineSpartenGruppen] = useState([]);
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -78,6 +80,20 @@ export default function MitgliedDashboard() {
         base44.entities.Veranstaltung.list('datum', 200),
         base44.entities.Arbeitsdienst.list('datum', 100),
       ]);
+
+      // Sparten-Termine: nur für Gruppen, in denen das Mitglied ist
+      const gruppenIds = mitglied.haesgruppen_ids || (mitglied.haesgruppe_id ? [mitglied.haesgruppe_id] : []);
+      if (gruppenIds.length > 0) {
+        const [alleTermine, gruppen] = await Promise.all([
+          base44.entities.SpartenTermin.list('datum', 200),
+          base44.entities.Haesgruppe.list('name', 100),
+        ]);
+        const meineTermine = alleTermine
+          .filter(t => gruppenIds.includes(t.haesgruppe_id) && t.datum >= today)
+          .slice(0, 5);
+        setSpartenTermine(meineTermine);
+        setMeineSpartenGruppen(gruppen.filter(g => gruppenIds.includes(g.id)));
+      }
 
       // Familienübersicht für Elternkonten
       if (user?.role === 'elternkonto' && mitglied.familie_id) {
@@ -195,6 +211,33 @@ export default function MitgliedDashboard() {
           </div>
         )}
       </Card>
+
+      {/* Sparten-Termine */}
+      {spartenTermine.length > 0 && (
+        <Card title="Meine Sparten-Termine" icon={Music} linkTo="/sparten">
+          <div className="space-y-2">
+            {spartenTermine.map(t => {
+              const gruppe = meineSpartenGruppen.find(g => g.id === t.haesgruppe_id);
+              return (
+                <div key={t.id} className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-purple-500/10 flex flex-col items-center justify-center shrink-0">
+                    <span className="text-[9px] text-muted-foreground">{format(new Date(t.datum), 'MMM', { locale: de })}</span>
+                    <span className="text-sm font-bold text-purple-400">{format(new Date(t.datum), 'd')}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{t.titel}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                      {t.uhrzeit && <span className="flex items-center gap-1"><Clock size={10} /> {t.uhrzeit}</span>}
+                      {gruppe && <span className="text-purple-400">{gruppe.name}</span>}
+                    </div>
+                  </div>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-400 shrink-0">{t.typ}</span>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       {/* Meine Arbeitsdienste */}
       <Card title="Meine Arbeitsdienste" icon={Briefcase} linkTo="/arbeitsdienste">

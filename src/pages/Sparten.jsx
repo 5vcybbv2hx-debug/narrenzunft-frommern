@@ -10,9 +10,11 @@ import Sparte from '@/components/sparten/Sparte';
 export default function Sparten() {
   const { user } = useAuth();
   const admin = isAdmin(user);
+  const isSpartenleiter = user?.role === 'spartenleiter';
 
   const [gruppen, setGruppen] = useState([]);
   const [mitglieder, setMitglieder] = useState([]);
+  const [meinMitglied, setMeinMitglied] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editGruppe, setEditGruppe] = useState(null);
@@ -28,6 +30,11 @@ export default function Sparten() {
     ]);
     setGruppen(g);
     setMitglieder(m);
+    if (isSpartenleiter) {
+      const me = await base44.auth.me();
+      const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
+      if (myM[0]) setMeinMitglied(myM[0]);
+    }
     setLoading(false);
   };
 
@@ -99,6 +106,7 @@ export default function Sparten() {
             gruppe={gruppe}
             alleMitglieder={mitglieder}
             isAdmin={admin}
+            kannBearbeiten={isSpartenleiter && meinMitglied?.spartenleiter_haesgruppe_id === gruppe.id}
             onEdit={() => { setEditGruppe(gruppe); setShowForm(true); }}
             onDelete={() => handleDelete(gruppe.id)}
             onMitgliederChanged={loadData}

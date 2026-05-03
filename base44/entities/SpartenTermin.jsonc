@@ -1,0 +1,47 @@
+{
+  "name": "SpartenTermin",
+  "type": "object",
+  "properties": {
+    "haesgruppe_id": {
+      "type": "string",
+      "description": "ID der Gruppe/Sparte"
+    },
+    "titel": {
+      "type": "string"
+    },
+    "typ": {
+      "type": "string",
+      "enum": [
+        "Probe",
+        "Auftritt",
+        "Besprechung",
+        "Ausflug",
+        "Sonstiges"
+      ],
+      "default": "Probe"
+    },
+    "datum": {
+      "type": "string",
+      "format": "date"
+    },
+    "uhrzeit": {
+      "type": "string",
+      "description": "HH:MM"
+    },
+    "endzeit": {
+      "type": "string",
+      "description": "HH:MM"
+    },
+    "ort": {
+      "type": "string"
+    },
+    "beschreibung": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "haesgruppe_id",
+    "titel",
+    "datum"
+  ]
+}
