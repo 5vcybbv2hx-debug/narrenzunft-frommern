@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
-import { CreditCard, Search, Filter, Plus, Check } from 'lucide-react';
+import { CreditCard, Search, Filter, Plus, Check, Settings } from 'lucide-react';
 import { format } from 'date-fns';
+import BeitraegeEinstellungen from '@/components/beitraege/BeitraegeEinstellungen';
 
 const STATUS_COLORS = {
   'Offen': 'bg-yellow-500/20 text-yellow-400',
@@ -12,7 +13,7 @@ const STATUS_COLORS = {
   'Erlassen': 'bg-gray-500/20 text-gray-400',
 };
 
-const BEITRAEGE_SATZ = {
+const DEFAULT_BEITRAEGE_SATZ = {
   'Aktiv': 60,
   'Passiv': 30,
   'Passiv mit Häs': 45,
@@ -33,6 +34,8 @@ export default function Beitraege() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [showEinstellungen, setShowEinstellungen] = useState(false);
+  const [beitraegeSatz, setBeitraegeSatz] = useState(DEFAULT_BEITRAEGE_SATZ);
   const isAdminUser = isAdmin(user);
 
   useEffect(() => {
@@ -55,6 +58,9 @@ export default function Beitraege() {
       const m = await base44.entities.Mitglied.list('nachname', 500);
       setBeitraege(bData);
       setMitglieder(m);
+      // Beitragssätze laden
+      const einst = await base44.entities.AppEinstellung.filter({ schluessel: 'beitraege_saetze' });
+      if (einst[0]?.wert_json) setBeitraegeSatz({ ...DEFAULT_BEITRAEGE_SATZ, ...einst[0].wert_json });
     } catch (e) {}
     setLoading(false);
   };
@@ -82,7 +88,7 @@ export default function Beitraege() {
       const neueBeitraege = neueM.map(m => ({
         mitglied_id: m.id,
         jahr: selectedYear,
-        betrag: BEITRAEGE_SATZ[m.mitgliedsstatus] || 0,
+        betrag: beitraegeSatz[m.mitgliedsstatus] || 0,
         mitgliedsstatus: m.mitgliedsstatus,
         zahlungsstatus: 'Offen',
       }));
@@ -125,6 +131,15 @@ export default function Beitraege() {
           <h1 className="text-2xl font-bold text-foreground">Beiträge</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{beitraege.length} Einträge</p>
         </div>
+        {isAdminUser && (
+          <button
+            onClick={() => setShowEinstellungen(true)}
+            className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground hover:bg-border transition-colors"
+            title="Beitragssätze anpassen"
+          >
+            <Settings size={18} />
+          </button>
+        )}
       </div>
 
       {/* Stats */}
@@ -247,6 +262,13 @@ export default function Beitraege() {
           </table>
         </div>
       </div>
+
+      {showEinstellungen && (
+        <BeitraegeEinstellungen
+          onClose={() => setShowEinstellungen(false)}
+          onSaved={(newSaetze) => { setBeitraegeSatz(newSaetze); setShowEinstellungen(false); }}
+        />
+      )}
 
       {filteredBeitraege.length === 0 && (
         <div className="text-center py-8">

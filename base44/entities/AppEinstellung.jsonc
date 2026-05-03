@@ -12,6 +12,10 @@
         "type": "string"
       },
       "description": "Liste von IDs (z.B. Mitglied-IDs)"
+    },
+    "wert_json": {
+      "type": "object",
+      "description": "Beliebige JSON-Daten (z.B. Beitragss\u00e4tze)"
     }
   },
   "required": [
