@@ -39,6 +39,7 @@ export default function Ausschuss() {
   const [termine, setTermine] = useState([]);
   const [aufgaben, setAufgaben] = useState([]);
   const [beschluesse, setBeschluesse] = useState([]);
+  const [abstimmungen, setAbstimmungen] = useState([]);
   const [mitglieder, setMitglieder] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -46,6 +47,8 @@ export default function Ausschuss() {
   const [showAufgabeModal, setShowAufgabeModal] = useState(false);
   const [showBeschlussModal, setShowBeschlussModal] = useState(false);
   const [showSitzungModal, setShowSitzungModal] = useState(false);
+  const [showAbstimmungModal, setShowAbstimmungModal] = useState(false);
+  const [editAbstimmung, setEditAbstimmung] = useState(null);
   const [editAufgabe, setEditAufgabe] = useState(null);
   const [editBeschluss, setEditBeschluss] = useState(null);
 
@@ -66,6 +69,9 @@ export default function Ausschuss() {
       setAufgaben(data.aufgaben || []);
       setBeschluesse(data.beschluesse || []);
       setMitglieder(data.mitglieder || []);
+      // Abstimmungen direkt laden
+      const abs = await base44.entities.Abstimmung.list('-created_date', 200);
+      setAbstimmungen(abs);
     } catch (e) {}
     setLoading(false);
   };
@@ -118,6 +124,7 @@ export default function Ausschuss() {
           { id: 'sitzungen', label: '📋 Sitzungen' },
           { id: 'aufgaben', label: `✅ Aufgaben (${offeneAufgaben.length})` },
           { id: 'beschluesse', label: '⚖️ Beschlüsse' },
+          { id: 'abstimmungen', label: `🗳️ Abstimmungen` },
           { id: 'mitglieder', label: '👥 Ausschuss' },
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -161,6 +168,50 @@ export default function Ausschuss() {
                   <SitzungsKarte key={t.id} termin={t} aufgaben={aufgaben.filter(a => a.termin_id === t.id)} vergangen />
                 ))}
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ABSTIMMUNGEN */}
+      {activeTab === 'abstimmungen' && (
+        <div>
+          <div className="flex justify-end mb-4">
+            <button onClick={() => { setEditAbstimmung(null); setShowAbstimmungModal(true); }}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
+              <Plus size={15} /> Abstimmung
+            </button>
+          </div>
+          <div className="space-y-2">
+            {abstimmungen.map(a => {
+              const sitzung = termine.find(t => t.id === a.termin_id);
+              return (
+                <div key={a.id} className="bg-card border border-border rounded-xl p-4 flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <p className="text-sm font-semibold text-foreground">{a.titel}</p>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${a.status === 'Abgeschlossen' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                        {a.status}
+                      </span>
+                      {a.ergebnis && (
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${a.ergebnis === 'Angenommen' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                          {a.ergebnis}
+                        </span>
+                      )}
+                    </div>
+                    {a.beschreibung && <p className="text-xs text-muted-foreground">{a.beschreibung}</p>}
+                    {sitzung && <p className="text-xs text-muted-foreground mt-1">📋 {sitzung.titel} · {sitzung.datum}</p>}
+                  </div>
+                  <button onClick={() => { setEditAbstimmung(a); setShowAbstimmungModal(true); }}
+                    className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors text-xs">✏️</button>
+                </div>
+              );
+            })}
+          </div>
+          {abstimmungen.length === 0 && (
+            <div className="text-center py-12 bg-card border border-border rounded-xl">
+              <FileText size={32} className="text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">Noch keine Abstimmungen erfasst</p>
             </div>
           )}
         </div>
@@ -255,6 +306,16 @@ export default function Ausschuss() {
           termine={termine}
           onClose={() => { setShowAufgabeModal(false); setEditAufgabe(null); }}
           onSaved={() => { setShowAufgabeModal(false); setEditAufgabe(null); loadData(); }}
+        />
+      )}
+
+      {/* Abstimmung Modal */}
+      {showAbstimmungModal && (
+        <AbstimmungModal
+          abstimmung={editAbstimmung}
+          termine={termine}
+          onClose={() => { setShowAbstimmungModal(false); setEditAbstimmung(null); }}
+          onSaved={() => { setShowAbstimmungModal(false); setEditAbstimmung(null); loadData(); }}
         />
       )}
 
@@ -378,6 +439,78 @@ function AufgabeModal({ aufgabe, mitglieder, termine, onClose, onSaved }) {
           </div>
           <textarea placeholder="Notizen" value={form.notizen || ''} onChange={e => set('notizen', e.target.value)}
             rows={2} className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary resize-none" />
+        </div>
+        <div className="flex gap-2 mt-4">
+          {!isNew && <button onClick={handleDelete} className="p-2.5 rounded-lg bg-destructive/10 text-destructive"><Trash2 size={16} /></button>}
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm">Abbrechen</button>
+          <button onClick={handleSave} disabled={saving || !form.titel}
+            className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">
+            {saving ? '...' : 'Speichern'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AbstimmungModal({ abstimmung, termine, onClose, onSaved }) {
+  const isNew = !abstimmung;
+  const [form, setForm] = useState({
+    titel: '', beschreibung: '', status: 'Offen', angenommen_ab: 50, termin_id: '',
+    ...abstimmung,
+  });
+  const [saving, setSaving] = useState(false);
+  const set = (f, v) => setForm(p => ({ ...p, [f]: v }));
+
+  const handleSave = async () => {
+    if (!form.titel) return;
+    setSaving(true);
+    if (isNew) await base44.entities.Abstimmung.create(form);
+    else await base44.entities.Abstimmung.update(abstimmung.id, form);
+    setSaving(false);
+    onSaved();
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm('Abstimmung löschen?')) return;
+    await base44.entities.Abstimmung.delete(abstimmung.id);
+    onSaved();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
+      <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-foreground">{isNew ? 'Neue Abstimmung' : 'Abstimmung bearbeiten'}</h3>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"><X size={16} /></button>
+        </div>
+        <div className="space-y-3">
+          <input type="text" placeholder="Titel *" value={form.titel} onChange={e => set('titel', e.target.value)}
+            className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+          <textarea placeholder="Beschreibung / Antrag" value={form.beschreibung || ''} onChange={e => set('beschreibung', e.target.value)}
+            rows={3} className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary resize-none" />
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">Status</label>
+              <select value={form.status} onChange={e => set('status', e.target.value)}
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary">
+                {['Offen','Abgeschlossen'].map(s => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">Angenommen ab (%)</label>
+              <input type="number" min="1" max="100" value={form.angenommen_ab} onChange={e => set('angenommen_ab', Number(e.target.value))}
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">Zugehörige Sitzung</label>
+            <select value={form.termin_id || ''} onChange={e => set('termin_id', e.target.value)}
+              className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary">
+              <option value="">–</option>
+              {termine.map(t => <option key={t.id} value={t.id}>{t.titel} ({t.datum})</option>)}
+            </select>
+          </div>
         </div>
         <div className="flex gap-2 mt-4">
           {!isNew && <button onClick={handleDelete} className="p-2.5 rounded-lg bg-destructive/10 text-destructive"><Trash2 size={16} /></button>}
