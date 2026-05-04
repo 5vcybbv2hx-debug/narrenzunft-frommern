@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Nur Admins dürfen importieren' }, { status: 403 });
   }
 
-  const { personen_url, kontakte_url, adressen_url, mode = 'preview', offset = 0, limit = 50 } = await req.json();
+  const { personen_url, kontakte_url, adressen_url, mode = 'preview', offset = 0, limit = 20 } = await req.json();
 
   if (!personen_url) return Response.json({ error: 'personen_url fehlt' }, { status: 400 });
 
@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
         await base44.asServiceRole.entities.Mitglied.create(data);
         created++;
       }
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise(r => setTimeout(r, 300));
     }
   }
 

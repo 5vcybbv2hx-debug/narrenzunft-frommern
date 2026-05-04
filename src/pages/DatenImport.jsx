@@ -42,7 +42,7 @@ const SCHRITTE = [
     payload: (mode, offset) => ({
       mode,
       offset: offset || 0,
-      limit: 50,
+      limit: 20,
       personen_url: CSV_URLS.personen,
       kontakte_url: CSV_URLS.kontakte,
       adressen_url: CSV_URLS.adressen,
