@@ -90,6 +90,7 @@ export default function ImportSchritt({ schritt }) {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [status, setStatus] = useState('idle'); // idle | previewed | running | done | error
+  const [progress, setProgress] = useState(null); // { current, total }
 
   const handlePreview = async () => {
     setLoading(true);
@@ -122,13 +123,17 @@ export default function ImportSchritt({ schritt }) {
 
     try {
       if (schritt.batched) {
-        // Batched execution
+        // Batched execution mit Fortschritt
         let offset = 0;
+        let total = null;
         let gesamt = { updated: 0, created: 0, haesZugewiesen: 0, zugeordnet: 0, nichtGefunden: 0 };
 
         while (true) {
           const res = await base44.functions.invoke(schritt.funktion, schritt.payload('execute', offset));
           const data = res.data;
+
+          if (total === null) total = data.total || 0;
+          setProgress({ current: Math.min(offset + (data.processed || 20), total), total });
 
           // Stats akkumulieren
           gesamt.updated += data.updated || 0;
@@ -140,10 +145,11 @@ export default function ImportSchritt({ schritt }) {
           if (data.done || !data.next_offset) break;
           offset = data.next_offset;
 
-          // Kurze Pause zwischen Batches
-          await new Promise(r => setTimeout(r, 300));
+          // Pause zwischen Batches um Rate-Limit zu vermeiden
+          await new Promise(r => setTimeout(r, 1500));
         }
 
+        setProgress(null);
         setResult({ ...gesamt, message: 'Alle Batches abgeschlossen' });
       } else {
         const res = await base44.functions.invoke(schritt.funktion, schritt.payload('execute'));
@@ -220,6 +226,22 @@ export default function ImportSchritt({ schritt }) {
           </button>
         </div>
       </div>
+
+      {/* Fortschritt-Banner */}
+      {progress && (
+        <div className="mx-5 mb-3 px-4 py-2.5 rounded-lg bg-primary/10 border border-primary/20">
+          <div className="flex items-center justify-between mb-1.5">
+            <p className="text-xs text-primary font-medium">Verarbeite... {progress.current} / {progress.total}</p>
+            <p className="text-xs text-muted-foreground">{progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0}%</p>
+          </div>
+          <div className="w-full bg-secondary rounded-full h-1.5">
+            <div
+              className="bg-primary h-1.5 rounded-full transition-all duration-300"
+              style={{ width: `${progress.total > 0 ? (progress.current / progress.total) * 100 : 0}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Ergebnis-Banner */}
       {result && (
