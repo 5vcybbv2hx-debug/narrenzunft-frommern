@@ -285,8 +285,8 @@ function SitzungsKarte({ termin, aufgaben, vergangen }) {
     <div className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary/40 transition-colors">
       <button onClick={() => navigate(`/ausschuss/sitzung/${termin.id}`)} className="w-full flex items-center gap-3 px-4 py-3 text-left">
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex flex-col items-center justify-center shrink-0">
-          <span className="text-[9px] text-muted-foreground">{format(new Date(termin.datum), 'MMM', { locale: de })}</span>
-          <span className="text-sm font-bold text-primary">{format(new Date(termin.datum), 'd')}</span>
+          <span className="text-[9px] text-muted-foreground">{format(new Date(termin.datum + 'T12:00:00'), 'MMM', { locale: de })}</span>
+          <span className="text-sm font-bold text-primary">{format(new Date(termin.datum + 'T12:00:00'), 'd')}</span>
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-foreground truncate">{termin.titel}</p>
