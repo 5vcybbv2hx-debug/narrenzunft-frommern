@@ -78,12 +78,32 @@ Deno.serve(async (req) => {
   const personIds = Object.keys(personMap);
   const total = personIds.length;
 
-  // ── 2. DB-Daten laden
-  const [dbMitglieder, dbHaes, dbGruppen] = await Promise.all([
-    base44.asServiceRole.entities.Mitglied.list('nachname', 2000),
-    base44.asServiceRole.entities.Haes.list('haesnummer', 2000),
-    base44.asServiceRole.entities.Haesgruppe.list('name', 500),
-  ]);
+  // ── 2. DB-Daten laden (sequentiell um Rate-Limit zu vermeiden)
+  const dbMitglieder = [];
+  let mPage = 0;
+  while (true) {
+    const chunk = await base44.asServiceRole.entities.Mitglied.list('nachname', 200, mPage * 200);
+    dbMitglieder.push(...chunk);
+    if (chunk.length < 200) break;
+    mPage++;
+    await new Promise(r => setTimeout(r, 500));
+  }
+
+  await new Promise(r => setTimeout(r, 500));
+
+  const dbHaes = [];
+  let hPage = 0;
+  while (true) {
+    const chunk = await base44.asServiceRole.entities.Haes.list('haesnummer', 200, hPage * 200);
+    dbHaes.push(...chunk);
+    if (chunk.length < 200) break;
+    hPage++;
+    await new Promise(r => setTimeout(r, 500));
+  }
+
+  await new Promise(r => setTimeout(r, 500));
+
+  const dbGruppen = await base44.asServiceRole.entities.Haesgruppe.list('name', 500);
 
   // Mitglieder-Index
   const mitgliedByKey = {};
@@ -257,10 +277,10 @@ Deno.serve(async (req) => {
           });
         }
         haesZugewiesen++;
-        await new Promise(r => setTimeout(r, 80));
+        await new Promise(r => setTimeout(r, 300));
       }
 
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise(r => setTimeout(r, 400));
     }
 
     if (!mitglied && mode === 'execute') nichtGefunden++;

@@ -84,7 +84,7 @@ export default function DatenImport() {
 
         if (data.done || !data.next_offset) break;
         offset = data.next_offset;
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise(r => setTimeout(r, 3000));
       }
 
       setProgress(null);
