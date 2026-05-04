@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { Calendar, Plus, MapPin, Clock, Users, Bus, ChevronRight, Filter } from 'lucide-react';
+import { Calendar, Plus, MapPin, Clock, Users, Bus, ChevronRight, Filter, LayoutTemplate } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import VeranstaltungsvorlagenModal from '@/components/veranstaltung/VeranstaltungsvorlagenModal';
 
 const TYP_COLORS = {
   'Intern': 'bg-blue-500/20 text-blue-400',
@@ -29,6 +30,7 @@ export default function Veranstaltungen() {
   const [loading, setLoading] = useState(true);
   const isAdmin = user?.role === 'admin';
   const today = new Date().toISOString().split('T')[0];
+  const [showVorlagen, setShowVorlagen] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -69,13 +71,23 @@ export default function Veranstaltungen() {
           <p className="text-sm text-muted-foreground mt-0.5">Intern organisierte Termine · {veranstaltungen.length} gesamt</p>
         </div>
         {isAdmin && (
-          <Link
-            to="/veranstaltungen/neu"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
-          >
-            <Plus size={16} />
-            <span className="hidden sm:inline">Neue Veranstaltung</span>
-          </Link>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowVorlagen(true)}
+              className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-secondary text-muted-foreground text-sm font-medium hover:bg-border hover:text-foreground transition-colors"
+              title="Vorlagen verwalten"
+            >
+              <LayoutTemplate size={16} />
+              <span className="hidden sm:inline">Vorlagen</span>
+            </button>
+            <Link
+              to="/veranstaltungen/neu"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+            >
+              <Plus size={16} />
+              <span className="hidden sm:inline">Neue Veranstaltung</span>
+            </Link>
+          </div>
         )}
       </div>
 
@@ -147,6 +159,10 @@ export default function Veranstaltungen() {
           );
         })}
       </div>
+
+      {showVorlagen && (
+        <VeranstaltungsvorlagenModal onClose={() => setShowVorlagen(false)} />
+      )}
 
       {filtered.length === 0 && (
         <div className="text-center py-12">
