@@ -23,30 +23,21 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Nur Admins dürfen importieren' }, { status: 403 });
   }
 
-  const { gruppen_url, personen_url, mitgliedschaft_gruppen_url, mode = 'preview' } = await req.json();
+  const { gruppen_text, personen_text, mitgliedschaft_gruppen_text, mode = 'preview' } = await req.json();
 
-  if (!gruppen_url || !personen_url || !mitgliedschaft_gruppen_url) {
-    return Response.json({ error: 'gruppen_url, personen_url und mitgliedschaft_gruppen_url sind Pflicht' }, { status: 400 });
+  if (!gruppen_text || !personen_text || !mitgliedschaft_gruppen_text) {
+    return Response.json({ error: 'gruppen_text, personen_text und mitgliedschaft_gruppen_text sind Pflicht' }, { status: 400 });
   }
 
-  const [gruppenText, personenText, mgruppenText] = await Promise.all([
-    fetch(gruppen_url).then(r => r.text()),
-    fetch(personen_url).then(r => r.text()),
-    fetch(mitgliedschaft_gruppen_url).then(r => r.text()),
-  ]);
+  const gruppenRows = parseCsvSemicolon(gruppen_text);
+  const personenRows = parseCsvSemicolon(personen_text);
+  const mgruppenRows = parseCsvSemicolon(mitgliedschaft_gruppen_text);
 
-  const gruppenRows = parseCsvSemicolon(gruppenText);
-  const personenRows = parseCsvSemicolon(personenText);
-  const mgruppenRows = parseCsvSemicolon(mgruppenText);
-
-  // Personen-Index
   const personenIndex = {};
   for (const p of personenRows) {
     personenIndex[p.person_id] = p;
   }
 
-  // Pro Person: welche Gruppen?
-  // person_id -> [{ gruppe_id, gruppenname, gruppenart }]
   const personGruppen = {};
   for (const mg of mgruppenRows) {
     if (!personGruppen[mg.person_id]) personGruppen[mg.person_id] = [];
@@ -59,13 +50,11 @@ Deno.serve(async (req) => {
     }
   }
 
-  // DB-Daten laden (alle Gruppen inkl. inaktive, um Duplikate zu vermeiden)
   const [dbMitglieder, dbGruppen] = await Promise.all([
     base44.asServiceRole.entities.Mitglied.list('nachname', 2000),
     base44.asServiceRole.entities.Haesgruppe.list('name', 500),
   ]);
 
-  // Mitglieder-Index
   const mitgliedByKey = {};
   const mitgliedByOhneGeb = {};
   for (const m of dbMitglieder) {
@@ -75,35 +64,27 @@ Deno.serve(async (req) => {
     if (!mitgliedByOhneGeb[keyOhne]) mitgliedByOhneGeb[keyOhne] = m;
   }
 
-  // Gruppen-Index: name.toLowerCase() -> gruppe (aktive bevorzugen)
   const gruppeByName = {};
   for (const g of dbGruppen) {
     const key = g.name.toLowerCase();
-    // Aktive Gruppe überschreibt inaktive
     if (!gruppeByName[key] || g.aktiv) {
       gruppeByName[key] = g;
     }
   }
 
-  // Schritt 1: Gruppen anlegen falls nicht vorhanden (auch inaktive zählen als "bereits vorhanden")
   const gruppenErgebnis = [];
   for (const g of gruppenRows) {
     const existing = gruppeByName[g.name.toLowerCase()];
     const typ = GRUPPENART_MAP[g.gruppenart] || 'Sonstige';
     if (!existing) {
       if (mode === 'execute') {
-        const neu = await base44.asServiceRole.entities.Haesgruppe.create({
-          name: g.name,
-          typ,
-          aktiv: true,
-        });
+        const neu = await base44.asServiceRole.entities.Haesgruppe.create({ name: g.name, typ, aktiv: true });
         gruppeByName[g.name.toLowerCase()] = neu;
         gruppenErgebnis.push({ name: g.name, aktion: 'erstellt', typ });
       } else {
         gruppenErgebnis.push({ name: g.name, aktion: 'würde erstellt werden', typ });
       }
     } else if (!existing.aktiv) {
-      // Inaktive Gruppe reaktivieren statt Duplikat erstellen
       if (mode === 'execute') {
         await base44.asServiceRole.entities.Haesgruppe.update(existing.id, { aktiv: true });
         gruppeByName[g.name.toLowerCase()] = { ...existing, aktiv: true };
@@ -116,10 +97,8 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Schritt 2: Mitglieder den Gruppen zuordnen
   const zuordnungen = [];
   let zugeordnet = 0, nichtGefunden = 0;
-
   const allePersonIds = Object.keys(personGruppen);
 
   for (const personId of allePersonIds) {
@@ -132,7 +111,6 @@ Deno.serve(async (req) => {
 
     const gruppen = personGruppen[personId];
     const gruppenIdsZuweisen = [];
-
     for (const g of gruppen) {
       const dbGruppe = gruppeByName[g.gruppenname.toLowerCase()];
       if (dbGruppe) gruppenIdsZuweisen.push(dbGruppe.id);
@@ -147,13 +125,9 @@ Deno.serve(async (req) => {
     };
 
     if (mode === 'execute' && mitglied && gruppenIdsZuweisen.length > 0) {
-      // Bestehende IDs mergen
       const aktuelle = mitglied.haesgruppen_ids || (mitglied.haesgruppe_id ? [mitglied.haesgruppe_id] : []);
       const merged = [...new Set([...aktuelle, ...gruppenIdsZuweisen])];
-
-      await base44.asServiceRole.entities.Mitglied.update(mitglied.id, {
-        haesgruppen_ids: merged,
-      });
+      await base44.asServiceRole.entities.Mitglied.update(mitglied.id, { haesgruppen_ids: merged });
       zugeordnet++;
       await new Promise(r => setTimeout(r, 80));
     } else if (!mitglied) {

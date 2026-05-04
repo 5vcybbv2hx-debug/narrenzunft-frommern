@@ -1,10 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-// Status-Mapping aus den bereinigten CSV-Daten
 const STATUS_MAP = {
   'active': 'Aktiv',
   'passive': 'Passiv',
-  'resigned': 'Passiv', // Ausgetreten → Passiv (mit Austrittsdatum)
+  'resigned': 'Passiv',
   'twen': 'Jungaktive 15-17',
   'teen': 'Jugendliche 11-14',
   'child': 'Kinder 4-10',
@@ -29,22 +28,14 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Nur Admins dürfen importieren' }, { status: 403 });
   }
 
-  const { personen_url, kontakte_url, adressen_url, mode = 'preview', offset = 0, limit = 20 } = await req.json();
+  const { personen_text, kontakte_text, adressen_text, mode = 'preview', offset = 0, limit = 20 } = await req.json();
 
-  if (!personen_url) return Response.json({ error: 'personen_url fehlt' }, { status: 400 });
+  if (!personen_text) return Response.json({ error: 'personen_text fehlt' }, { status: 400 });
 
-  // Alle CSV-Dateien parallel laden
-  const [personenText, kontakteText, adressenText] = await Promise.all([
-    fetch(personen_url).then(r => r.text()),
-    kontakte_url ? fetch(kontakte_url).then(r => r.text()) : Promise.resolve(null),
-    adressen_url ? fetch(adressen_url).then(r => r.text()) : Promise.resolve(null),
-  ]);
+  const personen = parseCsvSemicolon(personen_text);
+  const kontakte = kontakte_text ? parseCsvSemicolon(kontakte_text) : [];
+  const adressen = adressen_text ? parseCsvSemicolon(adressen_text) : [];
 
-  const personen = parseCsvSemicolon(personenText);
-  const kontakte = kontakteText ? parseCsvSemicolon(kontakteText) : [];
-  const adressen = adressenText ? parseCsvSemicolon(adressenText) : [];
-
-  // Kontakte-Index: person_id -> { telefon, email, mobil }
   const kontakteIndex = {};
   for (const k of kontakte) {
     if (!kontakteIndex[k.person_id]) kontakteIndex[k.person_id] = {};
@@ -53,13 +44,11 @@ Deno.serve(async (req) => {
     if (k.typ === 'email') kontakteIndex[k.person_id].email = k.wert;
   }
 
-  // Adressen-Index: person_id -> adresse
   const adressenIndex = {};
   for (const a of adressen) {
     adressenIndex[a.person_id] = a;
   }
 
-  // Aktuelle Mitglieder seitenweise laden (Rate-Limit vermeiden)
   const existingByKey = {};
   let page = 0;
   const pageSize = 200;
@@ -79,7 +68,6 @@ Deno.serve(async (req) => {
 
   const total = personen.length;
   const batch = personen.slice(offset, offset + limit);
-
   const preview = [];
   let updated = 0, created = 0, skipped = 0;
 
@@ -92,12 +80,6 @@ Deno.serve(async (req) => {
     const kontakt = kontakteIndex[p.person_id] || {};
     const adresse = adressenIndex[p.person_id] || {};
     const telefon = kontakt.mobil || kontakt.telefon || null;
-
-    let austrittsdatum = null;
-    if (p.status_gesamt === 'resigned') {
-      // Prüfe ob Austrittsdatum in Kommentaren – hier leer lassen, nur Status setzen
-      austrittsdatum = null;
-    }
 
     const data = {
       vorname: p.vorname,
@@ -120,10 +102,8 @@ Deno.serve(async (req) => {
         status: p.status_gesamt,
         match: existing ? `✓ ${existing.vorname} ${existing.nachname} (ID: ${existing.id})` : '➕ Neu anlegen',
         aktion: existing ? 'update' : 'create',
-        daten: data,
       });
     } else {
-      // Ausführen
       if (existing) {
         await base44.asServiceRole.entities.Mitglied.update(existing.id, data);
         updated++;

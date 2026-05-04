@@ -11,7 +11,6 @@ function parseCsvSemicolon(text) {
   });
 }
 
-// Gruppenname -> Häsgruppen-Typ-Mapping
 const GRUPPEN_TYP_MAP = {
   'Maskengruppe': 'Häsgruppe',
   'Tanzgruppe': 'Tanzgruppe',
@@ -25,45 +24,34 @@ Deno.serve(async (req) => {
   }
 
   const {
-    haes_url,
-    personen_url,
-    gruppen_url,
-    mitgliedschaft_gruppen_url,
+    haes_text,
+    personen_text,
+    gruppen_text,
+    mitgliedschaft_gruppen_text,
     mode = 'preview',
     offset = 0,
     limit = 50
   } = await req.json();
 
-  if (!haes_url || !personen_url) {
-    return Response.json({ error: 'haes_url und personen_url sind Pflicht' }, { status: 400 });
+  if (!haes_text || !personen_text) {
+    return Response.json({ error: 'haes_text und personen_text sind Pflicht' }, { status: 400 });
   }
 
-  // Alle Daten parallel laden
-  const [haesText, personenText, gruppenText, mgruppenText] = await Promise.all([
-    fetch(haes_url).then(r => r.text()),
-    fetch(personen_url).then(r => r.text()),
-    gruppen_url ? fetch(gruppen_url).then(r => r.text()) : Promise.resolve(null),
-    mitgliedschaft_gruppen_url ? fetch(mitgliedschaft_gruppen_url).then(r => r.text()) : Promise.resolve(null),
-  ]);
+  const haesRows = parseCsvSemicolon(haes_text);
+  const personenRows = parseCsvSemicolon(personen_text);
+  const gruppenRows = gruppen_text ? parseCsvSemicolon(gruppen_text) : [];
+  const mgruppenRows = mitgliedschaft_gruppen_text ? parseCsvSemicolon(mitgliedschaft_gruppen_text) : [];
 
-  const haesRows = parseCsvSemicolon(haesText);
-  const personenRows = parseCsvSemicolon(personenText);
-  const gruppenRows = gruppenText ? parseCsvSemicolon(gruppenText) : [];
-  const mgruppenRows = mgruppenText ? parseCsvSemicolon(mgruppenText) : [];
-
-  // Personen-Index: person_id -> { vorname, nachname, geburtsdatum }
   const personenIndex = {};
   for (const p of personenRows) {
     personenIndex[p.person_id] = p;
   }
 
-  // Gruppen-Index: gruppe_id -> gruppenname
   const gruppenIndex = {};
   for (const g of gruppenRows) {
     gruppenIndex[g.gruppe_id] = g;
   }
 
-  // Mitgliedschaft-Gruppen-Index: person_id -> [gruppe_id, ...]
   const personGruppenIndex = {};
   for (const mg of mgruppenRows) {
     if (!personGruppenIndex[mg.person_id]) personGruppenIndex[mg.person_id] = [];
@@ -72,14 +60,12 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Aktuelle DB-Daten laden
   const [dbMitglieder, dbHaes, dbGruppen] = await Promise.all([
     base44.asServiceRole.entities.Mitglied.list('nachname', 2000),
     base44.asServiceRole.entities.Haes.list('haesnummer', 2000),
     base44.asServiceRole.entities.Haesgruppe.list('name', 200),
   ]);
 
-  // Mitglieder-Index: "nachname|vorname|geburtsdatum" -> mitglied
   const mitgliedByKey = {};
   const mitgliedByGebKey = {};
   for (const m of dbMitglieder) {
@@ -89,15 +75,12 @@ Deno.serve(async (req) => {
     if (!mitgliedByGebKey[keyOhne]) mitgliedByGebKey[keyOhne] = m;
   }
 
-  // Häs-Index: haesnummer -> haes
   const haesIndex = {};
   for (const h of dbHaes) {
     haesIndex[h.haesnummer] = h;
-    // Auch ohne führende Nullen
     haesIndex[String(parseInt(h.haesnummer))] = h;
   }
 
-  // Häsgruppen-Index: name.toLowerCase() -> gruppe
   const gruppeByName = {};
   for (const g of dbGruppen) {
     gruppeByName[g.name.toLowerCase()] = g;
@@ -105,7 +88,6 @@ Deno.serve(async (req) => {
 
   const total = haesRows.length;
   const batch = haesRows.slice(offset, offset + limit);
-
   const preview = [];
   let haesZugewiesen = 0, haesNichtGefunden = 0, mitgliedNichtGefunden = 0;
 
@@ -116,21 +98,16 @@ Deno.serve(async (req) => {
 
     if (!person || !haesnummer) continue;
 
-    // Häs in DB suchen
     const haesInDb = haesIndex[haesnummer] || haesIndex[String(parseInt(haesnummer))];
-
-    // Mitglied in DB suchen
     const matchKey = `${person.nachname}|${person.vorname}|${person.geburtsdatum || ''}`;
     const matchKeyOhne = `${person.nachname}|${person.vorname}|`;
     const mitglied = mitgliedByKey[matchKey] || mitgliedByGebKey[matchKeyOhne];
 
-    // Gruppe des Mitglieds ermitteln (erste Gruppe aus mitgliedschaft_gruppen)
     const gruppenIds = personGruppenIndex[personId] || [];
     let haesgruppe = null;
     for (const gid of gruppenIds) {
       const g = gruppenIndex[gid];
       if (g) {
-        // Gruppe in DB suchen
         haesgruppe = gruppeByName[g.name.toLowerCase()];
         if (haesgruppe) break;
       }
@@ -141,8 +118,8 @@ Deno.serve(async (req) => {
       person_id: personId,
       person_name: `${person.vorname} ${person.nachname}`,
       haes_in_db: haesInDb ? `✓ ${haesInDb.haesnummer} (${haesInDb.status})` : '✗ Nicht gefunden',
-      mitglied_in_db: mitglied ? `✓ ${mitglied.vorname} ${mitglied.nachname} (ID: ${mitglied.id})` : '✗ Nicht gefunden',
-      haesgruppe: haesgruppe ? `✓ ${haesgruppe.name}` : gruppenIds.length > 0 ? `✗ "${gruppenIds.map(id => gruppenIndex[id]?.name).join(', ')}" nicht in DB` : '– keine Gruppe',
+      mitglied_in_db: mitglied ? `✓ ${mitglied.vorname} ${mitglied.nachname}` : '✗ Nicht gefunden',
+      haesgruppe: haesgruppe ? `✓ ${haesgruppe.name}` : '– keine Gruppe',
       aktion: haesInDb && mitglied ? 'zuweisen' : 'überspringen',
     };
 
@@ -151,7 +128,6 @@ Deno.serve(async (req) => {
     } else if (mode === 'execute') {
       if (haesInDb && mitglied) {
         const heute = new Date().toISOString().split('T')[0];
-        // Häs aktualisieren
         await base44.asServiceRole.entities.Haes.update(haesInDb.id, {
           aktueller_besitzer_id: mitglied.id,
           status: 'Verliehen',
@@ -159,8 +135,6 @@ Deno.serve(async (req) => {
           privat_eigentuemer_id: mitglied.id,
           ...(haesgruppe ? { haesgruppe_id: haesgruppe.id } : {}),
         });
-
-        // HaesHistorie anlegen (wenn noch keine aktive existiert)
         const bestehende = await base44.asServiceRole.entities.HaesHistorie.filter({ haes_id: haesInDb.id, aktiv: true });
         if (bestehende.length === 0) {
           await base44.asServiceRole.entities.HaesHistorie.create({

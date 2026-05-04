@@ -11,8 +11,8 @@ const IMPORT_SCHRITTE = [
     nummer: 1,
     titel: 'Sparten & Gruppen + Mitglieder-Zuordnungen',
     beschreibung: 'Gruppen aus CSV anlegen und Mitglieder den Gruppen zuordnen.',
-    felder: ['gruppen_url', 'personen_url', 'mitgliedschaft_gruppen_url'],
-    feldLabels: { gruppen_url: 'Gruppen CSV', personen_url: 'Personen CSV', mitgliedschaft_gruppen_url: 'Mitgliedschaft-Gruppen CSV' },
+    felder: ['gruppen_text', 'personen_text', 'mitgliedschaft_gruppen_text'],
+    feldLabels: { gruppen_text: 'Gruppen CSV', personen_text: 'Personen CSV', mitgliedschaft_gruppen_text: 'Mitgliedschaft-Gruppen CSV' },
     funktion: 'importGruppenCSV',
   },
   {
@@ -20,8 +20,8 @@ const IMPORT_SCHRITTE = [
     nummer: 2,
     titel: 'Mitglieder-Stammdaten',
     beschreibung: 'Personen abgleichen: Adresse, Geburtsdatum, Telefon, E-Mail aktualisieren.',
-    felder: ['personen_url', 'kontakte_url', 'adressen_url'],
-    feldLabels: { personen_url: 'Personen CSV', kontakte_url: 'Kontakte CSV', adressen_url: 'Adressen CSV' },
+    felder: ['personen_text', 'kontakte_text', 'adressen_text'],
+    feldLabels: { personen_text: 'Personen CSV', kontakte_text: 'Kontakte CSV', adressen_text: 'Adressen CSV' },
     funktion: 'importPersonenCSV',
     batched: true,
     limit: 20,
@@ -31,31 +31,34 @@ const IMPORT_SCHRITTE = [
     nummer: 3,
     titel: 'Häs-Zuweisungen',
     beschreibung: 'Häs-Nummern aus CSV den richtigen Personen zuweisen.',
-    felder: ['haes_url', 'personen_url', 'gruppen_url', 'mitgliedschaft_gruppen_url'],
-    feldLabels: { haes_url: 'Häs CSV', personen_url: 'Personen CSV', gruppen_url: 'Gruppen CSV', mitgliedschaft_gruppen_url: 'Mitgliedschaft-Gruppen CSV' },
+    felder: ['haes_text', 'personen_text', 'gruppen_text', 'mitgliedschaft_gruppen_text'],
+    feldLabels: { haes_text: 'Häs CSV', personen_text: 'Personen CSV', gruppen_text: 'Gruppen CSV', mitgliedschaft_gruppen_text: 'Mitgliedschaft-Gruppen CSV' },
     funktion: 'importHaesCSV',
     batched: true,
     limit: 50,
   },
 ];
 
-function DateiUpload({ label, onUploaded, uploadedUrl, onClear }) {
-  const [uploading, setUploading] = useState(false);
+function DateiUpload({ label, onUploaded, uploadedName, onClear }) {
+  const [reading, setReading] = useState(false);
 
-  const handleFile = async (e) => {
+  const handleFile = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setUploading(false);
-    onUploaded(file_url);
+    setReading(true);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      onUploaded(ev.target.result, file.name);
+      setReading(false);
+    };
+    reader.readAsText(file, 'UTF-8');
   };
 
-  if (uploadedUrl) {
+  if (uploadedName) {
     return (
       <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/30">
         <FileText size={14} className="text-green-400 shrink-0" />
-        <span className="text-xs text-green-400 flex-1 truncate">{label}: hochgeladen ✓</span>
+        <span className="text-xs text-green-400 flex-1 truncate">{label}: {uploadedName} ✓</span>
         <button onClick={onClear} className="text-muted-foreground hover:text-destructive transition-colors"><X size={13} /></button>
       </div>
     );
@@ -63,29 +66,30 @@ function DateiUpload({ label, onUploaded, uploadedUrl, onClear }) {
 
   return (
     <label className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-secondary border border-border border-dashed cursor-pointer hover:border-primary/50 transition-colors">
-      {uploading ? (
+      {reading ? (
         <div className="w-3.5 h-3.5 border-2 border-border border-t-primary rounded-full animate-spin shrink-0" />
       ) : (
         <Upload size={14} className="text-muted-foreground shrink-0" />
       )}
-      <span className="text-xs text-muted-foreground">{uploading ? 'Lade hoch...' : label + ' hochladen'}</span>
-      <input type="file" accept=".csv" className="hidden" onChange={handleFile} disabled={uploading} />
+      <span className="text-xs text-muted-foreground">{reading ? 'Lese...' : label + ' auswählen'}</span>
+      <input type="file" accept=".csv" className="hidden" onChange={handleFile} disabled={reading} />
     </label>
   );
 }
 
 function ImportSchritt({ schritt }) {
-  const [urls, setUrls] = useState({});
+  const [texte, setTexte] = useState({});
+  const [namen, setNamen] = useState({});
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState(null);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [progress, setProgress] = useState(null);
 
-  const alleHochgeladen = schritt.felder.every(f => urls[f]);
+  const alleHochgeladen = schritt.felder.every(f => texte[f]);
 
   const buildPayload = (mode, offset = 0) => {
-    const p = { mode, ...urls };
+    const p = { mode, ...texte };
     if (schritt.batched) {
       p.offset = offset;
       p.limit = schritt.limit || 20;
@@ -151,9 +155,15 @@ function ImportSchritt({ schritt }) {
           <DateiUpload
             key={f}
             label={schritt.feldLabels[f]}
-            uploadedUrl={urls[f]}
-            onUploaded={(url) => setUrls(p => ({ ...p, [f]: url }))}
-            onClear={() => setUrls(p => { const n = { ...p }; delete n[f]; return n; })}
+            uploadedName={namen[f]}
+            onUploaded={(text, name) => {
+              setTexte(p => ({ ...p, [f]: text }));
+              setNamen(p => ({ ...p, [f]: name }));
+            }}
+            onClear={() => {
+              setTexte(p => { const n = { ...p }; delete n[f]; return n; });
+              setNamen(p => { const n = { ...p }; delete n[f]; return n; });
+            }}
           />
         ))}
 
