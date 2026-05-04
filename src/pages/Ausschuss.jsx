@@ -45,6 +45,7 @@ export default function Ausschuss() {
   // Modals
   const [showAufgabeModal, setShowAufgabeModal] = useState(false);
   const [showBeschlussModal, setShowBeschlussModal] = useState(false);
+  const [showSitzungModal, setShowSitzungModal] = useState(false);
   const [editAufgabe, setEditAufgabe] = useState(null);
   const [editBeschluss, setEditBeschluss] = useState(null);
 
@@ -129,6 +130,12 @@ export default function Ausschuss() {
       {/* SITZUNGEN */}
       {activeTab === 'sitzungen' && (
         <div className="space-y-4">
+          <div className="flex justify-end">
+            <button onClick={() => setShowSitzungModal(true)}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
+              <Plus size={15} /> Neue Sitzung
+            </button>
+          </div>
           {kommendeSitzungen.length > 0 && (
             <div>
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Kommende Sitzungen</h3>
@@ -251,6 +258,14 @@ export default function Ausschuss() {
         />
       )}
 
+      {/* Sitzung Modal */}
+      {showSitzungModal && (
+        <SitzungModal
+          onClose={() => setShowSitzungModal(false)}
+          onSaved={() => { setShowSitzungModal(false); loadData(); }}
+        />
+      )}
+
       {/* Beschluss Modal */}
       {showBeschlussModal && (
         <BeschlussModal
@@ -370,6 +385,65 @@ function AufgabeModal({ aufgabe, mitglieder, termine, onClose, onSaved }) {
           <button onClick={handleSave} disabled={saving || !form.titel}
             className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">
             {saving ? '...' : 'Speichern'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SitzungModal({ onClose, onSaved }) {
+  const [form, setForm] = useState({
+    titel: '', datum: format(new Date(), 'yyyy-MM-dd'), startzeit: '', endzeit: '', ort: '', beschreibung: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const set = (f, v) => setForm(p => ({ ...p, [f]: v }));
+
+  const handleSave = async () => {
+    if (!form.titel || !form.datum) return;
+    setSaving(true);
+    await base44.entities.KalenderTermin.create({
+      ...form,
+      terminart: 'Ausschusssitzung',
+      sichtbarkeit: 'ausschuss',
+      status: 'Geplant',
+    });
+    setSaving(false);
+    onSaved();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
+      <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-foreground">Neue Sitzung</h3>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"><X size={16} /></button>
+        </div>
+        <div className="space-y-3">
+          <input type="text" placeholder="Titel *" value={form.titel} onChange={e => set('titel', e.target.value)}
+            className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">Datum *</label>
+              <input type="date" value={form.datum} onChange={e => set('datum', e.target.value)}
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">Uhrzeit</label>
+              <input type="time" value={form.startzeit} onChange={e => set('startzeit', e.target.value)}
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+            </div>
+          </div>
+          <input type="text" placeholder="Ort (optional)" value={form.ort} onChange={e => set('ort', e.target.value)}
+            className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+          <textarea placeholder="Beschreibung (optional)" value={form.beschreibung} onChange={e => set('beschreibung', e.target.value)}
+            rows={2} className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary resize-none" />
+        </div>
+        <div className="flex gap-2 mt-4">
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm">Abbrechen</button>
+          <button onClick={handleSave} disabled={saving || !form.titel || !form.datum}
+            className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">
+            {saving ? '...' : 'Erstellen'}
           </button>
         </div>
       </div>
