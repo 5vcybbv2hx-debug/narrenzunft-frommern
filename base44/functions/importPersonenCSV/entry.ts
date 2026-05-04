@@ -59,16 +59,22 @@ Deno.serve(async (req) => {
     adressenIndex[a.person_id] = a;
   }
 
-  // Aktuelle Mitglieder laden für Matching
-  const existingList = await base44.asServiceRole.entities.Mitglied.list('nachname', 2000);
+  // Aktuelle Mitglieder seitenweise laden (Rate-Limit vermeiden)
   const existingByKey = {};
-  for (const m of existingList) {
-    const geb = m.geburtsdatum || '';
-    const key = `${m.nachname}|${m.vorname}|${geb}`;
-    existingByKey[key] = m;
-    // Fallback ohne Geburtsdatum
-    const keyOhne = `${m.nachname}|${m.vorname}|`;
-    if (!existingByKey[keyOhne]) existingByKey[keyOhne] = m;
+  let page = 0;
+  const pageSize = 200;
+  while (true) {
+    const chunk = await base44.asServiceRole.entities.Mitglied.list('nachname', pageSize, page * pageSize);
+    for (const m of chunk) {
+      const geb = m.geburtsdatum || '';
+      const key = `${m.nachname}|${m.vorname}|${geb}`;
+      existingByKey[key] = m;
+      const keyOhne = `${m.nachname}|${m.vorname}|`;
+      if (!existingByKey[keyOhne]) existingByKey[keyOhne] = m;
+    }
+    if (chunk.length < pageSize) break;
+    page++;
+    await new Promise(r => setTimeout(r, 200));
   }
 
   const total = personen.length;
