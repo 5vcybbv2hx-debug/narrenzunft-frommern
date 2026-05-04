@@ -5,7 +5,7 @@ import { isAdmin, kannMitgliederlisteSehn, getRollenLabel } from '@/lib/roles';
 import {
   LayoutDashboard, Users, Shirt, Calendar, Briefcase,
   Award, CreditCard, Bus, Bell, Menu, X, ChevronRight,
-  LogOut, User, MoreHorizontal, Shield, ClipboardList, AlertTriangle, Lock, Database
+  LogOut, User, MoreHorizontal, Shield, ClipboardList, AlertTriangle, Lock
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import SecureSearch from './SecureSearch';
@@ -24,7 +24,6 @@ const sidebarNavItems = [
   { path: '/sparten', label: 'Sparten & Gruppen', icon: Users, roles: null },
   { path: '/vereine', label: 'Vereine & Zünfte', icon: Users, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
   { path: '/datenqualitaet', label: 'Datenqualität', icon: AlertTriangle, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
-  { path: '/daten-import', label: 'Daten-Import', icon: Database, roles: ['admin'] },
   { path: '/kalender', label: 'Kalender', icon: Calendar, roles: null },
   { path: '/ausschuss', label: 'Ausschussbereich', icon: Lock, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
   { path: '/familie', label: 'Familie', icon: Users, roles: ['elternkonto'] },
