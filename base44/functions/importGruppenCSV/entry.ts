@@ -59,10 +59,10 @@ Deno.serve(async (req) => {
     }
   }
 
-  // DB-Daten laden
+  // DB-Daten laden (alle Gruppen inkl. inaktive, um Duplikate zu vermeiden)
   const [dbMitglieder, dbGruppen] = await Promise.all([
     base44.asServiceRole.entities.Mitglied.list('nachname', 2000),
-    base44.asServiceRole.entities.Haesgruppe.list('name', 200),
+    base44.asServiceRole.entities.Haesgruppe.list('name', 500),
   ]);
 
   // Mitglieder-Index
@@ -75,13 +75,17 @@ Deno.serve(async (req) => {
     if (!mitgliedByOhneGeb[keyOhne]) mitgliedByOhneGeb[keyOhne] = m;
   }
 
-  // Gruppen-Index: name.toLowerCase() -> gruppe
+  // Gruppen-Index: name.toLowerCase() -> gruppe (aktive bevorzugen)
   const gruppeByName = {};
   for (const g of dbGruppen) {
-    gruppeByName[g.name.toLowerCase()] = g;
+    const key = g.name.toLowerCase();
+    // Aktive Gruppe überschreibt inaktive
+    if (!gruppeByName[key] || g.aktiv) {
+      gruppeByName[key] = g;
+    }
   }
 
-  // Schritt 1: Gruppen anlegen falls nicht vorhanden
+  // Schritt 1: Gruppen anlegen falls nicht vorhanden (auch inaktive zählen als "bereits vorhanden")
   const gruppenErgebnis = [];
   for (const g of gruppenRows) {
     const existing = gruppeByName[g.name.toLowerCase()];
@@ -97,6 +101,15 @@ Deno.serve(async (req) => {
         gruppenErgebnis.push({ name: g.name, aktion: 'erstellt', typ });
       } else {
         gruppenErgebnis.push({ name: g.name, aktion: 'würde erstellt werden', typ });
+      }
+    } else if (!existing.aktiv) {
+      // Inaktive Gruppe reaktivieren statt Duplikat erstellen
+      if (mode === 'execute') {
+        await base44.asServiceRole.entities.Haesgruppe.update(existing.id, { aktiv: true });
+        gruppeByName[g.name.toLowerCase()] = { ...existing, aktiv: true };
+        gruppenErgebnis.push({ name: g.name, aktion: 'reaktiviert (war inaktiv)', typ: existing.typ });
+      } else {
+        gruppenErgebnis.push({ name: g.name, aktion: 'würde reaktiviert werden (war inaktiv)', typ: existing.typ });
       }
     } else {
       gruppenErgebnis.push({ name: g.name, aktion: 'bereits vorhanden', typ: existing.typ });
