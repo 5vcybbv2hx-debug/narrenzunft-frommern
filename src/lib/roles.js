@@ -2,18 +2,21 @@
  * Rollen-System für Narrenzunft App
  *
  * Rollen (in user.role gespeichert):
+ * - admin            (Plattform-Admin / Entwickler)
  * - vorstand
- * - stellv_vorstand  (Stellvertretender Vorstand)
+ * - stellv_vorstand
  * - kassierer
  * - spartenleiter
  * - mitglied
+ * - elternkonto
  *
- * Um weitere Rollen hinzuzufügen:
- * 1. Neuen Eintrag in ROLLEN und ROLLEN_LABELS ergänzen
- * 2. Gewünschte Berechtigungsfunktionen unten erweitern
+ * Ausschusszugang wird NICHT über die Rolle gesteuert,
+ * sondern über AusschussMitglied-Einträge in der Datenbank.
+ * Spartenleiter sind kein automatischer Ausschuss-Zugang.
  */
 
 export const ROLLEN = {
+  ADMIN:           'admin',
   VORSTAND:        'vorstand',
   STELLV_VORSTAND: 'stellv_vorstand',
   KASSIERER:       'kassierer',
@@ -102,4 +105,18 @@ export function kannMitgliedProfilSehn(user, myMitglied, zielMitglied) {
   if (myMitglied.id === zielMitglied.id) return true; // eigenes Profil
   if (user?.role === 'elternkonto' && myMitglied.familie_id && myMitglied.familie_id === zielMitglied.familie_id) return true;
   return false;
+}
+
+/**
+ * Ausschuss-Zugang:
+ * Nur vorstand, stellv_vorstand, admin – NICHT pauschal spartenleiter.
+ * Spartenleiter brauchen einen AusschussMitglied-Eintrag (wird serverseitig geprüft).
+ */
+export function kannAusschussSehn(user) {
+  return ['vorstand', 'stellv_vorstand', 'admin'].includes(user?.role) || isDeveloper(user);
+}
+
+/** Darf Importe durchführen (nur Admin) */
+export function kannImportieren(user) {
+  return user?.role === 'admin' || isDeveloper(user);
 }

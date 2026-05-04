@@ -31,10 +31,9 @@ export default function SitzungDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin' || user?.role === 'vorstand' || user?.role === 'stellv_vorstand';
-  
-  // Zugriffsschutz: nur Ausschuss-Rollen
-  const hatZugriff = ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'].includes(user?.role);
+  // Zugriffsschutz: nur vorstand, stellv_vorstand, admin – NICHT spartenleiter
+  const hatZugriff = ['vorstand', 'stellv_vorstand', 'admin'].includes(user?.role);
+  const isAdmin = hatZugriff;
 
   const [termin, setTermin] = useState(null);
   const [ausschussMitglieder, setAusschussMitglieder] = useState([]);

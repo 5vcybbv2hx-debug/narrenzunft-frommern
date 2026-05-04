@@ -1,85 +1,232 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { isAdmin } from '@/lib/roles';
+import { kannImportieren } from '@/lib/roles';
 import { useNavigate } from 'react-router-dom';
-import ImportSchritt from '@/components/import/ImportSchritt';
-import { Database, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { Database, ArrowLeft, AlertTriangle, Upload, X, FileText } from 'lucide-react';
 
-// URLs der hochgeladenen CSV-Dateien (fest hinterlegt)
-const CSV_URLS = {
-  personen:               'https://media.base44.com/files/public/69f263f56f0ba624a7c9355c/8cac29552_personen.csv',
-  kontakte:               'https://media.base44.com/files/public/69f263f56f0ba624a7c9355c/48280a884_kontakte.csv',
-  adressen:               'https://media.base44.com/files/public/69f263f56f0ba624a7c9355c/32782fe08_adressen.csv',
-  haes:                   'https://media.base44.com/files/public/69f263f56f0ba624a7c9355c/561719be3_haes.csv',
-  gruppen:                'https://media.base44.com/files/public/69f263f56f0ba624a7c9355c/dd33bb54d_gruppen.csv',
-  mitgliedschaft_gruppen: 'https://media.base44.com/files/public/69f263f56f0ba624a7c9355c/e1fea9649_mitgliedschaft_gruppen.csv',
-};
-
-const SCHRITTE = [
+const IMPORT_SCHRITTE = [
   {
     id: 'gruppen',
     nummer: 1,
-    titel: 'Sparten & Gruppen synchronisieren',
-    beschreibung: '6 Gruppen aus der bereinigten Liste (Brennnesseln, Hexen, Garde, Zäpfle Bomber, Junggarde, Junggarde Mini) anlegen und 307 Mitglieder-Gruppen-Zuordnungen setzen.',
+    titel: 'Sparten & Gruppen + Mitglieder-Zuordnungen',
+    beschreibung: 'Gruppen aus CSV anlegen und Mitglieder den Gruppen zuordnen.',
+    felder: ['gruppen_url', 'personen_url', 'mitgliedschaft_gruppen_url'],
+    feldLabels: { gruppen_url: 'Gruppen CSV', personen_url: 'Personen CSV', mitgliedschaft_gruppen_url: 'Mitgliedschaft-Gruppen CSV' },
     funktion: 'importGruppenCSV',
-    payload: (mode) => ({
-      mode,
-      gruppen_url: CSV_URLS.gruppen,
-      personen_url: CSV_URLS.personen,
-      mitgliedschaft_gruppen_url: CSV_URLS.mitgliedschaft_gruppen,
-    }),
-    previewKey: 'zuordnungen',
-    previewColumns: ['person', 'gruppen', 'mitglied_match', 'aktion'],
-    statsKey: ['gruppen', 'zuordnungen_gesamt', 'zugeordnet', 'nichtGefunden'],
   },
   {
     id: 'personen',
     nummer: 2,
-    titel: 'Mitglieder-Stammdaten bereinigen',
-    beschreibung: '358 Personen abgleichen: Adresse, Geburtsdatum, Telefon, E-Mail aktualisieren. Matching über Name + Geburtsdatum.',
+    titel: 'Mitglieder-Stammdaten',
+    beschreibung: 'Personen abgleichen: Adresse, Geburtsdatum, Telefon, E-Mail aktualisieren.',
+    felder: ['personen_url', 'kontakte_url', 'adressen_url'],
+    feldLabels: { personen_url: 'Personen CSV', kontakte_url: 'Kontakte CSV', adressen_url: 'Adressen CSV' },
     funktion: 'importPersonenCSV',
-    payload: (mode, offset) => ({
-      mode,
-      offset: offset || 0,
-      limit: 20,
-      personen_url: CSV_URLS.personen,
-      kontakte_url: CSV_URLS.kontakte,
-      adressen_url: CSV_URLS.adressen,
-    }),
-    previewKey: 'preview',
-    previewColumns: ['vorname', 'nachname', 'geburtsdatum', 'status', 'match', 'aktion'],
-    statsKey: ['total', 'updated', 'created'],
     batched: true,
+    limit: 20,
   },
   {
     id: 'haes',
     nummer: 3,
-    titel: 'Häs-Zuweisungen automatisieren',
-    beschreibung: '217 Häs-Nummern aus der bereinigten Liste den richtigen Personen zuweisen + HaesHistorie anlegen. Matching über Name + Geburtsdatum.',
+    titel: 'Häs-Zuweisungen',
+    beschreibung: 'Häs-Nummern aus CSV den richtigen Personen zuweisen.',
+    felder: ['haes_url', 'personen_url', 'gruppen_url', 'mitgliedschaft_gruppen_url'],
+    feldLabels: { haes_url: 'Häs CSV', personen_url: 'Personen CSV', gruppen_url: 'Gruppen CSV', mitgliedschaft_gruppen_url: 'Mitgliedschaft-Gruppen CSV' },
     funktion: 'importHaesCSV',
-    payload: (mode, offset) => ({
-      mode,
-      offset: offset || 0,
-      limit: 50,
-      haes_url: CSV_URLS.haes,
-      personen_url: CSV_URLS.personen,
-      gruppen_url: CSV_URLS.gruppen,
-      mitgliedschaft_gruppen_url: CSV_URLS.mitgliedschaft_gruppen,
-    }),
-    previewKey: 'preview',
-    previewColumns: ['haesnummer', 'person_name', 'haes_in_db', 'mitglied_in_db', 'haesgruppe', 'aktion'],
-    statsKey: ['total', 'haesZugewiesen', 'haesNichtGefunden', 'mitgliedNichtGefunden'],
     batched: true,
+    limit: 50,
   },
 ];
+
+function DateiUpload({ label, onUploaded, uploadedUrl, onClear }) {
+  const [uploading, setUploading] = useState(false);
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setUploading(false);
+    onUploaded(file_url);
+  };
+
+  if (uploadedUrl) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/30">
+        <FileText size={14} className="text-green-400 shrink-0" />
+        <span className="text-xs text-green-400 flex-1 truncate">{label}: hochgeladen ✓</span>
+        <button onClick={onClear} className="text-muted-foreground hover:text-destructive transition-colors"><X size={13} /></button>
+      </div>
+    );
+  }
+
+  return (
+    <label className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-secondary border border-border border-dashed cursor-pointer hover:border-primary/50 transition-colors">
+      {uploading ? (
+        <div className="w-3.5 h-3.5 border-2 border-border border-t-primary rounded-full animate-spin shrink-0" />
+      ) : (
+        <Upload size={14} className="text-muted-foreground shrink-0" />
+      )}
+      <span className="text-xs text-muted-foreground">{uploading ? 'Lade hoch...' : label + ' hochladen'}</span>
+      <input type="file" accept=".csv" className="hidden" onChange={handleFile} disabled={uploading} />
+    </label>
+  );
+}
+
+function ImportSchritt({ schritt }) {
+  const [urls, setUrls] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [preview, setPreview] = useState(null);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+  const [progress, setProgress] = useState(null);
+
+  const alleHochgeladen = schritt.felder.every(f => urls[f]);
+
+  const buildPayload = (mode, offset = 0) => {
+    const p = { mode, ...urls };
+    if (schritt.batched) {
+      p.offset = offset;
+      p.limit = schritt.limit || 20;
+    }
+    return p;
+  };
+
+  const handlePreview = async () => {
+    setLoading(true);
+    setError(null);
+    setPreview(null);
+    const res = await base44.functions.invoke(schritt.funktion, buildPayload('preview', 0));
+    const data = res.data;
+    setPreview(data);
+    setLoading(false);
+  };
+
+  const handleExecute = async () => {
+    if (!window.confirm(`Schritt "${schritt.titel}" wirklich ausführen? Dies ändert Daten in der Datenbank.`)) return;
+    setLoading(true);
+    setError(null);
+    setResult(null);
+
+    if (schritt.batched) {
+      let offset = 0;
+      let total = null;
+      let gesamt = { updated: 0, created: 0, haesZugewiesen: 0 };
+      while (true) {
+        const res = await base44.functions.invoke(schritt.funktion, buildPayload('execute', offset));
+        const data = res.data;
+        if (total === null) total = data.total || 0;
+        setProgress({ current: Math.min(offset + (data.processed || schritt.limit), total), total });
+        gesamt.updated += data.updated || 0;
+        gesamt.created += data.created || 0;
+        gesamt.haesZugewiesen += data.haesZugewiesen || 0;
+        if (data.done || !data.next_offset) break;
+        offset = data.next_offset;
+        await new Promise(r => setTimeout(r, 1500));
+      }
+      setProgress(null);
+      setResult({ ...gesamt, message: 'Abgeschlossen' });
+    } else {
+      const res = await base44.functions.invoke(schritt.funktion, buildPayload('execute'));
+      setResult(res.data);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <div className="px-5 py-4 border-b border-border flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm shrink-0">
+          {schritt.nummer}
+        </div>
+        <div className="flex-1">
+          <h3 className="font-semibold text-foreground text-sm">{schritt.titel}</h3>
+          <p className="text-xs text-muted-foreground">{schritt.beschreibung}</p>
+        </div>
+      </div>
+
+      <div className="p-4 space-y-2">
+        {schritt.felder.map(f => (
+          <DateiUpload
+            key={f}
+            label={schritt.feldLabels[f]}
+            uploadedUrl={urls[f]}
+            onUploaded={(url) => setUrls(p => ({ ...p, [f]: url }))}
+            onClear={() => setUrls(p => { const n = { ...p }; delete n[f]; return n; })}
+          />
+        ))}
+
+        {/* Fortschritt */}
+        {progress && (
+          <div className="px-3 py-2 rounded-lg bg-primary/10 border border-primary/20">
+            <div className="flex justify-between mb-1">
+              <span className="text-xs text-primary">{progress.current} / {progress.total}</span>
+              <span className="text-xs text-muted-foreground">{Math.round((progress.current / progress.total) * 100)}%</span>
+            </div>
+            <div className="w-full bg-secondary rounded-full h-1.5">
+              <div className="bg-primary h-1.5 rounded-full transition-all" style={{ width: `${(progress.current / progress.total) * 100}%` }} />
+            </div>
+          </div>
+        )}
+
+        {/* Ergebnis */}
+        {result && (
+          <div className="px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/20">
+            <p className="text-sm text-green-400 font-medium">✓ {result.message || 'Abgeschlossen'}</p>
+            <div className="flex gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
+              {result.updated > 0 && <span>{result.updated} aktualisiert</span>}
+              {result.created > 0 && <span>{result.created} neu angelegt</span>}
+              {result.haesZugewiesen > 0 && <span>{result.haesZugewiesen} Häs zugewiesen</span>}
+              {result.nichtGefunden > 0 && <span className="text-yellow-400">{result.nichtGefunden} nicht gefunden</span>}
+            </div>
+          </div>
+        )}
+
+        {/* Fehler */}
+        {error && (
+          <div className="px-3 py-2 rounded-lg bg-destructive/10 border border-destructive/20">
+            <p className="text-xs text-destructive">{error}</p>
+          </div>
+        )}
+
+        {/* Vorschau */}
+        {preview && (
+          <div className="bg-secondary/30 rounded-lg p-3 text-xs text-muted-foreground">
+            <p className="font-medium text-foreground mb-1">Vorschau</p>
+            <p>{preview.message || `${preview.total || 0} Datensätze gefunden`}</p>
+            {preview.total > 0 && (
+              <p className="mt-0.5">Update: {(preview.preview || []).filter(p => p.aktion === 'update').length} · Neu: {(preview.preview || []).filter(p => p.aktion === 'create').length}</p>
+            )}
+          </div>
+        )}
+
+        <div className="flex gap-2 pt-1">
+          <button
+            onClick={handlePreview}
+            disabled={!alleHochgeladen || loading}
+            className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-xs font-medium hover:text-foreground disabled:opacity-40 transition-colors"
+          >
+            {loading && !progress ? 'Lade...' : 'Vorschau'}
+          </button>
+          <button
+            onClick={handleExecute}
+            disabled={!alleHochgeladen || loading}
+            className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-40 transition-colors"
+          >
+            {loading && progress ? 'Läuft...' : 'Ausführen'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function DatenImport() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const admin = isAdmin(user);
 
-  if (!admin) {
+  if (!kannImportieren(user)) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
         <AlertTriangle size={40} className="text-destructive mb-3" />
@@ -90,31 +237,29 @@ export default function DatenImport() {
   }
 
   return (
-    <div className="px-4 lg:px-6 py-6 max-w-4xl mx-auto">
+    <div className="px-4 lg:px-6 py-6 max-w-2xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground">
           <ArrowLeft size={20} />
         </button>
-        <div className="flex-1">
+        <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Database size={22} className="text-primary" /> Daten-Import & Bereinigung
+            <Database size={22} className="text-primary" /> Daten-Import
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Schrittweise Datenbereinigung aus der extern analysierten Mitgliederliste
-          </p>
+          <p className="text-sm text-muted-foreground mt-0.5">CSV-Dateien hochladen und schrittweise importieren</p>
         </div>
       </div>
 
       <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-3 mb-6 flex items-start gap-3">
         <AlertTriangle size={16} className="text-yellow-400 shrink-0 mt-0.5" />
-        <div className="text-sm text-yellow-300">
-          <strong>Wichtig:</strong> Führe die Schritte der Reihe nach aus. Erst Vorschau prüfen, dann ausführen.
+        <p className="text-sm text-yellow-300">
+          <strong>Wichtig:</strong> Schritte der Reihe nach ausführen. Erst Vorschau prüfen, dann ausführen.
           Schritt 1 (Gruppen) muss vor Schritt 2 und 3 abgeschlossen sein.
-        </div>
+        </p>
       </div>
 
       <div className="space-y-4">
-        {SCHRITTE.map((schritt) => (
+        {IMPORT_SCHRITTE.map(schritt => (
           <ImportSchritt key={schritt.id} schritt={schritt} />
         ))}
       </div>

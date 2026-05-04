@@ -9,8 +9,7 @@ import {
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import AusschussMitgliederTab from '@/components/ausschuss/AusschussMitgliederTab';
-
-const AUSSCHUSS_ROLLEN = ['vorstand', 'stellv_vorstand', 'admin', 'spartenleiter'];
+import { kannAusschussSehn } from '@/lib/roles';
 
 const PRIO_FARBEN = {
   'Niedrig':  'bg-gray-500/20 text-gray-400',
@@ -36,7 +35,7 @@ export default function Ausschuss() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('sitzungen');
-  const isAdmin = user?.role === 'admin' || user?.role === 'vorstand' || user?.role === 'stellv_vorstand';
+  const isAdmin = kannAusschussSehn(user);
   const [termine, setTermine] = useState([]);
   const [aufgaben, setAufgaben] = useState([]);
   const [beschluesse, setBeschluesse] = useState([]);
@@ -49,8 +48,8 @@ export default function Ausschuss() {
   const [editAufgabe, setEditAufgabe] = useState(null);
   const [editBeschluss, setEditBeschluss] = useState(null);
 
-  // Zugriffsschutz
-  const hatZugriff = AUSSCHUSS_ROLLEN.includes(user?.role);
+  // Zugriffsschutz: nur Vorstand/Admin – NICHT pauschal Spartenleiter
+  const hatZugriff = kannAusschussSehn(user);
 
   useEffect(() => {
     if (!hatZugriff) return;
@@ -60,17 +59,12 @@ export default function Ausschuss() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [t, a, b, m] = await Promise.all([
-        base44.entities.KalenderTermin.list('datum', 100),
-        base44.entities.Ausschussaufgabe.list('-created_date', 100),
-        base44.entities.Beschluss.list('-datum', 100),
-        base44.entities.Mitglied.list('nachname', 500),
-      ]);
-      // Nur Ausschuss-/Vorstandstermine
-      setTermine(t.filter(x => ['Ausschusssitzung','Vorstandssitzung','Intern'].includes(x.terminart)));
-      setAufgaben(a);
-      setBeschluesse(b);
-      setMitglieder(m);
+      const res = await base44.functions.invoke('getAusschussDataSicher', {});
+      const data = res.data;
+      setTermine(data.termine || []);
+      setAufgaben(data.aufgaben || []);
+      setBeschluesse(data.beschluesse || []);
+      setMitglieder(data.mitglieder || []);
     } catch (e) {}
     setLoading(false);
   };
