@@ -63,9 +63,14 @@ export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, getMit
               {ausruestung.zustand}
             </span>
             {ausruestung.standort && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ausruestung.standort)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+              >
                 📍 {ausruestung.standort}
-              </span>
+              </a>
             )}
           </div>
 
