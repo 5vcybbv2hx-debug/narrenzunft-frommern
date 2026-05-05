@@ -120,3 +120,15 @@ export function kannAusschussSehn(user) {
 export function kannImportieren(user) {
   return user?.role === 'admin' || isDeveloper(user);
 }
+
+/** Inventar & Verleih sehen/verwalten */
+export function kannInventarSehn(user) {
+  return ['vorstand', 'stellv_vorstand', 'admin'].includes(user?.role) ||
+    isDeveloper(user) ||
+    (user?._mitglied?.zusatz_berechtigungen || []).includes('inventar');
+}
+
+/** Hilfsfunktion: Hat Mitglied eine bestimmte Zusatz-Berechtigung? */
+export function hatZusatzBerechtigung(mitglied, berechtigung) {
+  return (mitglied?.zusatz_berechtigungen || []).includes(berechtigung);
+}

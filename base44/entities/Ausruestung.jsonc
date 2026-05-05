@@ -1,0 +1,52 @@
+{
+  "name": "Ausruestung",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Bezeichnung des Gegenstands"
+    },
+    "kategorie": {
+      "type": "string",
+      "enum": [
+        "Anh\u00e4nger",
+        "K\u00fchlanh\u00e4nger",
+        "Bar",
+        "Zelt",
+        "Technik",
+        "Sonstiges"
+      ],
+      "default": "Sonstiges"
+    },
+    "beschreibung": {
+      "type": "string"
+    },
+    "zustand": {
+      "type": "string",
+      "enum": [
+        "Sehr gut",
+        "Gut",
+        "Ausreichend",
+        "Defekt"
+      ],
+      "default": "Gut"
+    },
+    "standort": {
+      "type": "string",
+      "description": "Wo ist der Gegenstand normalerweise gelagert?"
+    },
+    "bild_url": {
+      "type": "string"
+    },
+    "aktiv": {
+      "type": "boolean",
+      "default": true
+    },
+    "notizen": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

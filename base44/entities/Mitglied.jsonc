@@ -63,25 +63,30 @@
       "default": "mitglied",
       "description": "Gew\u00fcnschte App-Rolle \u2013 wird beim ersten Login automatisch gesetzt"
     },
+    "zusatz_berechtigungen": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Zus\u00e4tzliche Berechtigungen unabh\u00e4ngig von der Hauptrolle, z.B. ['inventar', 'ausschuss']"
+    },
     "haesgruppe_id": {
       "type": "string",
-      "description": "Prim\u00e4re Gruppe (Legacy-Feld, wird durch haesgruppen_ids ersetzt)"
+      "description": "Prim\u00e4re Gruppe (Legacy-Feld)"
     },
     "haesgruppen_ids": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "description": "IDs aller Gruppen/Sparten, denen dieses Mitglied angeh\u00f6rt"
+      "description": "IDs aller Gruppen/Sparten"
     },
     "spartenleiter_haesgruppe_id": {
-      "type": "string",
-      "description": "H\u00e4sgruppe, f\u00fcr die dieses Mitglied als Spartenleiter zust\u00e4ndig ist"
+      "type": "string"
     },
     "einladung_gesendet_am": {
       "type": "string",
-      "format": "date",
-      "description": "Datum an dem die App-Einladung per E-Mail verschickt wurde"
+      "format": "date"
     },
     "notizen": {
       "type": "string"
@@ -112,36 +117,29 @@
       "type": "string"
     },
     "notfallkontakt_name": {
-      "type": "string",
-      "description": "Name des Notfallkontakts"
+      "type": "string"
     },
     "notfallkontakt_telefon": {
-      "type": "string",
-      "description": "Telefonnummer des Notfallkontakts"
+      "type": "string"
     },
     "hochzeitstag": {
       "type": "string",
-      "format": "date",
-      "description": "Hochzeitstag des Mitglieds"
+      "format": "date"
     },
     "umzuege_vor_digitalisierung": {
       "type": "number",
-      "description": "Anzahl Umz\u00fcge als Erwachsener vor Einf\u00fchrung der digitalen Verwaltung (historischer Anfangsbestand)",
       "default": 0
     },
     "archiviert": {
       "type": "boolean",
-      "default": false,
-      "description": "Archiviertes Mitglied \u2013 kein Login mehr m\u00f6glich, aber alle Daten bleiben erhalten"
+      "default": false
     },
     "archiviert_am": {
       "type": "string",
-      "format": "date",
-      "description": "Datum der Archivierung"
+      "format": "date"
     },
     "archiviert_grund": {
-      "type": "string",
-      "description": "Grund der Archivierung (z.B. Austritt, Kontol\u00f6schung)"
+      "type": "string"
     }
   },
   "required": [

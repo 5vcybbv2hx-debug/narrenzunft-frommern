@@ -1,0 +1,82 @@
+import { Edit, Package } from 'lucide-react';
+
+const KATEGORIE_EMOJIS = {
+  'Anhänger': '🚛', 'Kühlanhänger': '🧊', 'Bar': '🍺',
+  'Zelt': '⛺', 'Technik': '🔌', 'Sonstiges': '📦',
+};
+
+const ZUSTAND_FARBEN = {
+  'Sehr gut': 'bg-green-500/20 text-green-400',
+  'Gut':      'bg-blue-500/20 text-blue-400',
+  'Ausreichend': 'bg-yellow-500/20 text-yellow-400',
+  'Defekt':   'bg-red-500/20 text-red-400',
+};
+
+export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, getMitgliedName, isAdmin, onEdit, onAusleihen }) {
+  const frei = !aktuelleAusleihe;
+
+  return (
+    <div className={`bg-card border rounded-xl p-4 transition-all ${frei ? 'border-border' : 'border-orange-500/30'}`}>
+      <div className="flex items-start gap-3">
+        {/* Icon */}
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 ${frei ? 'bg-secondary' : 'bg-orange-500/10'}`}>
+          {ausruestung.bild_url
+            ? <img src={ausruestung.bild_url} alt="" className="w-full h-full object-cover rounded-xl" />
+            : KATEGORIE_EMOJIS[ausruestung.kategorie] || '📦'
+          }
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold text-foreground">{ausruestung.name}</p>
+              <p className="text-xs text-muted-foreground">{ausruestung.kategorie}</p>
+            </div>
+            {isAdmin && (
+              <button onClick={onEdit} className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors shrink-0">
+                <Edit size={14} />
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2 mt-2">
+            {/* Status */}
+            <span className={`text-[10px] px-2.5 py-1 rounded-full font-semibold ${frei ? 'bg-green-500/20 text-green-400' : 'bg-orange-500/20 text-orange-400'}`}>
+              {frei ? '✓ Verfügbar' : '● Ausgeliehen'}
+            </span>
+            <span className={`text-[10px] px-2 py-0.5 rounded-full ${ZUSTAND_FARBEN[ausruestung.zustand]}`}>
+              {ausruestung.zustand}
+            </span>
+            {ausruestung.standort && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
+                📍 {ausruestung.standort}
+              </span>
+            )}
+          </div>
+
+          {/* Aktuelle Ausleihe */}
+          {aktuelleAusleihe && (
+            <div className="mt-2 px-3 py-2 rounded-lg bg-orange-500/10 border border-orange-500/20 text-xs">
+              <p className="text-orange-300">
+                👤 {getMitgliedName(aktuelleAusleihe.ausleiher_mitglied_id)} · bis {aktuelleAusleihe.bis_datum}
+                {aktuelleAusleihe.zweck && ` · ${aktuelleAusleihe.zweck}`}
+              </p>
+            </div>
+          )}
+
+          {ausruestung.beschreibung && (
+            <p className="text-xs text-muted-foreground mt-2">{ausruestung.beschreibung}</p>
+          )}
+
+          {/* Ausleihen-Button */}
+          <button
+            onClick={onAusleihen}
+            className="mt-3 w-full py-2 rounded-lg bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors"
+          >
+            + Ausleihe eintragen
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

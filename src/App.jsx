@@ -39,6 +39,8 @@ import Vereine from './pages/Vereine';
 import Sparten from './pages/Sparten';
 import DatenImport from './pages/DatenImport';
 import Todos from './pages/Todos';
+import Inventar from './pages/Inventar';
+import Berechtigungen from './pages/Berechtigungen';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -104,6 +106,8 @@ const AuthenticatedApp = () => {
         <Route path="/sparten" element={<Sparten />} />
         <Route path="/daten-import" element={<DatenImport />} />
         <Route path="/todos" element={<Todos />} />
+        <Route path="/inventar" element={<Inventar />} />
+        <Route path="/berechtigungen" element={<Berechtigungen />} />
       </Route>
       <Route path="/busfahrer/:token" element={<BusfahrerInfo />} />
       <Route path="*" element={<PageNotFound />} />

@@ -1,0 +1,57 @@
+{
+  "name": "Ausleihe",
+  "type": "object",
+  "properties": {
+    "ausruestung_id": {
+      "type": "string",
+      "description": "ID des ausgeliehenen Gegenstands"
+    },
+    "ausleiher_mitglied_id": {
+      "type": "string",
+      "description": "Mitglied das ausleiht"
+    },
+    "verantwortlicher_id": {
+      "type": "string",
+      "description": "Vorstand/Verwalter der die Ausleihe genehmigt hat"
+    },
+    "von_datum": {
+      "type": "string",
+      "format": "date"
+    },
+    "bis_datum": {
+      "type": "string",
+      "format": "date"
+    },
+    "zweck": {
+      "type": "string",
+      "description": "Wof\u00fcr wird der Gegenstand ben\u00f6tigt?"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Reserviert",
+        "Ausgeliehen",
+        "Zur\u00fcckgegeben",
+        "Abgesagt"
+      ],
+      "default": "Reserviert"
+    },
+    "schadensbericht": {
+      "type": "string",
+      "description": "Sch\u00e4den bei R\u00fcckgabe"
+    },
+    "rueckgabe_datum": {
+      "type": "string",
+      "format": "date"
+    },
+    "notizen": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ausruestung_id",
+    "ausleiher_mitglied_id",
+    "von_datum",
+    "bis_datum"
+  ]
+}
