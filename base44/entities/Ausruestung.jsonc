@@ -44,6 +44,28 @@
     },
     "notizen": {
       "type": "string"
+    },
+    "kennzeichen": {
+      "type": "string",
+      "description": "Kfz-Kennzeichen (nur f\u00fcr Fahrzeuge/Anh\u00e4nger)"
+    },
+    "baujahr": {
+      "type": "number",
+      "description": "Baujahr des Fahrzeugs/Anh\u00e4ngers"
+    },
+    "tuev_faellig": {
+      "type": "string",
+      "format": "date",
+      "description": "F\u00e4lligkeitsdatum der n\u00e4chsten HU/T\u00dcV"
+    },
+    "versicherungsnummer": {
+      "type": "string",
+      "description": "Versicherungsnummer / Police"
+    },
+    "versicherung_gueltig_bis": {
+      "type": "string",
+      "format": "date",
+      "description": "Ablaufdatum der Versicherung"
     }
   },
   "required": [

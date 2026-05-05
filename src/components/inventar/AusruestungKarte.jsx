@@ -1,4 +1,4 @@
-import { Edit, Package } from 'lucide-react';
+import { Edit, AlertTriangle } from 'lucide-react';
 
 const KATEGORIE_EMOJIS = {
   'Anhänger': '🚛', 'Kühlanhänger': '🧊', 'Bar': '🍺',
@@ -12,8 +12,23 @@ const ZUSTAND_FARBEN = {
   'Defekt':   'bg-red-500/20 text-red-400',
 };
 
+const FAHRZEUG_KATEGORIEN = ['Anhänger', 'Kühlanhänger'];
+
+function getTuevStatus(datum) {
+  if (!datum) return null;
+  const today = new Date();
+  const faellig = new Date(datum);
+  const diffTage = Math.ceil((faellig - today) / (1000 * 60 * 60 * 24));
+  if (diffTage < 0) return { label: `TÜV abgelaufen (${datum})`, color: 'text-red-400 bg-red-500/10 border-red-500/30' };
+  if (diffTage <= 60) return { label: `TÜV fällig am ${datum}`, color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30' };
+  return { label: `TÜV bis ${datum}`, color: 'text-green-400 bg-green-500/10 border-green-500/30' };
+}
+
 export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, getMitgliedName, isAdmin, onEdit, onAusleihen }) {
   const frei = !aktuelleAusleihe;
+  const istFahrzeug = FAHRZEUG_KATEGORIEN.includes(ausruestung.kategorie);
+  const tuevStatus = getTuevStatus(ausruestung.tuev_faellig);
+  const versStatus = getTuevStatus(ausruestung.versicherung_gueltig_bis);
 
   return (
     <div className={`bg-card border rounded-xl p-4 transition-all ${frei ? 'border-border' : 'border-orange-500/30'}`}>
@@ -66,6 +81,25 @@ export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, getMit
 
           {ausruestung.beschreibung && (
             <p className="text-xs text-muted-foreground mt-2">{ausruestung.beschreibung}</p>
+          )}
+
+          {/* Fahrzeug-Infos */}
+          {istFahrzeug && (ausruestung.kennzeichen || tuevStatus || versStatus) && (
+            <div className="mt-2 space-y-1">
+              {ausruestung.kennzeichen && (
+                <p className="text-xs text-muted-foreground">🚗 {ausruestung.kennzeichen}{ausruestung.baujahr ? ` · Bj. ${ausruestung.baujahr}` : ''}</p>
+              )}
+              {tuevStatus && (
+                <div className={`flex items-center gap-1.5 px-2 py-1 rounded border text-[10px] font-medium ${tuevStatus.color}`}>
+                  <AlertTriangle size={11} /> {tuevStatus.label}
+                </div>
+              )}
+              {versStatus && ausruestung.versicherung_gueltig_bis && (
+                <div className={`flex items-center gap-1.5 px-2 py-1 rounded border text-[10px] font-medium ${versStatus.color}`}>
+                  <AlertTriangle size={11} /> Versicherung: {versStatus.label.replace('TÜV', '').trim()}
+                </div>
+              )}
+            </div>
           )}
 
           {/* Ausleihen-Button */}

@@ -3,14 +3,18 @@ import { X, Save, Trash2 } from 'lucide-react';
 
 const KATEGORIEN = ['Anhänger', 'Kühlanhänger', 'Bar', 'Zelt', 'Technik', 'Sonstiges'];
 const ZUSTAENDE = ['Sehr gut', 'Gut', 'Ausreichend', 'Defekt'];
+const FAHRZEUG_KATEGORIEN = ['Anhänger', 'Kühlanhänger'];
 
 export default function AusruestungForm({ ausruestung, onSave, onDelete, onClose }) {
   const isNew = !ausruestung;
   const [form, setForm] = useState({
     name: '', kategorie: 'Sonstiges', beschreibung: '',
     zustand: 'Gut', standort: '', notizen: '',
+    kennzeichen: '', baujahr: '', tuev_faellig: '',
+    versicherungsnummer: '', versicherung_gueltig_bis: '',
     ...ausruestung,
   });
+  const istFahrzeug = FAHRZEUG_KATEGORIEN.includes(form.kategorie);
   const [saving, setSaving] = useState(false);
   const set = (f, v) => setForm(p => ({ ...p, [f]: v }));
 
@@ -76,6 +80,43 @@ export default function AusruestungForm({ ausruestung, onSave, onDelete, onClose
             <textarea value={form.notizen || ''} onChange={e => set('notizen', e.target.value)} rows={2}
               className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary resize-none" />
           </div>
+
+          {/* Fahrzeug-spezifische Felder */}
+          {istFahrzeug && (
+            <div className="border-t border-border pt-3 space-y-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">🚛 Fahrzeug-Details</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground font-medium block mb-1">Kennzeichen</label>
+                  <input value={form.kennzeichen || ''} onChange={e => set('kennzeichen', e.target.value)}
+                    placeholder="z.B. VS-ZF 123"
+                    className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground font-medium block mb-1">Baujahr</label>
+                  <input type="number" value={form.baujahr || ''} onChange={e => set('baujahr', e.target.value ? Number(e.target.value) : '')}
+                    placeholder="z.B. 2015" min="1900" max="2099"
+                    className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground font-medium block mb-1">TÜV / HU fällig</label>
+                  <input type="date" value={form.tuev_faellig || ''} onChange={e => set('tuev_faellig', e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground font-medium block mb-1">Versicherung gültig bis</label>
+                  <input type="date" value={form.versicherung_gueltig_bis || ''} onChange={e => set('versicherung_gueltig_bis', e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground font-medium block mb-1">Versicherungsnummer</label>
+                <input value={form.versicherungsnummer || ''} onChange={e => set('versicherungsnummer', e.target.value)}
+                  placeholder="Police-Nr."
+                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-2 mt-5">
