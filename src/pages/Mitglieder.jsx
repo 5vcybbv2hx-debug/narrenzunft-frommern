@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannMitgliederlisteSehn } from '@/lib/roles';
-import { Search, Plus, User, ChevronRight } from 'lucide-react';
+import { Search, Plus, User, ChevronRight, Archive } from 'lucide-react';
 import { format, differenceInYears } from 'date-fns';
 
 const STATUS_COLORS = {
@@ -28,6 +28,7 @@ export default function Mitglieder() {
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('Alle');
+  const [zeigeArchiviert, setZeigeArchiviert] = useState(false);
   const [loading, setLoading] = useState(true);
   const isAdminUser = isAdmin(user);
   const kannListe = kannMitgliederlisteSehn(user);
@@ -42,7 +43,7 @@ export default function Mitglieder() {
 
   useEffect(() => {
     filterMitglieder();
-  }, [mitglieder, search, statusFilter]);
+  }, [mitglieder, search, statusFilter, zeigeArchiviert]);
 
   const loadMitglieder = async () => {
     setLoading(true);
@@ -63,6 +64,8 @@ export default function Mitglieder() {
 
   const filterMitglieder = () => {
     let result = mitglieder;
+    // Archivierte ausblenden (außer wenn explizit gewünscht)
+    result = result.filter(m => zeigeArchiviert ? m.archiviert : !m.archiviert);
     if (search) {
       const s = search.toLowerCase();
       result = result.filter(m =>
@@ -97,7 +100,7 @@ export default function Mitglieder() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Mitglieder</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{mitglieder.length} Mitglieder gesamt</p>
+          <p className="text-sm text-muted-foreground mt-0.5">{mitglieder.filter(m => !m.archiviert).length} Mitglieder · {mitglieder.filter(m => m.archiviert).length} archiviert</p>
         </div>
         {isAdminUser && (
           <Link
@@ -139,8 +142,19 @@ export default function Mitglieder() {
         ))}
       </div>
 
-      {/* Count */}
-      <p className="text-xs text-muted-foreground mb-3">{filtered.length} Ergebnisse</p>
+      {/* Archiv-Toggle */}
+      {isAdminUser && (
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs text-muted-foreground">{filtered.length} Ergebnisse</p>
+          <button
+            onClick={() => setZeigeArchiviert(p => !p)}
+            className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-all ${zeigeArchiviert ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' : 'bg-card text-muted-foreground border-border hover:border-primary/50'}`}
+          >
+            <Archive size={12} /> {zeigeArchiviert ? 'Archiv wird angezeigt' : 'Archiv anzeigen'}
+          </button>
+        </div>
+      )}
+      {!isAdminUser && <p className="text-xs text-muted-foreground mb-3">{filtered.length} Ergebnisse</p>}
 
       {/* List */}
       <div className="space-y-2">
@@ -181,7 +195,12 @@ export default function Mitglieder() {
                       Eintrittsdatum: {format(new Date(m.eintrittsdatum), 'dd.MM.yyyy')}
                     </span>
                   )}
-                  {isAdminUser && m.einladung_gesendet_am && !m.user_id && (
+                  {m.archiviert && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 flex items-center gap-1">
+                      <Archive size={10} /> Archiviert
+                    </span>
+                  )}
+                  {isAdminUser && m.einladung_gesendet_am && !m.user_id && !m.archiviert && (
                     <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">
                       📧 Eingeladen
                     </span>

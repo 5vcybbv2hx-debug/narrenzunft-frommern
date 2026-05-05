@@ -4,7 +4,8 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import {
   ArrowLeft, Edit, Save, X, Phone, Mail, MapPin, Calendar,
-  User, Shirt, Award, CreditCard, Trash2, AlertTriangle, Shield, Send, ChevronRight, Plus, Search, MessageCircle
+  User, Shirt, Award, CreditCard, Trash2, AlertTriangle, Shield, Send, ChevronRight, Plus, Search, MessageCircle,
+  Archive, RotateCcw
 } from 'lucide-react';
 import { format, differenceInYears } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -188,12 +189,24 @@ export default function MitgliedDetail() {
     setSaving(false);
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm('Mitglied wirklich löschen?')) return;
-    try {
-      await base44.entities.Mitglied.delete(mitglied.id);
-      navigate('/mitglieder');
-    } catch (e) {}
+  const handleArchivieren = async () => {
+    const grund = window.prompt('Grund der Archivierung (optional):') ?? '';
+    if (grund === null) return; // Abbruch
+    await base44.entities.Mitglied.update(mitglied.id, {
+      archiviert: true,
+      archiviert_am: new Date().toISOString().split('T')[0],
+      archiviert_grund: grund || 'Keine Angabe',
+    });
+    navigate('/mitglieder');
+  };
+
+  const handleReaktivieren = async () => {
+    await base44.entities.Mitglied.update(mitglied.id, {
+      archiviert: false,
+      archiviert_am: null,
+      archiviert_grund: null,
+    });
+    setMitglied(p => ({ ...p, archiviert: false, archiviert_am: null, archiviert_grund: null }));
   };
 
   const alter = mitglied.geburtsdatum ? differenceInYears(new Date(), new Date(mitglied.geburtsdatum)) : null;
@@ -297,6 +310,11 @@ export default function MitgliedDetail() {
             <p className="font-bold text-foreground text-lg">{mitglied.vorname} {mitglied.nachname}</p>
             {alter !== null && <p className="text-sm text-muted-foreground">{alter} Jahre alt</p>}
             <div className="flex items-center gap-2 mt-1 flex-wrap">
+              {mitglied.archiviert && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 font-medium flex items-center gap-1">
+                  <Archive size={10} /> Archiviert
+                </span>
+              )}
               <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
                 {mitglied.mitgliedsstatus}
               </span>
@@ -754,12 +772,32 @@ export default function MitgliedDetail() {
 
       {/* Löschen */}
       {admin && !isNew && (
-        <button
-          onClick={handleDelete}
-          className="flex items-center gap-2 text-sm text-destructive hover:text-destructive/80 transition-colors mt-2"
-        >
-          <Trash2 size={14} /> Mitglied löschen
-        </button>
+        <div className="flex flex-col gap-2 mt-2">
+          {mitglied.archiviert ? (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                <Archive size={14} className="text-yellow-400 shrink-0" />
+                <div>
+                  <p className="text-xs text-yellow-400 font-medium">Archiviert{mitglied.archiviert_am ? ` am ${format(new Date(mitglied.archiviert_am), 'dd.MM.yyyy', { locale: de })}` : ''}</p>
+                  {mitglied.archiviert_grund && <p className="text-xs text-muted-foreground">Grund: {mitglied.archiviert_grund}</p>}
+                </div>
+              </div>
+              <button
+                onClick={handleReaktivieren}
+                className="flex items-center gap-2 text-sm text-green-400 hover:text-green-300 transition-colors"
+              >
+                <RotateCcw size={14} /> Mitglied reaktivieren
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleArchivieren}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-yellow-400 transition-colors"
+            >
+              <Archive size={14} /> Mitglied archivieren
+            </button>
+          )}
+        </div>
       )}
 
       </div>
