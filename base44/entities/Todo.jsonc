@@ -1,0 +1,55 @@
+{
+  "name": "Todo",
+  "type": "object",
+  "properties": {
+    "titel": {
+      "type": "string",
+      "description": "Titel der Aufgabe"
+    },
+    "beschreibung": {
+      "type": "string",
+      "description": "Detailbeschreibung"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Offen",
+        "In Bearbeitung",
+        "Erledigt"
+      ],
+      "default": "Offen"
+    },
+    "prioritaet": {
+      "type": "string",
+      "enum": [
+        "Niedrig",
+        "Mittel",
+        "Hoch",
+        "Dringend"
+      ],
+      "default": "Mittel"
+    },
+    "faellig_am": {
+      "type": "string",
+      "format": "date"
+    },
+    "ersteller_mitglied_id": {
+      "type": "string",
+      "description": "Mitglied das die Aufgabe erstellt hat"
+    },
+    "verantwortliche_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs der verantwortlichen Mitglieder (mind. 1 erforderlich)"
+    },
+    "notizen": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "titel",
+    "verantwortliche_ids"
+  ]
+}

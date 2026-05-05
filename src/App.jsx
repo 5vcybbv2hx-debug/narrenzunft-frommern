@@ -38,6 +38,7 @@ import FamilienDashboard from './pages/FamilienDashboard';
 import Vereine from './pages/Vereine';
 import Sparten from './pages/Sparten';
 import DatenImport from './pages/DatenImport';
+import Todos from './pages/Todos';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -102,6 +103,7 @@ const AuthenticatedApp = () => {
         <Route path="/vereine" element={<Vereine />} />
         <Route path="/sparten" element={<Sparten />} />
         <Route path="/daten-import" element={<DatenImport />} />
+        <Route path="/todos" element={<Todos />} />
       </Route>
       <Route path="/busfahrer/:token" element={<BusfahrerInfo />} />
       <Route path="*" element={<PageNotFound />} />
