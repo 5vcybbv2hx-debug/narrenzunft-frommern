@@ -1,0 +1,52 @@
+{
+  "name": "SpartenAuslage",
+  "type": "object",
+  "properties": {
+    "haesgruppe_id": {
+      "type": "string",
+      "description": "ID der Gruppe"
+    },
+    "mitglied_id": {
+      "type": "string",
+      "description": "ID des Mitglieds, das Geld ausgelegt hat"
+    },
+    "betrag": {
+      "type": "number",
+      "description": "Betrag in Euro"
+    },
+    "beschreibung": {
+      "type": "string",
+      "description": "Wof\u00fcr wurde das Geld ausgegeben?"
+    },
+    "datum": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum der Auslage"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Offen",
+        "Erstattet",
+        "Storniert"
+      ],
+      "default": "Offen",
+      "description": "Status der Erstattung"
+    },
+    "erstattungsdatum": {
+      "type": "string",
+      "format": "date",
+      "description": "Wann wurde erstattet?"
+    },
+    "notizen": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "haesgruppe_id",
+    "mitglied_id",
+    "betrag",
+    "beschreibung",
+    "datum"
+  ]
+}

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { ChevronDown, ChevronUp, Edit, Trash2, Plus, UserMinus, Search, Users, Calendar } from 'lucide-react';
+import { ChevronDown, ChevronUp, Edit, Trash2, Plus, UserMinus, Search, Users, Calendar, Euro } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import SpartenKalender from './SpartenKalender';
+import AuslagenTab from './AuslagenTab';
 
 const TYP_EMOJI = {
   'Häsgruppe': '🎭',
@@ -108,11 +109,23 @@ export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten
             >
               <Calendar size={12} /> Termine
             </button>
-          </div>
+            <button
+              onClick={() => setActiveTab('auslagen')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'auslagen' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <Euro size={12} /> Auslagen
+            </button>
+            </div>
 
           {activeTab === 'kalender' && (
             <div className="p-4">
               <SpartenKalender gruppe={gruppe} kannBearbeiten={isAdmin || kannBearbeiten} />
+            </div>
+          )}
+
+          {activeTab === 'auslagen' && (
+            <div className="p-4">
+              <AuslagenTab gruppeId={gruppe.id} isAdmin={isAdmin} />
             </div>
           )}
 
