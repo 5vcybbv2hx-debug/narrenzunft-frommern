@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Plus, Trash2, Check, X, Euro, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Check, X, Euro, AlertCircle, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -26,10 +26,21 @@ export default function AuslagenTab({ gruppeId, isAdmin }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_AUSLAGE);
   const [saving, setSaving] = useState(false);
+  const [suche, setSuche] = useState('');
+  const [offen, setOffen] = useState(false);
+  const containerRef = useRef(null);
 
   useEffect(() => {
     loadData();
   }, [gruppeId]);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) setOffen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const loadData = async () => {
     setLoading(true);
@@ -115,18 +126,59 @@ export default function AuslagenTab({ gruppeId, isAdmin }) {
       {showForm && (
         <div className="bg-secondary/50 border border-border rounded-xl p-4 mb-4 space-y-3">
           <div className="grid grid-cols-2 gap-2">
-            <div>
+            <div ref={containerRef} className="relative">
               <label className="text-xs text-muted-foreground font-medium block mb-1">Wer hat ausgelegt? *</label>
-              <select
-                value={form.mitglied_id}
-                onChange={e => setForm(p => ({ ...p, mitglied_id: e.target.value }))}
-                className="w-full px-3 py-2 rounded-lg bg-card border border-border text-xs text-foreground focus:outline-none focus:border-primary"
-              >
-                <option value="">Auswählen...</option>
-                {mitglieder.map(m => (
-                  <option key={m.id} value={m.id}>{m.vorname} {m.nachname}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Name suchen..."
+                  value={suche}
+                  onChange={e => { setSuche(e.target.value); setOffen(true); }}
+                  onFocus={() => setOffen(true)}
+                  className="w-full pl-8 pr-3 py-2 rounded-lg bg-card border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              {offen && suche.length >= 1 && (
+                <div className="absolute z-30 left-0 right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-xl max-h-40 overflow-y-auto">
+                  {mitglieder
+                    .filter(m => `${m.vorname} ${m.nachname}`.toLowerCase().includes(suche.toLowerCase()))
+                    .slice(0, 8)
+                    .map(m => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => {
+                          setForm(p => ({ ...p, mitglied_id: m.id }));
+                          setSuche(`${m.vorname} ${m.nachname}`);
+                          setOffen(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs hover:bg-secondary border-b border-border last:border-0 transition-colors"
+                      >
+                        <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[10px] font-bold shrink-0">
+                          {m.vorname?.[0]}{m.nachname?.[0]}
+                        </div>
+                        {m.vorname} {m.nachname}
+                      </button>
+                    ))}
+                  {mitglieder.filter(m => `${m.vorname} ${m.nachname}`.toLowerCase().includes(suche.toLowerCase())).length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-2">Keine Ergebnisse</p>
+                  )}
+                </div>
+              )}
+
+              {form.mitglied_id && (
+                <div className="flex items-center gap-2 px-3 py-1.5 mt-1.5 rounded-lg bg-primary/10 border border-primary/20">
+                  <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[10px] font-bold">
+                    {mitglieder.find(m => m.id === form.mitglied_id)?.vorname?.[0]}{mitglieder.find(m => m.id === form.mitglied_id)?.nachname?.[0]}
+                  </div>
+                  <span className="text-xs text-foreground">{mitglieder.find(m => m.id === form.mitglied_id)?.vorname} {mitglieder.find(m => m.id === form.mitglied_id)?.nachname}</span>
+                  <button onClick={() => { setForm(p => ({ ...p, mitglied_id: '' })); setSuche(''); }} className="ml-auto p-0.5 text-muted-foreground hover:text-destructive">
+                    <X size={12} />
+                  </button>
+                </div>
+              )}
             </div>
             <div>
               <label className="text-xs text-muted-foreground font-medium block mb-1">Betrag € *</label>
