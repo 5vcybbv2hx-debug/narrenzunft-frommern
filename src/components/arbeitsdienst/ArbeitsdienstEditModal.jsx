@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { X, Save, Trash2, Search, Bookmark, GripVertical } from 'lucide-react';
+import { X, Save, Trash2, Search, Bookmark, GripVertical, AlertTriangle } from 'lucide-react';
 
 const ZUWEISUNG_STATUS = ['Offen', 'Bestätigt', 'Erledigt', 'Abgesagt', 'Nicht erledigt'];
 
@@ -24,10 +24,25 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
   const [vorlageSaving, setVorlageSaving] = useState(false);
   const [vorlageSaved, setVorlageSaved] = useState(false);
   const [draggedId, setDraggedId] = useState(null);
+  const [alleZuweisungen, setAlleZuweisungen] = useState([]); // alle Zuweisungen am selben Tag
+  const [alleDienste, setAlleDienste] = useState([]);
+  const [konfliktWarnung, setKonfliktWarnung] = useState(null); // { name, schicht }
 
   useEffect(() => {
     base44.entities.Veranstaltungsvorlage.list('name', 100).then(setVorlagen).catch(() => {});
-  }, []);
+    // Alle Dienste und Zuweisungen am selben Datum laden
+    if (dienst.datum) {
+      base44.entities.Arbeitsdienst.filter({ datum: dienst.datum }).then(d => {
+        setAlleDienste(d);
+        const andereIds = d.filter(x => x.id !== dienst.id && x.uhrzeit === dienst.uhrzeit).map(x => x.id);
+        if (andereIds.length > 0) {
+          Promise.all(andereIds.map(id => base44.entities.ArbeitsdienstZuweisung.filter({ arbeitsdienst_id: id })))
+            .then(results => setAlleZuweisungen(results.flat()))
+            .catch(() => {});
+        }
+      }).catch(() => {});
+    }
+  }, [dienst.datum, dienst.uhrzeit, dienst.id]);
 
   // Sync wenn onSaved neue zuweisungen liefert
   useEffect(() => { setZuweisungen(initialZuweisungen); }, [initialZuweisungen]);
@@ -51,13 +66,30 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
     e.dataTransfer.dropEffect = 'move';
   };
 
+  const pruefeKonflikt = (mitgliedId) => {
+    const konfliktZuweisung = alleZuweisungen.find(z => z.mitglied_id === mitgliedId);
+    if (!konfliktZuweisung) return null;
+    const konfliktDienst = alleDienste.find(d => d.id === konfliktZuweisung.arbeitsdienst_id);
+    return konfliktDienst ? konfliktDienst.titel : 'andere Schicht';
+  };
+
   const handleDropEingeteilt = async (e) => {
     e.preventDefault();
     if (!draggedId) return;
     
     if (zugewieseneIds.has(draggedId)) {
       setDraggedId(null);
-      return; // Already assigned
+      return;
+    }
+
+    // Konflikt prüfen
+    const konfliktSchicht = pruefeKonflikt(draggedId);
+    if (konfliktSchicht) {
+      const m = mitglieder.find(m => m.id === draggedId);
+      setKonfliktWarnung({ name: `${m?.vorname} ${m?.nachname}`, schicht: konfliktSchicht });
+      setDraggedId(null);
+      setTimeout(() => setKonfliktWarnung(null), 5000);
+      return;
     }
     
     setAdding(true);
@@ -238,26 +270,34 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
                 {verfuegbar.length === 0 && (
                   <p className="text-xs text-muted-foreground text-center mt-4">Alle eingeteilt</p>
                 )}
-                {verfuegbar.map(m => (
-                  <div
-                    key={m.id}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, m.id)}
-                    onDragEnd={() => setDraggedId(null)}
-                    className={`flex items-center gap-2 px-2 py-2 rounded-lg mb-0.5 cursor-move border transition-all ${
-                      draggedId === m.id ? 'opacity-50 bg-secondary border-border' : 'hover:bg-secondary bg-secondary/30 border-border/50'
-                    }`}
-                  >
-                    <GripVertical size={12} className="text-muted-foreground shrink-0" />
-                    <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-[10px] shrink-0">
-                      {m.vorname?.[0]}{m.nachname?.[0]}
+                {verfuegbar.map(m => {
+                  const hatKonflikt = !!pruefeKonflikt(m.id);
+                  return (
+                    <div
+                      key={m.id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, m.id)}
+                      onDragEnd={() => setDraggedId(null)}
+                      title={hatKonflikt ? `⚠ Bereits in anderer Schicht eingeteilt` : ''}
+                      className={`flex items-center gap-2 px-2 py-2 rounded-lg mb-0.5 cursor-move border transition-all ${
+                        draggedId === m.id ? 'opacity-50 bg-secondary border-border' :
+                        hatKonflikt ? 'bg-orange-500/10 border-orange-500/30 hover:bg-orange-500/15' :
+                        'hover:bg-secondary bg-secondary/30 border-border/50'
+                      }`}
+                    >
+                      <GripVertical size={12} className="text-muted-foreground shrink-0" />
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${hatKonflikt ? 'bg-orange-500/20 text-orange-400' : 'bg-primary/20 text-primary'}`}>
+                        {m.vorname?.[0]}{m.nachname?.[0]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-foreground truncate">{m.vorname} {m.nachname}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          {hatKonflikt ? <span className="text-orange-400">⚠ Zeitkonflikt</span> : m.mitgliedsstatus}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-foreground truncate">{m.vorname} {m.nachname}</p>
-                      <p className="text-[10px] text-muted-foreground truncate">{m.mitgliedsstatus}</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -268,6 +308,12 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
                   Eingeteilt ({zuweisungen.length}{form.benoetigte_personen ? `/${form.benoetigte_personen}` : ''})
                 </p>
                 <p className="text-[10px] text-muted-foreground">💡 Ziehe zurück nach links</p>
+                {konfliktWarnung && (
+                  <div className="mt-2 flex items-start gap-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-xs text-red-400">
+                    <AlertTriangle size={13} className="shrink-0 mt-0.5" />
+                    <span><strong>{konfliktWarnung.name}</strong> ist zur gleichen Zeit bereits in „{konfliktWarnung.schicht}" eingeteilt!</span>
+                  </div>
+                )}
               </div>
               <div 
                 className="flex-1 overflow-y-auto px-2 pb-2 min-h-0 bg-primary/5 rounded-lg"
