@@ -25,6 +25,10 @@
     "aktiv": {
       "type": "boolean",
       "default": true
+    },
+    "verantwortlicher_id": {
+      "type": "string",
+      "description": "ID des verantwortlichen Mitglieds (Spartenleiter)"
     }
   },
   "required": [

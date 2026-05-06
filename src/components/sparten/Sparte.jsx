@@ -69,6 +69,12 @@ export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten
             {mitglieder.length} Mitglied{mitglieder.length !== 1 ? 'er' : ''}
             {gruppe.beschreibung && ` · ${gruppe.beschreibung}`}
           </p>
+          {gruppe.verantwortlicher_id && (() => {
+            const v = alleMitglieder.find(m => m.id === gruppe.verantwortlicher_id);
+            return v ? (
+              <p className="text-xs text-primary mt-0.5 font-medium">👤 {v.vorname} {v.nachname}</p>
+            ) : null;
+          })()}
         </div>
         {isAdmin && (
           <div className="flex gap-1 shrink-0" onClick={e => e.stopPropagation()}>

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { X, Save } from 'lucide-react';
+import { X, Save, Shield, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const TYPEN = ['Häsgruppe', 'Tanzgruppe', 'Musikgruppe', 'Sonstige'];
 const FARBEN = ['#f97316', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899', '#f59e0b', '#ef4444', '#6b7280'];
@@ -13,8 +14,14 @@ export default function SparteFormModal({ gruppe, onClose, onSaved }) {
     typ: gruppe?.typ || 'Häsgruppe',
     farbe: gruppe?.farbe || '#f97316',
     aktiv: gruppe?.aktiv !== false,
+    verantwortlicher_id: gruppe?.verantwortlicher_id || '',
   });
   const [saving, setSaving] = useState(false);
+  const [mitglieder, setMitglieder] = useState([]);
+
+  useEffect(() => {
+    base44.entities.Mitglied.list('nachname', 500).then(m => setMitglieder(m.filter(x => !x.archiviert)));
+  }, []);
 
   const handleSave = async () => {
     if (!form.name) return;
@@ -81,6 +88,30 @@ export default function SparteFormModal({ gruppe, onClose, onSaved }) {
                 />
               ))}
             </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-muted-foreground font-medium block mb-1">Verantwortlicher (Spartenleiter)</label>
+            <select
+              value={form.verantwortlicher_id}
+              onChange={e => setForm(p => ({ ...p, verantwortlicher_id: e.target.value }))}
+              className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+            >
+              <option value="">– kein Verantwortlicher –</option>
+              {mitglieder.map(m => (
+                <option key={m.id} value={m.id}>{m.vorname} {m.nachname}</option>
+              ))}
+            </select>
+            {form.verantwortlicher_id && (
+              <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20 text-xs text-primary">
+                <Shield size={12} />
+                <span>Berechtigungen für diese Person über</span>
+                <Link to="/berechtigungen" onClick={onClose} className="underline font-semibold flex items-center gap-1 hover:text-primary/80">
+                  Berechtigungen <ExternalLink size={10} />
+                </Link>
+                <span>verwalten</span>
+              </div>
+            )}
           </div>
 
           <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground">
