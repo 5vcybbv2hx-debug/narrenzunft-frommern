@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
-import { Bus, Car, Clock, MapPin, Check, Plus, X, Edit, Trash2, Save, ChevronDown, ChevronUp, ClipboardCheck, Settings } from 'lucide-react';
+import { Bus, Car, Clock, MapPin, Check, Plus, X, Edit, Trash2, Save, ChevronDown, ChevronUp, ClipboardCheck, Settings, CheckCircle } from 'lucide-react';
 import { VeranstaltungsDetailsForm, VeranstaltungsDetailsView } from '@/components/veranstaltung/VeranstaltungsDetails';
 import AdresseAutocomplete from '@/components/AdresseAutocomplete';
 import UmzugCheckinModal from '@/components/umzug/UmzugCheckinModal';
+import UmzugAbschliessenModal from '@/components/umzug/UmzugAbschliessenModal';
 import BusverantwortlicheModal from '@/components/umzug/BusverantwortlicheModal';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -111,6 +112,7 @@ export default function Umzuege() {
   const [alleMitglieder, setAlleMitglieder] = useState([]);
   const [busverantwortlicheIds, setBusverantwortlicheIds] = useState([]);
   const [showBusverantwortliche, setShowBusverantwortliche] = useState(false);
+  const [abschliessenVeranstaltung, setAbschliessenVeranstaltung] = useState(null);
   const [externe_vereine, setExterneVereine] = useState([]);
   const today = new Date().toISOString().split('T')[0];
 
@@ -329,13 +331,21 @@ export default function Umzuege() {
 
                   {/* Check-In Button für Admins und Verantwortliche */}
                   {(admin || istVerantwortlicher(u)) && (
-                    <div className="px-4 pb-3">
+                    <div className="px-4 pb-3 flex gap-2">
                       <button
                         onClick={() => setCheckinVeranstaltung(u)}
-                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary/10 border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/20 transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary/10 border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/20 transition-colors"
                       >
-                        <ClipboardCheck size={15} /> Anwesenheit erfassen
+                        <ClipboardCheck size={15} /> Anwesenheit
                       </button>
+                      {admin && u.status !== 'Abgeschlossen' && (
+                        <button
+                          onClick={() => setAbschliessenVeranstaltung(u)}
+                          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400 text-sm font-semibold hover:bg-green-500/20 transition-colors"
+                        >
+                          <CheckCircle size={15} /> Abschließen
+                        </button>
+                      )}
                     </div>
                   )}
 
