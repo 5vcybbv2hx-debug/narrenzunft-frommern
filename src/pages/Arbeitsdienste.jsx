@@ -3,10 +3,11 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannArbeitsdiensteVerwalten } from '@/lib/roles';
-import { Briefcase, Plus, Calendar, MapPin, Users, Edit, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Briefcase, Plus, Calendar, MapPin, Users, Edit, X, ChevronDown, ChevronUp, LayoutTemplate } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import ArbeitsdienstEditModal from '@/components/arbeitsdienst/ArbeitsdienstEditModal';
+import VeranstaltungsvorlagenModal from '@/components/veranstaltung/VeranstaltungsvorlagenModal';
 
 const STATUS_COLORS = {
   'Offen': 'bg-yellow-500/20 text-yellow-400',
@@ -33,6 +34,7 @@ export default function Arbeitsdienste() {
   const [filter, setFilter] = useState('Alle');
   const [editDienst, setEditDienst] = useState(null);
   const [expandedEvents, setExpandedEvents] = useState({});
+  const [showVorlagen, setShowVorlagen] = useState(false);
   const kannVerwalten = kannArbeitsdiensteVerwalten(user);
   const today = new Date().toISOString().split('T')[0];
 
@@ -113,13 +115,23 @@ export default function Arbeitsdienste() {
           <p className="text-sm text-muted-foreground mt-0.5">{dienste.length} gesamt</p>
         </div>
         {kannVerwalten && (
-          <Link
-            to="/arbeitsdienste/neu"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
-          >
-            <Plus size={16} />
-            <span className="hidden sm:inline">Neuer Dienst</span>
-          </Link>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowVorlagen(true)}
+              className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-secondary text-muted-foreground text-sm font-medium hover:bg-border hover:text-foreground transition-colors"
+              title="Vorlagen verwalten"
+            >
+              <LayoutTemplate size={16} />
+              <span className="hidden sm:inline">Vorlagen</span>
+            </button>
+            <Link
+              to="/arbeitsdienste/neu"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+            >
+              <Plus size={16} />
+              <span className="hidden sm:inline">Neuer Dienst</span>
+            </Link>
+          </div>
         )}
       </div>
 
@@ -266,6 +278,10 @@ export default function Arbeitsdienste() {
           <Briefcase size={40} className="text-muted-foreground mx-auto mb-3" />
           <p className="text-muted-foreground">Keine Arbeitsdienste gefunden</p>
         </div>
+      )}
+
+      {showVorlagen && (
+        <VeranstaltungsvorlagenModal onClose={() => setShowVorlagen(false)} />
       )}
 
       {/* Edit Modal */}
