@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Briefcase, Plus, Trash2, Users, Clock, MapPin } from 'lucide-react';
+import { Briefcase, Plus, Trash2, Users, Clock, MapPin, CheckCircle, AlertCircle } from 'lucide-react';
 
 const STATUS_COLORS = {
   'Offen': 'bg-yellow-500/20 text-yellow-400',
@@ -20,6 +20,7 @@ const EMPTY_DIENST = {
 
 export default function ArbeitsdienstTab({ veranstaltung, isAdmin }) {
   const [dienste, setDienste] = useState([]);
+  const [zuweisungen, setZuweisungen] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_DIENST);
@@ -34,8 +35,25 @@ export default function ArbeitsdienstTab({ veranstaltung, isAdmin }) {
     try {
       const data = await base44.entities.Arbeitsdienst.filter({ veranstaltung_id: veranstaltung.id });
       setDienste(data);
+      if (data.length > 0) {
+        const allZuweisungen = await Promise.all(
+          data.map(d => base44.entities.ArbeitsdienstZuweisung.filter({ arbeitsdienst_id: d.id }))
+        );
+        setZuweisungen(allZuweisungen.flat());
+      }
     } catch (e) {}
     setLoading(false);
+  };
+
+  const getZuweisungen = (dienstId) => zuweisungen.filter(z => z.arbeitsdienst_id === dienstId && z.status !== 'Abgesagt');
+
+  const getBesetzungsStatus = (d) => {
+    const count = getZuweisungen(d.id).length;
+    const needed = d.benoetigte_personen;
+    if (!needed) return null;
+    if (count >= needed) return 'voll';
+    if (count > 0) return 'teil';
+    return 'leer';
   };
 
   const handleCreate = async () => {
@@ -151,19 +169,35 @@ export default function ArbeitsdienstTab({ veranstaltung, isAdmin }) {
 
       {/* Liste */}
       <div className="space-y-2">
-        {dienste.map(d => (
-          <div key={d.id} className="bg-card border border-border rounded-xl p-4">
+        {dienste.map(d => {
+          const count = getZuweisungen(d.id).length;
+          const besetzung = getBesetzungsStatus(d);
+          const pct = d.benoetigte_personen ? Math.min(100, Math.round((count / d.benoetigte_personen) * 100)) : null;
+          return (
+          <div key={d.id} className={`bg-card border rounded-xl p-4 ${besetzung === 'voll' ? 'border-green-500/30' : besetzung === 'leer' && d.benoetigte_personen ? 'border-orange-500/30' : 'border-border'}`}>
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-semibold text-foreground text-sm">{d.titel}</p>
                   <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[d.status]}`}>{d.status}</span>
+                  {besetzung === 'voll' && <CheckCircle size={13} className="text-green-400" />}
+                  {besetzung === 'leer' && d.benoetigte_personen > 0 && <AlertCircle size={13} className="text-orange-400" />}
                 </div>
                 <div className="flex flex-wrap gap-3 mt-1.5 text-xs text-muted-foreground">
-                  {d.datum && <span className="flex items-center gap-1"><Clock size={10} /> {d.datum}{d.uhrzeit ? ` – ${d.uhrzeit}` : ''}</span>}
+                  {d.datum && <span className="flex items-center gap-1"><Clock size={10} /> {d.datum}{d.uhrzeit ? ` · ${d.uhrzeit}` : ''}</span>}
                   {d.ort && <span className="flex items-center gap-1"><MapPin size={10} /> {d.ort}</span>}
-                  {d.benoetigte_personen && <span className="flex items-center gap-1"><Users size={10} /> {d.benoetigte_personen} Personen</span>}
+                  <span className={`flex items-center gap-1 font-medium ${besetzung === 'voll' ? 'text-green-400' : besetzung === 'leer' && d.benoetigte_personen ? 'text-orange-400' : 'text-muted-foreground'}`}>
+                    <Users size={10} /> {count}{d.benoetigte_personen ? `/${d.benoetigte_personen}` : ''}
+                  </span>
                 </div>
+                {pct !== null && (
+                  <div className="mt-2 h-1.5 bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${pct >= 100 ? 'bg-green-500' : pct >= 50 ? 'bg-yellow-500' : 'bg-orange-500'}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                )}
                 {d.beschreibung && <p className="text-xs text-muted-foreground mt-1">{d.beschreibung}</p>}
               </div>
               {isAdmin && (
@@ -176,7 +210,8 @@ export default function ArbeitsdienstTab({ veranstaltung, isAdmin }) {
               )}
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {dienste.length === 0 && !showForm && (
