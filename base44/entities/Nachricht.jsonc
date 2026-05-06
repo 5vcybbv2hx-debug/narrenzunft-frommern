@@ -1,0 +1,38 @@
+{
+  "name": "Nachricht",
+  "type": "object",
+  "properties": {
+    "absender_mitglied_id": {
+      "type": "string",
+      "description": "ID des absendenden Mitglieds"
+    },
+    "empfaenger_mitglied_id": {
+      "type": "string",
+      "description": "ID des empfangenden Mitglieds (Funktion\u00e4r/Vorstand)"
+    },
+    "betreff": {
+      "type": "string",
+      "description": "Betreffzeile"
+    },
+    "inhalt": {
+      "type": "string",
+      "description": "Nachrichtentext"
+    },
+    "gelesen": {
+      "type": "boolean",
+      "default": false,
+      "description": "Wurde die Nachricht gelesen?"
+    },
+    "gelesen_am": {
+      "type": "string",
+      "format": "date",
+      "description": "Wann wurde gelesen?"
+    }
+  },
+  "required": [
+    "absender_mitglied_id",
+    "empfaenger_mitglied_id",
+    "betreff",
+    "inhalt"
+  ]
+}

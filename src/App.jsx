@@ -41,6 +41,7 @@ import DatenImport from './pages/DatenImport';
 import Todos from './pages/Todos';
 import Inventar from './pages/Inventar';
 import Berechtigungen from './pages/Berechtigungen';
+import Nachrichten from './pages/Nachrichten';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -108,6 +109,7 @@ const AuthenticatedApp = () => {
         <Route path="/todos" element={<Todos />} />
         <Route path="/inventar" element={<Inventar />} />
         <Route path="/berechtigungen" element={<Berechtigungen />} />
+        <Route path="/nachrichten" element={<Nachrichten />} />
       </Route>
       <Route path="/busfahrer/:token" element={<BusfahrerInfo />} />
       <Route path="*" element={<PageNotFound />} />
