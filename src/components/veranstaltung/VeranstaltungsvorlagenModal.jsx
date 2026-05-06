@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { X, Plus, Trash2, Save, LayoutTemplate, Edit, Bus, Clock, MapPin } from 'lucide-react';
+import { X, Plus, Trash2, Save, LayoutTemplate, Edit, Bus, Clock, MapPin, Briefcase } from 'lucide-react';
 
 const TYP_OPTIONEN = ['Umzug', 'Abendveranstaltung', 'Intern', 'Arbeitsdienst', 'Fest'];
 
@@ -17,6 +17,7 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
       name: '', typ: 'Intern', ort: '', uhrzeit: '', beschreibung: '',
       bus_erforderlich: false, anmeldung_aktiv: true,
       busparkplatz_adresse: '', busparkplatz_treffzeit: '', hinweise: '',
+      arbeitsdienst_vorlagen: [],
     };
   }
 
@@ -45,8 +46,31 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
       busparkplatz_adresse: v.busparkplatz_adresse || '',
       busparkplatz_treffzeit: v.busparkplatz_treffzeit || '',
       hinweise: v.hinweise || '',
+      arbeitsdienst_vorlagen: v.arbeitsdienst_vorlagen || [],
     });
     setAnsicht('form');
+  };
+
+  const handleArbeitsdienstVorlageChange = (idx, field, value) => {
+    setForm(p => {
+      const liste = [...(p.arbeitsdienst_vorlagen || [])];
+      liste[idx] = { ...liste[idx], [field]: value };
+      return { ...p, arbeitsdienst_vorlagen: liste };
+    });
+  };
+
+  const handleArbeitsdienstVorlageAdd = () => {
+    setForm(p => ({
+      ...p,
+      arbeitsdienst_vorlagen: [...(p.arbeitsdienst_vorlagen || []), { titel: '', beschreibung: '', benoetigte_personen: '' }],
+    }));
+  };
+
+  const handleArbeitsdienstVorlageRemove = (idx) => {
+    setForm(p => ({
+      ...p,
+      arbeitsdienst_vorlagen: (p.arbeitsdienst_vorlagen || []).filter((_, i) => i !== idx),
+    }));
   };
 
   const handleSave = async () => {
@@ -121,6 +145,11 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
                         {v.bus_erforderlich && <span className="flex items-center gap-1"><Bus size={10} /> Bus</span>}
                       </div>
                       {v.beschreibung && <p className="text-xs text-muted-foreground mt-1.5">{v.beschreibung}</p>}
+                      {v.arbeitsdienst_vorlagen?.length > 0 && (
+                        <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
+                          <Briefcase size={10} /> {v.arbeitsdienst_vorlagen.length} Arbeitsdienst{v.arbeitsdienst_vorlagen.length !== 1 ? 'e' : ''}
+                        </p>
+                      )}
                     </div>
                     <div className="flex flex-col gap-1 shrink-0">
                       <button onClick={() => openEdit(v)}
@@ -205,6 +234,54 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
                 </div>
               </div>
             )}
+            {/* Arbeitsdienst-Vorlagen */}
+            <div className="border-t border-border pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                  <Briefcase size={12} /> Arbeitsdienste ({(form.arbeitsdienst_vorlagen || []).length})
+                </p>
+                <button onClick={handleArbeitsdienstVorlageAdd}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors">
+                  <Plus size={12} /> Hinzufügen
+                </button>
+              </div>
+              <div className="space-y-2">
+                {(form.arbeitsdienst_vorlagen || []).map((ad, idx) => (
+                  <div key={idx} className="bg-secondary/50 border border-border rounded-lg p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={ad.titel || ''}
+                        onChange={e => handleArbeitsdienstVorlageChange(idx, 'titel', e.target.value)}
+                        placeholder="Titel *"
+                        className="flex-1 px-2.5 py-1.5 rounded-lg bg-card border border-border text-xs text-foreground focus:outline-none focus:border-primary"
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        value={ad.benoetigte_personen || ''}
+                        onChange={e => handleArbeitsdienstVorlageChange(idx, 'benoetigte_personen', e.target.value ? Number(e.target.value) : '')}
+                        placeholder="Pers."
+                        className="w-16 px-2 py-1.5 rounded-lg bg-card border border-border text-xs text-foreground focus:outline-none focus:border-primary"
+                      />
+                      <button onClick={() => handleArbeitsdienstVorlageRemove(idx)}
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0">
+                        <X size={13} />
+                      </button>
+                    </div>
+                    <input
+                      value={ad.beschreibung || ''}
+                      onChange={e => handleArbeitsdienstVorlageChange(idx, 'beschreibung', e.target.value)}
+                      placeholder="Beschreibung (optional)"
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-card border border-border text-xs text-foreground focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                ))}
+                {(form.arbeitsdienst_vorlagen || []).length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-2">Noch keine Arbeitsdienste definiert</p>
+                )}
+              </div>
+            </div>
+
             <div className="flex gap-2 pt-1">
               <button onClick={() => setAnsicht('liste')} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm">Zurück</button>
               <button onClick={handleSave} disabled={saving || !form.name}
