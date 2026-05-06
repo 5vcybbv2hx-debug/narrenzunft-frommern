@@ -302,7 +302,7 @@ export default function Arbeitsdienste() {
             </div>
           );
         })}
-      </div>
+        </div>
 
         {filtered.length === 0 && (
           <div className="text-center py-12">
@@ -310,7 +310,6 @@ export default function Arbeitsdienste() {
             <p className="text-muted-foreground">Keine Arbeitsdienste gefunden</p>
           </div>
         )}
-        </div>
         </>
       )}
 
