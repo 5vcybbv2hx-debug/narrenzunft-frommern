@@ -3,7 +3,8 @@
   "type": "object",
   "properties": {
     "mitglied_id": {
-      "type": "string"
+      "type": "string",
+      "description": "ID des betroffenen Mitglieds (optional bei Admin-Benachrichtigungen)"
     },
     "titel": {
       "type": "string"
@@ -19,7 +20,8 @@
         "Ehrung",
         "Arbeitsdienst",
         "Veranstaltung",
-        "Beitrag"
+        "Beitrag",
+        "Statuswechsel"
       ],
       "default": "Info"
     },
@@ -29,10 +31,13 @@
     },
     "link": {
       "type": "string"
+    },
+    "daten": {
+      "type": "string",
+      "description": "JSON-String mit zus\u00e4tzlichen Daten (z.B. f\u00fcr Statuswechsel-Details)"
     }
   },
   "required": [
-    "mitglied_id",
     "titel"
   ]
 }

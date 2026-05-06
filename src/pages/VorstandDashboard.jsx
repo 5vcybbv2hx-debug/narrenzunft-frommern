@@ -5,8 +5,9 @@ import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannArbeitsdiensteVerwalten, getRollenLabel } from '@/lib/roles';
 import {
   Calendar, Users, Briefcase, AlertCircle, CheckCircle2,
-  Clock, MapPin, ChevronRight, ArrowRight, UserCheck, UserX, Shield
+  Clock, MapPin, ChevronRight, ArrowRight, UserCheck, UserX, Shield, Baby
 } from 'lucide-react';
+import StatuswechselWidget from '@/components/vorstand/StatuswechselWidget';
 import { format, differenceInDays } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -263,6 +264,11 @@ export default function VorstandDashboard() {
               })}
             </div>
           )}
+        </SectionCard>
+
+        {/* Altersbedingte Statuswechsel */}
+        <SectionCard title="👶 Altersbedingte Statuswechsel" icon={Baby} linkTo="/mitglieder" linkLabel="Mitglieder">
+          <StatuswechselWidget />
         </SectionCard>
 
         {/* Schnellzugriff */}
