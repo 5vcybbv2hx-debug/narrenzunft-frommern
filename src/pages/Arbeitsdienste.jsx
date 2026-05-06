@@ -3,11 +3,12 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannArbeitsdiensteVerwalten } from '@/lib/roles';
-import { Briefcase, Plus, Calendar, MapPin, Users, Edit, X, ChevronDown, ChevronUp, LayoutTemplate } from 'lucide-react';
+import { Briefcase, Plus, Calendar, MapPin, Users, Edit, X, ChevronDown, ChevronUp, LayoutTemplate, List } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import ArbeitsdienstEditModal from '@/components/arbeitsdienst/ArbeitsdienstEditModal';
 import VeranstaltungsvorlagenModal from '@/components/veranstaltung/VeranstaltungsvorlagenModal';
+import ArbeitsdienstKalender from '@/components/arbeitsdienst/ArbeitsdienstKalender';
 
 const STATUS_COLORS = {
   'Offen': 'bg-yellow-500/20 text-yellow-400',
@@ -35,6 +36,7 @@ export default function Arbeitsdienste() {
   const [editDienst, setEditDienst] = useState(null);
   const [expandedEvents, setExpandedEvents] = useState({});
   const [showVorlagen, setShowVorlagen] = useState(false);
+  const [ansicht, setAnsicht] = useState('liste'); // 'liste' | 'kalender'
   const kannVerwalten = kannArbeitsdiensteVerwalten(user);
   const today = new Date().toISOString().split('T')[0];
 
@@ -135,22 +137,51 @@ export default function Arbeitsdienste() {
         )}
       </div>
 
-      {/* Filter */}
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
-        {['Alle', 'Kommend', 'Vergangen', 'Offen', 'In Planung', 'Abgeschlossen'].map(f => (
+      {/* Ansicht-Toggle */}
+      <div className="flex items-center gap-2 mb-4">
+        <div className="flex gap-1 bg-secondary rounded-xl p-1">
           <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-              filter === f ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground'
-            }`}
+            onClick={() => setAnsicht('liste')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${ansicht === 'liste' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}
           >
-            {f}
+            <List size={13} /> Liste
           </button>
-        ))}
+          <button
+            onClick={() => setAnsicht('kalender')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${ansicht === 'kalender' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            <Calendar size={13} /> Kalender
+          </button>
+        </div>
       </div>
 
-      <div className="space-y-3">
+      {/* Kalenderansicht */}
+      {ansicht === 'kalender' && (
+        <ArbeitsdienstKalender
+          dienste={dienste}
+          zuweisungen={zuweisungen}
+          onDienstClick={(d) => kannVerwalten && setEditDienst(d)}
+        />
+      )}
+
+      {ansicht === 'liste' && (
+        <>
+        {/* Filter */}
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
+          {['Alle', 'Kommend', 'Vergangen', 'Offen', 'In Planung', 'Abgeschlossen'].map(f => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                filter === f ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground'
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+
+        <div className="space-y-3">
         {sortedKeys.map(eventKey => {
           const dienste_event = grouped[eventKey];
           const event = eventKey === '_keine' ? null : veranstaltungen.find(v => v.id === eventKey);
@@ -273,11 +304,14 @@ export default function Arbeitsdienste() {
         })}
       </div>
 
-      {filtered.length === 0 && (
-        <div className="text-center py-12">
-          <Briefcase size={40} className="text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">Keine Arbeitsdienste gefunden</p>
+        {filtered.length === 0 && (
+          <div className="text-center py-12">
+            <Briefcase size={40} className="text-muted-foreground mx-auto mb-3" />
+            <p className="text-muted-foreground">Keine Arbeitsdienste gefunden</p>
+          </div>
+        )}
         </div>
+        </>
       )}
 
       {showVorlagen && (

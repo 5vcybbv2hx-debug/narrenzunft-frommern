@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Save, Search, X, Users } from 'lucide-react';
+import { ArrowLeft, Save, Search, X, Users, LayoutTemplate, ChevronDown } from 'lucide-react';
 import AdresseAutocomplete from '@/components/AdresseAutocomplete';
 
 export default function ArbeitsdienstNeu() {
@@ -19,9 +19,15 @@ export default function ArbeitsdienstNeu() {
   const [alleMitglieder, setAlleMitglieder] = useState([]);
   const [ausgewaehlte, setAusgewaehlte] = useState([]); // { id, vorname, nachname }
   const [suchbegriff, setSuchbegriff] = useState('');
+  const [vorlagen, setVorlagen] = useState([]);
+  const [showVorlagenDropdown, setShowVorlagenDropdown] = useState(false);
 
   useEffect(() => {
     base44.entities.Mitglied.list('nachname', 1000).then(setAlleMitglieder).catch(() => {});
+    base44.entities.Veranstaltungsvorlage.list('name', 100).then(v => {
+      // Nur Vorlagen mit Arbeitsdienst-Vorlagen
+      setVorlagen(v.filter(x => (x.arbeitsdienst_vorlagen || []).length > 0));
+    }).catch(() => {});
   }, []);
 
   const handleSave = async () => {
@@ -87,6 +93,55 @@ export default function ArbeitsdienstNeu() {
         </button>
         <h1 className="text-xl font-bold text-foreground">Neuer Arbeitsdienst</h1>
       </div>
+
+      {/* Vorlage auswählen */}
+      {vorlagen.length > 0 && (
+        <div className="bg-card border border-border rounded-xl p-4 mb-4">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+            <LayoutTemplate size={12} /> Aus Vorlage befüllen
+          </p>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowVorlagenDropdown(p => !p)}
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground hover:border-primary/50 transition-colors"
+            >
+              <span className="text-muted-foreground">Vorlage auswählen...</span>
+              <ChevronDown size={14} className="text-muted-foreground" />
+            </button>
+            {showVorlagenDropdown && (
+              <div className="absolute z-20 left-0 right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-xl overflow-hidden">
+                {vorlagen.map(v => (
+                  <div key={v.id} className="border-b border-border last:border-0">
+                    <p className="px-3 pt-2.5 pb-1 text-xs font-semibold text-foreground">{v.name}</p>
+                    {(v.arbeitsdienst_vorlagen || []).map((ad, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setForm(p => ({
+                            ...p,
+                            titel: ad.titel || p.titel,
+                            beschreibung: ad.beschreibung || p.beschreibung,
+                            benoetigte_personen: ad.benoetigte_personen || p.benoetigte_personen,
+                          }));
+                          setShowVorlagenDropdown(false);
+                        }}
+                        className="w-full flex items-center justify-between px-3 py-2 hover:bg-secondary transition-colors text-left"
+                      >
+                        <span className="text-sm text-foreground">{ad.titel}</span>
+                        {ad.benoetigte_personen && (
+                          <span className="text-xs text-muted-foreground">{ad.benoetigte_personen} Pers.</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="bg-card border border-border rounded-xl p-5 space-y-4 mb-4">
         {field('Titel *', 'titel')}

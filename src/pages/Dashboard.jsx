@@ -99,12 +99,13 @@ export default function Dashboard() {
     setLoading(true);
     try {
       const today = new Date().toISOString().split('T')[0];
-      const [mitglieder, events, ehrungen, beitraege, dienste] = await Promise.all([
+      const [mitglieder, events, ehrungen, beitraege, dienste, zuweisungen] = await Promise.all([
         base44.entities.Mitglied.list('-created_date', 100),
         base44.entities.Veranstaltung.list('datum', 50),
         base44.entities.Ehrung.filter({ status: 'Vorgeschlagen' }),
         base44.entities.Beitrag.list('-created_date', 200),
-        base44.entities.Arbeitsdienst.list('datum', 20),
+        base44.entities.Arbeitsdienst.list('datum', 30),
+        base44.entities.ArbeitsdienstZuweisung.list('-created_date', 300),
       ]);
 
       const kommende = events.filter(e => e.datum >= today).slice(0, 5);
@@ -119,8 +120,21 @@ export default function Dashboard() {
         total: beitraege.reduce((s, b) => s + (b.betrag || 0), 0)
       });
 
-      const offeneDienste = dienste.filter(d => d.status === 'Offen' && d.datum >= today);
-      setArbeitsdienste(offeneDienste.slice(0, 3));
+      // Unterbesetzte Dienste ermitteln
+      const offeneDienste = dienste.filter(d => d.datum >= today && d.status !== 'Abgeschlossen');
+      const unterbesetzte = offeneDienste
+        .filter(d => d.benoetigte_personen > 0)
+        .map(d => {
+          const count = zuweisungen.filter(z => z.arbeitsdienst_id === d.id && z.status !== 'Abgesagt').length;
+          return { ...d, eingeteilt: count };
+        })
+        .filter(d => d.eingeteilt < d.benoetigte_personen)
+        .slice(0, 4);
+
+      setArbeitsdienste(unterbesetzte.length > 0 ? unterbesetzte : offeneDienste.slice(0, 3).map(d => ({
+        ...d,
+        eingeteilt: zuweisungen.filter(z => z.arbeitsdienst_id === d.id && z.status !== 'Abgesagt').length,
+      })));
 
       setNeueMitglieder(mitglieder.slice(0, 3));
       setStats({
@@ -128,7 +142,7 @@ export default function Dashboard() {
         veranstaltungen: kommende.length,
         offeneEhrungen: ehrungen.length,
         offeneBeitraege: offenB.length + ueberfaelligB.length,
-        arbeitsdienste: offeneDienste.length,
+        arbeitsdienste: unterbesetzte.length,
       });
     } catch (e) {
       console.error(e);
@@ -254,29 +268,42 @@ export default function Dashboard() {
         {/* Arbeitsdienste */}
         <SectionCard
           title="Arbeitsdienste"
-          subtitle="Offene Dienste"
+          subtitle={stats.arbeitsdienste > 0 ? `${stats.arbeitsdienste} unterbesetzt` : 'Kommende Dienste'}
           icon={Briefcase}
           linkTo="/arbeitsdienste"
-          linkLabel="Dienst eintragen"
+          linkLabel="Alle Dienste"
         >
           {arbeitsdienste.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">Keine offenen Arbeitsdienste</p>
           ) : (
             <div className="space-y-3">
-              {arbeitsdienste.map(d => (
-                <div key={d.id} className="flex items-center gap-3">
-                  <div className="flex-shrink-0 text-xs text-muted-foreground w-16">
-                    {format(new Date(d.datum), 'dd.MM', { locale: de })}
+              {arbeitsdienste.map(d => {
+                const pct = d.benoetigte_personen > 0 ? Math.min(100, Math.round((d.eingeteilt / d.benoetigte_personen) * 100)) : null;
+                const unterbesetzt = pct !== null && pct < 100;
+                return (
+                  <div key={d.id} className="space-y-1">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0 text-xs text-muted-foreground w-14">
+                        {format(new Date(d.datum), 'dd.MM', { locale: de })}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{d.titel}</p>
+                      </div>
+                      <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${unterbesetzt ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400'}`}>
+                        {d.eingeteilt}{d.benoetigte_personen ? `/${d.benoetigte_personen}` : ''}
+                      </span>
+                    </div>
+                    {pct !== null && (
+                      <div className="ml-14 h-1.5 bg-secondary rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${pct >= 100 ? 'bg-green-500' : pct >= 50 ? 'bg-yellow-500' : 'bg-orange-500'}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{d.titel}</p>
-                    {d.ort && <p className="text-xs text-muted-foreground truncate">{d.ort}</p>}
-                  </div>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400">
-                    Offen
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </SectionCard>

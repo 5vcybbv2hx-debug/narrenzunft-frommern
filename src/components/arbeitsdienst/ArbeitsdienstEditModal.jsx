@@ -326,36 +326,47 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
                 {zuweisungen.map(z => {
                   const m = mitglieder.find(m => m.id === z.mitglied_id);
                   return (
-                    <div 
-                      key={z.id} 
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, z.mitglied_id)}
-                      onDragEnd={() => setDraggedId(null)}
-                      className={`flex items-center gap-2 px-2 py-2 rounded-lg mb-0.5 group cursor-move border transition-all ${
-                        draggedId === z.mitglied_id ? 'opacity-50 bg-card border-primary/20' : 'hover:bg-secondary/50 bg-card border-primary/20'
-                      }`}
-                    >
-                      <GripVertical size={12} className="text-muted-foreground shrink-0" />
-                      <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-[10px] shrink-0">
-                        {m?.vorname?.[0]}{m?.nachname?.[0]}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-foreground truncate">{m ? `${m.vorname} ${m.nachname}` : '–'}</p>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${STATUS_COLORS[z.status] || STATUS_COLORS['Offen']}`}>
-                          {z.status}
-                        </span>
-                      </div>
-                      <select
-                        value={z.status}
-                        onChange={e => handleZuweisungStatus(z, e.target.value)}
-                        className="text-[10px] px-1.5 py-1 rounded-lg bg-secondary border border-border text-foreground focus:outline-none focus:border-primary shrink-0"
-                        onDragStart={e => e.stopPropagation()}
+                    <div key={z.id} className={`rounded-lg mb-1 border transition-all ${draggedId === z.mitglied_id ? 'opacity-50 border-primary/20' : 'border-primary/20'}`}>
+                      <div
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, z.mitglied_id)}
+                        onDragEnd={() => setDraggedId(null)}
+                        className="flex items-center gap-2 px-2 py-2 group cursor-move hover:bg-secondary/50 rounded-t-lg bg-card"
                       >
-                        {ZUWEISUNG_STATUS.map(s => <option key={s}>{s}</option>)}
-                      </select>
-                      <button onClick={() => handleRemove(z.id)} className="p-1 rounded text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 shrink-0">
-                        <X size={12} />
-                      </button>
+                        <GripVertical size={12} className="text-muted-foreground shrink-0" />
+                        <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-[10px] shrink-0">
+                          {m?.vorname?.[0]}{m?.nachname?.[0]}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-foreground truncate">{m ? `${m.vorname} ${m.nachname}` : '–'}</p>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${STATUS_COLORS[z.status] || STATUS_COLORS['Offen']}`}>
+                            {z.status}
+                          </span>
+                        </div>
+                        <select
+                          value={z.status}
+                          onChange={e => handleZuweisungStatus(z, e.target.value)}
+                          className="text-[10px] px-1.5 py-1 rounded-lg bg-secondary border border-border text-foreground focus:outline-none focus:border-primary shrink-0"
+                          onDragStart={e => e.stopPropagation()}
+                        >
+                          {ZUWEISUNG_STATUS.map(s => <option key={s}>{s}</option>)}
+                        </select>
+                        <button onClick={() => handleRemove(z.id)} className="p-1 rounded text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 shrink-0">
+                          <X size={12} />
+                        </button>
+                      </div>
+                      <input
+                        placeholder="Kommentar (optional)"
+                        defaultValue={z.notizen || ''}
+                        onBlur={async e => {
+                          if (e.target.value !== (z.notizen || '')) {
+                            await base44.entities.ArbeitsdienstZuweisung.update(z.id, { notizen: e.target.value });
+                            setZuweisungen(prev => prev.map(zw => zw.id === z.id ? { ...zw, notizen: e.target.value } : zw));
+                          }
+                        }}
+                        className="w-full px-2 py-1 bg-secondary/30 border-t border-border/50 text-[10px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:bg-secondary/50 rounded-b-lg"
+                        onDragStart={e => e.stopPropagation()}
+                      />
                     </div>
                   );
                 })}
