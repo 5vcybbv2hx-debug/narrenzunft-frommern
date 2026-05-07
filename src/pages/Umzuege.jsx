@@ -398,9 +398,14 @@ export default function Umzuege() {
                 <div className="flex items-center gap-1">
                   {getMeineAnmeldung(u.id)?.status === 'Anwesend' && <Check size={14} className="text-green-400" />}
                   {admin && (
-                    <button onClick={() => handleDelete(u.id)} className="p-1 rounded-lg text-muted-foreground hover:text-destructive transition-colors">
-                      <Trash2 size={13} />
-                    </button>
+                    <>
+                      <button onClick={() => openEdit(u)} className="p-1 rounded-lg text-muted-foreground hover:text-primary transition-colors">
+                        <Edit size={13} />
+                      </button>
+                      <button onClick={() => handleDelete(u.id)} className="p-1 rounded-lg text-muted-foreground hover:text-destructive transition-colors">
+                        <Trash2 size={13} />
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
