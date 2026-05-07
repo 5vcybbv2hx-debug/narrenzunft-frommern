@@ -1,0 +1,42 @@
+{
+  "name": "Protokoll",
+  "type": "object",
+  "properties": {
+    "termin_id": {
+      "type": "string",
+      "description": "ID der verkn\u00fcpften Sitzung (KalenderTermin)"
+    },
+    "titel": {
+      "type": "string"
+    },
+    "inhalt": {
+      "type": "string",
+      "description": "Freitext-Protokollinhalt"
+    },
+    "datei_url": {
+      "type": "string",
+      "description": "URL einer hochgeladenen Protokolldatei"
+    },
+    "datei_name": {
+      "type": "string",
+      "description": "Dateiname der hochgeladenen Datei"
+    },
+    "autor_mitglied_id": {
+      "type": "string",
+      "description": "ID des Verfassers"
+    },
+    "datum": {
+      "type": "string",
+      "format": "date"
+    },
+    "veroeffentlicht": {
+      "type": "boolean",
+      "default": false,
+      "description": "Ob das Protokoll f\u00fcr alle Ausschussmitglieder sichtbar ist"
+    }
+  },
+  "required": [
+    "titel",
+    "datum"
+  ]
+}

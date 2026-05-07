@@ -9,6 +9,7 @@ import {
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import AusschussMitgliederTab from '@/components/ausschuss/AusschussMitgliederTab';
+import ProtokollTab from '@/components/ausschuss/ProtokollTab';
 import { kannAusschussSehn } from '@/lib/roles';
 
 const PRIO_FARBEN = {
@@ -125,6 +126,7 @@ export default function Ausschuss() {
           { id: 'aufgaben', label: `✅ Aufgaben (${offeneAufgaben.length})` },
           { id: 'beschluesse', label: '⚖️ Beschlüsse' },
           { id: 'abstimmungen', label: `🗳️ Abstimmungen` },
+          { id: 'protokolle', label: '📝 Protokolle' },
           { id: 'mitglieder', label: '👥 Ausschuss' },
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -215,6 +217,11 @@ export default function Ausschuss() {
             </div>
           )}
         </div>
+      )}
+
+      {/* PROTOKOLLE */}
+      {activeTab === 'protokolle' && (
+        <ProtokollTab termine={termine} mitglieder={mitglieder} />
       )}
 
       {/* AUSSCHUSSMITGLIEDER */}
