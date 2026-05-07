@@ -136,6 +136,24 @@ export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten
           )}
 
           {activeTab === 'mitglieder' && <div className="p-4 space-y-3">
+          {gruppe.verantwortlicher_id && (() => {
+            const v = alleMitglieder.find(m => m.id === gruppe.verantwortlicher_id);
+            return v ? (
+              <Link
+                to={`/mitglieder/${v.id}`}
+                onClick={e => e.stopPropagation()}
+                className="flex items-center gap-3 bg-primary/10 border border-primary/20 rounded-lg px-3 py-2.5 hover:bg-primary/15 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 text-white" style={{ backgroundColor: farbe }}>
+                  {v.vorname?.[0]}{v.nachname?.[0]}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-primary">{v.vorname} {v.nachname}</p>
+                  <p className="text-xs text-muted-foreground">Verantwortlicher / Spartenleiter</p>
+                </div>
+              </Link>
+            ) : null;
+          })()}
           {mitglieder.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-2">Noch keine Mitglieder zugeordnet</p>
           ) : (
