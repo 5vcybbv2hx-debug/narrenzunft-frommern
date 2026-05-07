@@ -106,7 +106,10 @@ export default function Sparten() {
             gruppe={gruppe}
             alleMitglieder={mitglieder}
             isAdmin={admin}
-            kannBearbeiten={isSpartenleiter && meinMitglied?.spartenleiter_haesgruppe_id === gruppe.id}
+            kannBearbeiten={isSpartenleiter && (
+              (meinMitglied?.spartenleiter_haesgruppen_ids || []).includes(gruppe.id) ||
+              meinMitglied?.spartenleiter_haesgruppe_id === gruppe.id
+            )}
             onEdit={() => { setEditGruppe(gruppe); setShowForm(true); }}
             onDelete={() => handleDelete(gruppe.id)}
             onMitgliederChanged={loadData}

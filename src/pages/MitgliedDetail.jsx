@@ -723,22 +723,47 @@ export default function MitgliedDetail() {
               );
             })}
           </div>
-          {/* Häsgruppe für Spartenleiter */}
+          {/* Häsgruppen für Spartenleiter – mehrere möglich */}
           {(mitglied.app_rolle === 'spartenleiter' || linkedUser?.role === 'spartenleiter') && (
             <div className="mb-3">
-              <label className="text-xs text-muted-foreground font-medium block mb-1">Zuständige Häsgruppe</label>
-              <select
-                value={mitglied.spartenleiter_haesgruppe_id || ''}
-                onChange={async (e) => {
-                  const val = e.target.value;
-                  handleFieldChange('spartenleiter_haesgruppe_id', val);
-                  await base44.entities.Mitglied.update(mitglied.id, { spartenleiter_haesgruppe_id: val });
-                }}
-                className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
-              >
-                <option value="">– keine Gruppe zugeordnet –</option>
-                {haesgruppen.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-              </select>
+              <label className="text-xs text-muted-foreground font-medium block mb-1">Zuständige Gruppen (Spartenleiter)</label>
+              <div className="space-y-2">
+                {/* Ausgewählte Gruppen als Tags */}
+                <div className="flex flex-wrap gap-1.5">
+                  {(mitglied.spartenleiter_haesgruppen_ids || (mitglied.spartenleiter_haesgruppe_id ? [mitglied.spartenleiter_haesgruppe_id] : [])).map(gid => {
+                    const g = haesgruppen.find(g => g.id === gid);
+                    return g ? (
+                      <span key={gid} className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/20 text-primary text-xs font-medium">
+                        {g.name}
+                        <button type="button" onClick={async () => {
+                          const aktuell = mitglied.spartenleiter_haesgruppen_ids || (mitglied.spartenleiter_haesgruppe_id ? [mitglied.spartenleiter_haesgruppe_id] : []);
+                          const neu = aktuell.filter(id => id !== gid);
+                          handleFieldChange('spartenleiter_haesgruppen_ids', neu);
+                          await base44.entities.Mitglied.update(mitglied.id, { spartenleiter_haesgruppen_ids: neu });
+                        }} className="hover:text-destructive transition-colors ml-0.5">✕</button>
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+                {/* Dropdown zum Hinzufügen */}
+                <select
+                  value=""
+                  onChange={async (e) => {
+                    if (!e.target.value) return;
+                    const aktuell = mitglied.spartenleiter_haesgruppen_ids || (mitglied.spartenleiter_haesgruppe_id ? [mitglied.spartenleiter_haesgruppe_id] : []);
+                    if (aktuell.includes(e.target.value)) return;
+                    const neu = [...aktuell, e.target.value];
+                    handleFieldChange('spartenleiter_haesgruppen_ids', neu);
+                    await base44.entities.Mitglied.update(mitglied.id, { spartenleiter_haesgruppen_ids: neu });
+                  }}
+                  className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+                >
+                  <option value="">+ Gruppe hinzufügen...</option>
+                  {haesgruppen
+                    .filter(g => !(mitglied.spartenleiter_haesgruppen_ids || (mitglied.spartenleiter_haesgruppe_id ? [mitglied.spartenleiter_haesgruppe_id] : [])).includes(g.id))
+                    .map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                </select>
+              </div>
             </div>
           )}
 

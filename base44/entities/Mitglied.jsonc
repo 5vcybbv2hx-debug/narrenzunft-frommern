@@ -82,7 +82,15 @@
       "description": "IDs aller Gruppen/Sparten"
     },
     "spartenleiter_haesgruppe_id": {
-      "type": "string"
+      "type": "string",
+      "description": "Legacy \u2013 prim\u00e4re Spartenleiter-Gruppe"
+    },
+    "spartenleiter_haesgruppen_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs aller Gruppen, f\u00fcr die dieses Mitglied Spartenleiter ist"
     },
     "einladung_gesendet_am": {
       "type": "string",
