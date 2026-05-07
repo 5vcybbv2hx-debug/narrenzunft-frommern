@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
-import { ArrowLeft, Shirt, Plus, Trash2, UserCheck, UserX, Save, X, Search } from 'lucide-react';
+import { ArrowLeft, Shirt, Plus, Trash2, UserCheck, UserX, Save, X, Search, Upload } from 'lucide-react';
+import HaesHistorieImportModal from '@/components/haes/HaesHistorieImportModal';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -34,6 +35,7 @@ export default function HaesDetail() {
   const [eigentuemerSuche, setEigentuemerSuche] = useState('');
   const [zuweisung_suche, setZuweisungSuche] = useState('');
   const [confirmDialog, setConfirmDialog] = useState(null);
+  const [showHistorieImport, setShowHistorieImport] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -408,12 +410,21 @@ export default function HaesDetail() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-foreground">Mitglieder-Zuweisungen</h2>
           {admin && (
-            <button
-              onClick={() => setShowAddMitglied(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
-            >
-              <Plus size={13} /> Mitglied zuweisen
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowHistorieImport(true)}
+                title="Historie aus Excel importieren"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-muted-foreground text-xs font-medium hover:bg-border hover:text-foreground transition-colors"
+              >
+                <Upload size={13} /> Import
+              </button>
+              <button
+                onClick={() => setShowAddMitglied(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
+              >
+                <Plus size={13} /> Mitglied zuweisen
+              </button>
+            </div>
           )}
         </div>
 
@@ -636,6 +647,13 @@ export default function HaesDetail() {
             </div>
           </div>
         </div>
+      )}
+
+      {showHistorieImport && (
+        <HaesHistorieImportModal
+          onClose={() => setShowHistorieImport(false)}
+          onImported={() => loadData()}
+        />
       )}
 
       {confirmDialog?.type === 'eigentuemer_zuweisung' && (
