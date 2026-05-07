@@ -66,22 +66,22 @@ export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten
             </span>
             {!gruppe.aktiv && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-400">Inaktiv</span>}
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {mitglieder.length} Mitglied{mitglieder.length !== 1 ? 'er' : ''}
-            {gruppe.beschreibung && ` · ${gruppe.beschreibung}`}
-          </p>
           {gruppe.verantwortlicher_id && (() => {
             const v = alleMitglieder.find(m => m.id === gruppe.verantwortlicher_id);
             return v ? (
               <Link
                 to={`/mitglieder/${v.id}`}
                 onClick={e => e.stopPropagation()}
-                className="text-xs text-primary mt-0.5 font-medium hover:underline inline-flex items-center gap-1"
+                className="text-xs text-primary font-semibold hover:underline inline-flex items-center gap-1 mt-0.5"
               >
                 👤 {v.vorname} {v.nachname}
               </Link>
             ) : null;
           })()}
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {mitglieder.length} Mitglied{mitglieder.length !== 1 ? 'er' : ''}
+            {gruppe.beschreibung && ` · ${gruppe.beschreibung}`}
+          </p>
         </div>
         {isAdmin && (
           <div className="flex gap-1 shrink-0" onClick={e => e.stopPropagation()}>
