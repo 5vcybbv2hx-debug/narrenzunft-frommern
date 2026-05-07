@@ -34,6 +34,8 @@ export default function HaesHistorieImportModal({ onClose, onImported }) {
                   nachname: { type: 'string' },
                   von_datum: { type: 'string' },
                   bis_datum: { type: 'string' },
+                  haesgruppe: { type: 'string' },
+                  bezeichnung: { type: 'string' },
                   notizen: { type: 'string' },
                 },
               },
@@ -76,12 +78,15 @@ export default function HaesHistorieImportModal({ onClose, onImported }) {
           <div className="space-y-4">
             <div className="bg-secondary/50 border border-border rounded-xl p-4 text-sm text-muted-foreground space-y-1">
               <p className="font-semibold text-foreground mb-2">📋 Erwartete Spalten in der Excel-Datei:</p>
+              <p className="text-xs text-muted-foreground mb-2">Jede Zeile = ein Häs-Träger-Zeitraum. Häs werden automatisch angelegt falls noch nicht vorhanden.</p>
               <div className="grid grid-cols-2 gap-1 font-mono text-xs">
-                <span className="text-primary">haesnummer</span><span>z.B. 42</span>
+                <span className="text-primary">haesnummer</span><span>z.B. 42 <span className="text-yellow-400">(Pflicht)</span></span>
                 <span className="text-primary">vorname</span><span>z.B. Hans</span>
                 <span className="text-primary">nachname</span><span>z.B. Müller</span>
                 <span className="text-primary">von_datum</span><span>z.B. 01.01.2010</span>
-                <span className="text-primary">bis_datum</span><span>z.B. 31.12.2020 (leer = noch aktiv)</span>
+                <span className="text-primary">bis_datum</span><span>leer = noch aktiv</span>
+                <span className="text-primary">haesgruppe</span><span>Name der Gruppe (optional)</span>
+                <span className="text-primary">bezeichnung</span><span>Beschreibung des Häs (optional)</span>
                 <span className="text-primary">notizen</span><span>optional</span>
               </div>
             </div>
@@ -117,19 +122,20 @@ export default function HaesHistorieImportModal({ onClose, onImported }) {
               <table className="w-full text-xs">
                 <thead className="bg-secondary sticky top-0">
                   <tr>
-                    {['Häs-Nr.', 'Vorname', 'Nachname', 'Von', 'Bis', 'Notizen'].map(h => (
+                    {['Häs-Nr.', 'Vorname', 'Nachname', 'Von', 'Bis', 'Gruppe', 'Notizen'].map(h => (
                       <th key={h} className="px-2 py-2 text-left text-muted-foreground font-semibold">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.slice(0, 50).map((r, i) => (
+                  {rows.slice(0, 100).map((r, i) => (
                     <tr key={i} className="border-t border-border hover:bg-secondary/30">
                       <td className="px-2 py-1.5 font-mono text-primary">{r.haesnummer}</td>
                       <td className="px-2 py-1.5">{r.vorname}</td>
                       <td className="px-2 py-1.5 font-medium">{r.nachname}</td>
                       <td className="px-2 py-1.5 text-muted-foreground">{r.von_datum}</td>
                       <td className="px-2 py-1.5 text-muted-foreground">{r.bis_datum || '–'}</td>
+                      <td className="px-2 py-1.5 text-muted-foreground">{r.haesgruppe}</td>
                       <td className="px-2 py-1.5 text-muted-foreground truncate max-w-[80px]">{r.notizen}</td>
                     </tr>
                   ))}
@@ -153,15 +159,19 @@ export default function HaesHistorieImportModal({ onClose, onImported }) {
 
         {phase === 'ergebnis' && ergebnis && (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-center">
-                <CheckCircle2 size={24} className="text-green-400 mx-auto mb-1" />
-                <p className="text-2xl font-bold text-green-400">{ergebnis.erfolg}</p>
-                <p className="text-xs text-muted-foreground">Erfolgreich</p>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3 text-center">
+                <CheckCircle2 size={20} className="text-green-400 mx-auto mb-1" />
+                <p className="text-xl font-bold text-green-400">{ergebnis.erfolg}</p>
+                <p className="text-xs text-muted-foreground">Einträge</p>
               </div>
-              <div className={`border rounded-xl p-4 text-center ${ergebnis.fehler?.length > 0 ? 'bg-red-500/10 border-red-500/20' : 'bg-secondary border-border'}`}>
-                <AlertTriangle size={24} className={`mx-auto mb-1 ${ergebnis.fehler?.length > 0 ? 'text-red-400' : 'text-muted-foreground'}`} />
-                <p className={`text-2xl font-bold ${ergebnis.fehler?.length > 0 ? 'text-red-400' : 'text-muted-foreground'}`}>{ergebnis.fehler?.length || 0}</p>
+              <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 text-center">
+                <p className="text-xl font-bold text-primary">{ergebnis.haes_angelegt || 0}</p>
+                <p className="text-xs text-muted-foreground">Häs neu angelegt</p>
+              </div>
+              <div className={`border rounded-xl p-3 text-center ${ergebnis.fehler?.length > 0 ? 'bg-red-500/10 border-red-500/20' : 'bg-secondary border-border'}`}>
+                <AlertTriangle size={20} className={`mx-auto mb-1 ${ergebnis.fehler?.length > 0 ? 'text-red-400' : 'text-muted-foreground'}`} />
+                <p className={`text-xl font-bold ${ergebnis.fehler?.length > 0 ? 'text-red-400' : 'text-muted-foreground'}`}>{ergebnis.fehler?.length || 0}</p>
                 <p className="text-xs text-muted-foreground">Fehler</p>
               </div>
             </div>

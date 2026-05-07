@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { Shirt, Plus, Search, ChevronRight, Calendar } from 'lucide-react';
+import { Shirt, Plus, Search, ChevronRight, Calendar, Upload } from 'lucide-react';
 import HaesGroupTokenModal from '@/components/haes/HaesGroupTokenModal';
+import HaesHistorieImportModal from '@/components/haes/HaesHistorieImportModal';
 
 const STATUS_COLORS = {
   'Aktiv': 'bg-green-500/20 text-green-400',
@@ -27,6 +28,7 @@ export default function Haes() {
   const [newGruppe, setNewGruppe] = useState({ name: '', beschreibung: '' });
   const [newHaes, setNewHaes] = useState({ haesnummer: '', haesgruppe_id: '', bezeichnung: '', status: 'Frei' });
   const [selectedGruppeToken, setSelectedGruppeToken] = useState(null);
+  const [showHistorieImport, setShowHistorieImport] = useState(false);
   const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
@@ -110,6 +112,13 @@ export default function Haes() {
         </div>
         {isAdmin && (
           <div className="flex gap-2">
+            <button
+              onClick={() => setShowHistorieImport(true)}
+              title="Häs & Historie aus Excel importieren"
+              className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-secondary text-muted-foreground text-sm font-medium hover:bg-border hover:text-foreground transition-colors"
+            >
+              <Upload size={15} /> Import
+            </button>
             <button
               onClick={() => setShowNewGruppe(true)}
               className="px-3 py-2.5 rounded-xl bg-secondary text-foreground text-sm font-medium hover:bg-border transition-colors"
@@ -305,6 +314,14 @@ export default function Haes() {
         <HaesGroupTokenModal
           gruppe={selectedGruppeToken}
           onClose={() => setSelectedGruppeToken(null)}
+        />
+      )}
+
+      {/* Historie Import Modal */}
+      {showHistorieImport && (
+        <HaesHistorieImportModal
+          onClose={() => setShowHistorieImport(false)}
+          onImported={() => loadData()}
         />
       )}
     </div>
