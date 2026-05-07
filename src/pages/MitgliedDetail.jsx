@@ -739,9 +739,14 @@ export default function MitgliedDetail() {
                           const aktuell = mitglied.spartenleiter_haesgruppen_ids || (mitglied.spartenleiter_haesgruppe_id ? [mitglied.spartenleiter_haesgruppe_id] : []);
                           const neu = aktuell.filter(id => id !== gid);
                           handleFieldChange('spartenleiter_haesgruppen_ids', neu);
+                          // Mitglied aus verantwortliche_ids der Gruppe entfernen
+                          const gruppeData = await base44.entities.Haesgruppe.filter({ id: gid });
+                          const gruppe = gruppeData[0];
+                          const aktuelleV = gruppe?.verantwortliche_ids?.length ? gruppe.verantwortliche_ids : (gruppe?.verantwortlicher_id ? [gruppe.verantwortlicher_id] : []);
+                          const neueV = aktuelleV.filter(id => id !== mitglied.id);
                           await Promise.all([
                             base44.entities.Mitglied.update(mitglied.id, { spartenleiter_haesgruppen_ids: neu }),
-                            base44.entities.Haesgruppe.update(gid, { verantwortlicher_id: '' }),
+                            base44.entities.Haesgruppe.update(gid, { verantwortliche_ids: neueV, verantwortlicher_id: neueV[0] || '' }),
                           ]);
                         }} className="hover:text-destructive transition-colors ml-0.5">✕</button>
                       </span>
@@ -758,9 +763,14 @@ export default function MitgliedDetail() {
                     if (aktuell.includes(gruppeId)) return;
                     const neu = [...aktuell, gruppeId];
                     handleFieldChange('spartenleiter_haesgruppen_ids', neu);
+                    // Gruppe laden um bestehende verantwortliche_ids zu erhalten
+                    const gruppeData = await base44.entities.Haesgruppe.filter({ id: gruppeId });
+                    const gruppe = gruppeData[0];
+                    const aktuelleV = gruppe?.verantwortliche_ids?.length ? gruppe.verantwortliche_ids : (gruppe?.verantwortlicher_id ? [gruppe.verantwortlicher_id] : []);
+                    const neueV = aktuelleV.includes(mitglied.id) ? aktuelleV : [...aktuelleV, mitglied.id];
                     await Promise.all([
                       base44.entities.Mitglied.update(mitglied.id, { spartenleiter_haesgruppen_ids: neu }),
-                      base44.entities.Haesgruppe.update(gruppeId, { verantwortlicher_id: mitglied.id }),
+                      base44.entities.Haesgruppe.update(gruppeId, { verantwortliche_ids: neueV, verantwortlicher_id: mitglied.id }),
                     ]);
                   }}
                   className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"

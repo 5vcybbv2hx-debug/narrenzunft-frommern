@@ -124,6 +124,7 @@ export default function SparteFormModal({ gruppe, onClose, onSaved }) {
     farbe: gruppe?.farbe || '#f97316',
     aktiv: gruppe?.aktiv !== false,
     verantwortlicher_id: gruppe?.verantwortlicher_id || '',
+    verantwortliche_ids: gruppe?.verantwortliche_ids || (gruppe?.verantwortlicher_id ? [gruppe.verantwortlicher_id] : []),
   });
   const [saving, setSaving] = useState(false);
   const [mitglieder, setMitglieder] = useState([]);
@@ -135,10 +136,11 @@ export default function SparteFormModal({ gruppe, onClose, onSaved }) {
   const handleSave = async () => {
     if (!form.name) return;
     setSaving(true);
+    const saveData = { ...form, verantwortlicher_id: form.verantwortliche_ids[0] || '' };
     if (isNew) {
-      await base44.entities.Haesgruppe.create(form);
+      await base44.entities.Haesgruppe.create(saveData);
     } else {
-      await base44.entities.Haesgruppe.update(gruppe.id, form);
+      await base44.entities.Haesgruppe.update(gruppe.id, saveData);
     }
     setSaving(false);
     onSaved();
@@ -199,12 +201,33 @@ export default function SparteFormModal({ gruppe, onClose, onSaved }) {
             </div>
           </div>
 
-          <VerantwortlicherSuche
-            mitglieder={mitglieder}
-            selectedId={form.verantwortlicher_id}
-            onChange={id => setForm(p => ({ ...p, verantwortlicher_id: id }))}
-            onClose={onClose}
-          />
+          <div>
+            <label className="text-xs text-muted-foreground font-medium block mb-1">Verantwortliche (Spartenleiter)</label>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {form.verantwortliche_ids.map(id => {
+                const m = mitglieder.find(m => m.id === id);
+                return m ? (
+                  <span key={id} className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/20 text-primary text-xs font-medium">
+                    {m.vorname} {m.nachname}
+                    <button type="button" onClick={() => {
+                      const neu = form.verantwortliche_ids.filter(x => x !== id);
+                      setForm(p => ({ ...p, verantwortliche_ids: neu, verantwortlicher_id: neu[0] || '' }));
+                    }} className="hover:text-destructive transition-colors ml-0.5"><X size={11} /></button>
+                  </span>
+                ) : null;
+              })}
+            </div>
+            <VerantwortlicherSuche
+              mitglieder={mitglieder.filter(m => !form.verantwortliche_ids.includes(m.id))}
+              selectedId=""
+              onChange={id => {
+                if (!id || form.verantwortliche_ids.includes(id)) return;
+                const neu = [...form.verantwortliche_ids, id];
+                setForm(p => ({ ...p, verantwortliche_ids: neu, verantwortlicher_id: neu[0] || '' }));
+              }}
+              onClose={onClose}
+            />
+          </div>
 
           <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground">
             <input type="checkbox" checked={form.aktiv} onChange={e => setForm(p => ({ ...p, aktiv: e.target.checked }))} className="rounded" />

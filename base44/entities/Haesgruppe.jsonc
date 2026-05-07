@@ -28,7 +28,14 @@
     },
     "verantwortlicher_id": {
       "type": "string",
-      "description": "ID des verantwortlichen Mitglieds (Spartenleiter)"
+      "description": "Legacy \u2013 prim\u00e4re Verantwortliche Person (Spartenleiter)"
+    },
+    "verantwortliche_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs aller verantwortlichen Mitglieder (Spartenleiter)"
     }
   },
   "required": [

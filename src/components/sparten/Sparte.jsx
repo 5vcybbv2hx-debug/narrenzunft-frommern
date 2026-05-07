@@ -66,16 +66,18 @@ export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten
             </span>
             {!gruppe.aktiv && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-400">Inaktiv</span>}
           </div>
-          {gruppe.verantwortlicher_id && (() => {
-            const v = alleMitglieder.find(m => m.id === gruppe.verantwortlicher_id);
-            return v ? (
-              <Link
-                to={`/mitglieder/${v.id}`}
-                onClick={e => e.stopPropagation()}
-                className="text-xs text-primary font-semibold hover:underline inline-flex items-center gap-1 mt-0.5"
-              >
-                👤 {v.vorname} {v.nachname}
-              </Link>
+          {(() => {
+            const ids = gruppe.verantwortliche_ids?.length ? gruppe.verantwortliche_ids : (gruppe.verantwortlicher_id ? [gruppe.verantwortlicher_id] : []);
+            const verantw = ids.map(id => alleMitglieder.find(m => m.id === id)).filter(Boolean);
+            return verantw.length > 0 ? (
+              <div className="flex flex-wrap gap-1 mt-0.5">
+                {verantw.map(v => (
+                  <Link key={v.id} to={`/mitglieder/${v.id}`} onClick={e => e.stopPropagation()}
+                    className="text-xs text-primary font-semibold hover:underline inline-flex items-center gap-1">
+                    👤 {v.vorname} {v.nachname}
+                  </Link>
+                ))}
+              </div>
             ) : null;
           })()}
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -136,14 +138,12 @@ export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten
           )}
 
           {activeTab === 'mitglieder' && <div className="p-4 space-y-3">
-          {gruppe.verantwortlicher_id && (() => {
-            const v = alleMitglieder.find(m => m.id === gruppe.verantwortlicher_id);
-            return v ? (
-              <Link
-                to={`/mitglieder/${v.id}`}
-                onClick={e => e.stopPropagation()}
-                className="flex items-center gap-3 bg-primary/10 border border-primary/20 rounded-lg px-3 py-2.5 hover:bg-primary/15 transition-colors"
-              >
+          {(() => {
+            const ids = gruppe.verantwortliche_ids?.length ? gruppe.verantwortliche_ids : (gruppe.verantwortlicher_id ? [gruppe.verantwortlicher_id] : []);
+            const verantw = ids.map(id => alleMitglieder.find(m => m.id === id)).filter(Boolean);
+            return verantw.map(v => (
+              <Link key={v.id} to={`/mitglieder/${v.id}`} onClick={e => e.stopPropagation()}
+                className="flex items-center gap-3 bg-primary/10 border border-primary/20 rounded-lg px-3 py-2.5 hover:bg-primary/15 transition-colors">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 text-white" style={{ backgroundColor: farbe }}>
                   {v.vorname?.[0]}{v.nachname?.[0]}
                 </div>
@@ -152,7 +152,7 @@ export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten
                   <p className="text-xs text-muted-foreground">Verantwortlicher / Spartenleiter</p>
                 </div>
               </Link>
-            ) : null;
+            ));
           })()}
           {mitglieder.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-2">Noch keine Mitglieder zugeordnet</p>
