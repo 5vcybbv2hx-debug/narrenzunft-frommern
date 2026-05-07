@@ -140,6 +140,14 @@
     },
     "archiviert_grund": {
       "type": "string"
+    },
+    "antrag_pdf_url": {
+      "type": "string",
+      "description": "URL des hochgeladenen, unterschriebenen Mitgliedsantrags (PDF)"
+    },
+    "antrag_pdf_name": {
+      "type": "string",
+      "description": "Dateiname des hochgeladenen Antrags"
     }
   },
   "required": [

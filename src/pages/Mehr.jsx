@@ -4,7 +4,7 @@ import { isAdmin, kannMitgliederlisteSehn, getRollenLabel } from '@/lib/roles';
 import {
   Users, Shirt, Award, CreditCard, Calendar, Bus,
   Briefcase, Bell, Search, LogOut, ChevronRight,
-  Shield, Settings, Star
+  Shield, Settings, Star, FileText
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
@@ -30,6 +30,7 @@ export default function Mehr() {
       show: admin || verantw,
       items: [
         { path: '/mitglieder', label: 'Mitglieder', icon: Users, show: admin || verantw },
+        { path: '/mitgliedsantraege', label: 'Mitgliedsanträge', icon: FileText, show: admin },
         { path: '/ehrungen', label: 'Ehrungen', icon: Award, show: admin || verantw },
         { path: '/beitraege', label: 'Beiträge', icon: CreditCard, show: admin },
       ]

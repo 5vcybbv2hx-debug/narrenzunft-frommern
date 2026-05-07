@@ -42,6 +42,8 @@ import Todos from './pages/Todos';
 import Inventar from './pages/Inventar';
 import Berechtigungen from './pages/Berechtigungen';
 import Nachrichten from './pages/Nachrichten';
+import MitgliedsantragFormular from './pages/MitgliedsantragFormular';
+import Mitgliedsantraege from './pages/Mitgliedsantraege';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -110,7 +112,9 @@ const AuthenticatedApp = () => {
         <Route path="/inventar" element={<Inventar />} />
         <Route path="/berechtigungen" element={<Berechtigungen />} />
         <Route path="/nachrichten" element={<Nachrichten />} />
+        <Route path="/mitgliedsantraege" element={<Mitgliedsantraege />} />
       </Route>
+      <Route path="/mitgliedsantrag" element={<MitgliedsantragFormular />} />
       <Route path="/busfahrer/:token" element={<BusfahrerInfo />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>

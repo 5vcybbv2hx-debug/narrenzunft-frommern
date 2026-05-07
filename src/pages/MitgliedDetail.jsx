@@ -15,6 +15,7 @@ import AdresseAutocomplete from '@/components/AdresseAutocomplete';
 import AktivitaetTab from '@/components/mitglied/AktivitaetTab';
 import ArbeitsdiensteMitgliedTab from '@/components/mitglied/ArbeitsdiensteMitgliedTab';
 import FamilieTab from '@/components/mitglied/FamilieTab';
+import AntragTab from '@/components/mitglied/AntragTab';
 
 const ALLE_STATUS = ['Aktiv', 'Passiv', 'Passiv mit Häs', 'Leihäs', 'Jugendliche 11-14', 'Jungaktive 15-17', 'Kinder 4-10', 'Kleinkind 0-3', 'Ehrenmitglied'];
 
@@ -338,6 +339,7 @@ export default function MitgliedDetail() {
         <div className="flex gap-1 bg-secondary rounded-xl p-1 mb-4">
           {[
             { id: 'profil', label: 'Profil' },
+            { id: 'antrag', label: '📄 Antrag' },
             { id: 'familie', label: 'Familie' },
             { id: 'aktivitaet', label: 'Aktivität' },
             { id: 'arbeitsdienste', label: 'Arbeitsdienste' },
@@ -354,6 +356,11 @@ export default function MitgliedDetail() {
             </button>
           ))}
         </div>
+      )}
+
+      {/* Tab: Antrag */}
+      {activeTab === 'antrag' && !isNew && (
+        <AntragTab mitglied={mitglied} isAdmin={admin} />
       )}
 
       {/* Tab: Familie */}

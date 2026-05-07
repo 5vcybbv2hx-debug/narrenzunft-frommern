@@ -1,0 +1,88 @@
+{
+  "name": "Mitgliedsantrag",
+  "type": "object",
+  "properties": {
+    "vorname": {
+      "type": "string"
+    },
+    "nachname": {
+      "type": "string"
+    },
+    "geburtsdatum": {
+      "type": "string",
+      "format": "date"
+    },
+    "strasse": {
+      "type": "string"
+    },
+    "plz": {
+      "type": "string"
+    },
+    "ort": {
+      "type": "string"
+    },
+    "telefon": {
+      "type": "string"
+    },
+    "handy": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "sparte": {
+      "type": "string",
+      "enum": [
+        "Brennnesseln",
+        "Hexen",
+        "Z\u00e4pfle Bomber",
+        "Garde"
+      ]
+    },
+    "eintrittsdatum": {
+      "type": "string",
+      "format": "date"
+    },
+    "sepa_kontoinhaber": {
+      "type": "string"
+    },
+    "sepa_iban": {
+      "type": "string"
+    },
+    "sepa_bic": {
+      "type": "string"
+    },
+    "sepa_ort": {
+      "type": "string"
+    },
+    "sepa_datum": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Neu",
+        "In Bearbeitung",
+        "Angelegt",
+        "Abgelehnt"
+      ],
+      "default": "Neu"
+    },
+    "notizen": {
+      "type": "string"
+    },
+    "mitglied_id": {
+      "type": "string",
+      "description": "ID des daraus angelegten Mitglieds"
+    },
+    "eingereicht_von_mitglied_id": {
+      "type": "string",
+      "description": "Wer hat den Antrag aufgenommen?"
+    }
+  },
+  "required": [
+    "vorname",
+    "nachname"
+  ]
+}
