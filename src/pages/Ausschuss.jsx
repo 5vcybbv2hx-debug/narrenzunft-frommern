@@ -586,6 +586,15 @@ function SitzungModal({ onClose, onSaved }) {
   const [form, setForm] = useState({
     titel: '', datum: format(new Date(), 'yyyy-MM-dd'), startzeit: '', endzeit: '', ort: '', beschreibung: '',
   });
+
+  // Titel automatisch aus Datum ableiten
+  const handleDatumChange = (val) => {
+    setForm(p => ({
+      ...p,
+      datum: val,
+      titel: val ? `Ausschusssitzung ${val.split('-').reverse().join('.')}` : p.titel,
+    }));
+  };
   const [saving, setSaving] = useState(false);
   const set = (f, v) => setForm(p => ({ ...p, [f]: v }));
 
@@ -610,12 +619,10 @@ function SitzungModal({ onClose, onSaved }) {
           <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"><X size={16} /></button>
         </div>
         <div className="space-y-3">
-          <input type="text" placeholder="Titel *" value={form.titel} onChange={e => set('titel', e.target.value)}
-            className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-xs text-muted-foreground block mb-1">Datum *</label>
-              <input type="date" value={form.datum} onChange={e => set('datum', e.target.value)}
+              <input type="date" value={form.datum} onChange={e => handleDatumChange(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
             </div>
             <div>
@@ -631,7 +638,7 @@ function SitzungModal({ onClose, onSaved }) {
         </div>
         <div className="flex gap-2 mt-4">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm">Abbrechen</button>
-          <button onClick={handleSave} disabled={saving || !form.titel || !form.datum}
+          <button onClick={handleSave} disabled={saving || !form.datum}
             className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">
             {saving ? '...' : 'Erstellen'}
           </button>
