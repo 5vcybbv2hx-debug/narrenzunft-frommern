@@ -739,7 +739,10 @@ export default function MitgliedDetail() {
                           const aktuell = mitglied.spartenleiter_haesgruppen_ids || (mitglied.spartenleiter_haesgruppe_id ? [mitglied.spartenleiter_haesgruppe_id] : []);
                           const neu = aktuell.filter(id => id !== gid);
                           handleFieldChange('spartenleiter_haesgruppen_ids', neu);
-                          await base44.entities.Mitglied.update(mitglied.id, { spartenleiter_haesgruppen_ids: neu });
+                          await Promise.all([
+                            base44.entities.Mitglied.update(mitglied.id, { spartenleiter_haesgruppen_ids: neu }),
+                            base44.entities.Haesgruppe.update(gid, { verantwortlicher_id: '' }),
+                          ]);
                         }} className="hover:text-destructive transition-colors ml-0.5">✕</button>
                       </span>
                     ) : null;
@@ -750,11 +753,15 @@ export default function MitgliedDetail() {
                   value=""
                   onChange={async (e) => {
                     if (!e.target.value) return;
+                    const gruppeId = e.target.value;
                     const aktuell = mitglied.spartenleiter_haesgruppen_ids || (mitglied.spartenleiter_haesgruppe_id ? [mitglied.spartenleiter_haesgruppe_id] : []);
-                    if (aktuell.includes(e.target.value)) return;
-                    const neu = [...aktuell, e.target.value];
+                    if (aktuell.includes(gruppeId)) return;
+                    const neu = [...aktuell, gruppeId];
                     handleFieldChange('spartenleiter_haesgruppen_ids', neu);
-                    await base44.entities.Mitglied.update(mitglied.id, { spartenleiter_haesgruppen_ids: neu });
+                    await Promise.all([
+                      base44.entities.Mitglied.update(mitglied.id, { spartenleiter_haesgruppen_ids: neu }),
+                      base44.entities.Haesgruppe.update(gruppeId, { verantwortlicher_id: mitglied.id }),
+                    ]);
                   }}
                   className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
                 >
