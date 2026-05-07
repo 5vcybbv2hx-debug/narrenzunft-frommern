@@ -113,6 +113,22 @@ export default function Mitglieder() {
         )}
       </div>
 
+      {/* Mitgliedsantrag Banner */}
+      {isAdminUser && (
+        <a
+          href="/mitgliedsantrag"
+          target="_blank"
+          className="flex items-center gap-3 px-4 py-3 mb-4 rounded-xl bg-primary/10 border border-primary/30 hover:bg-primary/20 transition-colors"
+        >
+          <span className="text-xl">📋</span>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-primary">Mitgliedsantrag-Formular</p>
+            <p className="text-xs text-muted-foreground">Für neue Mitglieder – öffentlich zugänglich</p>
+          </div>
+          <span className="text-xs text-primary font-medium">Öffnen →</span>
+        </a>
+      )}
+
       {/* Search */}
       <div className="relative mb-4">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
