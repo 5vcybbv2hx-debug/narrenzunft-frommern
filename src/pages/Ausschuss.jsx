@@ -123,7 +123,7 @@ export default function Ausschuss() {
       <div className="flex gap-1 bg-secondary rounded-xl p-1 mb-5 overflow-x-auto">
         {[
           { id: 'sitzungen', label: '📋 Sitzungen' },
-          { id: 'aufgaben', label: `✅ Aufgaben (${offeneAufgaben.length})` },
+          { id: 'aufgaben', label: `✅ Offene Punkte (${offeneAufgaben.length})` },
           { id: 'beschluesse', label: '⚖️ Beschlüsse' },
           { id: 'abstimmungen', label: `🗳️ Abstimmungen` },
           { id: 'protokolle', label: '📝 Protokolle' },
@@ -239,7 +239,7 @@ export default function Ausschuss() {
             </div>
             <button onClick={() => { setEditAufgabe(null); setShowAufgabeModal(true); }}
               className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
-              <Plus size={15} /> Aufgabe
+              <Plus size={15} /> Offener Punkt
             </button>
           </div>
           <div className="space-y-2">
@@ -262,7 +262,7 @@ export default function Ausschuss() {
           {aufgaben.length === 0 && (
             <div className="text-center py-12 bg-card border border-border rounded-xl">
               <CheckSquare size={32} className="text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">Noch keine Aufgaben</p>
+              <p className="text-sm text-muted-foreground">Noch keine offenen Punkte</p>
             </div>
           )}
         </div>
@@ -392,7 +392,7 @@ function AufgabeModal({ aufgabe, mitglieder, termine, onClose, onSaved }) {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Aufgabe löschen?')) return;
+    if (!window.confirm('Offenen Punkt löschen?')) return;
     await base44.entities.Ausschussaufgabe.delete(aufgabe.id);
     onSaved();
   };
@@ -401,7 +401,7 @@ function AufgabeModal({ aufgabe, mitglieder, termine, onClose, onSaved }) {
     <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
       <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-foreground">{isNew ? 'Neue Aufgabe' : 'Aufgabe bearbeiten'}</h3>
+          <h3 className="font-bold text-foreground">{isNew ? 'Neuer offener Punkt' : 'Offenen Punkt bearbeiten'}</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"><X size={16} /></button>
         </div>
         <div className="space-y-3">
