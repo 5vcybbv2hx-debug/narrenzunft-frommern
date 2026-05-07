@@ -6,6 +6,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannMitgliederlisteSehn } from '@/lib/roles';
 import { Search, Plus, User, ChevronRight, Archive } from 'lucide-react';
+import NeuerAntragModal from '@/components/mitglied/NeuerAntragModal';
 import { format, differenceInYears } from 'date-fns';
 
 const STATUS_COLORS = {
@@ -32,6 +33,7 @@ export default function Mitglieder() {
   const [loading, setLoading] = useState(true);
   const isAdminUser = isAdmin(user);
   const kannListe = kannMitgliederlisteSehn(user);
+  const [showAntragModal, setShowAntragModal] = useState(false);
 
   const { pullDistance, refreshing, containerRef } = usePullToRefresh(useCallback(async () => {
     await loadMitglieder();
@@ -115,18 +117,24 @@ export default function Mitglieder() {
 
       {/* Mitgliedsantrag Banner */}
       {isAdminUser && (
-        <a
-          href="/mitgliedsantrag"
-          target="_blank"
-          className="flex items-center gap-3 px-4 py-3 mb-4 rounded-xl bg-primary/10 border border-primary/30 hover:bg-primary/20 transition-colors"
+        <button
+          onClick={() => setShowAntragModal(true)}
+          className="w-full flex items-center gap-3 px-4 py-3 mb-4 rounded-xl bg-primary/10 border border-primary/30 hover:bg-primary/20 transition-colors text-left"
         >
           <span className="text-xl">📋</span>
           <div className="flex-1">
-            <p className="text-sm font-semibold text-primary">Mitgliedsantrag-Formular</p>
-            <p className="text-xs text-muted-foreground">Für neue Mitglieder – öffentlich zugänglich</p>
+            <p className="text-sm font-semibold text-primary">Neues Mitglied aufnehmen</p>
+            <p className="text-xs text-muted-foreground">Antrag ausfüllen & Mitglied direkt anlegen</p>
           </div>
-          <span className="text-xs text-primary font-medium">Öffnen →</span>
-        </a>
+          <span className="text-xs text-primary font-medium">Starten →</span>
+        </button>
+      )}
+
+      {showAntragModal && (
+        <NeuerAntragModal
+          onClose={() => setShowAntragModal(false)}
+          onMitgliedAngelegt={() => { loadMitglieder(); }}
+        />
       )}
 
       {/* Search */}
