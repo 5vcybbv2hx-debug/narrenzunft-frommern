@@ -73,7 +73,13 @@ export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten
           {gruppe.verantwortlicher_id && (() => {
             const v = alleMitglieder.find(m => m.id === gruppe.verantwortlicher_id);
             return v ? (
-              <p className="text-xs text-primary mt-0.5 font-medium">👤 {v.vorname} {v.nachname}</p>
+              <Link
+                to={`/mitglieder/${v.id}`}
+                onClick={e => e.stopPropagation()}
+                className="text-xs text-primary mt-0.5 font-medium hover:underline inline-flex items-center gap-1"
+              >
+                👤 {v.vorname} {v.nachname}
+              </Link>
             ) : null;
           })()}
         </div>
