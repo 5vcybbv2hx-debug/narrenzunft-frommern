@@ -21,7 +21,8 @@ export default function AusruestungForm({ ausruestung, onSave, onDelete, onClose
   const handleSave = async () => {
     if (!form.name) return;
     setSaving(true);
-    await onSave(form);
+    const data = { ...form, baujahr: form.baujahr !== '' ? Number(form.baujahr) : undefined };
+    await onSave(data);
     setSaving(false);
   };
 
