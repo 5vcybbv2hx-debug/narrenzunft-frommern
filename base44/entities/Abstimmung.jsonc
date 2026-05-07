@@ -37,6 +37,13 @@
       "type": "number",
       "description": "Ben\u00f6tigte Ja-Stimmen in % f\u00fcr Annahme",
       "default": 50
+    },
+    "antwort_optionen": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Vorgegebene Antwortoptionen (leer = Standard Ja/Nein/Enthaltung)"
     }
   },
   "required": [

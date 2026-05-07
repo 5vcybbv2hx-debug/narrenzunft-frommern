@@ -457,10 +457,23 @@ function AbstimmungModal({ abstimmung, termine, onClose, onSaved }) {
   const isNew = !abstimmung;
   const [form, setForm] = useState({
     titel: '', beschreibung: '', status: 'Offen', angenommen_ab: 50, termin_id: '',
+    antwort_optionen: [],
     ...abstimmung,
   });
+  const [neueOption, setNeueOption] = useState('');
   const [saving, setSaving] = useState(false);
   const set = (f, v) => setForm(p => ({ ...p, [f]: v }));
+
+  const addOption = () => {
+    const val = neueOption.trim();
+    if (!val) return;
+    set('antwort_optionen', [...(form.antwort_optionen || []), val]);
+    setNeueOption('');
+  };
+
+  const removeOption = (idx) => {
+    set('antwort_optionen', (form.antwort_optionen || []).filter((_, i) => i !== idx));
+  };
 
   const handleSave = async () => {
     if (!form.titel) return;
@@ -477,6 +490,8 @@ function AbstimmungModal({ abstimmung, termine, onClose, onSaved }) {
     onSaved();
   };
 
+  const optionen = form.antwort_optionen || [];
+
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
       <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
@@ -489,6 +504,41 @@ function AbstimmungModal({ abstimmung, termine, onClose, onSaved }) {
             className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
           <textarea placeholder="Beschreibung / Antrag" value={form.beschreibung || ''} onChange={e => set('beschreibung', e.target.value)}
             rows={3} className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary resize-none" />
+
+          {/* Antwortoptionen */}
+          <div>
+            <label className="text-xs text-muted-foreground font-medium block mb-1">
+              Antwortoptionen
+              <span className="ml-1 text-muted-foreground font-normal">(leer = Standard: Ja / Nein / Enthaltung)</span>
+            </label>
+            {optionen.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {optionen.map((opt, idx) => (
+                  <span key={idx} className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/15 text-primary text-xs font-medium">
+                    {opt}
+                    <button type="button" onClick={() => removeOption(idx)} className="hover:text-destructive transition-colors ml-0.5">
+                      <X size={11} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Neue Option hinzufügen..."
+                value={neueOption}
+                onChange={e => setNeueOption(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addOption(); } }}
+                className="flex-1 px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+              />
+              <button type="button" onClick={addOption}
+                className="px-3 py-2 rounded-lg bg-primary/20 text-primary text-sm font-semibold hover:bg-primary/30 transition-colors">
+                <Plus size={15} />
+              </button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-xs text-muted-foreground block mb-1">Status</label>
