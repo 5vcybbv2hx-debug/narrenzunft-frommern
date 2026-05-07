@@ -1,0 +1,32 @@
+{
+  "name": "ExternePerson",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Vollst\u00e4ndiger Name"
+    },
+    "organisation": {
+      "type": "string",
+      "description": "Verein, Firma oder Organisation (optional)"
+    },
+    "email": {
+      "type": "string",
+      "description": "E-Mail-Adresse"
+    },
+    "telefon": {
+      "type": "string",
+      "description": "Telefonnummer"
+    },
+    "adresse": {
+      "type": "string",
+      "description": "Stra\u00dfe, PLZ, Ort"
+    },
+    "notizen": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

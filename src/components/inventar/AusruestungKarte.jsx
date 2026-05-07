@@ -24,7 +24,7 @@ function getTuevStatus(datum) {
   return { label: `TÜV bis ${datum}`, color: 'text-green-400 bg-green-500/10 border-green-500/30' };
 }
 
-export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, getMitgliedName, isAdmin, onEdit, onAusleihen }) {
+export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, ausleiherName, isAdmin, onEdit, onAusleihen }) {
   const frei = !aktuelleAusleihe;
   const istFahrzeug = FAHRZEUG_KATEGORIEN.includes(ausruestung.kategorie);
   const tuevStatus = getTuevStatus(ausruestung.tuev_faellig);
@@ -78,7 +78,7 @@ export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, getMit
           {aktuelleAusleihe && (
             <div className="mt-2 px-3 py-2 rounded-lg bg-orange-500/10 border border-orange-500/20 text-xs">
               <p className="text-orange-300">
-                👤 {getMitgliedName(aktuelleAusleihe.ausleiher_mitglied_id)} · bis {aktuelleAusleihe.bis_datum}
+                {aktuelleAusleihe.ausleiher_typ === 'extern' ? '🌐' : '👤'} {ausleiherName} · bis {aktuelleAusleihe.bis_datum}
                 {aktuelleAusleihe.zweck && ` · ${aktuelleAusleihe.zweck}`}
               </p>
             </div>

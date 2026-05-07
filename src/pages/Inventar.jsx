@@ -17,6 +17,7 @@ export default function Inventar() {
   const [ausruestungen, setAusruestungen] = useState([]);
   const [ausleihen, setAusleihen] = useState([]);
   const [mitglieder, setMitglieder] = useState([]);
+  const [externePersonen, setExternePersonen] = useState([]);
   const [meinMitglied, setMeinMitglied] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('uebersicht');
@@ -34,15 +35,17 @@ export default function Inventar() {
   const loadData = async () => {
     setLoading(true);
     const me = await base44.auth.me();
-    const [a, al, m, myM] = await Promise.all([
+    const [a, al, m, ep, myM] = await Promise.all([
       base44.entities.Ausruestung.list('name', 200),
       base44.entities.Ausleihe.list('-von_datum', 500),
       base44.entities.Mitglied.list('nachname', 500),
+      base44.entities.ExternePerson.list('name', 200),
       base44.entities.Mitglied.filter({ user_id: me?.id }),
     ]);
     setAusruestungen(a.filter(x => x.aktiv !== false));
     setAusleihen(al);
     setMitglieder(m.filter(x => !x.archiviert));
+    setExternePersonen(ep);
     setMeinMitglied(myM[0] || null);
     setLoading(false);
   };
@@ -61,6 +64,14 @@ export default function Inventar() {
   const getMitgliedName = (id) => {
     const m = mitglieder.find(m => m.id === id);
     return m ? `${m.vorname} ${m.nachname}` : '–';
+  };
+
+  const getAusleiherName = (al) => {
+    if (al.ausleiher_typ === 'extern') {
+      const ep = externePersonen.find(p => p.id === al.ausleiher_extern_id);
+      return ep ? `${ep.name}${ep.organisation ? ` (${ep.organisation})` : ''}` : '–';
+    }
+    return getMitgliedName(al.ausleiher_mitglied_id);
   };
 
   const handleAusruestungSave = async (form) => {
@@ -193,6 +204,7 @@ export default function Inventar() {
               isAdmin={admin}
               onEdit={() => { setEditAusruestung(a); setShowAusruestungForm(true); }}
               onAusleihen={() => handleAusleiheStart(a)}
+              ausleiherName={getAusleiherName(getAktuelleAusleihe(a.id) || {})}
             />
           ))}
         </div>
@@ -214,7 +226,7 @@ export default function Inventar() {
                 key={al.id}
                 ausleihe={al}
                 ausruestung={ausruestung}
-                getMitgliedName={getMitgliedName}
+                ausleiherName={getAusleiherName(al)}
                 today={today}
                 onClick={() => handleAusleiheEdit(al)}
               />
@@ -239,7 +251,7 @@ export default function Inventar() {
                 key={al.id}
                 ausleihe={al}
                 ausruestung={ausruestung}
-                getMitgliedName={getMitgliedName}
+                ausleiherName={getAusleiherName(al)}
                 today={today}
                 onClick={() => handleAusleiheEdit(al)}
                 vergangen
@@ -276,7 +288,7 @@ export default function Inventar() {
   );
 }
 
-function AusleiheKarte({ ausleihe, ausruestung, getMitgliedName, today, onClick, vergangen }) {
+function AusleiheKarte({ ausleihe, ausruestung, ausleiherName, today, onClick, vergangen }) {
   const STATUS_STYLE = {
     'Reserviert':     'bg-blue-500/20 text-blue-400',
     'Ausgeliehen':    'bg-orange-500/20 text-orange-400',
@@ -291,7 +303,7 @@ function AusleiheKarte({ ausleihe, ausruestung, getMitgliedName, today, onClick,
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-foreground">{ausruestung?.name || '–'}</p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            👤 {getMitgliedName(ausleihe.ausleiher_mitglied_id)}
+            {ausleihe.ausleiher_typ === 'extern' ? '🌐' : '👤'} {ausleiherName}
             {ausleihe.zweck && ` · ${ausleihe.zweck}`}
           </p>
           <p className="text-xs text-muted-foreground mt-1">

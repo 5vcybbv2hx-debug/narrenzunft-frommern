@@ -6,9 +6,22 @@
       "type": "string",
       "description": "ID des ausgeliehenen Gegenstands"
     },
+    "ausleiher_typ": {
+      "type": "string",
+      "enum": [
+        "mitglied",
+        "extern"
+      ],
+      "default": "mitglied",
+      "description": "Ob Mitglied oder externe Person ausleiht"
+    },
     "ausleiher_mitglied_id": {
       "type": "string",
-      "description": "Mitglied das ausleiht"
+      "description": "Mitglied das ausleiht (wenn ausleiher_typ = mitglied)"
+    },
+    "ausleiher_extern_id": {
+      "type": "string",
+      "description": "Externe Person die ausleiht (wenn ausleiher_typ = extern)"
     },
     "verantwortlicher_id": {
       "type": "string",
@@ -50,7 +63,6 @@
   },
   "required": [
     "ausruestung_id",
-    "ausleiher_mitglied_id",
     "von_datum",
     "bis_datum"
   ]
