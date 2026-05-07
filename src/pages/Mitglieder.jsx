@@ -115,19 +115,27 @@ export default function Mitglieder() {
         )}
       </div>
 
-      {/* Mitgliedsantrag Banner */}
+      {/* Mitgliedsantrag Bereich */}
       {isAdminUser && (
-        <button
-          onClick={() => setShowAntragModal(true)}
-          className="w-full flex items-center gap-3 px-4 py-3 mb-4 rounded-xl bg-primary/10 border border-primary/30 hover:bg-primary/20 transition-colors text-left"
-        >
-          <span className="text-xl">📋</span>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-primary">Neues Mitglied aufnehmen</p>
-            <p className="text-xs text-muted-foreground">Antrag ausfüllen & Mitglied direkt anlegen</p>
-          </div>
-          <span className="text-xs text-primary font-medium">Starten →</span>
-        </button>
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => setShowAntragModal(true)}
+            className="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 border border-primary/30 hover:bg-primary/20 transition-colors text-left"
+          >
+            <span className="text-xl">📋</span>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-primary">Neues Mitglied aufnehmen</p>
+              <p className="text-xs text-muted-foreground">Antrag ausfüllen & direkt anlegen</p>
+            </div>
+          </button>
+          <Link
+            to="/mitgliedsantraege"
+            className="flex items-center gap-2 px-4 py-3 rounded-xl bg-secondary border border-border hover:border-primary/40 hover:bg-secondary/80 transition-colors text-sm font-medium text-foreground"
+          >
+            <span className="text-base">📂</span>
+            <span className="hidden sm:inline">Anträge verwalten</span>
+          </Link>
+        </div>
       )}
 
       {showAntragModal && (
