@@ -5,9 +5,10 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannMitgliederlisteSehn } from '@/lib/roles';
-import { Search, Plus, User, ChevronRight, Archive } from 'lucide-react';
+import { Search, Plus, User, ChevronRight, Archive, Download } from 'lucide-react';
 import NeuerAntragModal from '@/components/mitglied/NeuerAntragModal';
 import { format, differenceInYears } from 'date-fns';
+import * as XLSX from 'xlsx';
 
 const STATUS_COLORS = {
   'Aktiv': 'bg-green-500/20 text-green-400',
@@ -87,6 +88,40 @@ export default function Mitglieder() {
     return differenceInYears(new Date(), new Date(geb));
   };
 
+  const handleExport = () => {
+    const haesgruppen = []; // Gruppen werden inline aus den IDs aufgelöst – hier nur IDs verfügbar
+    const rows = mitglieder
+      .filter(m => !m.archiviert)
+      .map(m => ({
+        'Vorname': m.vorname || '',
+        'Nachname': m.nachname || '',
+        'Status': m.mitgliedsstatus || '',
+        'Geburtsdatum': m.geburtsdatum || '',
+        'Eintrittsdatum': m.eintrittsdatum || '',
+        'Austrittsdatum': m.austrittsdatum || '',
+        'Straße': m.strasse || '',
+        'PLZ': m.plz || '',
+        'Ort': m.ort || '',
+        'Telefon': m.telefon || '',
+        'E-Mail': m.email || '',
+        'Notfallkontakt Name': m.notfallkontakt_name || '',
+        'Notfallkontakt Telefon': m.notfallkontakt_telefon || '',
+        'App-Rolle': m.app_rolle || '',
+        'Kontoinhaber': m.kontoinhaber || '',
+        'Bank': m.bankname || '',
+        'IBAN': m.iban || '',
+        'Mandatnummer': m.sepa_mandatnummer || '',
+        'Mandatdatum': m.sepa_mandatdatum || '',
+        'Umzüge (historisch)': m.umzuege_vor_digitalisierung || 0,
+        'Notizen': m.notizen || '',
+      }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Mitglieder');
+    XLSX.writeFile(wb, `Mitgliederliste_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -105,13 +140,23 @@ export default function Mitglieder() {
           <p className="text-sm text-muted-foreground mt-0.5">{mitglieder.filter(m => !m.archiviert).length} Mitglieder · {mitglieder.filter(m => m.archiviert).length} archiviert</p>
         </div>
         {isAdminUser && (
-          <Link
-            to="/mitglieder/neu"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
-          >
-            <Plus size={16} />
-            <span className="hidden sm:inline">Neu</span>
-          </Link>
+          <div className="flex gap-2">
+            <button
+              onClick={handleExport}
+              title="Mitgliederliste exportieren"
+              className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-secondary text-muted-foreground text-sm font-medium hover:bg-border hover:text-foreground transition-colors"
+            >
+              <Download size={16} />
+              <span className="hidden sm:inline">Export</span>
+            </button>
+            <Link
+              to="/mitglieder/neu"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+            >
+              <Plus size={16} />
+              <span className="hidden sm:inline">Neu</span>
+            </Link>
+          </div>
         )}
       </div>
 
