@@ -224,7 +224,18 @@ export default function MitgliedDetail() {
     return null;
   })();
 
-  const handleFieldChange = (field, value) => setMitglied(p => ({ ...p, [field]: value }));
+  const handleFieldChange = (field, value) => {
+    setMitglied(p => {
+      const updated = { ...p, [field]: value };
+      // Automatisch archivieren wenn Status auf Verstorben gesetzt wird
+      if (field === 'mitgliedsstatus' && value === 'Verstorben') {
+        updated.archiviert = true;
+        updated.archiviert_am = new Date().toISOString().split('T')[0];
+        updated.archiviert_grund = 'Verstorben';
+      }
+      return updated;
+    });
+  };
 
   if (loading) {
     return (
@@ -410,6 +421,9 @@ export default function MitgliedDetail() {
           <Field label="Eintrittsdatum" field="eintrittsdatum" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           <Field label="Austrittsdatum" field="austrittsdatum" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           <Field label="Hochzeitstag" field="hochzeitstag" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+          {(mitglied.mitgliedsstatus === 'Verstorben' || mitglied.todesdatum) && (
+            <Field label="Todesdatum" field="todesdatum" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+          )}
           <div>
             <label className="text-xs text-muted-foreground font-medium block mb-1">Gruppen / Sparten</label>
             {editing ? (

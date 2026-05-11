@@ -20,9 +20,10 @@ const STATUS_COLORS = {
   'Kinder 4-10': 'bg-pink-500/20 text-pink-400',
   'Kleinkind 0-3': 'bg-rose-500/20 text-rose-400',
   'Leihäs': 'bg-gray-500/20 text-gray-400',
+  'Verstorben': 'bg-gray-600/30 text-gray-400',
 };
 
-const ALLE_STATUS = ['Alle', 'Aktiv', 'Passiv', 'Passiv mit Häs', 'Ehrenmitglied', 'Jugendliche 11-14', 'Jungaktive 15-17', 'Kinder 4-10', 'Kleinkind 0-3', 'Leihäs'];
+const ALLE_STATUS = ['Alle', 'Aktiv', 'Passiv', 'Passiv mit Häs', 'Ehrenmitglied', 'Jugendliche 11-14', 'Jungaktive 15-17', 'Kinder 4-10', 'Kleinkind 0-3', 'Leihäs', 'Verstorben'];
 
 export default function Mitglieder() {
   const { user } = useAuth();
