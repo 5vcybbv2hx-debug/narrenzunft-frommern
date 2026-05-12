@@ -17,12 +17,17 @@ export default function NachrichtenInbox({ empfaengerId }) {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [n, m] = await Promise.all([
-        base44.entities.Nachricht.filter({ empfaenger_mitglied_id: empfaengerId }),
-        base44.entities.Mitglied.list('nachname', 500),
-      ]);
-      setNachrichten(n.sort((a, b) => new Date(b.created_date) - new Date(a.created_date)));
-      setMitglieder(m);
+      const n = await base44.entities.Nachricht.filter({ empfaenger_mitglied_id: empfaengerId });
+      const sorted = n.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+      setNachrichten(sorted);
+      // Nur die tatsächlichen Absender laden
+      const absenderIds = [...new Set(sorted.map(x => x.absender_mitglied_id).filter(Boolean))];
+      if (absenderIds.length > 0) {
+        const absender = await Promise.all(
+          absenderIds.map(id => base44.entities.Mitglied.filter({ id }))
+        );
+        setMitglieder(absender.flat());
+      }
     } catch (e) {}
     setLoading(false);
   };

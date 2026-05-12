@@ -10,13 +10,16 @@ export default function NachrichtForm({ absenderId, onSent, onClose }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Laden: nur Funktionäre/Vorstand
-    base44.entities.Mitglied.list('nachname', 500).then(m => {
-      const funktionaere = m.filter(x =>
-        !x.archiviert && 
-        ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter'].includes(x.app_rolle)
-      );
-      setEmpfaenger(funktionaere);
+    // Nur Funktionäre laden – jede Rolle einzeln filtern und zusammenführen
+    const rollen = ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter'];
+    Promise.all(
+      rollen.map(rolle => base44.entities.Mitglied.filter({ app_rolle: rolle, archiviert: false }))
+    ).then(results => {
+      const alle = results.flat();
+      // Deduplizieren nach ID
+      const unique = Array.from(new Map(alle.map(m => [m.id, m])).values());
+      unique.sort((a, b) => a.nachname.localeCompare(b.nachname));
+      setEmpfaenger(unique);
     });
   }, []);
 
