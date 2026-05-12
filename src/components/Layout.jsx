@@ -28,7 +28,7 @@ const sidebarNavItems = [
   { path: '/ausschuss', label: 'Ausschussbereich', icon: Lock, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
   { path: '/todos', label: 'Aufgaben', icon: CheckSquare, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
   { path: '/inventar', label: 'Inventar & Verleih', icon: Package, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
-  { path: '/berechtigungen', label: 'Berechtigungen', icon: Shield, roles: ['admin', 'vorstand'] },
+  { path: '/berechtigungen', label: 'Berechtigungen', icon: Shield, roles: ['admin', 'vorstand', 'stellv_vorstand'] },
   { path: '/daten-import', label: 'Daten-Import', icon: Database, roles: ['admin'] },
   { path: '/familie', label: 'Familie', icon: Users, roles: ['elternkonto'] },
 ];
