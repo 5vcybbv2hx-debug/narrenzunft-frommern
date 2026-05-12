@@ -100,10 +100,10 @@ export default function Dashboard() {
     try {
       const today = new Date().toISOString().split('T')[0];
       const [mitglieder, events, ehrungen, beitraege, dienste, zuweisungen] = await Promise.all([
-        base44.entities.Mitglied.list('-created_date', 100),
+        isAdminUser ? base44.entities.Mitglied.list('-created_date', 100) : Promise.resolve([]),
         base44.entities.Veranstaltung.list('datum', 50),
-        base44.entities.Ehrung.filter({ status: 'Vorgeschlagen' }),
-        base44.entities.Beitrag.list('-created_date', 200),
+        isAdminUser ? base44.entities.Ehrung.filter({ status: 'Vorgeschlagen' }) : Promise.resolve([]),
+        isAdminUser ? base44.entities.Beitrag.list('-created_date', 200) : Promise.resolve([]),
         base44.entities.Arbeitsdienst.list('datum', 30),
         base44.entities.ArbeitsdienstZuweisung.list('-created_date', 300),
       ]);
