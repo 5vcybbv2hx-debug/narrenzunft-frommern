@@ -129,7 +129,7 @@ export default function Dashboard() {
         arbeitsdienste: arbeitsdienste.length,
       });
     } catch (e) {
-      console.error('Dashboard load error:', e);
+      console.error('[Dashboard]', e instanceof Error ? e.message : e);
     }
     setLoading(false);
   };

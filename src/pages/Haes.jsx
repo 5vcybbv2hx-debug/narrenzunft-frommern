@@ -47,7 +47,7 @@ export default function Haes() {
       setGruppen(result.data.gruppen || []);
       setMitglieder(result.data.mitglieder || []);
     } catch (e) {
-      console.error('Haes load error:', e);
+      console.error('[Haes]', e instanceof Error ? e.message : e);
     }
     setLoading(false);
   };

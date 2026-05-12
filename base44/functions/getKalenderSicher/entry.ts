@@ -65,7 +65,8 @@ Deno.serve(async (req) => {
       kannBearbeiten: false,
     });
   } catch (error) {
-    console.error(error);
-    return Response.json({ erfolg: false, error: error.message }, { status: 500 });
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[getKalenderSicher]', msg);
+    return Response.json({ erfolg: false, error: msg }, { status: 500 });
   }
 });

@@ -58,7 +58,7 @@ export default function Arbeitsdienste() {
       const myMArr = result.data.mitglieder.filter(m => m.user_id === user?.id);
       if (myMArr[0]) setMyMitglied(myMArr[0]);
     } catch (e) {
-      console.error('Arbeitsdienste load error:', e);
+      console.error('[Arbeitsdienste]', e instanceof Error ? e.message : e);
     }
     setLoading(false);
   };

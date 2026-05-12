@@ -90,7 +90,7 @@ export default function Kalender() {
         setAnmeldungen(anm);
       }
     } catch (e) {
-      console.error('Kalender load error:', e);
+      console.error('[Kalender]', e instanceof Error ? e.message : e);
     }
     setLoading(false);
   };
