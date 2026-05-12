@@ -160,7 +160,7 @@ export default function Kalender() {
   );
 
   return (
-    <div className="px-4 lg:px-6 py-6 max-w-3xl mx-auto">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-3xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
@@ -246,7 +246,7 @@ export default function Kalender() {
       )}
 
       {/* Ansicht-Toggle */}
-      <div className="flex gap-1 bg-secondary rounded-xl p-1 mb-4">
+      <div className="flex gap-0.5 sm:gap-1 bg-secondary rounded-xl p-0.5 sm:p-1 mb-4">
         <button
           onClick={() => setAnsicht('liste')}
           className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${ansicht === 'liste' ? 'bg-card text-foreground shadow' : 'text-muted-foreground'}`}

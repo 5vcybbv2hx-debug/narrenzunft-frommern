@@ -147,7 +147,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div ref={containerRef} className="px-4 lg:px-6 py-6 max-w-7xl mx-auto">
+    <div ref={containerRef} className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-7xl mx-auto">
       <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
       {/* Header */}
       <div className="mb-6">
@@ -169,7 +169,7 @@ export default function Dashboard() {
 
       {/* Stats Row */}
       {isAdminUser && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-6">
           <StatCard icon={Users} label="Mitglieder" value={stats.mitglieder} />
           <StatCard icon={Calendar} label="Nächste Events" value={stats.veranstaltungen} />
           <StatCard icon={Award} label="Offene Ehrungen" value={stats.offeneEhrungen} color="text-yellow-400" />

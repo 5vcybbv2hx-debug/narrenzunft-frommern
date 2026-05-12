@@ -114,14 +114,14 @@ export default function Arbeitsdienste() {
   );
 
   return (
-    <div className="px-4 lg:px-6 py-6 max-w-4xl mx-auto">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Arbeitsdienste</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{dienste.length} gesamt</p>
         </div>
         {kannVerwalten && (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
             <button
               onClick={() => setShowVorlagen(true)}
               className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-secondary text-muted-foreground text-sm font-medium hover:bg-border hover:text-foreground transition-colors"
@@ -142,8 +142,8 @@ export default function Arbeitsdienste() {
       </div>
 
       {/* Ansicht-Toggle */}
-      <div className="flex items-center gap-2 mb-4">
-        <div className="flex gap-1 bg-secondary rounded-xl p-1">
+      <div className="flex items-center gap-1.5 sm:gap-2 mb-4">
+        <div className="flex gap-0.5 sm:gap-1 bg-secondary rounded-xl p-0.5 sm:p-1">
           <button
             onClick={() => setAnsicht('liste')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${ansicht === 'liste' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}

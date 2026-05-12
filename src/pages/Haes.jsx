@@ -108,7 +108,7 @@ export default function Haes() {
   );
 
   return (
-    <div className="px-4 lg:px-6 py-6 max-w-4xl mx-auto">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Häs & Masken</h1>
