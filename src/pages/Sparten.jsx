@@ -24,16 +24,17 @@ export default function Sparten() {
 
   const loadData = async () => {
     setLoading(true);
-    const [g, m] = await Promise.all([
-      base44.entities.Haesgruppe.list('name', 200),
-      base44.entities.Mitglied.list('nachname', 500),
-    ]);
+    const g = await base44.entities.Haesgruppe.list('name', 200);
     setGruppen(g);
-    setMitglieder(m);
-    if (isSpartenleiter) {
+    // Mitgliederliste nur für Admins und Spartenleiter laden
+    if (admin || isSpartenleiter) {
       const me = await base44.auth.me();
-      const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
-      if (myM[0]) setMeinMitglied(myM[0]);
+      const [m, myMArr] = await Promise.all([
+        base44.entities.Mitglied.list('nachname', 500),
+        isSpartenleiter ? base44.entities.Mitglied.filter({ user_id: me?.id }) : Promise.resolve([]),
+      ]);
+      setMitglieder(m);
+      if (myMArr[0]) setMeinMitglied(myMArr[0]);
     }
     setLoading(false);
   };

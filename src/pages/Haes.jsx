@@ -38,14 +38,17 @@ export default function Haes() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [h, g, m] = await Promise.all([
+      const [h, g] = await Promise.all([
         base44.entities.Haes.list('haesnummer', 500),
         base44.entities.Haesgruppe.list('name', 100),
-        base44.entities.Mitglied.list('nachname', 500),
       ]);
       setHaes(h);
       setGruppen(g);
-      setMitglieder(m);
+      // Mitgliedernamen nur für Admins laden (Besitzer-Anzeige und Suche)
+      if (isAdmin) {
+        const m = await base44.entities.Mitglied.list('nachname', 500);
+        setMitglieder(m);
+      }
     } catch (e) {}
     setLoading(false);
   };
