@@ -46,10 +46,10 @@ export default function Datenqualitaet() {
     setLoading(true);
     try {
       const [m, h, hist, b] = await Promise.all([
-        base44.entities.Mitglied.list('nachname', 1000),
-        base44.entities.Haes.list('haesnummer', 500),
-        base44.entities.HaesHistorie.list('-created_date', 2000),
-        base44.entities.Beitrag.list('-created_date', 2000),
+        base44.entities.Mitglied.list('nachname', 500),
+        base44.entities.Haes.list('haesnummer', 300),
+        base44.entities.HaesHistorie.list('-created_date', 800),
+        base44.entities.Beitrag.list('-created_date', 800),
       ]);
       setMitglieder(m);
       setHaes(h);
