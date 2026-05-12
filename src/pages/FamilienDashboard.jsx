@@ -23,81 +23,26 @@ export default function FamilienDashboard() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const me = await base44.auth.me();
-      if (!me) {
+      const result = await base44.functions.invoke('getFamilienDashboardSicher', {});
+      
+      if (result.data.erfolg === false) {
         setLoading(false);
         return;
       }
 
-      // Mein Mitglied-Profil laden
-      const myProfiles = await base44.entities.Mitglied.filter({ user_id: me.id });
-      if (!myProfiles[0]) {
-        setLoading(false);
-        return;
-      }
-
-      const myProfile = myProfiles[0];
-      setMyMitglied(myProfile);
-
-      // Verwandtschaften laden (meine Kinder) – gefiltert nach diesem Mitglied
-      const verwandtschaften_all = await base44.entities.Verwandtschaft.filter({ mitglied_id: myProfile.id });
-      const kinderVerwandtschaften = verwandtschaften_all.filter(v => v.beziehung === 'Kind');
-      setVerwandtschaften(kinderVerwandtschaften);
-
-      if (kinderVerwandtschaften.length === 0) {
-        setLoading(false);
-        return;
-      }
-
-      const kinderIds = kinderVerwandtschaften.map(v => v.verwandter_id);
-      const heute = new Date().toISOString().split('T')[0];
-
-      // Kinder direkt gefiltert laden – kein .list() mehr
-      const kinderProfiles = await Promise.all(
-        kinderIds.map(kid => base44.entities.Mitglied.filter({ id: kid }))
-      );
-      setKinder(kinderProfiles.map(r => r[0]).filter(Boolean));
-
-      // Arbeitsdienst-Zuweisungen gefiltert pro Kind
-      const alleZuweisungenArr = await Promise.all(
-        kinderIds.map(kid => base44.entities.ArbeitsdienstZuweisung.filter({ mitglied_id: kid }))
-      );
-      const alleZuweisungen = alleZuweisungenArr.flat();
-      setZuweisungen(alleZuweisungen);
-
-      const dienstIds = [...new Set(
-        alleZuweisungen.filter(z => z.status !== 'Abgesagt').map(z => z.arbeitsdienst_id)
-      )];
-
-      // Dienste direkt gefiltert – nur die relevanten IDs
-      if (dienstIds.length > 0) {
-        const diensteArr = await Promise.all(
-          dienstIds.slice(0, 20).map(did => base44.entities.Arbeitsdienst.filter({ id: did }))
-        );
-        const kinderDienste = diensteArr.map(r => r[0]).filter(d => d && d.datum >= heute).slice(0, 10);
-        setDienste(kinderDienste);
-      }
-
-      // Kalenderanmeldungen gefiltert
-      const anmeldungenArr = await Promise.all(
-        kinderIds.map(kid => base44.entities.KalenderAnmeldung.filter({ mitglied_id: kid }))
-      );
-      const alleAnmeldungen = anmeldungenArr.flat();
-      const terminIds = [...new Set(alleAnmeldungen.map(a => a.termin_id))];
-      if (terminIds.length > 0) {
-        const termineArr = await Promise.all(
-          terminIds.slice(0, 20).map(tid => base44.entities.KalenderTermin.filter({ id: tid }))
-        );
-        setTermine(termineArr.map(r => r[0]).filter(t => t && t.datum >= heute).slice(0, 10));
-      }
+      setMyMitglied(result.data.familie);
+      setKinder(result.data.kinder);
+      setTermine(result.data.termine);
+      setDienste(result.data.dienste.map(d => d.dienst));
+      setZuweisungen(result.data.dienste.map(d => d.zuweisung));
     } catch (e) {
       console.error('FamilienDashboard Ladefehler:', e);
     }
     setLoading(false);
   };
 
-  // Nur für Elternkonten
-  if (myMitglied?.app_rolle !== 'elternkonto') {
+  // Nur für Elternkonten und Admins
+  if (user?.role !== 'elternkonto' && user?.role !== 'admin') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
         <Lock size={40} className="text-muted-foreground mb-3" />
