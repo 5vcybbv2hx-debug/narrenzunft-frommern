@@ -1,0 +1,58 @@
+{
+  "name": "KalenderFeedToken",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID des App-Users"
+    },
+    "mitglied_id": {
+      "type": "string",
+      "description": "ID des zugeordneten Mitglieds"
+    },
+    "token_hash": {
+      "type": "string",
+      "description": "SHA256-Hash des Tokens (nicht das Token selbst)"
+    },
+    "feed_typ": {
+      "type": "string",
+      "enum": [
+        "persoenlich",
+        "mitglieder",
+        "ausschuss",
+        "vorstand",
+        "gruppe"
+      ],
+      "default": "persoenlich",
+      "description": "Typ des Feeds"
+    },
+    "rolle": {
+      "type": "string",
+      "description": "Rolle bei Tokenerstellung (f\u00fcr Filtering)"
+    },
+    "erstellt_am": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "zuletzt_genutzt_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Wann wurde dieser Token zuletzt verwendet"
+    },
+    "widerrufen_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Wann wurde dieser Token widerrufen"
+    },
+    "aktiv": {
+      "type": "boolean",
+      "default": true,
+      "description": "Ist dieser Token noch g\u00fcltig"
+    }
+  },
+  "required": [
+    "user_id",
+    "token_hash",
+    "feed_typ"
+  ]
+}
