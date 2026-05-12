@@ -80,37 +80,27 @@ export default function HaesDetail() {
     if (!newZuweisung.mitglied_id) return;
     setSaving(true);
     try {
-      const heute = new Date().toISOString().split('T')[0];
-
-      // #3 – Häs-Konsistenz: alle bisherigen aktiven Zuweisungen beenden
-      if (newZuweisung.aktiv) {
-        const aktive = historien.filter(h => h.aktiv);
-        await Promise.all(aktive.map(h =>
-          base44.entities.HaesHistorie.update(h.id, { aktiv: false, bis_datum: heute })
-        ));
-      }
-
-      await base44.entities.HaesHistorie.create({
+      await base44.functions.invoke('weiseHaesZuSicher', {
         haes_id: id,
         mitglied_id: newZuweisung.mitglied_id,
-        von_datum: newZuweisung.von_datum || heute,
-        aktiv: newZuweisung.aktiv,
-        notizen: newZuweisung.notizen,
+        aktion: newZuweisung.aktiv ? 'verliehen' : 'zurueckgegeben',
+        datum: newZuweisung.von_datum || undefined,
+        notiz: newZuweisung.notizen,
       });
 
-      // aktueller_besitzer_id aktualisieren falls aktiv
-      if (newZuweisung.aktiv) {
-        await base44.entities.Haes.update(id, { 
-          aktueller_besitzer_id: newZuweisung.mitglied_id, 
-          status: 'Verliehen',
-          ...(alsoSetEigentuemer && { privat_eigentuemer_id: newZuweisung.mitglied_id })
-        });
+      // Privateigentümer separat setzen wenn gewünscht
+      if (alsoSetEigentuemer) {
+        await base44.entities.Haes.update(id, { privat_eigentuemer_id: newZuweisung.mitglied_id });
       }
+
       setNewZuweisung({ mitglied_id: '', von_datum: '', aktiv: true, notizen: '' });
       setShowAddMitglied(false);
       setConfirmDialog(null);
       loadData();
-    } catch (e) {}
+    } catch (e) {
+      console.error('Häs-Zuweisung fehlgeschlagen:', e);
+      alert('Zuweisung fehlgeschlagen: ' + (e?.response?.data?.error || e.message));
+    }
     setSaving(false);
   };
 
@@ -142,25 +132,17 @@ export default function HaesDetail() {
 
   const handleToggleAktiv = async (historie) => {
     try {
-      const newAktiv = !historie.aktiv;
-      await base44.entities.HaesHistorie.update(historie.id, { aktiv: newAktiv });
-      // Wenn deaktiviert: bis_datum setzen
-      if (!newAktiv) {
-        await base44.entities.HaesHistorie.update(historie.id, {
-          aktiv: false,
-          bis_datum: new Date().toISOString().split('T')[0],
-        });
-        // Wenn das der aktuelle Besitzer war: aktueller_besitzer_id leeren
-        if (haes.aktueller_besitzer_id === historie.mitglied_id) {
-          await base44.entities.Haes.update(id, { aktueller_besitzer_id: null, status: 'Frei' });
-        }
-      } else {
-        await base44.entities.HaesHistorie.update(historie.id, { aktiv: true, bis_datum: null });
-        // Als aktiven Besitzer setzen
-        await base44.entities.Haes.update(id, { aktueller_besitzer_id: historie.mitglied_id, status: 'Verliehen' });
-      }
+      const neueAktion = historie.aktiv ? 'zurueckgegeben' : 'verliehen';
+      await base44.functions.invoke('weiseHaesZuSicher', {
+        haes_id: id,
+        mitglied_id: neueAktion === 'verliehen' ? historie.mitglied_id : undefined,
+        aktion: neueAktion,
+      });
       loadData();
-    } catch (e) {}
+    } catch (e) {
+      console.error('Status-Änderung fehlgeschlagen:', e);
+      alert('Fehlgeschlagen: ' + (e?.response?.data?.error || e.message));
+    }
   };
 
   const handleDeleteHistorie = async (historieId) => {
@@ -672,20 +654,18 @@ export default function HaesDetail() {
               </button>
               <button 
                 onClick={async () => {
-                  const heute = new Date().toISOString().split('T')[0];
                   setSaving(true);
                   try {
-                    await base44.entities.HaesHistorie.create({
+                    await base44.functions.invoke('weiseHaesZuSicher', {
                       haes_id: id,
                       mitglied_id: confirmDialog.mitgliedId,
-                      von_datum: heute,
-                      aktiv: true,
-                      notizen: '',
+                      aktion: 'verliehen',
                     });
-                    await base44.entities.Haes.update(id, { aktueller_besitzer_id: confirmDialog.mitgliedId, status: 'Verliehen' });
                     setConfirmDialog(null);
                     loadData();
-                  } catch (e) {}
+                  } catch (e) {
+                    console.error('Zuweisung fehlgeschlagen:', e);
+                  }
                   setSaving(false);
                 }}
                 disabled={saving}

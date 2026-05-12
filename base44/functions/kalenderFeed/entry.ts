@@ -73,7 +73,8 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json().catch(() => ({}));
-    const { feed_typ, mitglied_id } = body;
+    const { feed_typ } = body;
+    // SICHERHEIT: mitglied_id darf NICHT vom Frontend übergeben werden – immer über Auth ermitteln
 
     if (!feed_typ || !FEED_CONFIG[feed_typ]) {
       return Response.json({ error: 'Ungültiger Feed-Typ' }, { status: 400 });
@@ -98,12 +99,10 @@ Deno.serve(async (req) => {
     // Alle Termine laden
     const alleTermine = await base44.asServiceRole.entities.KalenderTermin.list('datum', 500);
 
-    // Mitglied für eingeladene/verantwortliche Checks
+    // Mitglied serverseitig über User-E-Mail ermitteln (nie aus Request-Body)
     let myMitglied = null;
-    if (mitglied_id) {
-      const ms = await base44.asServiceRole.entities.Mitglied.filter({ id: mitglied_id });
-      myMitglied = ms[0] || null;
-    }
+    const mitglieder = await base44.asServiceRole.entities.Mitglied.filter({ email: user.email });
+    myMitglied = mitglieder[0] || null;
 
     // Filtern: Sichtbarkeit + Terminart + Rollencheck
     const gefilterteTermine = alleTermine.filter(t => {

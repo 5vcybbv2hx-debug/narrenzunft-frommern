@@ -187,11 +187,10 @@ export default function Kalender() {
   const handleDownloadFeed = async (feedTyp) => {
     setDownloadingFeed(true);
     try {
+      // mitglied_id wird serverseitig über den authentifizierten User ermittelt – nicht vom Frontend übergeben
       const res = await base44.functions.invoke('kalenderFeed', {
         feed_typ: feedTyp,
-        mitglied_id: myMitglied?.id,
       });
-      // ICS als Datei speichern
       const blob = new Blob([res.data], { type: 'text/calendar' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -199,7 +198,9 @@ export default function Kalender() {
       a.download = `${feedTyp}-kalender.ics`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch (e) {}
+    } catch (e) {
+      console.error('Kalender-Download fehlgeschlagen:', e);
+    }
     setDownloadingFeed(false);
   };
 

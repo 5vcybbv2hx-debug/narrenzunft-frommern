@@ -39,7 +39,7 @@ export default function FamilienDashboard() {
       const myProfile = myProfiles[0];
       setMyMitglied(myProfile);
 
-      // Verwandtschaften laden (meine Kinder)
+      // Verwandtschaften laden (meine Kinder) – gefiltert nach diesem Mitglied
       const verwandtschaften_all = await base44.entities.Verwandtschaft.filter({ mitglied_id: myProfile.id });
       const kinderVerwandtschaften = verwandtschaften_all.filter(v => v.beziehung === 'Kind');
       setVerwandtschaften(kinderVerwandtschaften);
@@ -50,31 +50,48 @@ export default function FamilienDashboard() {
       }
 
       const kinderIds = kinderVerwandtschaften.map(v => v.verwandter_id);
-
-      // Alle Mitglieder laden
-      const allMitglieder = await base44.entities.Mitglied.list('nachname', 500);
-      const kinderProfiles = allMitglieder.filter(m => kinderIds.includes(m.id));
-      setKinder(kinderProfiles);
-
-      // Termine für die Kinder
-      const allTermine = await base44.entities.KalenderTermin.list('datum', 200);
       const heute = new Date().toISOString().split('T')[0];
-      const kinderTermine = allTermine.filter(t => {
-        const anmeldungen = t.anmeldungen || [];
-        return t.datum >= heute && kinderIds.some(id => anmeldungen.includes(id));
-      }).slice(0, 10);
-      setTermine(kinderTermine);
 
-      // Arbeitsdienste für die Kinder
-      const allZuweisungen = await base44.entities.ArbeitsdienstZuweisung.list('-created_date', 200);
-      setZuweisungen(allZuweisungen);
-      const kinderZuweisungen = allZuweisungen.filter(z => kinderIds.includes(z.mitglied_id) && z.status !== 'Abgesagt');
-      const dienstIds = new Set(kinderZuweisungen.map(z => z.arbeitsdienst_id));
-      const allDienste = await base44.entities.Arbeitsdienst.list('datum', 200);
-      const kinderDienste = allDienste.filter(d => dienstIds.has(d.id) && d.datum >= heute).slice(0, 10);
-      setDienste(kinderDienste);
+      // Kinder direkt gefiltert laden – kein .list() mehr
+      const kinderProfiles = await Promise.all(
+        kinderIds.map(kid => base44.entities.Mitglied.filter({ id: kid }))
+      );
+      setKinder(kinderProfiles.map(r => r[0]).filter(Boolean));
+
+      // Arbeitsdienst-Zuweisungen gefiltert pro Kind
+      const alleZuweisungenArr = await Promise.all(
+        kinderIds.map(kid => base44.entities.ArbeitsdienstZuweisung.filter({ mitglied_id: kid }))
+      );
+      const alleZuweisungen = alleZuweisungenArr.flat();
+      setZuweisungen(alleZuweisungen);
+
+      const dienstIds = [...new Set(
+        alleZuweisungen.filter(z => z.status !== 'Abgesagt').map(z => z.arbeitsdienst_id)
+      )];
+
+      // Dienste direkt gefiltert – nur die relevanten IDs
+      if (dienstIds.length > 0) {
+        const diensteArr = await Promise.all(
+          dienstIds.slice(0, 20).map(did => base44.entities.Arbeitsdienst.filter({ id: did }))
+        );
+        const kinderDienste = diensteArr.map(r => r[0]).filter(d => d && d.datum >= heute).slice(0, 10);
+        setDienste(kinderDienste);
+      }
+
+      // Kalenderanmeldungen gefiltert
+      const anmeldungenArr = await Promise.all(
+        kinderIds.map(kid => base44.entities.KalenderAnmeldung.filter({ mitglied_id: kid }))
+      );
+      const alleAnmeldungen = anmeldungenArr.flat();
+      const terminIds = [...new Set(alleAnmeldungen.map(a => a.termin_id))];
+      if (terminIds.length > 0) {
+        const termineArr = await Promise.all(
+          terminIds.slice(0, 20).map(tid => base44.entities.KalenderTermin.filter({ id: tid }))
+        );
+        setTermine(termineArr.map(r => r[0]).filter(t => t && t.datum >= heute).slice(0, 10));
+      }
     } catch (e) {
-      console.error(e);
+      console.error('FamilienDashboard Ladefehler:', e);
     }
     setLoading(false);
   };
