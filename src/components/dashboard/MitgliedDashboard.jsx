@@ -72,27 +72,38 @@ export default function MitgliedDashboard() {
       setMyMitglied(mitglied);
 
       // Parallele Abfragen
-      const [teilnahmen, zuweisungen, beitraege, notifs, events, dienste] = await Promise.all([
+      const [teilnahmen, zuweisungen, beitraege, notifs] = await Promise.all([
         base44.entities.Teilnahme.filter({ mitglied_id: mitglied.id }),
         base44.entities.ArbeitsdienstZuweisung.filter({ mitglied_id: mitglied.id }),
         base44.entities.Beitrag.filter({ mitglied_id: mitglied.id }),
         base44.entities.Benachrichtigung.filter({ mitglied_id: mitglied.id }),
-        base44.entities.Veranstaltung.list('datum', 200),
-        base44.entities.Arbeitsdienst.list('datum', 100),
       ]);
+
+      // Veranstaltungen nur für angemeldete IDs laden
+      const veranstaltungIds = [...new Set(teilnahmen.map(t => t.veranstaltung_id).filter(Boolean))];
+      const events = veranstaltungIds.length > 0
+        ? (await Promise.all(veranstaltungIds.map(id => base44.entities.Veranstaltung.filter({ id })))).flat()
+        : [];
+
+      // Arbeitsdienste nur für zugewiesene IDs laden
+      const dienstIds = [...new Set(zuweisungen.map(z => z.arbeitsdienst_id).filter(Boolean))];
+      const dienste = dienstIds.length > 0
+        ? (await Promise.all(dienstIds.map(id => base44.entities.Arbeitsdienst.filter({ id })))).flat()
+        : [];
 
       // Sparten-Termine: nur für Gruppen, in denen das Mitglied ist
       const gruppenIds = mitglied.haesgruppen_ids || (mitglied.haesgruppe_id ? [mitglied.haesgruppe_id] : []);
       if (gruppenIds.length > 0) {
-        const [alleTermine, gruppen] = await Promise.all([
-          base44.entities.SpartenTermin.list('datum', 200),
-          base44.entities.Haesgruppe.list('name', 100),
+        const [alleTermineArr, gruppen] = await Promise.all([
+          Promise.all(gruppenIds.map(gid => base44.entities.SpartenTermin.filter({ haesgruppe_id: gid }))),
+          Promise.all(gruppenIds.map(gid => base44.entities.Haesgruppe.filter({ id: gid }))),
         ]);
-        const meineTermine = alleTermine
-          .filter(t => gruppenIds.includes(t.haesgruppe_id) && t.datum >= today)
+        const meineTermine = alleTermineArr.flat()
+          .filter(t => t.datum >= today)
+          .sort((a, b) => a.datum.localeCompare(b.datum))
           .slice(0, 5);
         setSpartenTermine(meineTermine);
-        setMeineSpartenGruppen(gruppen.filter(g => gruppenIds.includes(g.id)));
+        setMeineSpartenGruppen(gruppen.flat().filter(Boolean));
       }
 
       // Familienübersicht für Elternkonten

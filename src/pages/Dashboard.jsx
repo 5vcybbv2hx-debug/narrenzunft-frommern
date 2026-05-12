@@ -99,14 +99,21 @@ export default function Dashboard() {
     setLoading(true);
     try {
       const today = new Date().toISOString().split('T')[0];
-      const [mitglieder, events, ehrungen, beitraege, dienste, zuweisungen] = await Promise.all([
+      const [mitglieder, events, ehrungen, beitraege, dienste] = await Promise.all([
         isAdminUser ? base44.entities.Mitglied.list('-created_date', 100) : Promise.resolve([]),
         base44.entities.Veranstaltung.list('datum', 50),
         isAdminUser ? base44.entities.Ehrung.filter({ status: 'Vorgeschlagen' }) : Promise.resolve([]),
         isAdminUser ? base44.entities.Beitrag.list('-created_date', 200) : Promise.resolve([]),
-        base44.entities.Arbeitsdienst.list('datum', 30),
-        base44.entities.ArbeitsdienstZuweisung.list('-created_date', 300),
+        isAdminUser || kannVerwalten
+          ? base44.entities.Arbeitsdienst.list('datum', 30)
+          : Promise.resolve([]),
       ]);
+
+      // Zuweisungen nur wenn Arbeitsdienste vorhanden und Nutzer Verwalter ist
+      const dienstIds = dienste.map(d => d.id);
+      const zuweisungen = (isAdminUser || kannVerwalten) && dienstIds.length > 0
+        ? await base44.entities.ArbeitsdienstZuweisung.list('-created_date', 300)
+        : [];
 
       const kommende = events.filter(e => e.datum >= today).slice(0, 5);
       setNaechsteEvents(kommende);
