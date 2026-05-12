@@ -38,18 +38,17 @@ export default function Haes() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [h, g] = await Promise.all([
-        base44.entities.Haes.list('haesnummer', 500),
-        base44.entities.Haesgruppe.list('name', 100),
-      ]);
-      setHaes(h);
-      setGruppen(g);
-      // Mitgliedernamen nur für Admins laden (Besitzer-Anzeige und Suche)
-      if (isAdmin) {
-        const m = await base44.entities.Mitglied.list('nachname', 500);
-        setMitglieder(m);
+      const result = await base44.functions.invoke('getHaesSicher', {});
+      if (!result.data.erfolg) {
+        setLoading(false);
+        return;
       }
-    } catch (e) {}
+      setHaes(result.data.haes || []);
+      setGruppen(result.data.gruppen || []);
+      setMitglieder(result.data.mitglieder || []);
+    } catch (e) {
+      console.error('Haes load error:', e);
+    }
     setLoading(false);
   };
 

@@ -73,78 +73,25 @@ export default function Kalender() {
   const loadData = async () => {
     setLoading(true);
     try {
+      const result = await base44.functions.invoke('getKalenderSicher', {});
+      if (!result.data.erfolg) {
+        setLoading(false);
+        return;
+      }
+      setTermine(result.data.termine || []);
+      
       const me = await base44.auth.me();
-      const [myMArr, kalenderTermine, veranstaltungen] = await Promise.all([
-        base44.entities.Mitglied.filter({ user_id: me?.id }),
-        base44.entities.KalenderTermin.list('datum', 200),
-        base44.entities.Veranstaltung.list('datum', 200),
-      ]);
-
+      const myMArr = await base44.asServiceRole?.entities?.Mitglied?.filter?.({ user_id: me?.id }) || [];
       const myM = myMArr[0] || null;
       setMyMitglied(myM);
-
+      
       if (myM) {
         const anm = await base44.entities.KalenderAnmeldung.filter({ mitglied_id: myM.id });
         setAnmeldungen(anm);
       }
-
-      // KalenderTermin – rollenbasiert filtern
-      const sichtbar = kalenderTermine.filter(t => {
-        const s = t.sichtbarkeit || 'alle';
-        if (!erlaubteSichtbarkeiten.includes(s)) return false;
-        if (s === 'eingeladen') return myM && (t.eingeladene_ids || []).includes(myM.id);
-        if (s === 'verantwortliche') return myM && (t.verantwortliche_ids || []).includes(myM.id);
-        return true;
-      });
-
-      // Veranstaltungen (eigene & auswärtige) als synthetische Kalendereinträge
-      const TYP_MAP = {
-        'Umzug':             'Umzug',
-        'Abendveranstaltung':'Abendveranstaltung',
-        'Intern':            'Intern',
-        'Arbeitsdienst':     'Arbeitsdienst',
-        'Fest':              'Sonstiges',
-      };
-      const fromVeranstaltungen = veranstaltungen
-        .filter(v => v.datum && v.status !== 'Abgesagt')
-        .map(v => ({
-          id: `v-${v.id}`,
-          _veranstaltung_id: v.id,
-          _quelle: 'veranstaltung',
-          titel: v.titel,
-          datum: v.datum,
-          startzeit: v.uhrzeit || '',
-          endzeit: '',
-          ort: v.ort || '',
-          beschreibung: v.beschreibung || '',
-          terminart: TYP_MAP[v.typ] || 'Sonstiges',
-          sichtbarkeit: 'alle',
-          status: v.status || 'Geplant',
-          anmeldbar: false,
-          abonnierbar: true,
-          // Detailinfos aus Veranstaltung
-          _bus: v.bus_erforderlich,
-          _busparkplatz_treffzeit: v.busparkplatz_treffzeit,
-          _busparkplatz_adresse: v.busparkplatz_adresse,
-          _umzugsaufstellung_ort: v.umzugsaufstellung_ort,
-          _umzugsaufstellung_zeit: v.umzugsaufstellung_zeit,
-          _festakt_ort: v.festakt_ort,
-          _festakt_zeit: v.festakt_zeit,
-          _dresscode: v.dresscode,
-          _hinweise: v.hinweise,
-          _veranstaltungsort_adresse: v.veranstaltungsort_adresse,
-          _einlass_zeit: v.einlass_zeit,
-          _beginn_zeit: v.beginn_zeit,
-        }));
-
-      // Duplikate vermeiden: wenn schon ein KalenderTermin mit gleichem Datum & Titel existiert, nicht doppelt zeigen
-      const existierendeTitel = new Set(sichtbar.map(t => `${t.datum}|${t.titel.toLowerCase()}`));
-      const neueTermine = fromVeranstaltungen.filter(t =>
-        !existierendeTitel.has(`${t.datum}|${t.titel.toLowerCase()}`)
-      );
-
-      setTermine([...sichtbar, ...neueTermine]);
-    } catch (e) {}
+    } catch (e) {
+      console.error('Kalender load error:', e);
+    }
     setLoading(false);
   };
 

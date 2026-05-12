@@ -45,31 +45,21 @@ export default function Arbeitsdienste() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const me = await base44.auth.me();
-      const [d, v, myMArr] = await Promise.all([
-        base44.entities.Arbeitsdienst.list('datum', 200),
-        kannVerwalten ? base44.entities.Veranstaltung.list('datum', 200) : Promise.resolve([]),
-        me ? base44.entities.Mitglied.filter({ user_id: me.id }) : Promise.resolve([]),
-      ]);
-
-      // Zuweisungen: für Verwalter alle laden; für normale Mitglieder nur eigene
-      const myMitgliedId = myMArr[0]?.id;
-      const z = kannVerwalten
-        ? await base44.entities.ArbeitsdienstZuweisung.list('-created_date', 500)
-        : myMitgliedId
-          ? await base44.entities.ArbeitsdienstZuweisung.filter({ mitglied_id: myMitgliedId })
-          : [];
-      setDienste(d);
-      setZuweisungen(z);
-      setVeranstaltungen(v);
-      if (myMArr[0]) setMyMitglied(myMArr[0]);
-
-      // Mitgliedernamen nur für Verwalter laden (für Eingeteilten-Anzeige und Edit-Modal)
-      if (kannVerwalten) {
-        const m = await base44.entities.Mitglied.list('nachname', 500);
-        setMitglieder(m);
+      const result = await base44.functions.invoke('getArbeitsdiensteSicher', {});
+      if (!result.data.erfolg) {
+        setLoading(false);
+        return;
       }
-    } catch (e) {}
+      setDienste(result.data.dienste || []);
+      setZuweisungen(result.data.zuweisungen || []);
+      setVeranstaltungen(kannVerwalten ? result.data.veranstaltungen || [] : []);
+      setMitglieder(result.data.mitglieder || []);
+      
+      const myMArr = result.data.mitglieder.filter(m => m.user_id === user?.id);
+      if (myMArr[0]) setMyMitglied(myMArr[0]);
+    } catch (e) {
+      console.error('Arbeitsdienste load error:', e);
+    }
     setLoading(false);
   };
 

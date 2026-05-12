@@ -98,26 +98,20 @@ export default function Dashboard() {
   const loadData = async () => {
     setLoading(true);
     try {
+      const result = await base44.functions.invoke('getDashboardSicher', {});
+      
+      if (!result.data.erfolg) {
+        setLoading(false);
+        return;
+      }
+
+      const { mitglieder, veranstaltungen, arbeitsdienste, ehrungen, beitraege } = result.data;
       const today = new Date().toISOString().split('T')[0];
-      const [mitglieder, events, ehrungen, beitraege, dienste] = await Promise.all([
-        isAdminUser ? base44.entities.Mitglied.list('-created_date', 100) : Promise.resolve([]),
-        base44.entities.Veranstaltung.list('datum', 50),
-        isAdminUser ? base44.entities.Ehrung.filter({ status: 'Vorgeschlagen' }) : Promise.resolve([]),
-        isAdminUser ? base44.entities.Beitrag.list('-created_date', 200) : Promise.resolve([]),
-        isAdminUser || kannVerwalten
-          ? base44.entities.Arbeitsdienst.list('datum', 30)
-          : Promise.resolve([]),
-      ]);
-
-      // Zuweisungen nur wenn Arbeitsdienste vorhanden und Nutzer Verwalter ist
-      const dienstIds = dienste.map(d => d.id);
-      const zuweisungen = (isAdminUser || kannVerwalten) && dienstIds.length > 0
-        ? await base44.entities.ArbeitsdienstZuweisung.list('-created_date', 300)
-        : [];
-
-      const kommende = events.filter(e => e.datum >= today).slice(0, 5);
-      setNaechsteEvents(kommende);
+      
+      setNaechsteEvents(veranstaltungen.filter(e => e.datum >= today).slice(0, 5));
       setOffeneEhrungen(ehrungen.slice(0, 4));
+      setArbeitsdienste(arbeitsdienste.slice(0, 4));
+      setNeueMitglieder(mitglieder.slice(0, 3));
 
       const offenB = beitraege.filter(b => b.zahlungsstatus === 'Offen');
       const ueberfaelligB = beitraege.filter(b => b.zahlungsstatus === 'Überfällig');
@@ -127,32 +121,15 @@ export default function Dashboard() {
         total: beitraege.reduce((s, b) => s + (b.betrag || 0), 0)
       });
 
-      // Unterbesetzte Dienste ermitteln
-      const offeneDienste = dienste.filter(d => d.datum >= today && d.status !== 'Abgeschlossen');
-      const unterbesetzte = offeneDienste
-        .filter(d => d.benoetigte_personen > 0)
-        .map(d => {
-          const count = zuweisungen.filter(z => z.arbeitsdienst_id === d.id && z.status !== 'Abgesagt').length;
-          return { ...d, eingeteilt: count };
-        })
-        .filter(d => d.eingeteilt < d.benoetigte_personen)
-        .slice(0, 4);
-
-      setArbeitsdienste(unterbesetzte.length > 0 ? unterbesetzte : offeneDienste.slice(0, 3).map(d => ({
-        ...d,
-        eingeteilt: zuweisungen.filter(z => z.arbeitsdienst_id === d.id && z.status !== 'Abgesagt').length,
-      })));
-
-      setNeueMitglieder(mitglieder.slice(0, 3));
       setStats({
         mitglieder: mitglieder.length,
-        veranstaltungen: kommende.length,
+        veranstaltungen: veranstaltungen.length,
         offeneEhrungen: ehrungen.length,
         offeneBeitraege: offenB.length + ueberfaelligB.length,
-        arbeitsdienste: unterbesetzte.length,
+        arbeitsdienste: arbeitsdienste.length,
       });
     } catch (e) {
-      console.error(e);
+      console.error('Dashboard load error:', e);
     }
     setLoading(false);
   };
