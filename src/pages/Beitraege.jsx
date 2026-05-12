@@ -47,22 +47,27 @@ export default function Beitraege() {
   const loadData = async () => {
     setLoading(true);
     try {
-      // #1 – Datenschutz: nur Kassierer/Vorstand sehen alle Beiträge
-      let bData;
-      if (isAdminUser) {
-        bData = await base44.entities.Beitrag.list('-jahr', 1000);
-      } else {
-        // Normales Mitglied sieht nur eigene Beiträge
-        const me = await base44.auth.me();
-        const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
-        bData = myM[0] ? await base44.entities.Beitrag.filter({ mitglied_id: myM[0].id }) : [];
-      }
-      const m = await base44.entities.Mitglied.list('nachname', 500);
-      setBeitraege(bData);
-      setMitglieder(m);
-      // Beitragssätze laden
       const einst = await base44.entities.AppEinstellung.filter({ schluessel: 'beitraege_saetze' });
       if (einst[0]?.wert_json) setBeitraegeSatz({ ...DEFAULT_BEITRAEGE_SATZ, ...einst[0].wert_json });
+
+      if (isAdminUser) {
+        // Admins sehen alle Beiträge + alle Mitglieder für Namensauflösung
+        const [bData, m] = await Promise.all([
+          base44.entities.Beitrag.list('-jahr', 1000),
+          base44.entities.Mitglied.list('nachname', 500),
+        ]);
+        setBeitraege(bData);
+        setMitglieder(m);
+      } else {
+        // Normales Mitglied: nur eigene Daten
+        const me = await base44.auth.me();
+        const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
+        if (myM[0]) {
+          setMitglieder([myM[0]]);
+          const bData = await base44.entities.Beitrag.filter({ mitglied_id: myM[0].id });
+          setBeitraege(bData);
+        }
+      }
     } catch (e) {}
     setLoading(false);
   };

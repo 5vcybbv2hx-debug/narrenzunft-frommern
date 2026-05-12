@@ -121,24 +121,31 @@ export default function Umzuege() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [data, mitglieder, einstellungen, vereine] = await Promise.all([
+      const me = await base44.auth.me();
+
+      // Basis-Daten für alle User
+      const [data, einstellungen, vereine, myMArr] = await Promise.all([
         base44.entities.Veranstaltung.list('datum', 500),
-        base44.entities.Mitglied.list('nachname', 500),
         base44.entities.AppEinstellung.filter({ schluessel: 'busverantwortliche' }),
         base44.entities.ExternerVerein.list('name', 500),
+        me ? base44.entities.Mitglied.filter({ user_id: me.id }) : Promise.resolve([]),
       ]);
+
       if (einstellungen[0]) setBusverantwortlicheIds(einstellungen[0].wert_ids || []);
       const extern = data.filter(v => v.typ === 'Umzug' || v.typ === 'Abendveranstaltung');
       setUmzuege(extern.sort((a, b) => a.datum.localeCompare(b.datum)));
       setExterneVereine(vereine);
-      setAlleMitglieder(mitglieder);
 
-      const me = await base44.auth.me();
-      const myM = mitglieder.filter(m => m.user_id === me?.id);
-      if (myM[0]) {
-        setMyMitglied(myM[0]);
-        const anmeldungen = await base44.entities.Teilnahme.filter({ mitglied_id: myM[0].id });
+      if (myMArr[0]) {
+        setMyMitglied(myMArr[0]);
+        const anmeldungen = await base44.entities.Teilnahme.filter({ mitglied_id: myMArr[0].id });
         setMeineAnmeldungen(anmeldungen);
+      }
+
+      // Mitgliederliste nur für Admins laden (wird für Verantwortlichen-Auswahl benötigt)
+      if (admin) {
+        const mitglieder = await base44.entities.Mitglied.list('nachname', 500);
+        setAlleMitglieder(mitglieder);
       }
     } catch (e) {}
     setLoading(false);
