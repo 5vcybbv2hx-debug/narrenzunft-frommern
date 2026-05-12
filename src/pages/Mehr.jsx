@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
-import { isAdmin, kannMitgliederlisteSehn, getRollenLabel } from '@/lib/roles';
+import { isAdmin, kannMitgliederlisteSehn, kannEhrungenVerwalten, getRollenLabel } from '@/lib/roles';
 import {
   Users, Shirt, Award, CreditCard, Calendar, Bus,
   Briefcase, Bell, Search, LogOut, ChevronRight,
@@ -12,6 +12,7 @@ export default function Mehr() {
   const { user } = useAuth();
   const admin = isAdmin(user);
   const verantw = kannMitgliederlisteSehn(user);
+  const kannEhrungen = kannEhrungenVerwalten(user);
 
   const handleLogout = () => base44.auth.logout('/');
 
@@ -31,7 +32,7 @@ export default function Mehr() {
       items: [
         { path: '/mitglieder', label: 'Mitglieder', icon: Users, show: admin || verantw },
         { path: '/mitgliedsantraege', label: 'Mitgliedsanträge', icon: FileText, show: admin },
-        { path: '/ehrungen', label: 'Ehrungen', icon: Award, show: admin || verantw },
+        { path: '/ehrungen', label: 'Ehrungen', icon: Award, show: kannEhrungen },
         { path: '/beitraege', label: 'Beiträge', icon: CreditCard, show: admin },
       ]
     },

@@ -38,6 +38,7 @@ function EmptyState({ text }) {
 
 export default function VorstandDashboard() {
   const { user } = useAuth();
+  const hatZugriff = isAdmin(user) || kannArbeitsdiensteVerwalten(user);
   const [loading, setLoading] = useState(true);
   const [veranstaltungen, setVeranstaltungen] = useState([]);
   const [offeneDienste, setOffeneDienste] = useState([]);
@@ -93,6 +94,16 @@ export default function VorstandDashboard() {
     // Proxy über Arbeitsdienste falls verknüpft – hier zeigen wir nur die Veranstaltungsinfo
     return null;
   };
+
+  if (!hatZugriff) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+        <Shield size={40} className="text-muted-foreground mb-3" />
+        <h2 className="text-xl font-bold text-foreground mb-2">Kein Zugriff</h2>
+        <p className="text-sm text-muted-foreground">Nur für Vorstand und Spartenleiter.</p>
+      </div>
+    );
+  }
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { kannAusschussSehn } from '@/lib/roles';
+import { kannAusschussSehn, isAdmin } from '@/lib/roles';
 import { CheckSquare, Plus, Lock, Circle, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -53,9 +53,9 @@ export default function Todos() {
     setLoading(false);
   };
 
-  // Sichtbarkeitslogik: Admin sieht alle; Ausschussmitglied sieht nur eigene
+  // Sichtbarkeitslogik: Admin/Vorstand sieht alle; Ausschussmitglied sieht nur eigene
   const sichtbareTodos = todos.filter(t => {
-    if (user?.role === 'admin') return true; // Admin sieht alles
+    if (isAdmin(user)) return true; // Admin/Vorstand sieht alles
     if (!meinMitglied) return false;
     return (t.verantwortliche_ids || []).includes(meinMitglied.id) ||
            t.ersteller_mitglied_id === meinMitglied.id;
