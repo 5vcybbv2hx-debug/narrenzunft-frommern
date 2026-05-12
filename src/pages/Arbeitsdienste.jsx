@@ -46,12 +46,19 @@ export default function Arbeitsdienste() {
     setLoading(true);
     try {
       const me = await base44.auth.me();
-      const [d, z, v, myMArr] = await Promise.all([
+      const [d, v, myMArr] = await Promise.all([
         base44.entities.Arbeitsdienst.list('datum', 200),
-        base44.entities.ArbeitsdienstZuweisung.list('-created_date', 500),
-        base44.entities.Veranstaltung.list('datum', 200),
+        kannVerwalten ? base44.entities.Veranstaltung.list('datum', 200) : Promise.resolve([]),
         me ? base44.entities.Mitglied.filter({ user_id: me.id }) : Promise.resolve([]),
       ]);
+
+      // Zuweisungen: für Verwalter alle laden; für normale Mitglieder nur eigene
+      const myMitgliedId = myMArr[0]?.id;
+      const z = kannVerwalten
+        ? await base44.entities.ArbeitsdienstZuweisung.list('-created_date', 500)
+        : myMitgliedId
+          ? await base44.entities.ArbeitsdienstZuweisung.filter({ mitglied_id: myMitgliedId })
+          : [];
       setDienste(d);
       setZuweisungen(z);
       setVeranstaltungen(v);

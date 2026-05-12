@@ -76,8 +76,8 @@ export default function Kalender() {
       const me = await base44.auth.me();
       const [myMArr, kalenderTermine, veranstaltungen] = await Promise.all([
         base44.entities.Mitglied.filter({ user_id: me?.id }),
-        base44.entities.KalenderTermin.list('datum', 500),
-        base44.entities.Veranstaltung.list('datum', 500),
+        base44.entities.KalenderTermin.list('datum', 200),
+        base44.entities.Veranstaltung.list('datum', 200),
       ]);
 
       const myM = myMArr[0] || null;

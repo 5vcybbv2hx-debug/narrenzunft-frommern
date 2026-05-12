@@ -48,11 +48,14 @@ export default function Todos() {
     setMeinMitglied(myM);
     setTodos(alleTodos);
 
-    // Mitgliedernamen für Verantwortliche-Anzeige und Todo-Form:
-    // Admins/Vorstand brauchen alle Namen; normale Ausschussmitglieder nur sich selbst
-    if (isAdmin(user)) {
-      const alle = await base44.entities.Mitglied.list('nachname', 500);
-      setMitglieder(alle.filter(m => !m.archiviert));
+    // Mitgliedernamen: nur die tatsächlich als Verantwortliche genutzten IDs laden
+    const alleVerantwortlicheIds = [...new Set(alleTodos.flatMap(t => t.verantwortliche_ids || []))];
+    if (alleVerantwortlicheIds.length > 0) {
+      const mArr = await Promise.all(alleVerantwortlicheIds.map(id => base44.entities.Mitglied.filter({ id })));
+      const loaded = mArr.flat().filter(m => !m.archiviert);
+      // Eigenes Mitglied immer dabei haben (für Todo-Form)
+      if (myM && !loaded.find(m => m.id === myM.id)) loaded.push(myM);
+      setMitglieder(loaded);
     } else if (myM) {
       setMitglieder([myM]);
     }
