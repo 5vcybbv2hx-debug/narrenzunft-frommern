@@ -40,16 +40,22 @@ export default function Todos() {
   const loadData = async () => {
     setLoading(true);
     const me = await base44.auth.me();
-    const [m, alle] = await Promise.all([
+    const [myMArr, alleTodos] = await Promise.all([
       base44.entities.Mitglied.filter({ user_id: me?.id }),
-      base44.entities.Mitglied.list('nachname', 500),
+      base44.entities.Todo.list('-created_date', 500),
     ]);
-    setMeinMitglied(m[0] || null);
-    setMitglieder(alle.filter(m => !m.archiviert));
-
-    // Alle Todos laden – clientseitig nach Verantwortlichkeit filtern
-    const alleTodos = await base44.entities.Todo.list('-created_date', 500);
+    const myM = myMArr[0] || null;
+    setMeinMitglied(myM);
     setTodos(alleTodos);
+
+    // Mitgliedernamen für Verantwortliche-Anzeige und Todo-Form:
+    // Admins/Vorstand brauchen alle Namen; normale Ausschussmitglieder nur sich selbst
+    if (isAdmin(user)) {
+      const alle = await base44.entities.Mitglied.list('nachname', 500);
+      setMitglieder(alle.filter(m => !m.archiviert));
+    } else if (myM) {
+      setMitglieder([myM]);
+    }
     setLoading(false);
   };
 

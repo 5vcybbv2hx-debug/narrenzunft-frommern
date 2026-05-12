@@ -35,18 +35,21 @@ export default function Inventar() {
   const loadData = async () => {
     setLoading(true);
     const me = await base44.auth.me();
-    const [a, al, m, ep, myM] = await Promise.all([
+    const [a, al, ep, myMArr] = await Promise.all([
       base44.entities.Ausruestung.list('name', 200),
       base44.entities.Ausleihe.list('-von_datum', 500),
-      base44.entities.Mitglied.list('nachname', 500),
-      base44.entities.ExternePerson.list('name', 200),
+      admin ? base44.entities.ExternePerson.list('name', 200) : Promise.resolve([]),
       base44.entities.Mitglied.filter({ user_id: me?.id }),
     ]);
     setAusruestungen(a.filter(x => x.aktiv !== false));
     setAusleihen(al);
-    setMitglieder(m.filter(x => !x.archiviert));
     setExternePersonen(ep);
-    setMeinMitglied(myM[0] || null);
+    setMeinMitglied(myMArr[0] || null);
+    // Mitgliedernamen nur für Admins laden (für Ausleiher-Anzeige und Form)
+    if (admin) {
+      const m = await base44.entities.Mitglied.list('nachname', 500);
+      setMitglieder(m.filter(x => !x.archiviert));
+    }
     setLoading(false);
   };
 
