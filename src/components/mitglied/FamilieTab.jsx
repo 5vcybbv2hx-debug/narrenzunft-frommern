@@ -41,6 +41,7 @@ export default function FamilieTab({ mitglied, isAdmin }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ verwandter_id: '', beziehung: 'Elternteil', notizen: '' });
   const [suchbegriff, setSuchbegriff] = useState('');
+  const [suchErgebnisse, setSuchErgebnisse] = useState([]);
   const [ausgewaehlt, setAusgewaehlt] = useState(null); // { id, vorname, nachname }
 
   useEffect(() => {
@@ -50,15 +51,22 @@ export default function FamilieTab({ mitglied, isAdmin }) {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [v, m] = await Promise.all([
-        // Beziehungen in beide Richtungen laden
+      const [v, vUmgekehrt] = await Promise.all([
         base44.entities.Verwandtschaft.filter({ mitglied_id: mitglied.id }),
-        base44.entities.Mitglied.list('nachname', 1000),
+        base44.entities.Verwandtschaft.filter({ verwandter_id: mitglied.id }),
       ]);
-      // Auch umgekehrte Beziehungen laden (wo dieses Mitglied der Verwandte ist)
-      const vUmgekehrt = await base44.entities.Verwandtschaft.filter({ verwandter_id: mitglied.id });
-      setVerwandtschaften([...v, ...vUmgekehrt]);
-      setAlleMitglieder(m);
+      const alleVerwandtschaften = [...v, ...vUmgekehrt];
+      setVerwandtschaften(alleVerwandtschaften);
+
+      // Nur die verknüpften Mitglieder laden (für Anzeige)
+      const ids = [...new Set(alleVerwandtschaften.map(x =>
+        x.mitglied_id === mitglied.id ? x.verwandter_id : x.mitglied_id
+      ).filter(Boolean))];
+      if (ids.length > 0) {
+        const m = await Promise.all(ids.map(id => base44.entities.Mitglied.filter({ id })));
+        setAlleMitglieder(m.flat());
+      }
+      // Für Admin-Suche: vollständige Liste wird lazy via searchMitgliedSicher geladen (Suchfeld)
     } catch (e) {}
     setLoading(false);
   };
@@ -91,6 +99,18 @@ export default function FamilieTab({ mitglied, isAdmin }) {
   const getMitglied = (id) => alleMitglieder.find(m => m.id === id);
   const getAlter = (geb) => geb ? differenceInYears(new Date(), new Date(geb)) : null;
 
+  const handleSuche = async (q) => {
+    setSuchbegriff(q);
+    if (q.length < 2) { setSuchErgebnisse([]); return; }
+    try {
+      const res = await base44.functions.invoke('searchMitgliedSicher', { q });
+      const verknuepfteIds = new Set(verwandtschaften.map(v =>
+        v.mitglied_id === mitglied.id ? v.verwandter_id : v.mitglied_id
+      ));
+      setSuchErgebnisse((res.data?.mitglieder || []).filter(m => m.id !== mitglied.id && !verknuepfteIds.has(m.id)));
+    } catch {}
+  };
+
   // Beziehung aus Sicht dieses Mitglieds ermitteln
   const getBeziehungLabel = (v) => {
     if (v.mitglied_id === mitglied.id) return v.beziehung;
@@ -114,7 +134,6 @@ export default function FamilieTab({ mitglied, isAdmin }) {
 
   // Bereits verknüpfte IDs (für Dropdown-Filter)
   const verknuepfteIds = new Set(verwandtschaften.map(v => getVerwandterMitgliedId(v)));
-  const verfuegbareMitglieder = alleMitglieder.filter(m => m.id !== mitglied.id && !verknuepfteIds.has(m.id));
 
   // Nach Gruppen sortieren
   const gruppenMitDaten = GRUPPEN.map(gruppe => ({
@@ -242,36 +261,34 @@ export default function FamilieTab({ mitglied, isAdmin }) {
                       type="text"
                       placeholder="Name eingeben..."
                       value={suchbegriff}
-                      onChange={e => setSuchbegriff(e.target.value)}
+                      onChange={e => handleSuche(e.target.value)}
                       autoFocus
                       className="w-full pl-8 pr-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
                     />
-                    {suchbegriff.length >= 1 && (
+                    {suchbegriff.length >= 2 && (
                       <div className="absolute z-20 left-0 right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-xl max-h-52 overflow-y-auto">
-                        {verfuegbareMitglieder
-                          .filter(m => `${m.vorname} ${m.nachname}`.toLowerCase().includes(suchbegriff.toLowerCase()))
-                          .slice(0, 10)
-                          .map(m => (
-                            <button
-                              key={m.id}
-                              type="button"
-                              onClick={() => {
-                                setAusgewaehlt(m);
-                                setForm(p => ({ ...p, verwandter_id: m.id }));
-                                setSuchbegriff('');
-                              }}
-                              className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary transition-colors text-left"
-                            >
-                              <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
-                                {m.vorname?.[0]}{m.nachname?.[0]}
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-foreground">{m.vorname} {m.nachname}</p>
-                                {m.mitgliedsstatus && <p className="text-xs text-muted-foreground">{m.mitgliedsstatus}</p>}
-                              </div>
-                            </button>
-                          ))}
-                        {verfuegbareMitglieder.filter(m => `${m.vorname} ${m.nachname}`.toLowerCase().includes(suchbegriff.toLowerCase())).length === 0 && (
+                        {suchErgebnisse.slice(0, 10).map(m => (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => {
+                              setAusgewaehlt(m);
+                              setForm(p => ({ ...p, verwandter_id: m.id }));
+                              setSuchbegriff('');
+                              setSuchErgebnisse([]);
+                            }}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary transition-colors text-left"
+                          >
+                            <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                              {m.vorname?.[0]}{m.nachname?.[0]}
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-foreground">{m.vorname} {m.nachname}</p>
+                              {m.mitgliedsstatus && <p className="text-xs text-muted-foreground">{m.mitgliedsstatus}</p>}
+                            </div>
+                          </button>
+                        ))}
+                        {suchErgebnisse.length === 0 && (
                           <p className="text-sm text-muted-foreground text-center py-4">Keine Ergebnisse</p>
                         )}
                       </div>

@@ -27,6 +27,7 @@ export default function AuslagenTab({ gruppeId, isAdmin }) {
   const [form, setForm] = useState(EMPTY_AUSLAGE);
   const [saving, setSaving] = useState(false);
   const [suche, setSuche] = useState('');
+  const [suchErgebnisse, setSuchErgebnisse] = useState([]);
   const [offen, setOffen] = useState(false);
   const containerRef = useRef(null);
 
@@ -45,12 +46,15 @@ export default function AuslagenTab({ gruppeId, isAdmin }) {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [a, m] = await Promise.all([
-        base44.entities.SpartenAuslage.filter({ haesgruppe_id: gruppeId }),
-        base44.entities.Mitglied.list('nachname', 500),
-      ]);
-      setAuslagen(a.sort((x, y) => y.datum.localeCompare(x.datum)));
-      setMitglieder(m);
+      const a = await base44.entities.SpartenAuslage.filter({ haesgruppe_id: gruppeId });
+      const sorted = a.sort((x, y) => y.datum.localeCompare(x.datum));
+      setAuslagen(sorted);
+      // Nur die tatsächlichen Ausleger laden (für Anzeige)
+      const mitgliedIds = [...new Set(sorted.map(x => x.mitglied_id).filter(Boolean))];
+      if (mitgliedIds.length > 0) {
+        const m = await Promise.all(mitgliedIds.map(id => base44.entities.Mitglied.filter({ id })));
+        setMitglieder(m.flat());
+      }
     } catch (e) {}
     setLoading(false);
   };
@@ -134,35 +138,46 @@ export default function AuslagenTab({ gruppeId, isAdmin }) {
                   type="text"
                   placeholder="Name suchen..."
                   value={suche}
-                  onChange={e => { setSuche(e.target.value); setOffen(true); }}
+                  onChange={async e => {
+                    const q = e.target.value;
+                    setSuche(q);
+                    setOffen(true);
+                    if (q.length >= 2) {
+                      try {
+                        const res = await base44.functions.invoke('searchMitgliedSicher', { q });
+                        setSuchErgebnisse(res.data?.mitglieder || []);
+                      } catch {}
+                    } else {
+                      setSuchErgebnisse([]);
+                    }
+                  }}
                   onFocus={() => setOffen(true)}
                   className="w-full pl-8 pr-3 py-2 rounded-lg bg-card border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
                 />
               </div>
 
-              {offen && suche.length >= 1 && (
+              {offen && suche.length >= 2 && (
                 <div className="absolute z-30 left-0 right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-xl max-h-40 overflow-y-auto">
-                  {mitglieder
-                    .filter(m => `${m.vorname} ${m.nachname}`.toLowerCase().includes(suche.toLowerCase()))
-                    .slice(0, 8)
-                    .map(m => (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => {
-                          setForm(p => ({ ...p, mitglied_id: m.id }));
-                          setSuche(`${m.vorname} ${m.nachname}`);
-                          setOffen(false);
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs hover:bg-secondary border-b border-border last:border-0 transition-colors"
-                      >
-                        <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[10px] font-bold shrink-0">
-                          {m.vorname?.[0]}{m.nachname?.[0]}
-                        </div>
-                        {m.vorname} {m.nachname}
-                      </button>
-                    ))}
-                  {mitglieder.filter(m => `${m.vorname} ${m.nachname}`.toLowerCase().includes(suche.toLowerCase())).length === 0 && (
+                  {suchErgebnisse.slice(0, 8).map(m => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => {
+                        setForm(p => ({ ...p, mitglied_id: m.id }));
+                        setSuche(`${m.vorname} ${m.nachname}`);
+                        setOffen(false);
+                        // Dieses Mitglied zur lokalen Liste hinzufügen (für Anzeige)
+                        setMitglieder(prev => prev.find(x => x.id === m.id) ? prev : [...prev, m]);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs hover:bg-secondary border-b border-border last:border-0 transition-colors"
+                    >
+                      <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[10px] font-bold shrink-0">
+                        {m.vorname?.[0]}{m.nachname?.[0]}
+                      </div>
+                      {m.vorname} {m.nachname}
+                    </button>
+                  ))}
+                  {suchErgebnisse.length === 0 && (
                     <p className="text-xs text-muted-foreground text-center py-2">Keine Ergebnisse</p>
                   )}
                 </div>
