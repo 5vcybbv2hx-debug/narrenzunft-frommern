@@ -53,8 +53,8 @@ export default function Beitraege() {
       if (isAdminUser) {
         // Admins sehen alle Beiträge + alle Mitglieder für Namensauflösung
         const [bData, m] = await Promise.all([
-          base44.entities.Beitrag.list('-jahr', 1000),
-          base44.entities.Mitglied.list('nachname', 500),
+          base44.entities.Beitrag.list('-jahr', 500),
+          base44.entities.Mitglied.list('nachname', 300),
         ]);
         setBeitraege(bData);
         setMitglieder(m);

@@ -29,8 +29,8 @@ export default function Vereine() {
     setLoading(true);
     try {
       const [v, k] = await Promise.all([
-        base44.entities.ExternerVerein.list('name', 500),
-        base44.entities.VereinKontakt.list('-created_date', 1000),
+        base44.entities.ExternerVerein.list('name', 300),
+        base44.entities.VereinKontakt.list('-created_date', 500),
       ]);
       setVereine(v.sort((a, b) => a.name.localeCompare(b.name)));
       setKontakte(k);

@@ -39,7 +39,7 @@ export default function Mitgliedsantraege() {
     setLoading(true);
     const [a, m] = await Promise.all([
       base44.entities.Mitgliedsantrag.list('-created_date', 200),
-      base44.entities.Mitglied.list('nachname', 500),
+      base44.entities.Mitglied.list('nachname', 300),
     ]);
     setAntraege(a);
     setMitglieder(m);
