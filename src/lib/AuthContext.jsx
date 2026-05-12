@@ -94,6 +94,37 @@ export const AuthProvider = ({ children }) => {
       // Now check if the user is authenticated
       setIsLoadingAuth(true);
       const currentUser = await base44.auth.me();
+
+      // Auto-Verknüpfung: Mitglied mit gleicher Email mit User verknüpfen + Rolle synchronisieren
+      try {
+        const mitglieder = await base44.entities.Mitglied.filter({ email: currentUser.email });
+        const mitglied = mitglieder[0];
+        if (mitglied) {
+          // user_id setzen falls noch nicht gesetzt
+          if (!mitglied.user_id) {
+            await base44.entities.Mitglied.update(mitglied.id, { user_id: currentUser.id });
+          }
+          // Rolle vom Mitglied-Datensatz auf den User übertragen falls vorhanden und abweichend
+          const gewuenschteRolle = mitglied.app_rolle;
+          if (gewuenschteRolle && gewuenschteRolle !== currentUser.role) {
+            const baseRolle = ['vorstand', 'stellv_vorstand'].includes(gewuenschteRolle) ? 'admin' : 'user';
+            // Nur wenn Mitglied eine höhere Rolle haben soll als aktuell
+            if (baseRolle === 'admin' && currentUser.role !== 'admin') {
+              await base44.auth.updateMe({ role: gewuenschteRolle });
+              currentUser.role = gewuenschteRolle;
+            } else if (baseRolle !== 'admin') {
+              await base44.auth.updateMe({ role: gewuenschteRolle });
+              currentUser.role = gewuenschteRolle;
+            }
+          }
+          // Mitglied-Daten an User-Objekt anhängen für Zusatz-Berechtigungen
+          currentUser._mitglied = mitglied;
+        }
+      } catch (e) {
+        // Fehler bei Auto-Verknüpfung nicht kritisch
+        console.warn('Auto-Verknüpfung fehlgeschlagen:', e);
+      }
+
       setUser(currentUser);
       setIsAuthenticated(true);
       setIsLoadingAuth(false);
