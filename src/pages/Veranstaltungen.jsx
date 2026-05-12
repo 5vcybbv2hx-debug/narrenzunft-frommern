@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { Calendar, Plus, MapPin, Clock, Users, Bus, ChevronRight, Filter, LayoutTemplate } from 'lucide-react';
+import { isAdmin } from '@/lib/roles';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import VeranstaltungsvorlagenModal from '@/components/veranstaltung/VeranstaltungsvorlagenModal';
@@ -28,7 +29,7 @@ export default function Veranstaltungen() {
   const [veranstaltungen, setVeranstaltungen] = useState([]);
   const [filter, setFilter] = useState('Alle');
   const [loading, setLoading] = useState(true);
-  const isAdmin = user?.role === 'admin';
+  const kannVerwalten = isAdmin(user);
   const today = new Date().toISOString().split('T')[0];
   const [showVorlagen, setShowVorlagen] = useState(false);
 
@@ -70,7 +71,7 @@ export default function Veranstaltungen() {
           <h1 className="text-2xl font-bold text-foreground">Eigene Veranstaltungen</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Intern organisierte Termine · {veranstaltungen.length} gesamt</p>
         </div>
-        {isAdmin && (
+        {kannVerwalten && (
           <div className="flex gap-2">
             <button
               onClick={() => setShowVorlagen(true)}
