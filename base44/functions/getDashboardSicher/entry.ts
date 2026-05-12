@@ -6,10 +6,10 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const isAdmin = ['vorstand', 'stellv_vorstand', 'admin'].includes(user.role);
+    const isAdminUser = ['vorstand', 'stellv_vorstand', 'admin'].includes(user.role);
 
     // Admin-Dashboard
-    if (isAdmin) {
+    if (isAdminUser) {
       const [mitglieder, veranstaltungen, arbeitsdienste, ehrungen, beitraege, haesgruppen] = await Promise.all([
         base44.asServiceRole.entities.Mitglied.list('nachname', 300),
         base44.asServiceRole.entities.Veranstaltung.list('-datum', 100),

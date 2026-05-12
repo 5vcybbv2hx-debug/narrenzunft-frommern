@@ -78,13 +78,13 @@ export default function Kalender() {
         setLoading(false);
         return;
       }
-      setTermine(result.data.termine || []);
-      
+      setTermine(result.data.termine);
+
       const me = await base44.auth.me();
-      const myMArr = await base44.asServiceRole?.entities?.Mitglied?.filter?.({ user_id: me?.id }) || [];
+      const myMArr = await base44.entities.Mitglied.filter({ user_id: me?.id });
       const myM = myMArr[0] || null;
       setMyMitglied(myM);
-      
+
       if (myM) {
         const anm = await base44.entities.KalenderAnmeldung.filter({ mitglied_id: myM.id });
         setAnmeldungen(anm);

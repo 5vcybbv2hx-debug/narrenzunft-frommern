@@ -6,12 +6,9 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const isAdmin = ['vorstand', 'stellv_vorstand', 'admin'].includes(user.role);
-    const isAusschuss = user.role === 'ausschuss';
+    const isAdminUser = ['vorstand', 'stellv_vorstand', 'admin'].includes(user.role);
 
-    const heute = new Date().toISOString().split('T')[0];
-
-    if (isAdmin) {
+    if (isAdminUser) {
       // Admin: alles
       const termine = await base44.asServiceRole.entities.KalenderTermin.list('datum', 500);
       return Response.json({

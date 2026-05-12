@@ -29,7 +29,7 @@ export default function Haes() {
   const [newHaes, setNewHaes] = useState({ haesnummer: '', haesgruppe_id: '', bezeichnung: '', status: 'Frei' });
   const [selectedGruppeToken, setSelectedGruppeToken] = useState(null);
   const [showHistorieImport, setShowHistorieImport] = useState(false);
-  const isAdmin = user?.role === 'admin';
+  const isAdminUser = user?.role === 'admin';
 
   useEffect(() => {
     loadData();
@@ -43,9 +43,11 @@ export default function Haes() {
         setLoading(false);
         return;
       }
-      setHaes(result.data.haes || []);
-      setGruppen(result.data.gruppen || []);
-      setMitglieder(result.data.mitglieder || []);
+      setHaes(result.data.haes);
+      setGruppen(result.data.gruppen);
+      if (isAdminUser) {
+        setMitglieder(result.data.mitglieder);
+      }
     } catch (e) {
       console.error('[Haes]', e instanceof Error ? e.message : e);
     }
@@ -112,7 +114,7 @@ export default function Haes() {
           <h1 className="text-2xl font-bold text-foreground">Häs & Masken</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{haes.length} Häs gesamt</p>
         </div>
-        {isAdmin && (
+        {isAdminUser && (
           <div className="flex gap-2">
             <button
               onClick={() => setShowHistorieImport(true)}
@@ -169,7 +171,7 @@ export default function Haes() {
               >
                 {g.name}
               </button>
-              {isAdmin && (
+              {isAdminUser && (
                 <button
                   onClick={() => setSelectedGruppeToken(g)}
                   title="Kalender-Feed-Token anzeigen"

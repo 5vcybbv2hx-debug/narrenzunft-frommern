@@ -50,13 +50,17 @@ export default function Arbeitsdienste() {
         setLoading(false);
         return;
       }
-      setDienste(result.data.dienste || []);
-      setZuweisungen(result.data.zuweisungen || []);
-      setVeranstaltungen(kannVerwalten ? result.data.veranstaltungen || [] : []);
-      setMitglieder(result.data.mitglieder || []);
-      
+      setDienste(result.data.dienste);
+      setZuweisungen(result.data.zuweisungen);
+      if (kannVerwalten) {
+        setVeranstaltungen(result.data.veranstaltungen);
+      }
+      setMitglieder(result.data.mitglieder);
+
       const myMArr = result.data.mitglieder.filter(m => m.user_id === user?.id);
-      if (myMArr[0]) setMyMitglied(myMArr[0]);
+      if (myMArr.length > 0) {
+        setMyMitglied(myMArr[0]);
+      }
     } catch (e) {
       console.error('[Arbeitsdienste]', e instanceof Error ? e.message : e);
     }

@@ -99,7 +99,6 @@ export default function Dashboard() {
     setLoading(true);
     try {
       const result = await base44.functions.invoke('getDashboardSicher', {});
-      
       if (!result.data.erfolg) {
         setLoading(false);
         return;
