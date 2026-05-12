@@ -95,33 +95,22 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingAuth(true);
       const currentUser = await base44.auth.me();
 
-      // Auto-Verknüpfung: Mitglied mit gleicher Email mit User verknüpfen + Rolle synchronisieren
+      // Sichere serverseitige Auto-Verknüpfung: Backend-Function prüft Email & setzt Rolle
       try {
-        const mitglieder = await base44.entities.Mitglied.filter({ email: currentUser.email });
-        const mitglied = mitglieder[0];
-        if (mitglied) {
-          // user_id setzen falls noch nicht gesetzt
-          if (!mitglied.user_id) {
-            await base44.entities.Mitglied.update(mitglied.id, { user_id: currentUser.id });
+        const res = await base44.functions.invoke('verknuepfeMitgliedLogin', {});
+        if (res.data?.linked) {
+          // Rolle wurde ggf. serverseitig geändert – User neu laden
+          if (res.data.updates?.some(u => u.startsWith('role'))) {
+            const updatedUser = await base44.auth.me();
+            Object.assign(currentUser, updatedUser);
           }
-          // Rolle vom Mitglied-Datensatz auf den User übertragen falls vorhanden und abweichend
-          const gewuenschteRolle = mitglied.app_rolle;
-          if (gewuenschteRolle && gewuenschteRolle !== currentUser.role) {
-            const baseRolle = ['vorstand', 'stellv_vorstand'].includes(gewuenschteRolle) ? 'admin' : 'user';
-            // Nur wenn Mitglied eine höhere Rolle haben soll als aktuell
-            if (baseRolle === 'admin' && currentUser.role !== 'admin') {
-              await base44.auth.updateMe({ role: gewuenschteRolle });
-              currentUser.role = gewuenschteRolle;
-            } else if (baseRolle !== 'admin') {
-              await base44.auth.updateMe({ role: gewuenschteRolle });
-              currentUser.role = gewuenschteRolle;
-            }
-          }
-          // Mitglied-Daten an User-Objekt anhängen für Zusatz-Berechtigungen
-          currentUser._mitglied = mitglied;
+          // Zusatz-Berechtigungen und mitglied_id ans User-Objekt hängen (nur frontend-lokal)
+          currentUser._mitglied = {
+            id: res.data.mitglied_id,
+            zusatz_berechtigungen: res.data.zusatz_berechtigungen || [],
+          };
         }
       } catch (e) {
-        // Fehler bei Auto-Verknüpfung nicht kritisch
         console.warn('Auto-Verknüpfung fehlgeschlagen:', e);
       }
 
