@@ -1,12 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { X, CheckCircle, Loader2, AlertTriangle } from 'lucide-react';
+import { X, CheckCircle, Loader2, AlertTriangle, Users, Bus } from 'lucide-react';
 
 export default function UmzugAbschliessenModal({ veranstaltung, onClose, onAbgeschlossen }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [buskostenErstellen, setBuskostenErstellen] = useState(false);
+  const [vorschau, setVorschau] = useState(null);
+
+  useEffect(() => {
+    // Vorschau-Statistik laden
+    base44.entities.Teilnahme.filter({ veranstaltung_id: veranstaltung.id })
+      .then(teilnahmen => {
+        setVorschau({
+          angemeldet: teilnahmen.length,
+          anwesend: teilnahmen.filter(t => t.status === 'Anwesend').length,
+          bus: teilnahmen.filter(t => t.bus === true).length,
+          busAnwesend: teilnahmen.filter(t => t.bus_anwesend === true).length,
+        });
+      })
+      .catch(() => {});
+  }, [veranstaltung.id]);
 
   const handleAbschliessen = async () => {
     setLoading(true);
@@ -40,6 +55,28 @@ export default function UmzugAbschliessenModal({ veranstaltung, onClose, onAbges
               <p className="text-sm font-semibold text-foreground mb-1">{veranstaltung.titel}</p>
               <p className="text-xs text-muted-foreground">{veranstaltung.datum} · {veranstaltung.ort || 'Kein Ort'}</p>
             </div>
+
+            {/* Vorschau-Statistik */}
+            {vorschau && (
+              <div className="grid grid-cols-4 gap-2 mb-4">
+                <div className="bg-secondary rounded-xl p-2.5 text-center">
+                  <p className="text-lg font-bold text-foreground">{vorschau.angemeldet}</p>
+                  <p className="text-[10px] text-muted-foreground">Angemeldet</p>
+                </div>
+                <div className="bg-green-500/10 rounded-xl p-2.5 text-center">
+                  <p className="text-lg font-bold text-green-400">{vorschau.anwesend}</p>
+                  <p className="text-[10px] text-muted-foreground">Anwesend</p>
+                </div>
+                <div className="bg-secondary rounded-xl p-2.5 text-center">
+                  <p className="text-lg font-bold text-blue-400">{vorschau.bus}</p>
+                  <p className="text-[10px] text-muted-foreground">Bus</p>
+                </div>
+                <div className="bg-blue-500/10 rounded-xl p-2.5 text-center">
+                  <p className="text-lg font-bold text-blue-300">{vorschau.busAnwesend}</p>
+                  <p className="text-[10px] text-muted-foreground">Bus ✓</p>
+                </div>
+              </div>
+            )}
 
             <p className="text-sm text-muted-foreground mb-4">
               Beim Abschließen werden Anwesenheiten geprüft, Ehrungszähler aktualisiert und der Status auf „Abgeschlossen" gesetzt.
@@ -80,26 +117,64 @@ export default function UmzugAbschliessenModal({ veranstaltung, onClose, onAbges
             </div>
           </>
         ) : (
-          <div className="text-center py-4">
-            <CheckCircle size={40} className="text-green-400 mx-auto mb-3" />
-            <p className="font-semibold text-foreground mb-1">Erfolgreich abgeschlossen</p>
-            <div className="grid grid-cols-2 gap-2 mt-4 text-sm">
-              <div className="bg-secondary rounded-xl p-3">
-                <p className="text-xl font-bold text-primary">{result.anwesend ?? '–'}</p>
+          <div className="py-2">
+            <div className="flex items-center gap-3 mb-4">
+              <CheckCircle size={28} className="text-green-400 shrink-0" />
+              <div>
+                <p className="font-semibold text-foreground">Erfolgreich abgeschlossen</p>
+                <p className="text-xs text-muted-foreground">{veranstaltung.titel}</p>
+              </div>
+            </div>
+
+            {/* Statistik */}
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              <div className="bg-secondary rounded-xl p-3 text-center">
+                <p className="text-2xl font-bold text-foreground">{result.statistik?.angemeldet ?? result.anwesend ?? '–'}</p>
+                <p className="text-xs text-muted-foreground">Angemeldet</p>
+              </div>
+              <div className="bg-secondary rounded-xl p-3 text-center">
+                <p className="text-2xl font-bold text-green-400">{result.statistik?.anwesend ?? result.anwesend ?? '–'}</p>
                 <p className="text-xs text-muted-foreground">Anwesend</p>
               </div>
-              <div className="bg-secondary rounded-xl p-3">
-                <p className="text-xl font-bold text-primary">{result.ehrungen_aktualisiert ?? '–'}</p>
-                <p className="text-xs text-muted-foreground">Ehrungen aktualisiert</p>
+              <div className="bg-secondary rounded-xl p-3 text-center">
+                <p className="text-2xl font-bold text-blue-400">{result.statistik?.bus_anwesend ?? '–'}</p>
+                <p className="text-xs text-muted-foreground">Bus anwesend</p>
               </div>
-              {result.buskosten_erstellt != null && (
-                <div className="bg-secondary rounded-xl p-3 col-span-2">
-                  <p className="text-xl font-bold text-primary">{result.buskosten_erstellt}</p>
-                  <p className="text-xs text-muted-foreground">Buskosten erstellt</p>
-                </div>
-              )}
+              <div className="bg-secondary rounded-xl p-3 text-center">
+                <p className="text-2xl font-bold text-primary">{result.ehrungen_aktualisiert ?? '–'}</p>
+                <p className="text-xs text-muted-foreground">Ehrungen vorgeschlagen</p>
+              </div>
             </div>
-            <button onClick={onClose} className="mt-5 w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold">
+
+            {/* Neue Ehrungen */}
+            {result.neue_ehrungen?.length > 0 && (
+              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 mb-3">
+                <p className="text-xs font-semibold text-yellow-400 mb-2">🏅 Neue Ehrungen</p>
+                {result.neue_ehrungen.map((e, i) => (
+                  <p key={i} className="text-xs text-foreground">{e.mitglied} – {e.umzuege} Umzüge → Stufe {e.stufe}</p>
+                ))}
+              </div>
+            )}
+
+            {/* Buskosten */}
+            {result.buskosten_erstellt != null && (
+              <div className="bg-secondary rounded-xl p-3 mb-3 text-center">
+                <p className="text-xl font-bold text-primary">{result.buskosten_erstellt}</p>
+                <p className="text-xs text-muted-foreground">Buskosten erstellt</p>
+              </div>
+            )}
+
+            {/* Warnungen */}
+            {result.warnungen?.length > 0 && (
+              <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 mb-3">
+                <p className="text-xs font-semibold text-orange-400 mb-1">⚠ Hinweise</p>
+                {result.warnungen.map((w, i) => (
+                  <p key={i} className="text-xs text-orange-300">{w}</p>
+                ))}
+              </div>
+            )}
+
+            <button onClick={onClose} className="mt-2 w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold">
               Schließen
             </button>
           </div>

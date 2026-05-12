@@ -902,22 +902,18 @@ export default function MitgliedDetail() {
                       onClick={async () => {
                         setAssigningHaes(true);
                         try {
-                          const heute = new Date().toISOString().split('T')[0];
-                          await base44.entities.HaesHistorie.create({
+                          await base44.functions.invoke('weiseHaesZuSicher', {
                             haes_id: h.id,
                             mitglied_id: mitglied.id,
-                            von_datum: heute,
-                            aktiv: true,
-                            notizen: '',
-                          });
-                          await base44.entities.Haes.update(h.id, {
-                            aktueller_besitzer_id: mitglied.id,
-                            status: 'Verliehen',
+                            aktion: 'verliehen',
                           });
                           setShowHaesModal(false);
                           setHaessuche('');
                           loadMitglied();
-                        } catch (e) {}
+                        } catch (e) {
+                          console.error('Häs-Zuweisung fehlgeschlagen:', e);
+                          alert('Häs konnte nicht zugewiesen werden: ' + (e?.response?.data?.error || e.message));
+                        }
                         setAssigningHaes(false);
                       }}
                       disabled={assigningHaes}
