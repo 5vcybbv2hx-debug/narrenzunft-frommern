@@ -17,12 +17,13 @@ export default function ArbeitsdiensteMitgliedTab({ mitgliedId }) {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [z, d] = await Promise.all([
-        base44.entities.ArbeitsdienstZuweisung.filter({ mitglied_id: mitgliedId }),
-        base44.entities.Arbeitsdienst.list('datum', 500),
-      ]);
+      const z = await base44.entities.ArbeitsdienstZuweisung.filter({ mitglied_id: mitgliedId });
       setZuweisungen(z);
-      setDienste(d);
+      const dienstIds = [...new Set(z.map(x => x.arbeitsdienst_id).filter(Boolean))];
+      if (dienstIds.length > 0) {
+        const d = await Promise.all(dienstIds.map(id => base44.entities.Arbeitsdienst.filter({ id })));
+        setDienste(d.flat());
+      }
     } catch (e) {}
     setLoading(false);
   };

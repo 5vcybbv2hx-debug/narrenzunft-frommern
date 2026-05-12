@@ -17,12 +17,13 @@ export default function AktivitaetTab({ mitgliedId }) {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [t, v] = await Promise.all([
-        base44.entities.Teilnahme.filter({ mitglied_id: mitgliedId }),
-        base44.entities.Veranstaltung.list('datum', 500),
-      ]);
+      const t = await base44.entities.Teilnahme.filter({ mitglied_id: mitgliedId });
       setTeilnahmen(t);
-      setVeranstaltungen(v);
+      const veranstaltungIds = [...new Set(t.map(x => x.veranstaltung_id).filter(Boolean))];
+      if (veranstaltungIds.length > 0) {
+        const v = await Promise.all(veranstaltungIds.map(id => base44.entities.Veranstaltung.filter({ id })));
+        setVeranstaltungen(v.flat());
+      }
     } catch (e) {}
     setLoading(false);
   };
