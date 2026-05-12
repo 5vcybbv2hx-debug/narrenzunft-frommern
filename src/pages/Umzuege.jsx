@@ -124,12 +124,14 @@ export default function Umzuege() {
       const me = await base44.auth.me();
 
       // Basis-Daten für alle User
-      const [data, einstellungen, vereine, myMArr] = await Promise.all([
-        base44.entities.Veranstaltung.list('datum', 500),
+      const [data, einstellungen, myMArr] = await Promise.all([
+        base44.entities.Veranstaltung.list('datum', 200),
         base44.entities.AppEinstellung.filter({ schluessel: 'busverantwortliche' }),
-        base44.entities.ExternerVerein.list('name', 500),
         me ? base44.entities.Mitglied.filter({ user_id: me.id }) : Promise.resolve([]),
       ]);
+
+      // Externe Vereine nur für Admins laden (wird nur im Bearbeitungsformular benötigt)
+      const vereine = admin ? await base44.entities.ExternerVerein.list('name', 200) : [];
 
       if (einstellungen[0]) setBusverantwortlicheIds(einstellungen[0].wert_ids || []);
       const extern = data.filter(v => v.typ === 'Umzug' || v.typ === 'Abendveranstaltung');

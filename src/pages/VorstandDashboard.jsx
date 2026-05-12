@@ -56,9 +56,9 @@ export default function VorstandDashboard() {
     try {
       const [v, m, ad, adz] = await Promise.all([
         base44.entities.Veranstaltung.list('datum', 100),
-        base44.entities.Mitglied.list('nachname', 500),
-        base44.entities.Arbeitsdienst.list('datum', 200),
-        base44.entities.ArbeitsdienstZuweisung.list('-created_date', 1000),
+        base44.entities.Mitglied.list('nachname', 300),
+        base44.entities.Arbeitsdienst.list('datum', 100),
+        base44.entities.ArbeitsdienstZuweisung.list('-created_date', 500),
       ]);
       setMitglieder(m);
       setDienstZuweisungen(adz);
