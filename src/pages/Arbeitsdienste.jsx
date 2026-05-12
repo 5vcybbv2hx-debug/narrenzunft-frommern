@@ -45,20 +45,23 @@ export default function Arbeitsdienste() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [d, z, m, v] = await Promise.all([
+      const me = await base44.auth.me();
+      const [d, z, v, myMArr] = await Promise.all([
         base44.entities.Arbeitsdienst.list('datum', 200),
         base44.entities.ArbeitsdienstZuweisung.list('-created_date', 500),
-        base44.entities.Mitglied.list('nachname', 500),
         base44.entities.Veranstaltung.list('datum', 200),
+        me ? base44.entities.Mitglied.filter({ user_id: me.id }) : Promise.resolve([]),
       ]);
       setDienste(d);
       setZuweisungen(z);
-      setMitglieder(m);
       setVeranstaltungen(v);
+      if (myMArr[0]) setMyMitglied(myMArr[0]);
 
-      const me = await base44.auth.me();
-      const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
-      if (myM[0]) setMyMitglied(myM[0]);
+      // Mitgliedernamen nur für Verwalter laden (für Eingeteilten-Anzeige und Edit-Modal)
+      if (kannVerwalten) {
+        const m = await base44.entities.Mitglied.list('nachname', 500);
+        setMitglieder(m);
+      }
     } catch (e) {}
     setLoading(false);
   };
@@ -274,23 +277,31 @@ export default function Arbeitsdienste() {
                             </div>
                           )}
 
-                          {/* Zugewiesene Personen */}
+                          {/* Zugewiesene Personen – nur für Verwalter mit Namen, für andere nur Anzahl */}
                           {zuws.length > 0 && (
                             <div className="mt-2 pt-2 border-t border-border/50">
-                              <p className="text-[10px] text-muted-foreground mb-1">Eingeteilt ({zuws.length}):</p>
-                              <div className="flex flex-wrap gap-1">
-                                {zuws.map(z => {
-                                  const m = mitglieder.find(m => m.id === z.mitglied_id);
-                                  return (
-                                    <span
-                                      key={z.id}
-                                      className={`text-[10px] px-1.5 py-0.5 rounded-full ${ZUWEISUNG_COLORS[z.status] || ZUWEISUNG_COLORS['Offen']}`}
-                                    >
-                                      {m ? `${m.vorname}` : '–'}
-                                    </span>
-                                  );
-                                })}
-                              </div>
+                              {kannVerwalten ? (
+                                <>
+                                  <p className="text-[10px] text-muted-foreground mb-1">Eingeteilt ({zuws.length}):</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {zuws.map(z => {
+                                      const m = mitglieder.find(m => m.id === z.mitglied_id);
+                                      return (
+                                        <span
+                                          key={z.id}
+                                          className={`text-[10px] px-1.5 py-0.5 rounded-full ${ZUWEISUNG_COLORS[z.status] || ZUWEISUNG_COLORS['Offen']}`}
+                                        >
+                                          {m ? `${m.vorname}` : '–'}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                </>
+                              ) : (
+                                <p className="text-[10px] text-muted-foreground">
+                                  {zuws.filter(z => z.status !== 'Abgesagt').length} Person(en) eingeteilt
+                                </p>
+                              )}
                             </div>
                           )}
                         </div>
