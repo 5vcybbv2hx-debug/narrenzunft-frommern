@@ -51,7 +51,7 @@ export default function Sparten() {
     setGruppen(prev => prev.filter(g => g.id !== id));
   };
 
-  const TYPEN = ['Alle', 'Häsgruppe', 'Tanzgruppe', 'Musikgruppe', 'Sonstige'];
+  const TYPEN = ['Alle', 'Häsgruppe', 'Tanzgruppe', 'Sonstige'];
 
   const filtered = gruppen.filter(g =>
     filterTyp === 'Alle' || g.typ === filterTyp || (!g.typ && filterTyp === 'Häsgruppe')
