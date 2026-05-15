@@ -1,16 +1,18 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Calendar, List, ChevronLeft, ChevronRight, Plus, Clock,
-  MapPin, Users, Download, Filter, X
+  MapPin, Download, Filter, X, Edit, Bus, LayoutTemplate
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth,
-  isSameDay, addMonths, subMonths, parseISO, isToday } from 'date-fns';
+  addMonths, subMonths, parseISO, isToday } from 'date-fns';
 import { de } from 'date-fns/locale';
 import KalenderTerminModal from '@/components/kalender/KalenderTerminModal';
+import VeranstaltungBearbeitenModal from '@/components/kalender/VeranstaltungBearbeitenModal';
+import VeranstaltungsvorlagenModal from '@/components/veranstaltung/VeranstaltungsvorlagenModal';
 
 const TERMINART_FARBEN = {
   'Umzug':             'bg-orange-500/20 text-orange-400 border-orange-500/30',
@@ -64,6 +66,11 @@ export default function Kalender() {
   const [filterArt, setFilterArt] = useState('alle');
   const [showFilter, setShowFilter] = useState(false);
   const [downloadingFeed, setDownloadingFeed] = useState(false);
+  const [showVeranstaltungModal, setShowVeranstaltungModal] = useState(false);
+  const [editVeranstaltung, setEditVeranstaltung] = useState(null);
+  const [showVorlagen, setShowVorlagen] = useState(false);
+  const [showNeuDropdown, setShowNeuDropdown] = useState(false);
+  const navigate = useNavigate();
 
   const userRolle = user?.role || 'mitglied';
   const erlaubteSichtbarkeiten = ROLLE_ERLAUBTE_SICHTBARKEIT[userRolle] || ['alle'];
@@ -175,12 +182,50 @@ export default function Kalender() {
             <Filter size={18} />
           </button>
           {admin && (
-            <button
-              onClick={() => { setEditTermin(null); setShowModal(true); }}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
-            >
-              <Plus size={16} /> <span className="hidden sm:inline">Neuer Termin</span>
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowNeuDropdown(v => !v)}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+              >
+                <Plus size={16} /> <span className="hidden sm:inline">Neu</span> <ChevronRight size={12} className={`transition-transform ${showNeuDropdown ? 'rotate-90' : ''}`} />
+              </button>
+              {showNeuDropdown && (
+                <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-lg z-30 min-w-[220px] overflow-hidden">
+                  <button onClick={() => { setShowNeuDropdown(false); setEditTermin(null); setShowModal(true); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-secondary transition-colors border-b border-border">
+                    <Calendar size={15} className="text-primary shrink-0" />
+                    <div className="text-left">
+                      <p className="font-medium">Kalendertermin</p>
+                      <p className="text-xs text-muted-foreground">Sitzung, Arbeitsdienst, intern…</p>
+                    </div>
+                  </button>
+                  <button onClick={() => { setShowNeuDropdown(false); setEditVeranstaltung(null); setShowVeranstaltungModal(true); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-secondary transition-colors border-b border-border">
+                    <Bus size={15} className="text-orange-400 shrink-0" />
+                    <div className="text-left">
+                      <p className="font-medium">Auswärtiger Termin</p>
+                      <p className="text-xs text-muted-foreground">Umzug, Abendveranstaltung…</p>
+                    </div>
+                  </button>
+                  <button onClick={() => { setShowNeuDropdown(false); navigate('/veranstaltungen/neu'); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-secondary transition-colors border-b border-border">
+                    <Calendar size={15} className="text-purple-400 shrink-0" />
+                    <div className="text-left">
+                      <p className="font-medium">Eigene Veranstaltung</p>
+                      <p className="text-xs text-muted-foreground">Intern, Fest, Arbeitsdienst…</p>
+                    </div>
+                  </button>
+                  <button onClick={() => { setShowNeuDropdown(false); setShowVorlagen(true); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-secondary transition-colors">
+                    <LayoutTemplate size={15} className="text-muted-foreground shrink-0" />
+                    <div className="text-left">
+                      <p className="font-medium">Vorlagen verwalten</p>
+                      <p className="text-xs text-muted-foreground">Veranstaltungsvorlagen</p>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -332,6 +377,7 @@ export default function Kalender() {
                   anmeldung={meineAnmeldung(t.id)}
                   onAnmelden={() => handleAnmelden(t)}
                   onEdit={admin ? () => { setEditTermin(t); setShowModal(true); } : null}
+                  onEditVeranstaltung={admin ? (v) => { setEditVeranstaltung(v); setShowVeranstaltungModal(true); } : null}
                   compact
                 />
               ))}
@@ -349,6 +395,7 @@ export default function Kalender() {
                   anmeldung={meineAnmeldung(t.id)}
                   onAnmelden={() => handleAnmelden(t)}
                   onEdit={admin ? () => { setEditTermin(t); setShowModal(true); } : null}
+                  onEditVeranstaltung={admin ? (v) => { setEditVeranstaltung(v); setShowVeranstaltungModal(true); } : null}
                   compact
                 />
               ))}
@@ -378,13 +425,14 @@ export default function Kalender() {
                 anmeldung={meineAnmeldung(t.id)}
                 onAnmelden={() => handleAnmelden(t)}
                 onEdit={admin ? () => { setEditTermin(t); setShowModal(true); } : null}
+                onEditVeranstaltung={admin ? (v) => { setEditVeranstaltung(v); setShowVeranstaltungModal(true); } : null}
               />
             ))
           )}
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modal KalenderTermin */}
       {showModal && (
         <KalenderTerminModal
           termin={editTermin}
@@ -392,11 +440,26 @@ export default function Kalender() {
           onSaved={() => { setShowModal(false); setEditTermin(null); loadData(); }}
         />
       )}
+
+      {/* Modal Veranstaltung (auswärtig) */}
+      {showVeranstaltungModal && (
+        <VeranstaltungBearbeitenModal
+          veranstaltung={editVeranstaltung}
+          onClose={() => { setShowVeranstaltungModal(false); setEditVeranstaltung(null); }}
+          onSaved={() => { setShowVeranstaltungModal(false); setEditVeranstaltung(null); loadData(); }}
+        />
+      )}
+
+      {/* Vorlagen Modal */}
+      {showVorlagen && <VeranstaltungsvorlagenModal onClose={() => setShowVorlagen(false)} />}
+
+      {/* Dropdown schließen bei Klick außerhalb */}
+      {showNeuDropdown && <div className="fixed inset-0 z-20" onClick={() => setShowNeuDropdown(false)} />}
     </div>
   );
 }
 
-function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, compact = false }) {
+function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, onEditVeranstaltung, compact = false }) {
   const farbeClass = TERMINART_FARBEN[termin.terminart] || TERMINART_FARBEN['Sonstiges'];
   const isAngemeldet = anmeldung?.status === 'Angemeldet';
   const istVonVeranstaltung = termin._quelle === 'veranstaltung';
@@ -474,9 +537,18 @@ function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, compact = false })
               →
             </Link>
           )}
+          {onEditVeranstaltung && istVonVeranstaltung && ['Umzug', 'Abendveranstaltung'].includes(termin.terminart) && (
+            <button
+              onClick={() => onEditVeranstaltung({ id: termin._veranstaltung_id, ...termin, typ: termin.terminart })}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+              title="Bearbeiten"
+            >
+              <Edit size={13} />
+            </button>
+          )}
           {onEdit && !istVonVeranstaltung && (
             <button onClick={onEdit} className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
-              ✏️
+              <Edit size={13} />
             </button>
           )}
         </div>
