@@ -16,7 +16,6 @@
       "enum": [
         "H\u00e4sgruppe",
         "Tanzgruppe",
-        "Musikgruppe",
         "Sonstige"
       ],
       "default": "H\u00e4sgruppe",
