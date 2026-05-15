@@ -4,7 +4,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, isDeveloper, kannMitgliederlisteSehn, getRollenLabel } from '@/lib/roles';
 import {
   LayoutDashboard, Users, Shirt, Calendar, Briefcase,
-  Award, CreditCard, Bus, Bell, Menu, X, ChevronRight,
+  Award, CreditCard, Bell, Menu, X, ChevronRight,
   LogOut, User, MoreHorizontal, Shield, ClipboardList, AlertTriangle, Lock, Database, CheckSquare, Package
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -17,8 +17,7 @@ const sidebarNavItems = [
   { path: '/mitglieder', label: 'Mitglieder', icon: Users, roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter', 'admin'] },
   { path: '/kalender', label: 'Termine', icon: Calendar, roles: null },
   { path: '/arbeitsdienste', label: 'Arbeitsdienste', icon: Briefcase, roles: null },
-  { path: '/veranstaltungen', label: 'Veranstaltungen verwalten', icon: Calendar, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
-  { path: '/umzuege', label: 'Auswärtige Termine verwalten', icon: Bus, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
+
   { path: '/ehrungen', label: 'Ehrungen', icon: Award, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
   { path: '/beitraege', label: 'Beiträge', icon: CreditCard, roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'] },
   { path: '/haes', label: 'Häs', icon: Shirt, roles: null },
