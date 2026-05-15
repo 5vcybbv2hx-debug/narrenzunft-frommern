@@ -15,16 +15,17 @@ const sidebarNavItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard, roles: null },
   { path: '/vorstand', label: 'Führungs-Dashboard', icon: ClipboardList, roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'] },
   { path: '/mitglieder', label: 'Mitglieder', icon: Users, roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter', 'admin'] },
-  { path: '/veranstaltungen', label: 'Eigene Veranstaltungen', icon: Calendar, roles: null },
-  { path: '/umzuege', label: 'Auswärtige Termine', icon: Bus, roles: null },
+  { path: '/kalender', label: 'Termine', icon: Calendar, roles: null },
   { path: '/arbeitsdienste', label: 'Arbeitsdienste', icon: Briefcase, roles: null },
+  { path: '/veranstaltungen', label: 'Veranstaltungen verwalten', icon: Calendar, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
+  { path: '/umzuege', label: 'Auswärtige Termine verwalten', icon: Bus, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
   { path: '/ehrungen', label: 'Ehrungen', icon: Award, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
   { path: '/beitraege', label: 'Beiträge', icon: CreditCard, roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'] },
   { path: '/haes', label: 'Häs', icon: Shirt, roles: null },
   { path: '/sparten', label: 'Sparten & Gruppen', icon: Users, roles: null },
   { path: '/vereine', label: 'Vereine & Zünfte', icon: Users, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
   { path: '/datenqualitaet', label: 'Datenqualität', icon: AlertTriangle, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
-  { path: '/kalender', label: 'Kalender', icon: Calendar, roles: null },
+
   { path: '/ausschuss', label: 'Ausschussbereich', icon: Lock, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
   { path: '/todos', label: 'Aufgaben', icon: CheckSquare, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
   { path: '/inventar', label: 'Inventar & Verleih', icon: Package, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
@@ -36,14 +37,14 @@ const sidebarNavItems = [
 // Mobile Bottom-Nav: Start, Umzüge, Dienste, Profil, Mehr
 const bottomNavItems = [
   { path: '/', label: 'Start', icon: LayoutDashboard },
-  { path: '/umzuege', label: 'Auswärts', icon: Bus },
+  { path: '/kalender', label: 'Termine', icon: Calendar },
   { path: '/arbeitsdienste', label: 'Dienste', icon: Briefcase },
   { path: '/profil', label: 'Profil', icon: User },
   { path: '/mehr', label: 'Mehr', icon: MoreHorizontal },
 ];
 
 // Which top-level path each bottom tab "owns"
-const TAB_ROOTS = ['/', '/umzuege', '/arbeitsdienste', '/profil', '/mehr'];
+const TAB_ROOTS = ['/', '/kalender', '/arbeitsdienste', '/profil', '/mehr'];
 
 function canSee(item, user) {
   if (!item.roles) return true;

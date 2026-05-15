@@ -164,8 +164,8 @@ export default function Kalender() {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Kalender</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{termine.length} Termine sichtbar</p>
+          <h1 className="text-2xl font-bold text-foreground">Termine</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{termine.length} Termine gesamt</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -533,7 +533,7 @@ function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, compact = false })
         </div>
       )}
 
-      {termin.anmeldbar && onAnmelden && (
+      {termin.anmeldbar && !istVonVeranstaltung && onAnmelden && (
         <div className="px-4 pb-3">
           <button
             onClick={onAnmelden}
@@ -545,6 +545,16 @@ function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, compact = false })
           >
             {isAngemeldet ? 'Absagen' : 'Anmelden'}
           </button>
+        </div>
+      )}
+      {termin.anmeldbar && istVonVeranstaltung && (
+        <div className="px-4 pb-3">
+          <Link
+            to={`/umzuege`}
+            className="block w-full py-2 rounded-lg text-sm font-semibold text-center bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+          >
+            Zur Anmeldung →
+          </Link>
         </div>
       )}
     </div>
