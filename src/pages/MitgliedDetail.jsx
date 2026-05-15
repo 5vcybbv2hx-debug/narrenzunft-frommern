@@ -32,13 +32,19 @@ function getVerfuegbareStatus(geburtsdatum) {
 }
 
 function Field({ label, value, field, type = 'text', options, editing, mitglied, onChange }) {
+  const rawVal = mitglied[field];
+  // Datumswerte im deutschen Format anzeigen (nur im Lesemodus)
+  const displayVal = value || (type === 'date' && rawVal
+    ? format(new Date(rawVal), 'dd.MM.yyyy', { locale: de })
+    : rawVal) || '–';
+
   return (
     <div>
       <label className="text-xs text-muted-foreground font-medium block mb-1">{label}</label>
       {editing ? (
         options ? (
           <select
-            value={mitglied[field] || ''}
+            value={rawVal || ''}
             onChange={e => onChange(field, e.target.value)}
             className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
           >
@@ -47,13 +53,13 @@ function Field({ label, value, field, type = 'text', options, editing, mitglied,
         ) : (
           <input
             type={type}
-            value={mitglied[field] || ''}
+            value={rawVal || ''}
             onChange={e => onChange(field, e.target.value)}
             className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
           />
         )
       ) : (
-        <p className="text-sm text-foreground py-1">{value || mitglied[field] || '–'}</p>
+        <p className="text-sm text-foreground py-1">{displayVal}</p>
       )}
     </div>
   );

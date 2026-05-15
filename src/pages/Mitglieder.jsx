@@ -8,6 +8,7 @@ import { isAdmin, kannMitgliederlisteSehn } from '@/lib/roles';
 import { Search, Plus, User, ChevronRight, Archive, Download } from 'lucide-react';
 import NeuerAntragModal from '@/components/mitglied/NeuerAntragModal';
 import { format, differenceInYears } from 'date-fns';
+import { de } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
 
 const STATUS_COLORS = {
@@ -270,7 +271,7 @@ export default function Mitglieder() {
                   {m.ort && <span className="text-xs text-muted-foreground">{m.ort}</span>}
                   {m.eintrittsdatum && (
                     <span className="text-xs text-muted-foreground">
-                      Eintrittsdatum: {format(new Date(m.eintrittsdatum), 'dd.MM.yyyy')}
+                      Eintrittsdatum: {format(new Date(m.eintrittsdatum), 'dd.MM.yyyy', { locale: de })}
                     </span>
                   )}
                   {m.archiviert && (
