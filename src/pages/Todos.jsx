@@ -48,11 +48,14 @@ export default function Todos() {
     setMeinMitglied(myM);
     setTodos(alleTodos);
 
-    // Mitgliedernamen: nur die tatsächlich als Verantwortliche genutzten IDs laden
-    const alleVerantwortlicheIds = [...new Set(alleTodos.flatMap(t => t.verantwortliche_ids || []))];
-    if (alleVerantwortlicheIds.length > 0) {
-      const mArr = await Promise.all(alleVerantwortlicheIds.map(id => base44.entities.Mitglied.filter({ id })));
-      const loaded = mArr.flat().filter(m => !m.archiviert);
+    // Mitgliedernamen: Verantwortliche + Ersteller laden
+    const alleIds = [...new Set([
+      ...alleTodos.flatMap(t => t.verantwortliche_ids || []),
+      ...alleTodos.map(t => t.ersteller_mitglied_id).filter(Boolean),
+    ])];
+    if (alleIds.length > 0) {
+      const mArr = await Promise.all(alleIds.map(id => base44.entities.Mitglied.filter({ id })));
+      const loaded = mArr.flat();
       // Eigenes Mitglied immer dabei haben (für Todo-Form)
       if (myM && !loaded.find(m => m.id === myM.id)) loaded.push(myM);
       setMitglieder(loaded);
@@ -225,6 +228,13 @@ export default function Todos() {
                         </span>
                       ))}
                     </div>
+                  )}
+
+                  {/* Ersteller */}
+                  {todo.ersteller_mitglied_id && (
+                    <p className="text-[10px] text-muted-foreground mt-1.5">
+                      Erstellt von {getMitgliedName(todo.ersteller_mitglied_id)}
+                    </p>
                   )}
                 </div>
               </div>
