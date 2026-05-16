@@ -147,24 +147,29 @@ export default function Layout() {
 
         {/* User */}
         <div className="px-3 py-4 border-t border-sidebar-border">
-          {admin && (
-            <div className="flex items-center gap-1.5 px-3 mb-2">
-              <Shield size={12} className="text-primary" />
-              <span className="text-xs text-primary font-medium">{getRollenLabel(user?.role)}</span>
+          <Link to="/profil" className="block rounded-xl bg-sidebar-accent hover:bg-sidebar-accent/80 transition-colors p-3 mb-2">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-base shrink-0 ring-2 ring-primary/30">
+                {user?.full_name?.[0]?.toUpperCase() || 'U'}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-sidebar-foreground truncate">{user?.full_name || 'Benutzer'}</p>
+                <p className="text-xs text-muted-foreground truncate">{user?.email || ''}</p>
+                {admin && (
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <Shield size={10} className="text-primary" />
+                    <span className="text-[10px] text-primary font-medium">{getRollenLabel(user?.role)}</span>
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-          <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-sidebar-accent">
-            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">
-              {user?.full_name?.[0] || 'U'}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.full_name || 'Benutzer'}</p>
-              <p className="text-xs text-muted-foreground truncate">{getRollenLabel(user?.role)}</p>
-            </div>
-            <button onClick={handleLogout} className="text-muted-foreground hover:text-destructive transition-colors">
-              <LogOut size={16} />
-            </button>
-          </div>
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors text-xs font-medium"
+          >
+            <LogOut size={14} /> Abmelden
+          </button>
         </div>
       </aside>
 
