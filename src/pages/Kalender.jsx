@@ -171,7 +171,7 @@ export default function Kalender() {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Termine</h1>
+          <h1 className="text-2xl font-bold text-foreground">Veranstaltungen</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{termine.length} Termine gesamt</p>
         </div>
         <div className="flex items-center gap-2">
