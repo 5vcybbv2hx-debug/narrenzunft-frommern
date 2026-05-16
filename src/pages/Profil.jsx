@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { User, Mail, Phone, MapPin, Calendar, LogOut, Bell, Award, Shirt, Trash2 } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, LogOut, Award, Shirt, Trash2, Flag } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -14,6 +14,7 @@ export default function Profil() {
   const [mitglied, setMitglied] = useState(null);
   const [haes, setHaes] = useState([]);
   const [ehrungen, setEhrungen] = useState([]);
+  const [teilnahmen, setTeilnahmen] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
 
@@ -28,12 +29,14 @@ export default function Profil() {
       const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
       if (myM[0]) {
         setMitglied(myM[0]);
-        const [h, e] = await Promise.all([
+        const [h, e, t] = await Promise.all([
           base44.entities.Haes.filter({ aktueller_besitzer_id: myM[0].id }),
           base44.entities.Ehrung.filter({ mitglied_id: myM[0].id }),
+          base44.entities.Teilnahme.filter({ mitglied_id: myM[0].id }),
         ]);
         setHaes(h);
         setEhrungen(e);
+        setTeilnahmen(t);
       }
     } catch (e) {}
     setLoading(false);
@@ -67,6 +70,8 @@ export default function Profil() {
   );
 
   const alter = mitglied?.geburtsdatum ? differenceInYears(new Date(), new Date(mitglied.geburtsdatum)) : null;
+  const vollname = mitglied ? `${mitglied.vorname} ${mitglied.nachname}`.trim() : null;
+  const umzuegeGesamt = (mitglied?.umzuege_vor_digitalisierung || 0) + teilnahmen.filter(t => t.teilgenommen).length;
 
   return (
     <div className="px-4 lg:px-6 py-6 max-w-2xl mx-auto">
@@ -74,20 +79,27 @@ export default function Profil() {
 
       {/* Avatar */}
       <div className="bg-card border border-border rounded-xl p-6 mb-4 flex items-center gap-4">
-        <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-3xl overflow-hidden">
+        <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-3xl overflow-hidden shrink-0">
           {mitglied?.profilbild_url ? (
             <img src={mitglied.profilbild_url} alt="" className="w-full h-full object-cover" />
           ) : (
-            `${user?.full_name?.[0] || 'U'}`
+            `${mitglied?.vorname?.[0] || user?.full_name?.[0] || 'U'}${mitglied?.nachname?.[0] || ''}`
           )}
         </div>
         <div>
-          <h2 className="text-xl font-bold text-foreground">{user?.full_name || 'Benutzer'}</h2>
+          <h2 className="text-xl font-bold text-foreground">{vollname || user?.full_name || 'Benutzer'}</h2>
           <p className="text-sm text-muted-foreground">{user?.email}</p>
           {mitglied && (
-            <span className="mt-1 inline-block text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
-              {mitglied.mitgliedsstatus}
-            </span>
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
+                {mitglied.mitgliedsstatus}
+              </span>
+              {mitglied.eintrittsdatum && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
+                  seit {format(new Date(mitglied.eintrittsdatum), 'yyyy')}
+                </span>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -112,11 +124,14 @@ export default function Profil() {
               </div>
             )}
             {(mitglied.strasse || mitglied.ort) && (
-              <div className="flex items-center gap-3">
-                <MapPin size={14} className="text-muted-foreground shrink-0" />
-                <span className="text-sm text-foreground">
-                  {[mitglied.strasse, `${mitglied.plz || ''} ${mitglied.ort || ''}`].filter(Boolean).join(', ')}
-                </span>
+              <div className="flex items-start gap-3">
+                <MapPin size={14} className="text-muted-foreground shrink-0 mt-0.5" />
+                <div>
+                  {mitglied.strasse && <p className="text-sm text-foreground">{mitglied.strasse}</p>}
+                  {(mitglied.plz || mitglied.ort) && (
+                    <p className="text-sm text-foreground">{[mitglied.plz, mitglied.ort].filter(Boolean).join(' ')}</p>
+                  )}
+                </div>
               </div>
             )}
             {mitglied.geburtsdatum && (
@@ -132,6 +147,26 @@ export default function Profil() {
                 <span className="text-xs">Mitglied seit {format(new Date(mitglied.eintrittsdatum), 'dd.MM.yyyy')}</span>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Statistiken */}
+      {mitglied && (
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
+            <Flag size={20} className="text-primary shrink-0" />
+            <div>
+              <p className="text-xl font-bold text-foreground">{umzuegeGesamt}</p>
+              <p className="text-xs text-muted-foreground">Umzüge gesamt</p>
+            </div>
+          </div>
+          <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
+            <Award size={20} className="text-primary shrink-0" />
+            <div>
+              <p className="text-xl font-bold text-foreground">{ehrungen.filter(e => e.status === 'Verliehen').length}</p>
+              <p className="text-xs text-muted-foreground">Ehrungen</p>
+            </div>
           </div>
         </div>
       )}
@@ -162,7 +197,10 @@ export default function Profil() {
           </h3>
           {ehrungen.map(e => (
             <div key={e.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-              <p className="text-sm text-foreground">{e.typ} – {e.wert}</p>
+              <div>
+                <p className="text-sm text-foreground">{e.typ}{e.wert ? ` – ${e.wert}` : ''}</p>
+                {e.jahr && <p className="text-xs text-muted-foreground">Jahr {e.jahr}</p>}
+              </div>
               <span className={`text-xs px-2 py-0.5 rounded-full ${
                 e.status === 'Verliehen' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
               }`}>{e.status}</span>
