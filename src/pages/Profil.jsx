@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { User, Mail, Phone, MapPin, Calendar, LogOut, Award, Shirt, Trash2, Flag } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, LogOut, Award, Shirt, Trash2, Flag, Edit, Save, X } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -17,6 +17,9 @@ export default function Profil() {
   const [teilnahmen, setTeilnahmen] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({});
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -40,6 +43,27 @@ export default function Profil() {
       }
     } catch (e) {}
     setLoading(false);
+  };
+
+  const handleEditStart = () => {
+    setEditForm({
+      telefon: mitglied.telefon || '',
+      email: mitglied.email || '',
+      strasse: mitglied.strasse || '',
+      plz: mitglied.plz || '',
+      ort: mitglied.ort || '',
+      notfallkontakt_name: mitglied.notfallkontakt_name || '',
+      notfallkontakt_telefon: mitglied.notfallkontakt_telefon || '',
+    });
+    setEditing(true);
+  };
+
+  const handleEditSave = async () => {
+    setSaving(true);
+    await base44.entities.Mitglied.update(mitglied.id, editForm);
+    setMitglied(prev => ({ ...prev, ...editForm }));
+    setEditing(false);
+    setSaving(false);
   };
 
   const handleLogout = () => {
@@ -107,47 +131,131 @@ export default function Profil() {
       {/* Mitgliedsdaten */}
       {mitglied && (
         <div className="bg-card border border-border rounded-xl p-5 mb-4">
-          <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-            <User size={16} className="text-primary" /> Meine Daten
-          </h3>
-          <div className="space-y-3">
-            {mitglied.telefon && (
-              <div className="flex items-center gap-3">
-                <Phone size={14} className="text-muted-foreground shrink-0" />
-                <span className="text-sm text-foreground">{mitglied.telefon}</span>
-              </div>
-            )}
-            {mitglied.email && (
-              <div className="flex items-center gap-3">
-                <Mail size={14} className="text-muted-foreground shrink-0" />
-                <span className="text-sm text-foreground">{mitglied.email}</span>
-              </div>
-            )}
-            {(mitglied.strasse || mitglied.ort) && (
-              <div className="flex items-start gap-3">
-                <MapPin size={14} className="text-muted-foreground shrink-0 mt-0.5" />
-                <div>
-                  {mitglied.strasse && <p className="text-sm text-foreground">{mitglied.strasse}</p>}
-                  {(mitglied.plz || mitglied.ort) && (
-                    <p className="text-sm text-foreground">{[mitglied.plz, mitglied.ort].filter(Boolean).join(' ')}</p>
-                  )}
-                </div>
-              </div>
-            )}
-            {mitglied.geburtsdatum && (
-              <div className="flex items-center gap-3">
-                <Calendar size={14} className="text-muted-foreground shrink-0" />
-                <span className="text-sm text-foreground">
-                  {format(new Date(mitglied.geburtsdatum), 'dd.MM.yyyy')} ({alter} Jahre)
-                </span>
-              </div>
-            )}
-            {mitglied.eintrittsdatum && (
-              <div className="flex items-center gap-3 text-muted-foreground">
-                <span className="text-xs">Mitglied seit {format(new Date(mitglied.eintrittsdatum), 'dd.MM.yyyy')}</span>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-foreground flex items-center gap-2">
+              <User size={16} className="text-primary" /> Meine Daten
+            </h3>
+            {!editing ? (
+              <button
+                onClick={handleEditStart}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Edit size={13} /> Bearbeiten
+              </button>
+            ) : (
+              <div className="flex gap-2">
+                <button onClick={() => setEditing(false)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+                  <X size={15} />
+                </button>
+                <button
+                  onClick={handleEditSave}
+                  disabled={saving}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
+                >
+                  <Save size={13} /> {saving ? '...' : 'Speichern'}
+                </button>
               </div>
             )}
           </div>
+
+          {editing ? (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-muted-foreground font-medium block mb-1">Telefon</label>
+                <input value={editForm.telefon} onChange={e => setEditForm(p => ({ ...p, telefon: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground font-medium block mb-1">E-Mail</label>
+                <input type="email" value={editForm.email} onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground font-medium block mb-1">Straße & Hausnummer</label>
+                <input value={editForm.strasse} onChange={e => setEditForm(p => ({ ...p, strasse: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-muted-foreground font-medium block mb-1">PLZ</label>
+                  <input value={editForm.plz} onChange={e => setEditForm(p => ({ ...p, plz: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground font-medium block mb-1">Ort</label>
+                  <input value={editForm.ort} onChange={e => setEditForm(p => ({ ...p, ort: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+                </div>
+              </div>
+              <div className="border-t border-border pt-3">
+                <p className="text-xs font-semibold text-muted-foreground mb-2">🚨 Notfallkontakt</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-muted-foreground font-medium block mb-1">Name</label>
+                    <input value={editForm.notfallkontakt_name} onChange={e => setEditForm(p => ({ ...p, notfallkontakt_name: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground font-medium block mb-1">Telefon</label>
+                    <input value={editForm.notfallkontakt_telefon} onChange={e => setEditForm(p => ({ ...p, notfallkontakt_telefon: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {mitglied.telefon && (
+                <div className="flex items-center gap-3">
+                  <Phone size={14} className="text-muted-foreground shrink-0" />
+                  <span className="text-sm text-foreground">{mitglied.telefon}</span>
+                </div>
+              )}
+              {mitglied.email && (
+                <div className="flex items-center gap-3">
+                  <Mail size={14} className="text-muted-foreground shrink-0" />
+                  <span className="text-sm text-foreground">{mitglied.email}</span>
+                </div>
+              )}
+              {(mitglied.strasse || mitglied.ort) && (
+                <div className="flex items-start gap-3">
+                  <MapPin size={14} className="text-muted-foreground shrink-0 mt-0.5" />
+                  <div>
+                    {mitglied.strasse && <p className="text-sm text-foreground">{mitglied.strasse}</p>}
+                    {(mitglied.plz || mitglied.ort) && (
+                      <p className="text-sm text-foreground">{[mitglied.plz, mitglied.ort].filter(Boolean).join(' ')}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+              {mitglied.geburtsdatum && (
+                <div className="flex items-center gap-3">
+                  <Calendar size={14} className="text-muted-foreground shrink-0" />
+                  <span className="text-sm text-foreground">
+                    {format(new Date(mitglied.geburtsdatum), 'dd.MM.yyyy')} ({alter} Jahre)
+                  </span>
+                </div>
+              )}
+              {mitglied.eintrittsdatum && (
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <span className="text-xs">Mitglied seit {format(new Date(mitglied.eintrittsdatum), 'dd.MM.yyyy')}</span>
+                </div>
+              )}
+              {(mitglied.notfallkontakt_name || mitglied.notfallkontakt_telefon) && (
+                <div className="flex items-start gap-3 pt-1 border-t border-border">
+                  <span className="text-sm shrink-0">🚨</span>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Notfallkontakt</p>
+                    {mitglied.notfallkontakt_name && <p className="text-sm text-foreground">{mitglied.notfallkontakt_name}</p>}
+                    {mitglied.notfallkontakt_telefon && <p className="text-sm text-foreground">{mitglied.notfallkontakt_telefon}</p>}
+                  </div>
+                </div>
+              )}
+              {!mitglied.telefon && !mitglied.email && !mitglied.strasse && (
+                <p className="text-sm text-muted-foreground italic">Noch keine Daten hinterlegt – jetzt bearbeiten</p>
+              )}
+            </div>
+          )}
         </div>
       )}
 
