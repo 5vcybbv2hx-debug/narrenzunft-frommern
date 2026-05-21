@@ -13,10 +13,11 @@ Deno.serve(async (req) => {
 
     if (isAdmin) {
       // Admin: alle Dienste + alle Zuweisungen
-      const [dienste, zuweisungen, mitglieder] = await Promise.all([
+      const [dienste, zuweisungen, mitglieder, veranstaltungen] = await Promise.all([
         base44.asServiceRole.entities.Arbeitsdienst.list('-datum', 300),
         base44.asServiceRole.entities.ArbeitsdienstZuweisung.list('-created_date', 500),
         base44.asServiceRole.entities.Mitglied.list('nachname', 300),
+        base44.asServiceRole.entities.Veranstaltung.list('-datum', 300),
       ]);
 
       return Response.json({
@@ -24,6 +25,7 @@ Deno.serve(async (req) => {
         dienste,
         zuweisungen,
         mitglieder,
+        veranstaltungen,
         kannBearbeiten: true,
       });
     }
@@ -44,20 +46,22 @@ Deno.serve(async (req) => {
 
     if (isSpartenleiter && myMitglied) {
       const spartenIds = myMitglied.spartenleiter_haesgruppen_ids || [];
-      const alleDienste = await base44.asServiceRole.entities.Arbeitsdienst.list('-datum', 300);
+      const [alleDienste, allZuweisungen, mitgliederResp, veranstaltungen] = await Promise.all([
+        base44.asServiceRole.entities.Arbeitsdienst.list('-datum', 300),
+        base44.asServiceRole.entities.ArbeitsdienstZuweisung.list('-created_date', 500),
+        base44.asServiceRole.entities.Mitglied.list('nachname', 300),
+        base44.asServiceRole.entities.Veranstaltung.list('-datum', 300),
+      ]);
       const dienste = alleDienste.filter(d => spartenIds.includes(d.haesgruppe_id) || !d.haesgruppe_id);
       const diensteIds = dienste.map(d => d.id);
-
-      const allZuweisungen = await base44.asServiceRole.entities.ArbeitsdienstZuweisung.list('-created_date', 500);
       const zuweisungen = allZuweisungen.filter(z => diensteIds.includes(z.arbeitsdienst_id));
-
-      const mitgliederResp = await base44.asServiceRole.entities.Mitglied.list('nachname', 300);
 
       return Response.json({
         erfolg: true,
         dienste,
         zuweisungen,
         mitglieder: mitgliederResp,
+        veranstaltungen,
         kannBearbeiten: true,
       });
     }

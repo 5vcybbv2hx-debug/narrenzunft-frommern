@@ -52,9 +52,7 @@ export default function Arbeitsdienste() {
       }
       setDienste(result.data.dienste);
       setZuweisungen(result.data.zuweisungen);
-      if (kannVerwalten) {
-        setVeranstaltungen(result.data.veranstaltungen);
-      }
+      setVeranstaltungen(result.data.veranstaltungen || []);
       setMitglieder(result.data.mitglieder);
 
       const myMArr = result.data.mitglieder.filter(m => m.user_id === user?.id);
