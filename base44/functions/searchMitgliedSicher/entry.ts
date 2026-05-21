@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
 
     // Rolle ermitteln
     const role = myMitglied?.app_rolle || "mitglied";
-    const isAdmin = user.role === "admin" || user.role === "vorstand" || user.role === "stellv_vorstand";
+    const isAdmin = user.role === "admin" || user.role === "vorstand" || user.role === "stellv_vorstand" || user.role === "spartenleiter" || user.role === "kassierer";
 
     // Admin/Vorstand: alles durchsuchen
     if (isAdmin) {

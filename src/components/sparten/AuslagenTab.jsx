@@ -144,8 +144,8 @@ export default function AuslagenTab({ gruppeId, isAdmin }) {
                     setOffen(true);
                     if (q.length >= 2) {
                       try {
-                        const res = await base44.functions.invoke('searchMitgliedSicher', { q });
-                        setSuchErgebnisse(res.data?.mitglieder || []);
+                        const res = await base44.functions.invoke('searchMitgliedSicher', { query: q });
+                        setSuchErgebnisse(res.data?.results || []);
                       } catch {}
                     } else {
                       setSuchErgebnisse([]);
