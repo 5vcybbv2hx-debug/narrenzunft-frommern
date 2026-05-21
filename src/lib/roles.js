@@ -10,9 +10,7 @@
  * - mitglied
  * - elternkonto
  *
- * Ausschusszugang wird NICHT über die Rolle gesteuert,
- * sondern über AusschussMitglied-Einträge in der Datenbank.
- * Spartenleiter sind kein automatischer Ausschuss-Zugang.
+ * Ausschusszugang: Spartenleiter sind automatisch Ausschussmitglieder.
  */
 
 export const ROLLEN = {
@@ -109,11 +107,10 @@ export function kannMitgliedProfilSehn(user, myMitglied, zielMitglied) {
 
 /**
  * Ausschuss-Zugang:
- * Nur vorstand, stellv_vorstand, admin – NICHT pauschal spartenleiter.
- * Spartenleiter brauchen einen AusschussMitglied-Eintrag (wird serverseitig geprüft).
+ * Vorstand, Stv. Vorstand, Spartenleiter und Admin haben automatisch Ausschusszugang.
  */
 export function kannAusschussSehn(user) {
-  return ['vorstand', 'stellv_vorstand', 'admin'].includes(user?.role) || isDeveloper(user);
+  return ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'].includes(user?.role) || isDeveloper(user);
 }
 
 /** Darf Importe durchführen (nur Admin) */

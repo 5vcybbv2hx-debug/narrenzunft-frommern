@@ -25,8 +25,8 @@ const sidebarNavItems = [
   { path: '/vereine', label: 'Vereine & Zünfte', icon: Users, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
   { path: '/datenqualitaet', label: 'Datenqualität', icon: AlertTriangle, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
 
-  { path: '/ausschuss', label: 'Ausschussbereich', icon: Lock, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
-  { path: '/todos', label: 'Aufgaben', icon: CheckSquare, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
+  { path: '/ausschuss', label: 'Ausschussbereich', icon: Lock, roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'] },
+  { path: '/todos', label: 'Aufgaben', icon: CheckSquare, roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'] },
   { path: '/inventar', label: 'Inventar & Verleih', icon: Package, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
   { path: '/berechtigungen', label: 'Berechtigungen', icon: Shield, roles: ['admin', 'vorstand', 'stellv_vorstand'] },
   { path: '/daten-import', label: 'Daten-Import', icon: Database, roles: ['admin'] },
