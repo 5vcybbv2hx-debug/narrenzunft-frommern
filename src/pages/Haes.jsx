@@ -55,7 +55,7 @@ export default function Haes() {
   };
 
   const getMitgliedName = (id) => {
-    const m = mitglieder.find(m => m.id === id);
+    const m = (mitglieder || []).find(m => m.id === id);
     return m ? `${m.vorname} ${m.nachname}` : '–';
   };
 
