@@ -56,7 +56,7 @@ export default function Mitglieder() {
       // #1 – Datenschutz: nur berechtigte Rollen sehen alle Mitglieder
       let data;
       if (kannListe) {
-        data = await base44.entities.Mitglied.list('nachname', 500);
+        data = await base44.entities.Mitglied.list('nachname', 2000);
       } else {
         // Normale Mitglieder sehen nur eigenes Profil
         const me = await base44.auth.me();
