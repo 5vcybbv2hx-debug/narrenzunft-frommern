@@ -9,7 +9,7 @@ const STATUS_COLORS = {
   'Bestätigt':      'bg-blue-500/20 text-blue-400',
   'Erledigt':       'bg-green-500/20 text-green-400',
   'Abgesagt':       'bg-red-500/20 text-red-400',
-  'Nicht erledigt': 'bg-orange-500/20 text-orange-400',
+  'Nicht erledigt': 'bg-primary/20 text-primary',
 };
 
 export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen: initialZuweisungen, onClose, onSaved }) {
@@ -281,18 +281,18 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
                       title={hatKonflikt ? `⚠ Bereits in anderer Schicht eingeteilt` : ''}
                       className={`flex items-center gap-2 px-2 py-2 rounded-lg mb-0.5 cursor-move border transition-all ${
                         draggedId === m.id ? 'opacity-50 bg-secondary border-border' :
-                        hatKonflikt ? 'bg-orange-500/10 border-orange-500/30 hover:bg-orange-500/15' :
+                        hatKonflikt ? 'bg-primary/10 border-primary/40/30 hover:bg-primary/15' :
                         'hover:bg-secondary bg-secondary/30 border-border/50'
                       }`}
                     >
                       <GripVertical size={12} className="text-muted-foreground shrink-0" />
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${hatKonflikt ? 'bg-orange-500/20 text-orange-400' : 'bg-primary/20 text-primary'}`}>
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${hatKonflikt ? 'bg-primary/20 text-primary' : 'bg-primary/20 text-primary'}`}>
                         {m.vorname?.[0]}{m.nachname?.[0]}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium text-foreground truncate">{m.vorname} {m.nachname}</p>
                         <p className="text-[10px] text-muted-foreground truncate">
-                          {hatKonflikt ? <span className="text-orange-400">⚠ Zeitkonflikt</span> : m.mitgliedsstatus}
+                          {hatKonflikt ? <span className="text-primary">⚠ Zeitkonflikt</span> : m.mitgliedsstatus}
                         </p>
                       </div>
                     </div>
