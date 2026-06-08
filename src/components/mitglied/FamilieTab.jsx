@@ -25,7 +25,7 @@ const BEZIEHUNG_FARBEN = {
   'Elternteil': 'bg-blue-500/20 text-blue-400',
   'Kind': 'bg-green-500/20 text-green-400',
   'Geschwister': 'bg-purple-500/20 text-purple-400',
-  'Großelternteil': 'bg-orange-500/20 text-orange-400',
+  'Großelternteil': 'bg-primary/20 text-primary',
   'Enkel': 'bg-teal-500/20 text-teal-400',
   'Onkel/Tante': 'bg-yellow-500/20 text-yellow-400',
   'Nichte/Neffe': 'bg-pink-500/20 text-pink-400',
