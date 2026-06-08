@@ -82,7 +82,7 @@ export default function ArbeitsdienstTab({ veranstaltung, isAdmin }) {
 
   if (loading) return (
     <div className="flex items-center justify-center py-12">
-      <div className="w-6 h-6 border-4 border-border border-t-primary rounded-full animate-spin" />
+      <div className="w-6 h-6 border-[3px] border-border border-t-primary rounded-full animate-spin" />
     </div>
   );
 
