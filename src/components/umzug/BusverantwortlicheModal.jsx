@@ -93,7 +93,7 @@ export default function BusverantwortlicheModal({ mitglieder, onClose }) {
         <div className="flex-1 overflow-y-auto px-5 pb-3 space-y-1">
           {loading && (
             <div className="flex items-center justify-center py-8">
-              <div className="w-5 h-5 border-4 border-border border-t-primary rounded-full animate-spin" />
+              <div className="w-5 h-5 border-[3px] border-border border-t-primary rounded-full animate-spin" />
             </div>
           )}
           {!loading && gefiltert.map(m => {
