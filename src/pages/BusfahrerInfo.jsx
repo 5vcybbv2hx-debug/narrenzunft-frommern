@@ -22,14 +22,14 @@ function NavButton({ adresse, label }) {
 
 function InfoBlock({ color, emoji, title, children }) {
   const borders = {
-    orange: 'border-orange-500/40 bg-orange-500/5',
+    orange: 'border-primary/40/40 bg-primary/5',
     blue: 'border-blue-500/40 bg-blue-500/5',
     purple: 'border-purple-500/40 bg-purple-500/5',
     green: 'border-green-500/40 bg-green-500/5',
     gray: 'border-border bg-secondary/30',
   };
   const texts = {
-    orange: 'text-orange-400',
+    orange: 'text-primary',
     blue: 'text-blue-400',
     purple: 'text-purple-400',
     green: 'text-green-400',
