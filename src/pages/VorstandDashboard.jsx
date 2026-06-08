@@ -287,7 +287,7 @@ export default function VorstandDashboard() {
           <div className="grid grid-cols-2 gap-2">
             {[
               { path: '/mitglieder', label: 'Mitglieder', icon: Users, color: 'bg-blue-500/10 text-blue-400' },
-              { path: '/arbeitsdienste', label: 'Arbeitsdienste', icon: Briefcase, color: 'bg-orange-500/10 text-orange-400' },
+              { path: '/arbeitsdienste', label: 'Arbeitsdienste', icon: Briefcase, color: 'bg-primary/10 text-primary' },
               { path: '/veranstaltungen', label: 'Veranstaltungen', icon: Calendar, color: 'bg-primary/10 text-primary' },
               { path: '/umzuege', label: 'Umzüge', icon: MapPin, color: 'bg-purple-500/10 text-purple-400' },
             ].map(item => {
