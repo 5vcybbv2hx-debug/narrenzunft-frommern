@@ -261,9 +261,9 @@ export default function MitgliedDashboard() {
               if (!d) return null;
               return (
                 <div key={z.id} className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-orange-500/10 flex flex-col items-center justify-center shrink-0">
+                  <div className="w-11 h-11 rounded-xl bg-primary/10 flex flex-col items-center justify-center shrink-0">
                     <span className="text-[9px] text-muted-foreground">{format(new Date(d.datum), 'MMM', { locale: de })}</span>
-                    <span className="text-sm font-bold text-orange-400">{format(new Date(d.datum), 'd')}</span>
+                    <span className="text-sm font-bold text-primary">{format(new Date(d.datum), 'd')}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{d.titel}</p>
