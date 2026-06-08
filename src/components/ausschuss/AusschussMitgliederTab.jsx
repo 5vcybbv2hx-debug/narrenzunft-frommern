@@ -10,7 +10,7 @@ const ROLLE_FARBEN = {
   'Schriftführer':       'bg-purple-500/20 text-purple-400',
   'Kassierer':           'bg-green-500/20 text-green-400',
   'Beisitzer':           'bg-gray-500/20 text-gray-400',
-  'Jugendleiter':        'bg-orange-500/20 text-orange-400',
+  'Jugendleiter':        'bg-primary/20 text-primary',
   'Sonstiges':           'bg-secondary text-muted-foreground',
 };
 
@@ -157,12 +157,12 @@ export default function AusschussMitgliederTab({ mitglieder, isAdmin }) {
             <div className="space-y-2">
               {spartenleiter.map(m => (
                 <div key={m.id} className="bg-card border border-border rounded-xl px-4 py-3 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 font-bold text-sm shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0">
                     {m.vorname?.[0]}{m.nachname?.[0]}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate">{m.vorname} {m.nachname}</p>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary">
                       {m.spartenleiter_haesgruppe_id ? `Spartenleiter · ${getGruppenName(m.spartenleiter_haesgruppe_id) || '–'}` : 'Spartenleiter'}
                     </span>
                   </div>
