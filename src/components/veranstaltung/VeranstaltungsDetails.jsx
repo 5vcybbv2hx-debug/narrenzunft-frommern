@@ -23,7 +23,7 @@ function NavButton({ adresse, label }) {
 
 function InfoBlock({ color, emoji, title, children }) {
   const borderColors = {
-    orange: 'border-orange-500/40',
+    orange: 'border-primary/40/40',
     blue: 'border-blue-500/40',
     purple: 'border-purple-500/40',
     green: 'border-green-500/40',
@@ -32,7 +32,7 @@ function InfoBlock({ color, emoji, title, children }) {
     gray: 'border-border',
   };
   const textColors = {
-    orange: 'text-orange-400',
+    orange: 'text-primary',
     blue: 'text-blue-400',
     purple: 'text-purple-400',
     green: 'text-green-400',
@@ -105,7 +105,7 @@ export function VeranstaltungsDetailsForm({ data, onChange, typ }) {
     <div className="space-y-4">
       {isUmzug && (
         <>
-          <div className="text-xs font-semibold text-orange-400 uppercase tracking-wide">🅿️ Busparkplatz</div>
+          <div className="text-xs font-semibold text-primary uppercase tracking-wide">🅿️ Busparkplatz</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <InputField label="Treffzeit am Bus" field="busparkplatz_treffzeit" value={data.busparkplatz_treffzeit} onChange={onChange} placeholder="z.B. 09:30" />
             <InputField label="Adresse Busparkplatz" field="busparkplatz_adresse" value={data.busparkplatz_adresse} onChange={onChange} placeholder="Straße, Ort" isAddress />
