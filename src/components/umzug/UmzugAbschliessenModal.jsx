@@ -166,10 +166,10 @@ export default function UmzugAbschliessenModal({ veranstaltung, onClose, onAbges
 
             {/* Warnungen */}
             {result.warnungen?.length > 0 && (
-              <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 mb-3">
-                <p className="text-xs font-semibold text-orange-400 mb-1">⚠ Hinweise</p>
+              <div className="bg-primary/10 border border-primary/40/20 rounded-xl p-3 mb-3">
+                <p className="text-xs font-semibold text-primary mb-1">⚠ Hinweise</p>
                 {result.warnungen.map((w, i) => (
-                  <p key={i} className="text-xs text-orange-300">{w}</p>
+                  <p key={i} className="text-xs text-primary">{w}</p>
                 ))}
               </div>
             )}
