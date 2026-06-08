@@ -294,7 +294,7 @@ export default function Inventar() {
 function AusleiheKarte({ ausleihe, ausruestung, ausleiherName, today, onClick, vergangen }) {
   const STATUS_STYLE = {
     'Reserviert':     'bg-blue-500/20 text-blue-400',
-    'Ausgeliehen':    'bg-orange-500/20 text-orange-400',
+    'Ausgeliehen':    'bg-primary/20 text-primary',
     'Zurückgegeben':  'bg-green-500/20 text-green-400',
     'Abgesagt':       'bg-gray-500/20 text-gray-400',
   };
