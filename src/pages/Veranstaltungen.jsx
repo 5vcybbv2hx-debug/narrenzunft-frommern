@@ -13,7 +13,7 @@ const TYP_COLORS = {
   'Fest': 'bg-purple-500/20 text-purple-400',
   'Probe': 'bg-cyan-500/20 text-cyan-400',
   'Hauptversammlung': 'bg-yellow-500/20 text-yellow-400',
-  'Arbeitsdienst': 'bg-orange-500/20 text-orange-400',
+  'Arbeitsdienst': 'bg-primary/20 text-primary',
   'Sonstiges': 'bg-gray-500/20 text-gray-400',
 };
 
