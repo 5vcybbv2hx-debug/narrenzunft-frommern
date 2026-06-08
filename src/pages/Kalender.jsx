@@ -15,7 +15,7 @@ import VeranstaltungBearbeitenModal from '@/components/kalender/VeranstaltungBea
 import VeranstaltungsvorlagenModal from '@/components/veranstaltung/VeranstaltungsvorlagenModal';
 
 const TERMINART_FARBEN = {
-  'Umzug':             'bg-orange-500/20 text-orange-400 border-orange-500/30',
+  'Umzug':             'bg-primary/20 text-primary border-primary/40/30',
   'Abendveranstaltung':'bg-purple-500/20 text-purple-400 border-purple-500/30',
   'Arbeitsdienst':     'bg-blue-500/20 text-blue-400 border-blue-500/30',
   'Ausschusssitzung':  'bg-red-500/20 text-red-400 border-red-500/30',
@@ -27,7 +27,7 @@ const TERMINART_FARBEN = {
 };
 
 const TERMINART_DOT = {
-  'Umzug':             'bg-orange-400',
+  'Umzug':             'bg-primary/15',
   'Abendveranstaltung':'bg-purple-400',
   'Arbeitsdienst':     'bg-blue-400',
   'Ausschusssitzung':  'bg-red-400',
@@ -201,7 +201,7 @@ export default function Kalender() {
                   </button>
                   <button onClick={() => { setShowNeuDropdown(false); setEditVeranstaltung(null); setShowVeranstaltungModal(true); }}
                     className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-secondary transition-colors border-b border-border">
-                    <Bus size={15} className="text-orange-400 shrink-0" />
+                    <Bus size={15} className="text-primary shrink-0" />
                     <div className="text-left">
                       <p className="font-medium">Auswärtiger Termin</p>
                       <p className="text-xs text-muted-foreground">Umzug, Abendveranstaltung…</p>
