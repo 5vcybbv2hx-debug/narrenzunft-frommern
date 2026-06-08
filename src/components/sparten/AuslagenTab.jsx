@@ -100,7 +100,7 @@ export default function AuslagenTab({ gruppeId, isAdmin }) {
 
   if (loading) return (
     <div className="flex items-center justify-center py-8">
-      <div className="w-5 h-5 border-4 border-border border-t-primary rounded-full animate-spin" />
+      <div className="w-5 h-5 border-[3px] border-border border-t-primary rounded-full animate-spin" />
     </div>
   );
 
