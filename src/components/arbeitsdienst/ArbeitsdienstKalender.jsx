@@ -88,7 +88,7 @@ export default function ArbeitsdienstKalender({ dienste, zuweisungen, onDienstCl
                       title={`${d.titel}${d.uhrzeit ? ` · ${d.uhrzeit}` : ''} · ${count}${needed ? `/${needed}` : ''} Personen`}
                       className={`w-full text-left text-[9px] leading-tight px-1 py-0.5 rounded font-medium truncate transition-opacity hover:opacity-80 ${
                         unterbesetzt
-                          ? 'bg-orange-500/30 text-orange-300'
+                          ? 'bg-primary/30 text-primary'
                           : 'bg-primary/20 text-primary'
                       }`}
                     >
@@ -105,7 +105,7 @@ export default function ArbeitsdienstKalender({ dienste, zuweisungen, onDienstCl
       {/* Legend */}
       <div className="flex items-center gap-4 px-4 py-2 border-t border-border text-[10px] text-muted-foreground">
         <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-primary/20" /> Besetzt</span>
-        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-orange-500/30" /> Unterbesetzt</span>
+        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-primary/30" /> Unterbesetzt</span>
       </div>
     </div>
   );
