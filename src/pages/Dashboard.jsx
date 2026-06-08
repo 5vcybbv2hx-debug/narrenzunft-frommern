@@ -147,8 +147,8 @@ export default function Dashboard() {
 
       // Häs-Stats aus Backend oder aus Dashboard-Daten
       let haesGesamt = 0, haesFrei = 0, haesAktiv = 0, haesVerliehen = 0;
-      if (haesResult?.data?.haesList) {
-        const hl = haesResult.data.haesList;
+      if (haesResult?.data?.haes) {
+        const hl = haesResult.data.haes;
         haesGesamt   = hl.length;
         haesFrei     = hl.filter(h => h.status === 'Frei').length;
         haesAktiv    = hl.filter(h => h.status === 'Aktiv').length;
