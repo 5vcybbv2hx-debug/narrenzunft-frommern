@@ -174,26 +174,26 @@ export default function ArbeitsdienstTab({ veranstaltung, isAdmin }) {
           const besetzung = getBesetzungsStatus(d);
           const pct = d.benoetigte_personen ? Math.min(100, Math.round((count / d.benoetigte_personen) * 100)) : null;
           return (
-          <div key={d.id} className={`bg-card border rounded-xl p-4 ${besetzung === 'voll' ? 'border-green-500/30' : besetzung === 'leer' && d.benoetigte_personen ? 'border-orange-500/30' : 'border-border'}`}>
+          <div key={d.id} className={`bg-card border rounded-xl p-4 ${besetzung === 'voll' ? 'border-green-500/30' : besetzung === 'leer' && d.benoetigte_personen ? 'border-primary/40/30' : 'border-border'}`}>
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-semibold text-foreground text-sm">{d.titel}</p>
                   <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[d.status]}`}>{d.status}</span>
                   {besetzung === 'voll' && <CheckCircle size={13} className="text-green-400" />}
-                  {besetzung === 'leer' && d.benoetigte_personen > 0 && <AlertCircle size={13} className="text-orange-400" />}
+                  {besetzung === 'leer' && d.benoetigte_personen > 0 && <AlertCircle size={13} className="text-primary" />}
                 </div>
                 <div className="flex flex-wrap gap-3 mt-1.5 text-xs text-muted-foreground">
                   {d.datum && <span className="flex items-center gap-1"><Clock size={10} /> {d.datum}{d.uhrzeit ? ` · ${d.uhrzeit}` : ''}</span>}
                   {d.ort && <span className="flex items-center gap-1"><MapPin size={10} /> {d.ort}</span>}
-                  <span className={`flex items-center gap-1 font-medium ${besetzung === 'voll' ? 'text-green-400' : besetzung === 'leer' && d.benoetigte_personen ? 'text-orange-400' : 'text-muted-foreground'}`}>
+                  <span className={`flex items-center gap-1 font-medium ${besetzung === 'voll' ? 'text-green-400' : besetzung === 'leer' && d.benoetigte_personen ? 'text-primary' : 'text-muted-foreground'}`}>
                     <Users size={10} /> {count}{d.benoetigte_personen ? `/${d.benoetigte_personen}` : ''}
                   </span>
                 </div>
                 {pct !== null && (
                   <div className="mt-2 h-1.5 bg-secondary rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all ${pct >= 100 ? 'bg-green-500' : pct >= 50 ? 'bg-yellow-500' : 'bg-orange-500'}`}
+                      className={`h-full rounded-full transition-all ${pct >= 100 ? 'bg-green-500' : pct >= 50 ? 'bg-yellow-500' : 'bg-primary'}`}
                       style={{ width: `${pct}%` }}
                     />
                   </div>
