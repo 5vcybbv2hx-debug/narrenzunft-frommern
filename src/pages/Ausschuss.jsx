@@ -15,7 +15,7 @@ import { kannAusschussSehn } from '@/lib/roles';
 const PRIO_FARBEN = {
   'Niedrig':  'bg-gray-500/20 text-gray-400',
   'Mittel':   'bg-blue-500/20 text-blue-400',
-  'Hoch':     'bg-orange-500/20 text-orange-400',
+  'Hoch':     'bg-primary/20 text-primary',
   'Dringend': 'bg-red-500/20 text-red-400',
 };
 
@@ -361,7 +361,7 @@ function SitzungsKarte({ termin, aufgaben, vergangen }) {
           <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
             {termin.startzeit && <span>🕐 {termin.startzeit}{termin.endzeit ? `–${termin.endzeit}` : ''}</span>}
             {termin.ort && <span>📍 {termin.ort}</span>}
-            {aufgaben.length > 0 && <span className="text-orange-400">📋 {aufgaben.length} Aufgaben</span>}
+            {aufgaben.length > 0 && <span className="text-primary">📋 {aufgaben.length} Aufgaben</span>}
           </div>
         </div>
         <ChevronRight size={15} className="text-muted-foreground shrink-0" />
