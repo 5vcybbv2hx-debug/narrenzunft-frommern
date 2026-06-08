@@ -100,7 +100,7 @@ export default function BusfahrerInfo() {
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="flex flex-col items-center gap-3">
         <div className="text-4xl">🚌</div>
-        <div className="w-8 h-8 border-4 border-border border-t-primary rounded-full animate-spin" />
+        <div className="w-8 h-8 border-[3px] border-border border-t-primary rounded-full animate-spin" />
         <p className="text-muted-foreground text-sm">Lade Busfahrer-Infos...</p>
       </div>
     </div>
