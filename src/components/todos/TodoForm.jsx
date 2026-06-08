@@ -4,7 +4,7 @@ import { X, Save, Trash2, Search } from 'lucide-react';
 const PRIORITAET_FARBEN = {
   'Niedrig':  'bg-gray-500/20 text-gray-400',
   'Mittel':   'bg-blue-500/20 text-blue-400',
-  'Hoch':     'bg-orange-500/20 text-orange-400',
+  'Hoch':     'bg-primary/20 text-primary',
   'Dringend': 'bg-red-500/20 text-red-400',
 };
 
