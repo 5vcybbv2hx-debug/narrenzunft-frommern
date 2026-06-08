@@ -274,14 +274,14 @@ export default function Dashboard() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{d.titel}</p>
                       </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${unterbesetzt ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400'}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${unterbesetzt ? 'bg-primary/20 text-primary' : 'bg-green-500/20 text-green-400'}`}>
                         {d.eingeteilt}{d.benoetigte_personen ? `/${d.benoetigte_personen}` : ''}
                       </span>
                     </div>
                     {pct !== null && (
                       <div className="ml-14 h-1.5 bg-secondary rounded-full overflow-hidden">
                         <div
-                          className={`h-full rounded-full transition-all ${pct >= 100 ? 'bg-green-500' : pct >= 50 ? 'bg-yellow-500' : 'bg-orange-500'}`}
+                          className={`h-full rounded-full transition-all ${pct >= 100 ? 'bg-green-500' : pct >= 50 ? 'bg-yellow-500' : 'bg-primary'}`}
                           style={{ width: `${pct}%` }}
                         />
                       </div>
