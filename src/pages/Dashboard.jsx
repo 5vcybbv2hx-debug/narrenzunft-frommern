@@ -17,15 +17,17 @@ import MitgliedDashboard from '@/components/dashboard/MitgliedDashboard';
 function StatCard({ icon: Icon, label, value, color = 'text-primary', onClick }) {
   return (
     <div
-      className={`bg-card border border-border rounded-xl p-4 flex items-center gap-4 ${onClick ? 'cursor-pointer hover:border-primary/50 transition-all' : ''}`}
+      className={`relative bg-card border border-border rounded-lg p-4 flex items-center gap-4 overflow-hidden ${onClick ? 'cursor-pointer hover:border-primary/40 hover:bg-card/80 transition-all duration-150' : ''}`}
       onClick={onClick}
     >
-      <div className={`w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center ${color}`}>
-        <Icon size={22} />
+      {/* roter Akzentbalken */}
+      <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-lg" />
+      <div className={`ml-2 w-11 h-11 rounded-lg bg-primary/10 flex items-center justify-center ${color} shrink-0`}>
+        <Icon size={20} />
       </div>
       <div>
-        <p className="text-2xl font-bold text-foreground">{value}</p>
-        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-2xl font-oswald font-semibold text-foreground leading-tight">{value}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
       </div>
     </div>
   );
