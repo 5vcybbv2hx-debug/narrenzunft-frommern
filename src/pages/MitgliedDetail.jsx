@@ -197,12 +197,11 @@ export default function MitgliedDetail() {
   };
 
   const handleArchivieren = async () => {
-    const grund = window.prompt('Grund der Archivierung (optional):') ?? '';
-    if (grund === null) return; // Abbruch
+    if (!window.confirm(`Mitglied "${mitglied.vorname} ${mitglied.nachname}" wirklich archivieren?`)) return;
     await base44.entities.Mitglied.update(mitglied.id, {
       archiviert: true,
       archiviert_am: new Date().toISOString().split('T')[0],
-      archiviert_grund: grund || 'Keine Angabe',
+      archiviert_grund: 'Archiviert',
     });
     navigate('/mitglieder');
   };
@@ -246,7 +245,7 @@ export default function MitgliedDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-8 h-8 border-[3px] border-border border-t-primary rounded-full animate-spin" />
+        <div className="w-9 h-9 border-[3px] border-border border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
@@ -333,9 +332,24 @@ export default function MitgliedDetail() {
                   <Archive size={10} /> Archiviert
                 </span>
               )}
-              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
-                {mitglied.mitgliedsstatus}
-              </span>
+              {(() => {
+                const sc = {
+                  'Aktiv':'bg-green-500/20 text-green-400',
+                  'Passiv':'bg-yellow-500/20 text-yellow-400',
+                  'Passiv mit Häs':'bg-primary/20 text-primary',
+                  'Ehrenmitglied':'bg-purple-500/20 text-purple-400',
+                  'Jugendliche 11-14':'bg-blue-500/20 text-blue-400',
+                  'Jungaktive 15-17':'bg-cyan-500/20 text-cyan-400',
+                  'Kinder 4-10':'bg-pink-500/20 text-pink-400',
+                  'Kleinkind 0-3':'bg-rose-500/20 text-rose-400',
+                  'Verstorben':'bg-gray-600/30 text-gray-400',
+                };
+                return (
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${sc[mitglied.mitgliedsstatus] || 'bg-secondary text-muted-foreground'}`}>
+                    {mitglied.mitgliedsstatus}
+                  </span>
+                );
+              })()}
               {(mitglied.haesgruppen_ids || (mitglied.haesgruppe_id ? [mitglied.haesgruppe_id] : [])).map(gid => {
                 const g = haesgruppen.find(g => g.id === gid);
                 return g ? <span key={gid} className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">📍 {g.name}</span> : null;
@@ -353,20 +367,22 @@ export default function MitgliedDetail() {
 
       {/* Tabs */}
       {!isNew && (
-        <div className="flex gap-1 bg-secondary rounded-xl p-1 mb-4">
+        <div className="flex gap-1.5 overflow-x-auto pb-1 mb-4 scrollbar-hide">
           {[
-            { id: 'profil', label: 'Profil' },
-            { id: 'antrag', label: '📄 Antrag' },
-            { id: 'familie', label: 'Familie' },
-            { id: 'aktivitaet', label: 'Aktivität' },
-            { id: 'arbeitsdienste', label: 'Arbeitsdienste' },
-            { id: 'ehrungen', label: 'Ehrungen' },
+            { id: 'profil',        label: 'Profil' },
+            { id: 'antrag',        label: 'Antrag' },
+            { id: 'familie',       label: 'Familie' },
+            { id: 'aktivitaet',    label: 'Aktivität' },
+            { id: 'arbeitsdienste',label: 'Dienste' },
+            { id: 'ehrungen',      label: 'Ehrungen' },
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeTab === tab.id ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'
+              className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === tab.id
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80'
               }`}
             >
               {tab.label}
@@ -591,7 +607,7 @@ export default function MitgliedDetail() {
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([mitglied.strasse, mitglied.plz, mitglied.ort].filter(Boolean).join(' '))}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors mt-1"
+                className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors mt-1"
               >
                 <MapPin size={11} /> Navigation öffnen
               </a>
@@ -677,7 +693,10 @@ export default function MitgliedDetail() {
                   <p className="text-xs text-muted-foreground">{h.bezeichnung}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary">{h.status}</span>
+                  {(() => {
+                    const hsc = { 'Aktiv':'bg-green-500/20 text-green-400', 'Frei':'bg-yellow-500/20 text-yellow-400', 'Verliehen':'bg-blue-500/20 text-blue-400', 'Stillgelegt':'bg-gray-500/20 text-gray-400', 'Verkauft':'bg-red-500/20 text-red-400' };
+                    return <span className={`text-xs px-2 py-0.5 rounded-full ${hsc[h.status] || 'bg-secondary text-muted-foreground'}`}>{h.status}</span>;
+                  })()}
                   <ChevronRight size={14} className="text-muted-foreground" />
                 </div>
               </Link>
@@ -881,6 +900,7 @@ export default function MitgliedDetail() {
               <button onClick={() => { setShowHaesModal(false); setHaessuche(''); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"><X size={16} /></button>
             </div>
             <div className="space-y-3">
+              <p className="text-xs text-muted-foreground mb-1">Freie Häs werden zuerst angezeigt.</p>
               <div className="relative">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
@@ -894,14 +914,19 @@ export default function MitgliedDetail() {
               </div>
 
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                {allHaes
+                {[...allHaes]
                   .filter(h =>
                     !haes.some(m => m.id === h.id) &&
                     (haessuche === '' ||
                       h.haesnummer.toLowerCase().includes(haessuche.toLowerCase()) ||
                       (h.bezeichnung || '').toLowerCase().includes(haessuche.toLowerCase()))
                   )
-                  .slice(0, 20)
+                  .sort((a, b) => {
+                    // Freie Häs zuerst, dann Aktiv, Rest hinten
+                    const order = { 'Frei': 0, 'Aktiv': 1, 'Verliehen': 2, 'Stillgelegt': 3, 'Verkauft': 4 };
+                    return (order[a.status] ?? 5) - (order[b.status] ?? 5);
+                  })
+                  .slice(0, 30)
                   .map(h => (
                     <button
                       key={h.id}
