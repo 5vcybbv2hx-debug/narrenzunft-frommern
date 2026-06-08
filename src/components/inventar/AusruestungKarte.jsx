@@ -31,10 +31,10 @@ export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, auslei
   const versStatus = getTuevStatus(ausruestung.versicherung_gueltig_bis);
 
   return (
-    <div className={`bg-card border rounded-xl p-4 transition-all ${frei ? 'border-border' : 'border-orange-500/30'}`}>
+    <div className={`bg-card border rounded-xl p-4 transition-all ${frei ? 'border-border' : 'border-primary/40/30'}`}>
       <div className="flex items-start gap-3">
         {/* Icon */}
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 ${frei ? 'bg-secondary' : 'bg-orange-500/10'}`}>
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 ${frei ? 'bg-secondary' : 'bg-primary/10'}`}>
           {ausruestung.bild_url
             ? <img src={ausruestung.bild_url} alt="" className="w-full h-full object-cover rounded-xl" />
             : KATEGORIE_EMOJIS[ausruestung.kategorie] || '📦'
@@ -56,7 +56,7 @@ export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, auslei
 
           <div className="flex flex-wrap gap-2 mt-2">
             {/* Status */}
-            <span className={`text-[10px] px-2.5 py-1 rounded-full font-semibold ${frei ? 'bg-green-500/20 text-green-400' : 'bg-orange-500/20 text-orange-400'}`}>
+            <span className={`text-[10px] px-2.5 py-1 rounded-full font-semibold ${frei ? 'bg-green-500/20 text-green-400' : 'bg-primary/20 text-primary'}`}>
               {frei ? '✓ Verfügbar' : '● Ausgeliehen'}
             </span>
             <span className={`text-[10px] px-2 py-0.5 rounded-full ${ZUSTAND_FARBEN[ausruestung.zustand]}`}>
@@ -76,8 +76,8 @@ export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, auslei
 
           {/* Aktuelle Ausleihe */}
           {aktuelleAusleihe && (
-            <div className="mt-2 px-3 py-2 rounded-lg bg-orange-500/10 border border-orange-500/20 text-xs">
-              <p className="text-orange-300">
+            <div className="mt-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/40/20 text-xs">
+              <p className="text-primary">
                 {aktuelleAusleihe.ausleiher_typ === 'extern' ? '🌐' : '👤'} {ausleiherName} · bis {aktuelleAusleihe.bis_datum}
                 {aktuelleAusleihe.zweck && ` · ${aktuelleAusleihe.zweck}`}
               </p>
