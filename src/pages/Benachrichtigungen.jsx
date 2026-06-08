@@ -19,7 +19,7 @@ const TYP_COLORS = {
   'Info': 'text-blue-400 bg-blue-500/10',
   'Warnung': 'text-yellow-400 bg-yellow-500/10',
   'Ehrung': 'text-yellow-400 bg-yellow-500/10',
-  'Arbeitsdienst': 'text-orange-400 bg-orange-500/10',
+  'Arbeitsdienst': 'text-primary bg-primary/10',
   'Veranstaltung': 'text-primary bg-primary/10',
   'Beitrag': 'text-red-400 bg-red-500/10',
 };
