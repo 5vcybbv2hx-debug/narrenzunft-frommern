@@ -291,7 +291,7 @@ export default function AuslagenTab({ gruppeId, isAdmin }) {
                   {a.status !== 'Storniert' && (
                     <button
                       onClick={() => handleStatusChange(a, 'Storniert')}
-                      className="p-1 rounded text-orange-400 hover:bg-orange-500/10 transition-colors"
+                      className="p-1 rounded text-primary hover:bg-primary/10 transition-colors"
                       title="Stornieren"
                     >
                       <X size={12} />
