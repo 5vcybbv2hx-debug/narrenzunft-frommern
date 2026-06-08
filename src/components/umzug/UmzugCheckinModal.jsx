@@ -138,7 +138,7 @@ export default function UmzugCheckinModal({ veranstaltung, onClose }) {
         <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-1.5">
           {loading && (
             <div className="flex items-center justify-center py-8">
-              <div className="w-6 h-6 border-4 border-border border-t-primary rounded-full animate-spin" />
+              <div className="w-6 h-6 border-[3px] border-border border-t-primary rounded-full animate-spin" />
             </div>
           )}
           {!loading && gefiltert.length === 0 && spontanVorschlaege.length === 0 && (
