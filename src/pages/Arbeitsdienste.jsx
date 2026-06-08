@@ -21,7 +21,7 @@ const ZUWEISUNG_COLORS = {
   'Bestätigt':     'bg-green-500/20 text-green-400',
   'Erledigt':      'bg-green-500/20 text-green-400',
   'Abgesagt':      'bg-red-500/20 text-red-400',
-  'Nicht erledigt':'bg-orange-500/20 text-orange-400',
+  'Nicht erledigt':'bg-primary/20 text-primary',
 };
 
 export default function Arbeitsdienste() {
