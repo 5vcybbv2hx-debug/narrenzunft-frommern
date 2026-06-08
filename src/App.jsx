@@ -51,10 +51,19 @@ const AuthenticatedApp = () => {
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="text-4xl">🎭</div>
-          <div className="w-8 h-8 border-4 border-border border-t-primary rounded-full animate-spin" />
-          <p className="text-muted-foreground text-sm">Narrenzunft Verwaltung wird geladen...</p>
+        <div className="flex flex-col items-center gap-5">
+          {/* Logo */}
+          <div className="w-16 h-16 rounded-xl bg-primary flex items-center justify-center shadow-xl shadow-primary/30">
+            <span className="text-3xl">🎭</span>
+          </div>
+          {/* Vereinsname */}
+          <div className="text-center">
+            <p className="font-oswald font-semibold text-foreground text-xl uppercase tracking-widest">Narrenzunft</p>
+            <p className="text-primary text-xs font-semibold uppercase tracking-[0.3em] mt-0.5">Frommern</p>
+          </div>
+          {/* Roter Spinner */}
+          <div className="w-8 h-8 border-[3px] border-border border-t-primary rounded-full animate-spin" />
+          <p className="text-muted-foreground text-xs tracking-wide">Wird geladen…</p>
         </div>
       </div>
     );
