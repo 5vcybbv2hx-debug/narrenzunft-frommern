@@ -6,7 +6,7 @@ import { Baby, CheckCircle2, ChevronRight, RefreshCw, X, ArrowRight } from 'luci
 const STATUS_FARBEN = {
   'Kleinkind 0-3':     'bg-pink-500/20 text-pink-300',
   'Kinder 4-10':       'bg-yellow-500/20 text-yellow-300',
-  'Jugendliche 11-14': 'bg-orange-500/20 text-orange-300',
+  'Jugendliche 11-14': 'bg-primary/20 text-primary',
   'Jungaktive 15-17':  'bg-blue-500/20 text-blue-300',
   'Aktiv':             'bg-green-500/20 text-green-400',
 };
