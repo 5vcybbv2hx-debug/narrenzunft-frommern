@@ -100,7 +100,7 @@ export default function AntragTab({ mitglied, isAdmin }) {
                 className="w-full flex flex-col items-center justify-center gap-2 py-8 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-all text-muted-foreground hover:text-primary"
               >
                 {uploading ? (
-                  <div className="w-6 h-6 border-4 border-border border-t-primary rounded-full animate-spin" />
+                  <div className="w-6 h-6 border-[3px] border-border border-t-primary rounded-full animate-spin" />
                 ) : (
                   <>
                     <Upload size={24} />
