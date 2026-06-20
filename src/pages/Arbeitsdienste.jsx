@@ -107,7 +107,10 @@ export default function Arbeitsdienste() {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="w-9 h-9 border-[3px] border-border border-t-primary rounded-full animate-spin" />
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-9 h-9 border-[3px] border-border border-t-primary rounded-full animate-spin" />
+        <p className="text-xs text-muted-foreground">Arbeitsdienste werden geladen…</p>
+      </div>
     </div>
   );
 
@@ -115,7 +118,7 @@ export default function Arbeitsdienste() {
     <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Arbeitsdienste</h1>
+          <h1 className="text-2xl font-oswald font-semibold text-foreground tracking-wide">Arbeitsdienste</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{dienste.length} gesamt</p>
         </div>
         {kannVerwalten && (
@@ -140,21 +143,19 @@ export default function Arbeitsdienste() {
       </div>
 
       {/* Ansicht-Toggle */}
-      <div className="flex items-center gap-1.5 sm:gap-2 mb-4">
-        <div className="flex gap-0.5 sm:gap-1 bg-secondary rounded-xl p-0.5 sm:p-1">
-          <button
-            onClick={() => setAnsicht('liste')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${ansicht === 'liste' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}
-          >
-            <List size={13} /> Liste
-          </button>
-          <button
-            onClick={() => setAnsicht('kalender')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${ansicht === 'kalender' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}
-          >
-            <Calendar size={13} /> Kalender
-          </button>
-        </div>
+      <div className="flex gap-1.5 mb-4">
+        <button
+          onClick={() => setAnsicht('liste')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${ansicht === 'liste' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+        >
+          <List size={14} /> Liste
+        </button>
+        <button
+          onClick={() => setAnsicht('kalender')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${ansicht === 'kalender' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+        >
+          <Calendar size={14} /> Kalender
+        </button>
       </div>
 
       {/* Kalenderansicht */}
@@ -169,19 +170,34 @@ export default function Arbeitsdienste() {
       {ansicht === 'liste' && (
         <>
         {/* Filter */}
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
-          {['Alle', 'Kommend', 'Vergangen', 'Offen', 'In Planung', 'Abgeschlossen'].map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                filter === f ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground'
-              }`}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
+        {(() => {
+          const filterCount = {
+            'Alle':         dienste.length,
+            'Kommend':      dienste.filter(d => d.datum >= today).length,
+            'Vergangen':    dienste.filter(d => d.datum < today).length,
+            'Offen':        dienste.filter(d => d.status === 'Offen').length,
+            'In Planung':   dienste.filter(d => d.status === 'In Planung').length,
+            'Abgeschlossen':dienste.filter(d => d.status === 'Abgeschlossen').length,
+          };
+          return (
+            <div className="flex gap-2 overflow-x-auto pb-1 mb-4 scrollbar-hide">
+              {['Alle', 'Kommend', 'Vergangen', 'Offen', 'In Planung', 'Abgeschlossen'].map(f => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    filter === f ? 'bg-primary text-white' : 'bg-card border border-border text-muted-foreground hover:border-primary/50'
+                  }`}
+                >
+                  {f}
+                  <span className={`text-[10px] font-bold px-1 rounded-full ${filter === f ? 'bg-white/20' : 'bg-secondary'}`}>
+                    {filterCount[f] ?? 0}
+                  </span>
+                </button>
+              ))}
+            </div>
+          );
+        })()}
 
         <div className="space-y-3">
         {sortedKeys.map(eventKey => {
@@ -195,17 +211,31 @@ export default function Arbeitsdienste() {
               {/* Veranstaltungs Header (Klappbar) */}
               <button
                 onClick={() => setExpandedEvents(p => ({ ...p, [eventKey]: !p[eventKey] }))}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary/50 border border-border hover:border-primary/40 transition-all group"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-secondary/60 border border-border hover:border-primary/40 transition-all"
               >
-                {isExpanded ? <ChevronUp size={18} className="text-primary" /> : <ChevronDown size={18} className="text-muted-foreground" />}
-                <div className="flex-1 text-left">
-                  <p className="font-semibold text-foreground">
+                {event ? (
+                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex flex-col items-center justify-center">
+                    <span className="text-[9px] text-muted-foreground uppercase leading-none font-medium">
+                      {format(new Date(event.datum), 'MMM', { locale: de })}
+                    </span>
+                    <span className="text-base font-oswald font-bold text-primary leading-tight">
+                      {format(new Date(event.datum), 'd')}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
+                    <Briefcase size={16} className="text-muted-foreground" />
+                  </div>
+                )}
+                <div className="flex-1 text-left min-w-0">
+                  <p className="font-semibold text-foreground text-sm truncate">
                     {event ? event.titel : 'Keine Veranstaltung zugeordnet'}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {event ? format(new Date(event.datum), 'dd.MM.yyyy', { locale: de }) : 'N/A'} · {dienste_event.length} Dienst{dienste_event.length !== 1 ? 'e' : ''} · {allZuweisungen} eingeteilt
                   </p>
                 </div>
+                {isExpanded ? <ChevronUp size={16} className="text-primary shrink-0" /> : <ChevronDown size={16} className="text-muted-foreground shrink-0" />}
               </button>
 
               {/* Dienste (Ausgeklappt) */}
@@ -236,6 +266,18 @@ export default function Arbeitsdienste() {
                               {d.beschreibung && (
                                 <p className="text-[11px] text-muted-foreground mt-1.5 line-clamp-2">{d.beschreibung}</p>
                               )}
+                              {d.benoetigte_personen > 0 && (() => {
+                                const eingeteilt = zuws.filter(z => z.status !== 'Abgesagt').length;
+                                const pct = Math.min(100, Math.round((eingeteilt / d.benoetigte_personen) * 100));
+                                const barColor = pct >= 100 ? 'bg-green-500' : pct >= 60 ? 'bg-yellow-500' : 'bg-primary';
+                                return (
+                                  <div className="mt-2">
+                                    <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                                      <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                             </div>
                             {kannVerwalten && (
                               <button
@@ -253,24 +295,30 @@ export default function Arbeitsdienste() {
                               <p className="text-[10px] text-muted-foreground mb-1.5">Meine Zuweisung:</p>
                               <div className="flex gap-2">
                                 <button
-                                  onClick={() => handleStatusChange(meineZ, 'Bestätigt')}
-                                  className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                                  onClick={async () => {
+                                    if (meineZ.status === 'Bestätigt') return;
+                                    await handleStatusChange(meineZ, 'Bestätigt');
+                                  }}
+                                  className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
                                     meineZ.status === 'Bestätigt' || meineZ.status === 'Erledigt'
                                       ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                      : 'bg-secondary text-muted-foreground hover:bg-green-500/10 hover:text-green-400'
+                                      : 'bg-secondary text-muted-foreground hover:bg-green-500/10 hover:text-green-400 border border-border'
                                   }`}
                                 >
-                                  ✓ OK
+                                  {meineZ.status === 'Bestätigt' || meineZ.status === 'Erledigt' ? '✓ Bestätigt' : '✓ Bestätigen'}
                                 </button>
                                 <button
-                                  onClick={() => handleStatusChange(meineZ, 'Abgesagt')}
-                                  className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                                  onClick={async () => {
+                                    if (meineZ.status === 'Abgesagt') return;
+                                    await handleStatusChange(meineZ, 'Abgesagt');
+                                  }}
+                                  className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
                                     meineZ.status === 'Abgesagt'
                                       ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                                      : 'bg-secondary text-muted-foreground hover:bg-red-500/10 hover:text-red-400'
+                                      : 'bg-secondary text-muted-foreground hover:bg-red-500/10 hover:text-red-400 border border-border'
                                   }`}
                                 >
-                                  ✗ Absage
+                                  {meineZ.status === 'Abgesagt' ? '✗ Abgesagt' : '✗ Absagen'}
                                 </button>
                               </div>
                             </div>
@@ -316,8 +364,16 @@ export default function Arbeitsdienste() {
 
         {filtered.length === 0 && (
           <div className="text-center py-12">
-            <Briefcase size={40} className="text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">Keine Arbeitsdienste gefunden</p>
+            <Briefcase size={36} className="text-muted-foreground/40 mx-auto mb-3" />
+            <p className="text-foreground font-medium">Keine Arbeitsdienste</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {filter !== 'Alle' ? `Keine Einträge für Filter „${filter}"` : 'Noch keine Arbeitsdienste angelegt'}
+            </p>
+            {filter !== 'Alle' && (
+              <button onClick={() => setFilter('Alle')} className="mt-3 text-xs text-primary hover:underline">
+                Filter zurücksetzen
+              </button>
+            )}
           </div>
         )}
         </>
