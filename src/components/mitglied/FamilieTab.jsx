@@ -103,11 +103,11 @@ export default function FamilieTab({ mitglied, isAdmin }) {
     setSuchbegriff(q);
     if (q.length < 2) { setSuchErgebnisse([]); return; }
     try {
-      const res = await base44.functions.invoke('searchMitgliedSicher', { q });
+      const res = await base44.functions.invoke('searchMitgliedSicher', { query: q });
       const verknuepfteIds = new Set(verwandtschaften.map(v =>
         v.mitglied_id === mitglied.id ? v.verwandter_id : v.mitglied_id
       ));
-      setSuchErgebnisse((res.data?.mitglieder || []).filter(m => m.id !== mitglied.id && !verknuepfteIds.has(m.id)));
+      setSuchErgebnisse((res.data?.results || []).filter(m => m.id !== mitglied.id && !verknuepfteIds.has(m.id)));
     } catch {}
   };
 
