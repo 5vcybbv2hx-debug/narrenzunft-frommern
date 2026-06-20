@@ -15,7 +15,7 @@ import VeranstaltungBearbeitenModal from '@/components/kalender/VeranstaltungBea
 import VeranstaltungsvorlagenModal from '@/components/veranstaltung/VeranstaltungsvorlagenModal';
 
 const TERMINART_FARBEN = {
-  'Umzug':             'bg-primary/20 text-primary border-primary/40/30',
+  'Umzug':             'bg-primary/20 text-primary border-primary/30',
   'Abendveranstaltung':'bg-purple-500/20 text-purple-400 border-purple-500/30',
   'Arbeitsdienst':     'bg-blue-500/20 text-blue-400 border-blue-500/30',
   'Ausschusssitzung':  'bg-red-500/20 text-red-400 border-red-500/30',
@@ -27,7 +27,7 @@ const TERMINART_FARBEN = {
 };
 
 const TERMINART_DOT = {
-  'Umzug':             'bg-primary/15',
+  'Umzug':             'bg-primary',
   'Abendveranstaltung':'bg-purple-400',
   'Arbeitsdienst':     'bg-blue-400',
   'Ausschusssitzung':  'bg-red-400',
@@ -70,6 +70,7 @@ export default function Kalender() {
   const [editVeranstaltung, setEditVeranstaltung] = useState(null);
   const [showVorlagen, setShowVorlagen] = useState(false);
   const [showNeuDropdown, setShowNeuDropdown] = useState(false);
+  const [zeigeVergangene, setZeigeVergangene] = useState(false);
   const navigate = useNavigate();
 
   const userRolle = user?.role || 'mitglied';
@@ -162,7 +163,10 @@ export default function Kalender() {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="w-9 h-9 border-[3px] border-border border-t-primary rounded-full animate-spin" />
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-9 h-9 border-[3px] border-border border-t-primary rounded-full animate-spin" />
+        <p className="text-xs text-muted-foreground">Kalender wird geladen…</p>
+      </div>
     </div>
   );
 
@@ -171,13 +175,13 @@ export default function Kalender() {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Veranstaltungen</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{termine.length} Termine gesamt</p>
+          <h1 className="text-2xl font-oswald font-semibold text-foreground tracking-wide">Kalender</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{termine.length} Termine · {format(new Date(), 'MMMM yyyy', { locale: de })}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowFilter(!showFilter)}
-            className={`p-2 rounded-lg transition-colors ${showFilter ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+            className={`relative p-2 rounded-lg transition-colors ${showFilter || filterArt !== 'alle' ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
           >
             <Filter size={18} />
           </button>
@@ -291,16 +295,16 @@ export default function Kalender() {
       )}
 
       {/* Ansicht-Toggle */}
-      <div className="flex gap-0.5 sm:gap-1 bg-secondary rounded-xl p-0.5 sm:p-1 mb-4">
+      <div className="flex gap-1.5 mb-4">
         <button
           onClick={() => setAnsicht('liste')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${ansicht === 'liste' ? 'bg-card text-foreground shadow' : 'text-muted-foreground'}`}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${ansicht === 'liste' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
         >
           <List size={15} /> Liste
         </button>
         <button
           onClick={() => setAnsicht('monat')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${ansicht === 'monat' ? 'bg-card text-foreground shadow' : 'text-muted-foreground'}`}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${ansicht === 'monat' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
         >
           <Calendar size={15} /> Monat
         </button>
@@ -314,7 +318,7 @@ export default function Kalender() {
             <button onClick={() => setMonat(subMonths(monat, 1))} className="p-1.5 rounded-lg hover:bg-secondary transition-colors text-muted-foreground">
               <ChevronLeft size={18} />
             </button>
-            <h2 className="font-bold text-foreground">
+            <h2 className="font-oswald font-semibold text-foreground text-lg">
               {format(monat, 'MMMM yyyy', { locale: de })}
             </h2>
             <button onClick={() => setMonat(addMonths(monat, 1))} className="p-1.5 rounded-lg hover:bg-secondary transition-colors text-muted-foreground">
@@ -405,32 +409,53 @@ export default function Kalender() {
       )}
 
       {/* LISTENANSICHT */}
-      {ansicht === 'liste' && (
-        <div className="space-y-3">
-          {kommende.length === 0 ? (
-            <div className="text-center py-16 bg-card border border-border rounded-xl">
-              <Calendar size={40} className="text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">Keine bevorstehenden Termine</p>
-              {admin && (
-                <button onClick={() => { setEditTermin(null); setShowModal(true); }} className="mt-3 text-sm text-primary hover:underline">
-                  Ersten Termin erstellen
-                </button>
-              )}
+      {ansicht === 'liste' && (() => {
+        const today = format(new Date(), 'yyyy-MM-dd');
+        const listeKommend = gefilterteTermine.filter(t => t.datum >= today);
+        const listeVergangen = gefilterteTermine.filter(t => t.datum < today).reverse();
+        const listeAnzeigen = zeigeVergangene ? listeVergangen : listeKommend;
+        return (
+          <div className="space-y-3">
+            {/* Toggle Kommend/Vergangen */}
+            <div className="flex gap-2 text-xs">
+              <button
+                onClick={() => setZeigeVergangene(false)}
+                className={`px-3 py-1.5 rounded-full font-medium transition-all ${!zeigeVergangene ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+              >
+                Kommend ({listeKommend.length})
+              </button>
+              <button
+                onClick={() => setZeigeVergangene(true)}
+                className={`px-3 py-1.5 rounded-full font-medium transition-all ${zeigeVergangene ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+              >
+                Vergangen ({listeVergangen.length})
+              </button>
             </div>
-          ) : (
-            kommende.map(t => (
-              <TerminKarte
-                key={t.id}
-                termin={t}
-                anmeldung={meineAnmeldung(t.id)}
-                onAnmelden={() => handleAnmelden(t)}
-                onEdit={admin ? () => { setEditTermin(t); setShowModal(true); } : null}
-                onEditVeranstaltung={admin ? (v) => { setEditVeranstaltung(v); setShowVeranstaltungModal(true); } : null}
-              />
-            ))
-          )}
-        </div>
-      )}
+            {listeAnzeigen.length === 0 ? (
+              <div className="text-center py-16 bg-card border border-border rounded-xl">
+                <Calendar size={36} className="text-muted-foreground/40 mx-auto mb-3" />
+                <p className="text-muted-foreground">{zeigeVergangene ? 'Keine vergangenen Termine' : 'Keine bevorstehenden Termine'}</p>
+                {admin && !zeigeVergangene && (
+                  <button onClick={() => { setEditTermin(null); setShowModal(true); }} className="mt-3 text-sm text-primary hover:underline">
+                    Ersten Termin erstellen
+                  </button>
+                )}
+              </div>
+            ) : (
+              listeAnzeigen.slice(0, 30).map(t => (
+                <TerminKarte
+                  key={t.id}
+                  termin={t}
+                  anmeldung={meineAnmeldung(t.id)}
+                  onAnmelden={() => handleAnmelden(t)}
+                  onEdit={admin ? () => { setEditTermin(t); setShowModal(true); } : null}
+                  onEditVeranstaltung={admin ? (v) => { setEditVeranstaltung(v); setShowVeranstaltungModal(true); } : null}
+                />
+              ))
+            )}
+          </div>
+        );
+      })()}
 
       {/* Modal KalenderTermin */}
       {showModal && (
