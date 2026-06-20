@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
-import { ArrowLeft, Shirt, Plus, Trash2, UserCheck, UserX, Save, X, Search, Upload } from 'lucide-react';
+import { ArrowLeft, Shirt, Plus, Trash2, UserCheck, UserX, Save, X, Search, Edit } from 'lucide-react';
 import HaesHistorieImportModal from '@/components/haes/HaesHistorieImportModal';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -184,13 +184,13 @@ export default function HaesDetail() {
           <ArrowLeft size={20} />
         </button>
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-foreground">Häs #{haes.haesnummer}</h1>
+          <h1 className="text-xl font-oswald font-semibold text-foreground">Häs #{haes.haesnummer}</h1>
           <p className="text-sm text-muted-foreground">{haes.bezeichnung || 'Keine Bezeichnung'}</p>
         </div>
         {admin && !editing && (
           <div className="flex gap-2">
-            <button onClick={() => setEditing(true)} className="px-3 py-2 rounded-lg bg-secondary text-sm text-foreground hover:bg-border transition-colors">
-              Bearbeiten
+            <button onClick={() => setEditing(true)} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors">
+              <Edit size={14} /> Bearbeiten
             </button>
             <button onClick={handleDelete} className="p-2 rounded-lg text-destructive hover:bg-destructive/10 transition-colors">
               <Trash2 size={18} />
@@ -372,16 +372,18 @@ export default function HaesDetail() {
             {haes.haesgruppe_id && (
               <p className="text-muted-foreground">Gruppe: <span className="text-foreground">{gruppen.find(g => g.id === haes.haesgruppe_id)?.name || '–'}</span></p>
             )}
-            <p className="text-muted-foreground">
-              Eigentümer:{' '}
-              <span className={`font-medium ${haes.vereinseigentum ? 'text-primary' : 'text-foreground'}`}>
-                {haes.vereinseigentum
-                  ? '🏛 Verein'
-                  : haes.privat_eigentuemer_id
-                    ? `👤 ${getMitgliedName(haes.privat_eigentuemer_id)}`
-                    : 'Privat (keine Person verknüpft)'}
-              </span>
-            </p>
+            <div className="flex items-center gap-1 text-sm">
+              <span className="text-muted-foreground">Eigentümer:</span>{' '}
+              {haes.vereinseigentum ? (
+                <span className="font-medium text-primary">🏛 Verein</span>
+              ) : haes.privat_eigentuemer_id ? (
+                <Link to={`/mitglieder/${haes.privat_eigentuemer_id}`} className="font-medium text-foreground hover:text-primary transition-colors">
+                  👤 {getMitgliedName(haes.privat_eigentuemer_id)}
+                </Link>
+              ) : (
+                <span className="text-muted-foreground italic">Keine Person verknüpft</span>
+              )}
+            </div>
             {haes.notizen && <p className="text-muted-foreground text-xs mt-2 whitespace-pre-wrap">{haes.notizen}</p>}
           </div>
         )}
@@ -417,11 +419,13 @@ export default function HaesDetail() {
             <div className="space-y-2">
               {aktiveZuweisungen.map(h => (
                 <div key={h.id} className="flex items-center gap-3 bg-green-500/5 border border-green-500/20 rounded-xl px-3 py-3">
-                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs shrink-0">
                     {getMitgliedName(h.mitglied_id)[0]}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground">{getMitgliedName(h.mitglied_id)}</p>
+                    <Link to={`/mitglieder/${h.mitglied_id}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+                      {getMitgliedName(h.mitglied_id)}
+                    </Link>
                     <p className="text-xs text-muted-foreground">
                       seit {h.von_datum ? format(new Date(h.von_datum), 'dd.MM.yyyy', { locale: de }) : '–'}
                     </p>
