@@ -231,7 +231,7 @@ export default function VeranstaltungDetail() {
           <ArrowLeft size={20} />
         </button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-bold text-foreground truncate">{isNew ? 'Neue Veranstaltung' : veranstaltung.titel}</h1>
+          <h1 className="text-xl font-oswald font-semibold text-foreground truncate">{isNew ? 'Neue Veranstaltung' : veranstaltung.titel}</h1>
           {!isNew && veranstaltung.datum && (
             <p className="text-sm text-muted-foreground">
               {format(new Date(veranstaltung.datum), 'EEEE, d. MMMM yyyy', { locale: de })}
@@ -257,20 +257,22 @@ export default function VeranstaltungDetail() {
 
       {/* Tabs */}
       {!isNew && (
-        <div className="flex gap-1 bg-secondary rounded-xl p-1 mb-4 overflow-x-auto">
+         <div className="flex gap-1.5 overflow-x-auto pb-1 mb-4 scrollbar-hide">
           {[
-            { id: 'info', label: 'Info' },
-            { id: 'teilnahmen', label: `Teilnahmen (${angemeldete.length})` },
-            { id: 'check-in', label: 'Check-In' },
-            { id: 'bus', label: `Bus (${teilnahmen.filter(t => t.bus).length})` },
-            { id: 'arbeitsdienste', label: '🛠 Dienste' },
-            { id: 'dokumente', label: '📎 Dokumente' },
+            { id: 'info',          label: 'Info' },
+            { id: 'teilnahmen',    label: `Teilnahmen (${angemeldete.length})` },
+            { id: 'check-in',      label: 'Check-In' },
+            { id: 'bus',           label: `Bus (${teilnahmen.filter(t => t.bus).length})` },
+            { id: 'arbeitsdienste',label: 'Dienste' },
+            { id: 'dokumente',     label: 'Dokumente' },
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeTab === tab.id ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'
+              className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === tab.id
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80'
               }`}
             >
               {tab.label}
@@ -310,7 +312,7 @@ export default function VeranstaltungDetail() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleAnmelden(false)}
-                        className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+                        className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
                       >
                         Anmelden
                       </button>
@@ -568,7 +570,7 @@ export default function VeranstaltungDetail() {
           <div className="space-y-2">
             {filteredTeilnahmen.map(t => (
               <div key={t.id} className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3">
-                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-xs shrink-0">
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs shrink-0">
                   {getMitgliedName(t.mitglied_id)[0]}
                 </div>
                 <div className="flex-1 min-w-0">
