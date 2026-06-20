@@ -327,13 +327,6 @@ export default function Haes() {
         />
       )}
 
-      {/* Historie Import Modal */}
-      {showHistorieImport && (
-        <HaesHistorieImportModal
-          onClose={() => setShowHistorieImport(false)}
-          onImported={() => loadData()}
-        />
-      )}
     </div>
   );
 }

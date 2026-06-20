@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
-import { ArrowLeft, Shirt, Plus, Trash2, UserCheck, UserX, Save, X, Search, Edit } from 'lucide-react';
+import { ArrowLeft, Shirt, Plus, Trash2, UserCheck, UserX, Save, X, Search, Edit, Upload } from 'lucide-react';
 import HaesHistorieImportModal from '@/components/haes/HaesHistorieImportModal';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
