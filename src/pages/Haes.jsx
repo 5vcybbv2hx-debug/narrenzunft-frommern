@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { Shirt, Plus, Search, ChevronRight, Calendar, Upload } from 'lucide-react';
+import { Shirt, Plus, Search, ChevronRight, Calendar } from 'lucide-react';
 import HaesGroupTokenModal from '@/components/haes/HaesGroupTokenModal';
-import HaesHistorieImportModal from '@/components/haes/HaesHistorieImportModal';
+import { isAdmin } from '@/lib/roles';
 
 const STATUS_COLORS = {
   'Aktiv': 'bg-green-500/20 text-green-400',
@@ -28,8 +28,7 @@ export default function Haes() {
   const [newGruppe, setNewGruppe] = useState({ name: '', beschreibung: '' });
   const [newHaes, setNewHaes] = useState({ haesnummer: '', haesgruppe_id: '', bezeichnung: '', status: 'Frei' });
   const [selectedGruppeToken, setSelectedGruppeToken] = useState(null);
-  const [showHistorieImport, setShowHistorieImport] = useState(false);
-  const isAdminUser = user?.role === 'admin';
+  const isAdminUser = isAdmin(user);
 
   useEffect(() => {
     loadData();
@@ -95,15 +94,19 @@ export default function Haes() {
 
   // Stats
   const stats = {
-    gesamt: haes.length,
-    aktiv: haes.filter(h => h.status === 'Aktiv').length,
-    verliehen: haes.filter(h => h.status === 'Verliehen').length,
-    frei: haes.filter(h => h.status === 'Frei').length,
+    gesamt:      haes.length,
+    aktiv:       haes.filter(h => h.status === 'Aktiv').length,
+    verliehen:   haes.filter(h => h.status === 'Verliehen').length,
+    frei:        haes.filter(h => h.status === 'Frei').length,
+    stillgelegt: haes.filter(h => h.status === 'Stillgelegt').length,
   };
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="w-9 h-9 border-[3px] border-border border-t-primary rounded-full animate-spin" />
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-9 h-9 border-[3px] border-border border-t-primary rounded-full animate-spin" />
+        <p className="text-xs text-muted-foreground">Häs wird geladen…</p>
+      </div>
     </div>
   );
 
@@ -111,18 +114,12 @@ export default function Haes() {
     <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Häs & Masken</h1>
+          <h1 className="text-2xl font-oswald font-semibold text-foreground tracking-wide">Häs & Masken</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{haes.length} Häs gesamt</p>
         </div>
         {isAdminUser && (
           <div className="flex gap-2">
-            <button
-              onClick={() => setShowHistorieImport(true)}
-              title="Häs & Historie aus Excel importieren"
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-secondary text-muted-foreground text-sm font-medium hover:bg-border hover:text-foreground transition-colors"
-            >
-              <Upload size={15} /> Import
-            </button>
+
             <button
               onClick={() => setShowNewGruppe(true)}
               className="px-3 py-2.5 rounded-xl bg-secondary text-foreground text-sm font-medium hover:bg-border transition-colors"
@@ -140,17 +137,22 @@ export default function Haes() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-2 mb-4">
+      <div className="grid grid-cols-5 gap-2 mb-4">
         {[
-          { label: 'Gesamt', value: stats.gesamt, color: 'text-foreground' },
-          { label: 'Aktiv', value: stats.aktiv, color: 'text-green-400' },
-          { label: 'Verliehen', value: stats.verliehen, color: 'text-blue-400' },
-          { label: 'Frei', value: stats.frei, color: 'text-yellow-400' },
+          { label: 'Gesamt',     value: stats.gesamt,      color: 'text-foreground',  filter: 'Alle' },
+          { label: 'Aktiv',      value: stats.aktiv,       color: 'text-green-400',   filter: 'Aktiv' },
+          { label: 'Verliehen',  value: stats.verliehen,   color: 'text-blue-400',    filter: 'Verliehen' },
+          { label: 'Frei',       value: stats.frei,        color: 'text-yellow-400',  filter: 'Frei' },
+          { label: 'Stillgelegt',value: stats.stillgelegt, color: 'text-red-400',     filter: 'Stillgelegt' },
         ].map(s => (
-          <div key={s.label} className="bg-card border border-border rounded-xl p-3 text-center">
-            <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="text-xs text-muted-foreground">{s.label}</p>
-          </div>
+          <button
+            key={s.label}
+            onClick={() => setStatusFilter(s.filter)}
+            className={`bg-card border rounded-lg p-2.5 text-center transition-all hover:border-primary/40 ${statusFilter === s.filter ? 'border-primary/50 bg-primary/5' : 'border-border'}`}
+          >
+            <p className={`text-lg font-oswald font-semibold ${s.color}`}>{s.value}</p>
+            <p className="text-[10px] text-muted-foreground leading-tight">{s.label}</p>
+          </button>
         ))}
       </div>
 
@@ -163,25 +165,29 @@ export default function Haes() {
           >
             Alle Gruppen
           </button>
-          {gruppen.map(g => (
+          {gruppen.map(g => {
+            const count = haes.filter(h => h.haesgruppe_id === g.id).length;
+            return (
             <div key={g.id} className="flex-shrink-0 relative group">
               <button
                 onClick={() => setGruppeFilter(g.id)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${gruppeFilter === g.id ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground'}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${gruppeFilter === g.id ? 'bg-primary text-white' : 'bg-card border border-border text-muted-foreground hover:border-primary/50'}`}
               >
                 {g.name}
+                <span className={`text-[10px] font-bold px-1 rounded-full ${gruppeFilter === g.id ? 'bg-white/20' : 'bg-secondary'}`}>{count}</span>
               </button>
               {isAdminUser && (
                 <button
                   onClick={() => setSelectedGruppeToken(g)}
-                  title="Kalender-Feed-Token anzeigen"
-                  className="absolute -right-1 -top-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg bg-primary text-primary-foreground text-[10px] hover:bg-primary/90"
+                  title="Kalender-Feed"
+                  className="absolute -right-1 -top-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg bg-primary text-white text-[10px] hover:bg-primary/90"
                 >
                   <Calendar size={12} />
                 </button>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -237,7 +243,7 @@ export default function Haes() {
 
       {filtered.length === 0 && (
         <div className="text-center py-12">
-          <Shirt size={40} className="text-muted-foreground mx-auto mb-3" />
+          <Shirt size={40} className="text-muted-foreground/40 mx-auto mb-3" />
           <p className="text-muted-foreground">Keine Häs gefunden</p>
         </div>
       )}
