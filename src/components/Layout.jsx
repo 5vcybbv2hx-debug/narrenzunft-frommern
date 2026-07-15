@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Shirt, Calendar, Briefcase,
   Award, CreditCard, Bell, Menu, X, ChevronRight,
   LogOut, User, MoreHorizontal, Shield, ClipboardList,
-  AlertTriangle, Lock, CheckSquare, Package, Bus, FileText
+  AlertTriangle, Lock, CheckSquare, Package, Bus, FileText, ShoppingBag
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import SecureSearch from './SecureSearch';
@@ -18,6 +18,7 @@ const sidebarGroups = [
       { path: '/', label: 'Dashboard', icon: LayoutDashboard, roles: null },
       { path: '/kalender', label: 'Veranstaltungen', icon: Calendar, roles: null },
       { path: '/ausfahrten', label: 'Ausfahrten', icon: Bus, roles: null },
+      { path: '/shop', label: 'Shop', icon: ShoppingBag, roles: null },
       { path: '/arbeitsdienste', label: 'Arbeitsdienste', icon: Briefcase, roles: null },
       { path: '/haes', label: 'Häs', icon: Shirt, roles: null },
       { path: '/sparten', label: 'Sparten & Gruppen', icon: Users, roles: null },
@@ -30,6 +31,7 @@ const sidebarGroups = [
       { path: '/mitglieder', label: 'Mitglieder', icon: Users, roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter', 'admin'] },
       { path: '/ehrungen', label: 'Ehrungen', icon: Award, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
       { path: '/beitraege', label: 'Beiträge', icon: CreditCard, roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'] },
+      { path: '/shop/verwaltung', label: 'Shop-Verwaltung', icon: ShoppingBag, roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'] },
       { path: '/vereine', label: 'Vereine & Zünfte', icon: Users, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
     ]
   },

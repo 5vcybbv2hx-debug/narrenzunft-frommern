@@ -43,6 +43,8 @@ import AusfahrtDetail from './pages/AusfahrtDetail';
 import AusfahrtNeu from './pages/AusfahrtNeu';
 import AusfahrtScanner from './pages/AusfahrtScanner';
 import Todos from './pages/Todos';
+import Shop from './pages/Shop';
+import ShopVerwaltung from './pages/ShopVerwaltung';
 import Inventar from './pages/Inventar';
 import Berechtigungen from './pages/Berechtigungen';
 import Nachrichten from './pages/Nachrichten';
@@ -136,6 +138,8 @@ const AuthenticatedApp = () => {
         } />
 
         {/* ── Ausschuss (Rollen + Zusatz-Berechtigung 'ausschuss') ── */}
+        <Route path="/shop" element={<Shop />} />
+        <Route path="/shop/verwaltung" element={<Guard roles={ROLLEN_FUEHRUNG}><ShopVerwaltung /></Guard>} />
         <Route path="/ausschuss" element={
           <Guard roles={ROLLEN_FUEHRUNG} zusatz={['ausschuss']}><Ausschuss /></Guard>
         } />
