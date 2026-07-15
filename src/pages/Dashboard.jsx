@@ -447,15 +447,15 @@ export default function Dashboard() {
               <div className="grid grid-cols-3 gap-2">
                 <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-3">
                   <p className="text-[10px] text-muted-foreground">Bezahlt</p>
-                  <p className="text-base font-oswald font-semibold text-green-400">{beitraegeStats.bezahlt.toLocaleString('de-DE', {{ minimumFractionDigits: 2, maximumFractionDigits: 2 }})} €</p>
+                  <p className="text-base font-oswald font-semibold text-green-400">{beitraegeStats.bezahlt.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
                 </div>
                 <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3">
                   <p className="text-[10px] text-muted-foreground">Offen</p>
-                  <p className="text-base font-oswald font-semibold text-yellow-400">{beitraegeStats.offen.toLocaleString('de-DE', {{ minimumFractionDigits: 2, maximumFractionDigits: 2 }})} €</p>
+                  <p className="text-base font-oswald font-semibold text-yellow-400">{beitraegeStats.offen.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
                 </div>
                 <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3">
                   <p className="text-[10px] text-muted-foreground">Überfällig</p>
-                  <p className="text-base font-oswald font-semibold text-red-400">{beitraegeStats.ueberfaellig.toLocaleString('de-DE', {{ minimumFractionDigits: 2, maximumFractionDigits: 2 }})} €</p>
+                  <p className="text-base font-oswald font-semibold text-red-400">{beitraegeStats.ueberfaellig.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
                 </div>
               </div>
             </div>
