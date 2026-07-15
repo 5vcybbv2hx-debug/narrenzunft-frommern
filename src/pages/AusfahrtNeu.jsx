@@ -9,14 +9,13 @@ export default function AusfahrtNeu() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Load Sparten (Häsgruppen) for the selector
   const [sparten, setSparten] = useState([]);
   const [loadingSparten, setLoadingSparten] = useState(true);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Form State
   const todayStr = new Date().toISOString().split('T')[0];
+
   const [formData, setFormData] = useState({
     titel: '',
     typ: 'Umzug',
@@ -37,92 +36,67 @@ export default function AusfahrtNeu() {
     notizen: ''
   });
 
-  // Calculate default registration end date (3 days before event datum)
+  // Auto: Anmelde-Ende = 3 Tage vor Event
   useEffect(() => {
     if (formData.datum) {
-      const eventDate = new Date(formData.datum);
-      const endLimitDate = new Date(eventDate);
-      endLimitDate.setDate(eventDate.getDate() - 3);
-      
-      const endLimitStr = endLimitDate.toISOString().split('T')[0];
-      setFormData((prev) => ({
-        ...prev,
-        anmeldung_ende: endLimitStr
-      }));
+      const d = new Date(formData.datum);
+      d.setDate(d.getDate() - 3);
+      setFormData(prev => ({ ...prev, anmeldung_ende: d.toISOString().split('T')[0] }));
     }
   }, [formData.datum]);
 
-  // Load Sparten on Mount
+  // Sparten laden
   useEffect(() => {
-    async function loadSparten() {
+    (async () => {
       try {
-        setLoadingSparten(true);
-        // Using base44.entities.Haesgruppe to load Sparten
-        const response = await base44.entities.Haesgruppe.list();
-        // Fallback for different API shapes (standard array vs { data: [] })
-        const listData = Array.isArray(response) ? response : (response?.data || []);
-        setSparten(listData);
-      } catch (err) {
-        console.error('Fehler beim Laden der Häsgruppen:', err);
-        setError('Häsgruppen konnten nicht geladen werden.');
+        const resp = await base44.entities.Haesgruppe.list('name', 200);
+        setSparten(Array.isArray(resp) ? resp : (resp?.data || []));
+      } catch (e) {
+        console.error('Sparten laden:', e);
       } finally {
         setLoadingSparten(false);
       }
-    }
-    loadSparten();
+    })();
   }, []);
 
-  // Admin Check
   if (!user || !isAdmin(user)) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center p-6">
-        <div className="bg-secondary p-8 rounded-xl max-w-md w-full border border-border text-center">
-          <h2 className="text-2xl font-oswald text-primary mb-4">Zugriff verweigert</h2>
-          <p className="text-muted-foreground mb-6">Sie haben keine Berechtigung, diese Seite aufzurufen. Nur Administratoren dürfen neue Ausfahrten erstellen.</p>
-          <Link to="/ausfahrten" className="inline-flex items-center justify-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90 font-medium transition-colors">
-            <ArrowLeft className="w-4 h-4 mr-2" /> Zurück zur Übersicht
+      <div className="min-h-[60vh] flex items-center justify-center p-6">
+        <div className="bg-card border border-border rounded-xl p-8 max-w-sm text-center">
+          <h2 className="text-xl font-oswald font-semibold text-foreground mb-3">Zugriff verweigert</h2>
+          <p className="text-sm text-muted-foreground mb-5">Nur Administratoren dürfen Ausfahrten erstellen.</p>
+          <Link to="/ausfahrten" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90">
+            <ArrowLeft size={16} /> Zurück
           </Link>
         </div>
       </div>
     );
   }
 
-  // Handle Input Changes
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
-  // Form Validation and Submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
 
-    // Validation
     if (!formData.titel.trim() || !formData.typ || !formData.datum || !formData.ort.trim()) {
-      setError('Bitte füllen Sie alle Pflichtfelder aus (Titel, Typ, Datum und Ort).');
+      setError('Bitte fülle alle Pflichtfelder aus (Titel, Typ, Datum, Ort).');
       return;
     }
 
     try {
       setSubmitting(true);
 
-      // Determine initial status based on registration dates
-      // Default initial status
-      let initialStatus = 'Geplant';
-      
       const today = new Date(todayStr);
       const start = formData.anmeldung_start ? new Date(formData.anmeldung_start) : null;
       const end = formData.anmeldung_ende ? new Date(formData.anmeldung_ende) : null;
+      let initialStatus = 'Geplant';
+      if (start && end && start <= today && today <= end) initialStatus = 'Anmeldung offen';
 
-      if (start && end && start <= today && today <= end) {
-        initialStatus = 'Anmeldung offen';
-      }
-
-      // Prepare payload
+      // Payload — nur Felder mit Werten senden, undefined für leere Optionals
       const payload = {
         titel: formData.titel.trim(),
         typ: formData.typ,
@@ -130,318 +104,201 @@ export default function AusfahrtNeu() {
         ort: formData.ort.trim(),
         abfahrt_zeit: formData.abfahrt_zeit,
         abfahrt_ort: formData.abfahrt_ort.trim(),
-        veranstaltungsbeginn: formData.veranstaltungsbeginn || '',
-        rueckfahrt_zeit: formData.rueckfahrt_zeit || '',
-        aufstellung: formData.aufstellung.trim() || '',
-        startnummer: formData.startnummer.trim() || '',
-        busparkplatz: formData.busparkplatz.trim() || '',
-        bus_kapazitaet: formData.bus_kapazitaet ? parseInt(formData.bus_kapazitaet, 10) : null,
+        veranstaltungsbeginn: formData.veranstaltungsbeginn || undefined,
+        rueckfahrt_zeit: formData.rueckfahrt_zeit || undefined,
+        aufstellung: formData.aufstellung.trim() || undefined,
+        startnummer: formData.startnummer.trim() || undefined,
+        busparkplatz: formData.busparkplatz.trim() || undefined,
+        bus_kapazitaet: formData.bus_kapazitaet ? Number(formData.bus_kapazitaet) : undefined,
         sparte_auftritt: formData.sparte_auftritt,
-        sparte_id: formData.sparte_auftritt ? formData.sparte_id : '',
+        sparte_id: formData.sparte_auftritt && formData.sparte_id ? formData.sparte_id : undefined,
         anmeldung_start: formData.anmeldung_start,
         anmeldung_ende: formData.anmeldung_ende,
-        notizen: formData.notizen.trim() || '',
+        notizen: formData.notizen.trim() || undefined,
         status: initialStatus
       };
 
-      // Create record
-      const createdAusfahrt = await base44.entities.Ausfahrt.create(payload);
-      if (!createdAusfahrt?.id) throw new Error('Keine ID erhalten');
-      navigate(`/ausfahrten/${createdAusfahrt.id}`);
+      const created = await base44.entities.Ausfahrt.create(payload);
+      if (!created?.id) throw new Error('Keine ID vom Server erhalten');
+      navigate(`/ausfahrten/${created.id}`);
     } catch (err) {
-      console.error('Fehler beim Erstellen der Ausfahrt:', err);
-      setError('Die Ausfahrt konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.');
+      console.error('Fehler beim Erstellen:', err);
+      // Zeige die echte Fehlermeldung
+      const msg = err?.response?.data?.message || err?.message || 'Unbekannter Fehler';
+      setError(`Speichern fehlgeschlagen: ${msg}`);
     } finally {
       setSubmitting(false);
     }
   };
 
-  return (
-    <div className="min-h-[60vh] py-10 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Navigation & Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Link to="/ausfahrten" className="p-2 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-white">
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
-            <h1 className="text-3xl sm:text-4xl font-oswald tracking-wide uppercase">Neue Ausfahrt</h1>
-          </div>
-        </div>
+  const inputClass = "w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary";
+  const labelClass = "text-sm text-muted-foreground mb-1.5 block";
 
-        {/* Error Notification */}
-        {error && (
-          <div className="mb-6 bg-red-950/50 border border-primary text-red-200 px-4 py-3 rounded-lg text-sm flex items-center justify-between">
-            <span>{error}</span>
-            <button onClick={() => setError(null)} className="text-red-200 hover:text-white">
-              <X className="w-4 h-4" />
+  return (
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-3xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-6">
+        <Link to="/ausfahrten" className="p-2 -ml-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+          <ArrowLeft size={20} />
+        </Link>
+        <div>
+          <h1 className="text-2xl font-oswald font-semibold text-foreground tracking-wide">Neue Ausfahrt</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Umzug oder Veranstaltung erstellen</p>
+        </div>
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div className="mb-4 bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg text-sm flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="text-destructive hover:text-foreground shrink-0 ml-3">
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {/* Form */}
+      <div className="bg-card border border-border rounded-xl p-5 sm:p-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+
+          {/* Allgemein */}
+          <div>
+            <h2 className="text-base font-oswald font-semibold text-foreground border-b border-border pb-2 mb-4">Allgemeine Informationen</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Titel *</label>
+                <input type="text" name="titel" required value={formData.titel} onChange={handleChange}
+                  placeholder="z.B. Fackelumzug Balingen" className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Typ *</label>
+                <select name="typ" required value={formData.typ} onChange={handleChange} className={inputClass}>
+                  <option value="Umzug">Umzug</option>
+                  <option value="Veranstaltung">Veranstaltung</option>
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Datum *</label>
+                <input type="date" name="datum" required value={formData.datum} onChange={handleChange} className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Ort *</label>
+                <input type="text" name="ort" required value={formData.ort} onChange={handleChange}
+                  placeholder="z.B. Balingen" className={inputClass} />
+              </div>
+            </div>
+          </div>
+
+          {/* Zeiten */}
+          <div>
+            <h2 className="text-base font-oswald font-semibold text-foreground border-b border-border pb-2 mb-4">Zeiten & Logistik</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div>
+                <label className={labelClass}>Abfahrt *</label>
+                <input type="time" name="abfahrt_zeit" value={formData.abfahrt_zeit} onChange={handleChange} className={inputClass} />
+              </div>
+              <div className="col-span-2 sm:col-span-2">
+                <label className={labelClass}>Abfahrt Ort</label>
+                <input type="text" name="abfahrt_ort" value={formData.abfahrt_ort} onChange={handleChange} className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Veranst.-beginn</label>
+                <input type="time" name="veranstaltungsbeginn" value={formData.veranstaltungsbeginn} onChange={handleChange} className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Rückfahrt</label>
+                <input type="time" name="rueckfahrt_zeit" value={formData.rueckfahrt_zeit} onChange={handleChange} className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Bus-Kapazität</label>
+                <input type="number" name="bus_kapazitaet" value={formData.bus_kapazitaet} onChange={handleChange}
+                  placeholder="50" min="1" className={inputClass} />
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <label className={labelClass}>Busparkplatz</label>
+                <input type="text" name="busparkplatz" value={formData.busparkplatz} onChange={handleChange}
+                  placeholder="z.B. P3" className={inputClass} />
+              </div>
+            </div>
+          </div>
+
+          {/* Aufstellung */}
+          <div>
+            <h2 className="text-base font-oswald font-semibold text-foreground border-b border-border pb-2 mb-4">Aufstellung & Programm</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className={labelClass}>Aufstellung</label>
+                <input type="text" name="aufstellung" value={formData.aufstellung} onChange={handleChange}
+                  placeholder="z.B. Hauptstraße" className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Startnummer</label>
+                <input type="text" name="startnummer" value={formData.startnummer} onChange={handleChange}
+                  placeholder="z.B. 12" className={inputClass} />
+              </div>
+            </div>
+
+            {/* Sparte Auftritt */}
+            <div className="p-3 bg-secondary/30 border border-border rounded-lg">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" name="sparte_auftritt" checked={formData.sparte_auftritt} onChange={handleChange}
+                  className="w-4 h-4 rounded accent-[#EA2525]" />
+                <span className="text-sm font-medium text-foreground">Sparte hat einen Auftritt</span>
+              </label>
+              {formData.sparte_auftritt && (
+                <div className="mt-3">
+                  {loadingSparten ? (
+                    <p className="text-xs text-muted-foreground">Sparten werden geladen…</p>
+                  ) : (
+                    <select name="sparte_id" value={formData.sparte_id} onChange={handleChange} className={inputClass}>
+                      <option value="">— Sparte auswählen —</option>
+                      {sparten.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Anmeldezeitraum */}
+          <div>
+            <h2 className="text-base font-oswald font-semibold text-foreground border-b border-border pb-2 mb-4">Anmeldezeitraum</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Anmeldung Start *</label>
+                <input type="date" name="anmeldung_start" required value={formData.anmeldung_start} onChange={handleChange} className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Anmeldung Ende *</label>
+                <input type="date" name="anmeldung_ende" required value={formData.anmeldung_ende} onChange={handleChange} className={inputClass} />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">Das Ende wird automatisch auf 3 Tage vor dem Event gesetzt.</p>
+          </div>
+
+          {/* Notizen */}
+          <div>
+            <label className={labelClass}>Notizen</label>
+            <textarea name="notizen" rows={3} value={formData.notizen} onChange={handleChange}
+              placeholder="Weitere Informationen…" className={inputClass + " resize-y"} />
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-3 pt-4 border-t border-border">
+            <Link to="/ausfahrten" className="flex-1 sm:flex-none px-4 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium hover:text-foreground text-center transition-colors">
+              Abbrechen
+            </Link>
+            <button type="submit" disabled={submitting}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50">
+              {submitting ? (
+                <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Speichert…</>
+              ) : (
+                <><Save size={16} /> Ausfahrt erstellen</>
+              )}
             </button>
           </div>
-        )}
 
-        {/* Form Card */}
-        <div className="bg-card border border-border rounded-xl border border-border p-6 sm:p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            
-            {/* Section: Allgemeine Informationen */}
-            <div>
-              <h2 className="text-lg font-oswald font-semibold border-b border-border pb-2 mb-4">Allgemeine Informationen</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm text-muted-foreground mb-1.5 block">Titel *</label>
-                  <input
-                    type="text"
-                    name="titel"
-                    required
-                    value={formData.titel}
-                    onChange={handleChange}
-                    placeholder="z.B. Umzug in Frommern"
-                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-muted-foreground mb-1.5 block">Typ *</label>
-                  <select
-                    name="typ"
-                    required
-                    value={formData.typ}
-                    onChange={handleChange}
-                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
-                  >
-                    <option value="Umzug">Umzug</option>
-                    <option value="Veranstaltung">Veranstaltung</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-sm text-muted-foreground mb-1.5 block">Datum *</label>
-                  <input
-                    type="date"
-                    name="datum"
-                    required
-                    value={formData.datum}
-                    onChange={handleChange}
-                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-muted-foreground mb-1.5 block">Ort *</label>
-                  <input
-                    type="text"
-                    name="ort"
-                    required
-                    value={formData.ort}
-                    onChange={handleChange}
-                    placeholder="z.B. Frommern"
-                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Section: Zeiten & Logistik */}
-            <div>
-              <h2 className="text-lg font-oswald font-semibold border-b border-border pb-2 mb-4">Zeiten & Logistik</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="text-sm text-muted-foreground mb-1.5 block">Abfahrt Zeit *</label>
-                  <input
-                    type="time"
-                    name="abfahrt_zeit"
-                    required
-                    value={formData.abfahrt_zeit}
-                    onChange={handleChange}
-                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-muted-foreground mb-1.5 block">Abfahrt Ort</label>
-                  <input
-                    type="text"
-                    name="abfahrt_ort"
-                    value={formData.abfahrt_ort}
-                    onChange={handleChange}
-                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-muted-foreground mb-1.5 block">Veranstaltungsbeginn</label>
-                  <input
-                    type="time"
-                    name="veranstaltungsbeginn"
-                    value={formData.veranstaltungsbeginn}
-                    onChange={handleChange}
-                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-muted-foreground mb-1.5 block">Rückfahrt Zeit</label>
-                  <input
-                    type="time"
-                    name="rueckfahrt_zeit"
-                    value={formData.rueckfahrt_zeit}
-                    onChange={handleChange}
-                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-muted-foreground mb-1.5 block">Bus-Kapazität</label>
-                  <input
-                    type="number"
-                    name="bus_kapazitaet"
-                    value={formData.bus_kapazitaet}
-                    onChange={handleChange}
-                    placeholder="z.B. 50"
-                    min="1"
-                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-muted-foreground mb-1.5 block">Busparkplatz</label>
-                  <input
-                    type="text"
-                    name="busparkplatz"
-                    value={formData.busparkplatz}
-                    onChange={handleChange}
-                    placeholder="z.B. P3"
-                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Section: Aufstellung & Programm */}
-            <div>
-              <h2 className="text-lg font-oswald font-semibold border-b border-border pb-2 mb-4">Aufstellung & Programm</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm text-muted-foreground mb-1.5 block">Aufstellung</label>
-                  <input
-                    type="text"
-                    name="aufstellung"
-                    value={formData.aufstellung}
-                    onChange={handleChange}
-                    placeholder="z.B. Hauptstraße"
-                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-muted-foreground mb-1.5 block">Startnummer</label>
-                  <input
-                    type="text"
-                    name="startnummer"
-                    value={formData.startnummer}
-                    onChange={handleChange}
-                    placeholder="z.B. 12"
-                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
-                  />
-                </div>
-              </div>
-
-              {/* Sparte hat Auftritt */}
-              <div className="mt-4 p-4 bg-secondary/25 border border-border rounded-lg">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="sparte_auftritt"
-                    checked={formData.sparte_auftritt}
-                    onChange={handleChange}
-                    className="w-4 h-4 rounded text-primary focus:ring-primary focus:ring-offset-0 bg-background border-border"
-                  />
-                  <span className="text-sm font-medium">Sparte hat einen Auftritt?</span>
-                </label>
-
-                {formData.sparte_auftritt && (
-                  <div className="mt-3">
-                    <label className="text-sm text-muted-foreground mb-1.5 block">Sparte (Häsgruppe) auswählen</label>
-                    {loadingSparten ? (
-                      <p className="text-xs text-muted-foreground">Spaten werden geladen...</p>
-                    ) : (
-                      <select
-                        name="sparte_id"
-                        value={formData.sparte_id}
-                        onChange={handleChange}
-                        className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
-                      >
-                        <option value="">-- Sparte auswählen --</option>
-                        {sparten.map((sparte) => (
-                          <option key={sparte.id} value={sparte.id}>
-                            {sparte.name}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Section: Anmeldezeitraum */}
-            <div>
-              <h2 className="text-lg font-oswald font-semibold border-b border-border pb-2 mb-4">Anmeldezeitraum</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm text-muted-foreground mb-1.5 block">Anmeldung Start *</label>
-                  <input
-                    type="date"
-                    name="anmeldung_start"
-                    required
-                    value={formData.anmeldung_start}
-                    onChange={handleChange}
-                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-muted-foreground mb-1.5 block">Anmeldung Ende *</label>
-                  <input
-                    type="date"
-                    name="anmeldung_ende"
-                    required
-                    value={formData.anmeldung_ende}
-                    onChange={handleChange}
-                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Section: Notizen */}
-            <div>
-              <label className="text-sm text-muted-foreground mb-1.5 block">Notizen</label>
-              <textarea
-                name="notizen"
-                rows={4}
-                value={formData.notizen}
-                onChange={handleChange}
-                placeholder="Weitere wichtige Informationen oder Details zur Ausfahrt..."
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary resize-y"
-              />
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-border">
-              <Link
-                to="/ausfahrten"
-                className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 bg-neutral-900 border border-border hover:bg-neutral-800 rounded-lg text-sm font-medium transition-colors cursor-pointer"
-              >
-                Abbrechen
-              </Link>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 bg-primary text-white hover:bg-opacity-90 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 cursor-pointer"
-              >
-                {submitting ? (
-                  <>Speichert...</>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" /> Ausfahrt erstellen
-                  </>
-                )}
-              </button>
-            </div>
-            
-          </form>
-        </div>
+        </form>
       </div>
     </div>
   );
