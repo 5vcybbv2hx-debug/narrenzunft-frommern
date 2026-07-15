@@ -99,6 +99,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const isAdminUser = isAdmin(user);
   const kannVerwalten = kannArbeitsdiensteVerwalten(user);
+  const today = new Date().toISOString().split('T')[0];
 
   const { pullDistance, refreshing, containerRef } = usePullToRefresh(useCallback(async () => {
     await loadData();
@@ -418,7 +419,7 @@ export default function Dashboard() {
                 return (
                   <div key={m.id} className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${istHeute ? 'bg-primary' : 'bg-primary/10'}`}>
-                      <span className={`text-xs ${istHeute ? 'text-white' : 'text-primary'}">🎂</span>
+                      <span className={`text-xs ${istHeute ? 'text-white' : 'text-primary'}`}>🎂</span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{m.vorname} {m.nachname}</p>
