@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
-import { Bus, MapPin, Clock, Calendar, Users, ChevronRight, ArrowLeft, UserPlus, CheckCircle2, Download, X, Pencil, Trash2, Ban, AlertTriangle, QrCode, ScanLine } from 'lucide-react';
+import { Bus, MapPin, Clock, Calendar, Users, ChevronRight, ArrowLeft, UserPlus, CheckCircle2, Download, X, Pencil, Trash2, Ban, AlertTriangle, QrCode, ScanLine, Search } from 'lucide-react';
 import AusfahrtEditModal from '@/components/ausfahrt/AusfahrtEditModal';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -24,6 +24,7 @@ export default function AusfahrtDetail() {
   const [showQR, setShowQR] = useState(false);
   const [showBusVwModal, setShowBusVwModal] = useState(false);
   const [selectedBusVw, setSelectedBusVw] = useState([]);
+  const [busVwSearch, setBusVwSearch] = useState('');
 
   // Inline Fremdanmeldung form states
   const [showFremdForm, setShowFremdForm] = useState(false);
@@ -1017,7 +1018,7 @@ export default function AusfahrtDetail() {
       {/* Busverantwortliche Modal */}
       {showBusVwModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setShowBusVwModal(false)}>
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold font-oswald uppercase tracking-wider text-white">Busverantwortliche</h3>
               <button onClick={() => setShowBusVwModal(false)} className="text-gray-400 hover:text-white">
@@ -1027,26 +1028,93 @@ export default function AusfahrtDetail() {
             <p className="text-xs text-gray-400 mb-4">
               Wähle Mitglieder, die den QR-Check-in durchführen dürfen.
             </p>
-            <div className="space-y-2 mb-4">
-              {mitglieder.filter(m => m.mitgliedsstatus === 'Aktiv').sort((a,b) => (a.nachname||'').localeCompare(b.nachname||'')).map(m => (
-                <label key={m.id} className="flex items-center gap-3 p-2.5 bg-neutral-900 border border-border rounded-lg cursor-pointer hover:border-primary/40">
-                  <input
-                    type="checkbox"
-                    checked={selectedBusVw.includes(m.id)}
-                    onChange={() => setSelectedBusVw(prev =>
-                      prev.includes(m.id) ? prev.filter(id => id !== m.id) : [...prev, m.id]
+            {/* Live-Suche */}
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <input
+                type="text"
+                value={busVwSearch}
+                onChange={e => setBusVwSearch(e.target.value)}
+                placeholder="Name oder Mitgliedsnummer suchen…"
+                className="w-full bg-neutral-900 border border-border rounded-lg pl-9 pr-3 py-2.5 text-sm text-white placeholder-gray-500 focus:border-primary focus:outline-none transition-colors"
+                autoFocus
+              />
+            </div>
+            {/* Ausgewählte Mitglieder (Chips) */}
+            {selectedBusVw.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {selectedBusVw.map(bvId => {
+                  const m = mitglieder.find(x => x.id === bvId);
+                  if (!m) return null;
+                  return (
+                    <span key={bvId} className="inline-flex items-center gap-1.5 bg-primary/20 border border-primary/40 text-white text-xs px-2.5 py-1 rounded-full">
+                      {m.vorname || ''} {m.nachname || ''}
+                      <button
+                        onClick={() => setSelectedBusVw(prev => prev.filter(id => id !== bvId))}
+                        className="hover:text-primary"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+            {/* Gefilterte Mitglieder-Liste */}
+            <div className="flex-1 overflow-y-auto space-y-1.5 mb-4 min-h-0">
+              {(() => {
+                const search = busVwSearch.trim().toLowerCase();
+                const aktive = mitglieder
+                  .filter(m => m.mitgliedsstatus === 'Aktiv')
+                  .filter(m => {
+                    if (!search) return true;
+                    const name = `${(m.vorname || '').toLowerCase()} ${(m.nachname || '').toLowerCase()}`;
+                    const nummer = (m.mitgliedsnummer || '').toString().toLowerCase();
+                    return name.includes(search) || nummer.includes(search) || `#${nummer}`.includes(search);
+                  })
+                  .sort((a, b) => (a.nachname || '').localeCompare(b.nachname || ''));
+                if (aktive.length === 0) {
+                  return (
+                    <p className="text-center text-gray-500 py-6 text-sm">
+                      Keine Mitglieder für „{busVwSearch}" gefunden.
+                    </p>
+                  );
+                }
+                return aktive.map(m => (
+                  <label
+                    key={m.id}
+                    className={`flex items-center gap-3 p-2.5 border rounded-lg cursor-pointer transition-colors ${
+                      selectedBusVw.includes(m.id)
+                        ? 'bg-primary/15 border-primary/50'
+                        : 'bg-neutral-900 border-border hover:border-primary/40'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedBusVw.includes(m.id)}
+                      onChange={() => setSelectedBusVw(prev =>
+                        prev.includes(m.id) ? prev.filter(x => x !== m.id) : [...prev, m.id]
+                      )}
+                      className="w-4 h-4 accent-[#EA2525] shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm text-white">{m.vorname || ''} {m.nachname || ''}</span>
+                      {m.mitgliedsnummer && (
+                        <span className="text-xs text-gray-500 ml-2">#{m.mitgliedsnummer}</span>
+                      )}
+                    </div>
+                    {m.sparte && (
+                      <span className="text-xs text-gray-500 shrink-0">{m.sparte}</span>
                     )}
-                    className="w-4 h-4 accent-[#EA2525]"
-                  />
-                  <span className="text-sm text-white">{m.vorname || ''} {m.nachname || ''}</span>
-                </label>
-              ))}
+                  </label>
+                ));
+              })()}
             </div>
             <button
               onClick={saveBusVerantwortliche}
               className="w-full bg-primary hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors"
             >
-              Speichern
+              {selectedBusVw.length} {selectedBusVw.length === 1 ? 'Verantwortliche' : 'Verantwortliche'} speichern
             </button>
           </div>
         </div>
