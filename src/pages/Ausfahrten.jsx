@@ -35,7 +35,7 @@ export default function Ausfahrten() {
       }
 
       // 2. Fetch all outings (Ausfahrten) sorted by datum ascending
-      const ausfahrtenResponse = await base44.entities.Ausfahrt.filter({}, { sort: 'datum' });
+      const ausfahrtenResponse = await base44.entities.Ausfahrt.filter({}, 'datum');
       setAusfahrten(ausfahrtenResponse || []);
 
       // 3. Fetch all registrations (Anmeldungen) to count and check own status

@@ -38,23 +38,15 @@ export default function AusfahrtDetail() {
     try {
       // Load Ausfahrt, Anmeldungen, and Mitglieder in parallel
       const [ausfahrtRes, anmeldungenRes, mitgliederRes] = await Promise.all([
-        base44.read_entities({
-          entity_name: 'Ausfahrt',
-          query: { id: id }
-        }),
-        base44.read_entities({
-          entity_name: 'AusfahrtAnmeldung',
-          query: { ausfahrt_id: id }
-        }),
-        base44.read_entities({
-          entity_name: 'Mitglied'
-        })
+        base44.entities.Ausfahrt.get(id),
+        base44.entities.AusfahrtAnmeldung.filter({ ausfahrt_id: id }),
+        base44.entities.Mitglied.list('-nachname', 500)
       ]);
 
-      if (!ausfahrtRes || ausfahrtRes.length === 0) {
+      if (!ausfahrtRes) {
         setError('Ausfahrt nicht gefunden.');
       } else {
-        setAusfahrt(ausfahrtRes[0]);
+        setAusfahrt(ausfahrtRes);
       }
 
       setAnmeldungen(anmeldungenRes || []);
