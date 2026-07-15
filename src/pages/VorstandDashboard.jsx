@@ -5,7 +5,8 @@ import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannArbeitsdiensteVerwalten, getRollenLabel } from '@/lib/roles';
 import {
   Calendar, Users, Briefcase, AlertCircle, CheckCircle2,
-  Clock, MapPin, ChevronRight, ArrowRight, UserCheck, UserX, Shield, Baby
+  Clock, MapPin, ChevronRight, ArrowRight, UserCheck, UserX, Shield, Baby,
+  Shirt, Award, CreditCard
 } from 'lucide-react';
 import StatuswechselWidget from '@/components/vorstand/StatuswechselWidget';
 import { format, differenceInDays } from 'date-fns';
@@ -17,7 +18,7 @@ function SectionCard({ title, icon: Icon, children, linkTo, linkLabel, accent })
       <div className={`flex items-center justify-between px-5 py-3.5 border-b border-border ${accent ? 'bg-primary/5' : ''}`}>
         <div className="flex items-center gap-2">
           {Icon && <Icon size={16} className="text-primary" />}
-          <h3 className="font-semibold text-foreground text-sm">{title}</h3>
+          <h3 className="font-oswald font-semibold text-foreground text-sm tracking-wide">{title}</h3>
         </div>
         {linkTo && (
           <Link to={linkTo} className="text-xs text-primary hover:underline flex items-center gap-1">
@@ -90,11 +91,6 @@ export default function VorstandDashboard() {
 
   const getDaysUntil = (datum) => differenceInDays(new Date(datum), new Date());
 
-  const getTeilnahmeCount = (veranstaltungId) => {
-    // Proxy über Arbeitsdienste falls verknüpft – hier zeigen wir nur die Veranstaltungsinfo
-    return null;
-  };
-
   if (!hatZugriff) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
@@ -107,7 +103,10 @@ export default function VorstandDashboard() {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="w-9 h-9 border-[3px] border-border border-t-primary rounded-full animate-spin" />
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-9 h-9 border-[3px] border-border border-t-primary rounded-full animate-spin" />
+        <p className="text-xs text-muted-foreground">Führungs-Dashboard wird geladen…</p>
+      </div>
     </div>
   );
 
@@ -124,7 +123,7 @@ export default function VorstandDashboard() {
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-1">
           <Shield size={18} className="text-primary" />
-          <h1 className="text-2xl font-bold text-foreground">Führungs-Dashboard</h1>
+          <h1 className="text-2xl font-oswald font-semibold text-foreground tracking-wide">Führungs-Dashboard</h1>
         </div>
         <p className="text-sm text-muted-foreground">
           {getRollenLabel(user?.role)} · {format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}
@@ -135,21 +134,21 @@ export default function VorstandDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <div className="bg-card border border-border rounded-xl p-4">
           <p className="text-xs text-muted-foreground">Anstehende Events</p>
-          <p className="text-2xl font-bold text-foreground mt-1">{veranstaltungen.length}</p>
+          <p className="text-2xl font-oswald font-semibold text-foreground mt-1">{veranstaltungen.length}</p>
         </div>
         <div className="bg-card border border-border rounded-xl p-4">
           <p className="text-xs text-muted-foreground">Offene Dienste</p>
-          <p className="text-2xl font-bold text-primary mt-1">{offeneDienste.length}</p>
+          <p className="text-2xl font-oswald font-semibold text-primary mt-1">{offeneDienste.length}</p>
         </div>
         <div className={`bg-card border rounded-xl p-4 ${unterbesetzte.length > 0 ? 'border-red-500/30' : 'border-border'}`}>
           <p className="text-xs text-muted-foreground">Unterbesetzt</p>
-          <p className={`text-2xl font-bold mt-1 ${unterbesetzte.length > 0 ? 'text-red-400' : 'text-green-400'}`}>
+          <p className={`text-2xl font-oswald font-semibold mt-1 ${unterbesetzte.length > 0 ? 'text-red-400' : 'text-green-400'}`}>
             {unterbesetzte.length}
           </p>
         </div>
         <div className="bg-card border border-border rounded-xl p-4">
           <p className="text-xs text-muted-foreground">Mitglieder</p>
-          <p className="text-2xl font-bold text-foreground mt-1">{mitglieder.length}</p>
+          <p className="text-2xl font-oswald font-semibold text-foreground mt-1">{mitglieder.length}</p>
         </div>
       </div>
 
@@ -170,11 +169,11 @@ export default function VorstandDashboard() {
                     to={`/veranstaltungen/${v.id}`}
                     className="flex items-center gap-3 group"
                   >
-                    <div className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center shrink-0 ${urgent ? 'bg-red-500/10' : 'bg-primary/10'}`}>
-                      <span className="text-[9px] text-muted-foreground font-medium leading-none">
+                    <div className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center shrink-0 ${v.datum === today ? 'bg-primary' : urgent ? 'bg-red-500/10' : 'bg-primary/10'}`}>
+                      <span className={`text-[9px] font-medium leading-none ${v.datum === today ? 'text-white/80' : 'text-muted-foreground'}`}>
                         {format(new Date(v.datum), 'MMM', { locale: de })}
                       </span>
-                      <span className={`text-lg font-bold leading-none ${urgent ? 'text-red-400' : 'text-primary'}`}>
+                      <span className={`text-lg font-oswald font-bold leading-none ${v.datum === today ? 'text-white' : urgent ? 'text-red-400' : 'text-primary'}`}>
                         {format(new Date(v.datum), 'd')}
                       </span>
                     </div>
@@ -187,11 +186,16 @@ export default function VorstandDashboard() {
                         </span>
                       </div>
                     </div>
-                    <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${
-                      v.typ === 'Umzug' ? 'bg-primary/15 text-primary' :
-                      v.typ === 'Abendveranstaltung' ? 'bg-purple-500/15 text-purple-400' :
-                      'bg-blue-500/15 text-blue-400'
-                    }`}>{v.typ}</span>
+                    {v.datum === today ? (
+                      <span className="text-xs px-2 py-0.5 rounded-full shrink-0 bg-primary text-white font-semibold">HEUTE</span>
+                    ) : (
+                      <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${
+                        v.typ === 'Umzug' ? 'bg-primary/20 text-primary' :
+                        v.typ === 'Abendveranstaltung' ? 'bg-purple-500/20 text-purple-400' :
+                        v.typ === 'Arbeitsdienst' ? 'bg-green-500/20 text-green-400' :
+                        'bg-blue-500/20 text-blue-400'
+                      }`}>{v.typ}</span>
+                    )}
                   </Link>
                 );
               })}
@@ -200,7 +204,7 @@ export default function VorstandDashboard() {
         </SectionCard>
 
         {/* Unterbesetzte Dienste – Dringend */}
-        <SectionCard title="⚠ Dringlich: Unterbesetzte Dienste" icon={AlertCircle} linkTo="/arbeitsdienste" accent>
+        <SectionCard title="Dringlich: Unterbesetzte Dienste" icon={AlertCircle} linkTo="/arbeitsdienste" accent>
           {unterbesetzte.length === 0 ? (
             <div className="flex items-center gap-2 py-3">
               <CheckCircle2 size={18} className="text-green-400" />
@@ -223,7 +227,7 @@ export default function VorstandDashboard() {
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <span className="text-xs font-bold text-red-400">{fehlend} fehlen</span>
+                        <span className="text-xs font-oswald font-bold text-red-400">{fehlend} fehlen</span>
                         <p className="text-xs text-muted-foreground">{bestaetigt}/{d.benoetigte_personen}</p>
                       </div>
                     </div>
@@ -284,12 +288,14 @@ export default function VorstandDashboard() {
 
         {/* Schnellzugriff */}
         <SectionCard title="Schnellzugriff" icon={Shield}>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {[
-              { path: '/mitglieder', label: 'Mitglieder', icon: Users, color: 'bg-blue-500/10 text-blue-400' },
-              { path: '/arbeitsdienste', label: 'Arbeitsdienste', icon: Briefcase, color: 'bg-primary/10 text-primary' },
+              { path: '/mitglieder',     label: 'Mitglieder',      icon: Users,     color: 'bg-blue-500/10 text-blue-400' },
+              { path: '/arbeitsdienste',  label: 'Arbeitsdienste',  icon: Briefcase, color: 'bg-primary/10 text-primary' },
               { path: '/veranstaltungen', label: 'Veranstaltungen', icon: Calendar, color: 'bg-primary/10 text-primary' },
-              { path: '/umzuege', label: 'Umzüge', icon: MapPin, color: 'bg-purple-500/10 text-purple-400' },
+              { path: '/haes',            label: 'Häs & Masken',   icon: Shirt,     color: 'bg-yellow-500/10 text-yellow-400' },
+              { path: '/ehrungen',        label: 'Ehrungen',       icon: Award,     color: 'bg-yellow-500/10 text-yellow-400' },
+              { path: '/beitraege',       label: 'Beiträge',       icon: CreditCard,color: 'bg-red-500/10 text-red-400' },
             ].map(item => {
               const Icon = item.icon;
               return (
