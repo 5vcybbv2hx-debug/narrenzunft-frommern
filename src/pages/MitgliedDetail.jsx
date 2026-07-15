@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/AuthContext';
 import {
   ArrowLeft, Edit, Save, X, Phone, Mail, MapPin, Calendar,
   User, Shirt, Award, CreditCard, Trash2, AlertTriangle, Shield, Send, ChevronRight, Plus, Search, MessageCircle,
-  Archive, RotateCcw
+  Archive, RotateCcw, Lock, Check, Users, ClipboardList, Wallet, Crown, AlertCircle
 } from 'lucide-react';
 import { format, differenceInYears } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -27,13 +27,41 @@ function getVerfuegbareStatus(geburtsdatum) {
     if (s === 'Kinder 4-10') return alter >= 4 && alter <= 10;
     if (s === 'Jugendliche 11-14') return alter >= 11 && alter <= 14;
     if (s === 'Jungaktive 15-17') return alter >= 15 && alter <= 17;
-    return true; // Alle anderen immer verfügbar
+    return true;
   });
 }
 
+const STATUS_BADGE_COLORS = {
+  'Aktiv':'bg-green-900/20 text-green-400 border border-green-700/30',
+  'Passiv':'bg-yellow-900/20 text-yellow-400 border border-yellow-700/30',
+  'Passiv mit Häs':'bg-primary/20 text-primary border border-primary/30',
+  'Ehrenmitglied':'bg-purple-900/20 text-purple-400 border border-purple-700/30',
+  'Jugendliche 11-14':'bg-blue-900/20 text-blue-400 border border-blue-700/30',
+  'Jungaktive 15-17':'bg-cyan-900/20 text-cyan-400 border border-cyan-700/30',
+  'Kinder 4-10':'bg-pink-900/20 text-pink-400 border border-pink-700/30',
+  'Kleinkind 0-3':'bg-rose-900/20 text-rose-400 border border-rose-700/30',
+  'Verstorben':'bg-neutral-700 text-neutral-400',
+};
+
+const HAES_STATUS_COLORS = {
+  'Aktiv':'bg-green-900/20 text-green-400 border border-green-700/30',
+  'Frei':'bg-yellow-900/20 text-yellow-400 border border-yellow-700/30',
+  'Verliehen':'bg-blue-900/20 text-blue-400 border border-blue-700/30',
+  'Stillgelegt':'bg-neutral-700 text-neutral-400',
+  'Verkauft':'bg-red-900/20 text-red-400 border border-red-700/30',
+};
+
+const ROLE_TILES = [
+  { value: 'mitglied', label: 'Mitglied', desc: 'Grundzugang', icon: User },
+  { value: 'elternkonto', label: 'Elternkonto', desc: 'Für Erziehungsberechtigte', icon: Users },
+  { value: 'spartenleiter', label: 'Spartenleiter', desc: 'Dienste & Check-In', icon: ClipboardList },
+  { value: 'kassierer', label: 'Kassierer', desc: 'Finanzen & Beiträge', icon: Wallet },
+  { value: 'stellv_vorstand', label: 'Stv. Vorstand', desc: 'Vollzugriff (ohne Admin)', icon: Shield },
+  { value: 'vorstand', label: 'Vorstand', desc: 'Vollzugriff', icon: Crown },
+];
+
 function Field({ label, value, field, type = 'text', options, editing, mitglied, onChange }) {
   const rawVal = mitglied[field];
-  // Datumswerte im deutschen Format anzeigen (nur im Lesemodus)
   const displayVal = value || (type === 'date' && rawVal
     ? format(new Date(rawVal), 'dd.MM.yyyy', { locale: de })
     : rawVal) || '–';
@@ -46,7 +74,7 @@ function Field({ label, value, field, type = 'text', options, editing, mitglied,
           <select
             value={rawVal || ''}
             onChange={e => onChange(field, e.target.value)}
-            className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+            className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors"
           >
             {options.map(o => <option key={o} value={o}>{o}</option>)}
           </select>
@@ -55,11 +83,11 @@ function Field({ label, value, field, type = 'text', options, editing, mitglied,
             type={type}
             value={rawVal || ''}
             onChange={e => onChange(field, e.target.value)}
-            className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+            className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors"
           />
         )
       ) : (
-        <p className="text-sm text-foreground py-1">{displayVal}</p>
+        <p className="text-sm text-white py-1">{displayVal}</p>
       )}
     </div>
   );
@@ -95,6 +123,9 @@ export default function MitgliedDetail() {
   const [allHaes, setAllHaes] = useState([]);
   const [haessuche, setHaessuche] = useState('');
   const [assigningHaes, setAssigningHaes] = useState(false);
+  const [error, setError] = useState(null);
+  const [confirmArchive, setConfirmArchive] = useState(false);
+  const [haesError, setHaesError] = useState(null);
 
   useEffect(() => {
     if (!isNew) loadMitglied();
@@ -104,6 +135,7 @@ export default function MitgliedDetail() {
 
   const loadMitglied = async () => {
     setLoading(true);
+    setError(null);
     try {
       const [m, h, e] = await Promise.all([
         base44.entities.Mitglied.filter({ id }),
@@ -111,7 +143,6 @@ export default function MitgliedDetail() {
         base44.entities.Ehrung.filter({ mitglied_id: id }),
       ]);
       if (m[0]) {
-        // Zugriffsschutz: Mitglied darf nur eigenes Profil sehen
         if (istNurMitglied(user)) {
           const me = await base44.auth.me();
           const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
@@ -128,9 +159,12 @@ export default function MitgliedDetail() {
           if (u) setLinkedUser(u);
         }
       }
-      setHaes(h);
-      setEhrungen(e);
-    } catch (e) {}
+      setHaes(h || []);
+      setEhrungen(e || []);
+    } catch (e) {
+      console.error('Mitglied laden:', e);
+      setError('Mitglied konnte nicht geladen werden.');
+    }
     setLoading(false);
   };
 
@@ -138,52 +172,49 @@ export default function MitgliedDetail() {
     if (!mitglied.email) return;
     setInviting(true);
     try {
-      // inviteUser akzeptiert nur "user" oder "admin" – Feinrolle wird via app_rolle gesetzt
       const baseRolle = ['vorstand', 'stellv_vorstand'].includes(mitglied.app_rolle) ? 'admin' : 'user';
       await base44.users.inviteUser(mitglied.email, baseRolle);
       const today = new Date().toISOString().split('T')[0];
       await base44.entities.Mitglied.update(mitglied.id, { einladung_gesendet_am: today });
       setMitglied(p => ({ ...p, einladung_gesendet_am: today }));
       setInviteSent(true);
-    } catch (e) {}
+    } catch (e) {
+      console.error('Einladung senden:', e);
+      setError('Einladung konnte nicht gesendet werden.');
+    }
     setInviting(false);
   };
 
   const handleAppRolleChange = async (newRole) => {
-    // Immer auf dem Mitglied-Datensatz speichern
     setMitglied(p => ({ ...p, app_rolle: newRole }));
-    await base44.entities.Mitglied.update(mitglied.id, { app_rolle: newRole });
-    // Falls bereits ein User verknüpft: auch dort direkt setzen
+    try {
+      await base44.entities.Mitglied.update(mitglied.id, { app_rolle: newRole });
+    } catch (e) {
+      console.error('Rolle auf Mitglied setzen:', e);
+      setError('Rolle konnte nicht gespeichert werden.');
+    }
     if (linkedUser) {
       setRoleSaving(true);
       try {
         await base44.entities.User.update(linkedUser.id, { role: newRole });
         setLinkedUser(prev => ({ ...prev, role: newRole }));
-      } catch (e) {}
+      } catch (e) {
+        console.error('Rolle auf User setzen:', e);
+      }
       setRoleSaving(false);
     }
   };
 
   const getWhatsAppLink = (telefon) => {
     if (!telefon) return null;
-    // Nummer bereinigen: nur Ziffern, führende 0 → +49
     let nr = telefon.replace(/\s|-|\(|\)/g, '');
     if (nr.startsWith('0')) nr = '+49' + nr.slice(1);
     return `https://wa.me/${nr.replace('+', '')}`;
   };
 
-  const handleRoleChange = async (newRole) => {
-    if (!linkedUser) return;
-    setRoleSaving(true);
-    try {
-      await base44.entities.User.update(linkedUser.id, { role: newRole });
-      setLinkedUser(prev => ({ ...prev, role: newRole }));
-    } catch (e) {}
-    setRoleSaving(false);
-  };
-
   const handleSave = async () => {
     setSaving(true);
+    setError(null);
     try {
       if (isNew) {
         await base44.entities.Mitglied.create(mitglied);
@@ -192,39 +223,51 @@ export default function MitgliedDetail() {
         await base44.entities.Mitglied.update(mitglied.id, mitglied);
         setEditing(false);
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('Speichern:', e);
+      setError('Speichern fehlgeschlagen.');
+    }
     setSaving(false);
   };
 
   const handleArchivieren = async () => {
-    if (!window.confirm(`Mitglied "${mitglied.vorname} ${mitglied.nachname}" wirklich archivieren?`)) return;
-    await base44.entities.Mitglied.update(mitglied.id, {
-      archiviert: true,
-      archiviert_am: new Date().toISOString().split('T')[0],
-      archiviert_grund: 'Archiviert',
-    });
-    navigate('/mitglieder');
+    setConfirmArchive(false);
+    try {
+      await base44.entities.Mitglied.update(mitglied.id, {
+        archiviert: true,
+        archiviert_am: new Date().toISOString().split('T')[0],
+        archiviert_grund: 'Archiviert',
+      });
+      navigate('/mitglieder');
+    } catch (e) {
+      console.error('Archivieren:', e);
+      setError('Archivieren fehlgeschlagen.');
+    }
   };
 
   const handleReaktivieren = async () => {
-    await base44.entities.Mitglied.update(mitglied.id, {
-      archiviert: false,
-      archiviert_am: null,
-      archiviert_grund: null,
-    });
-    setMitglied(p => ({ ...p, archiviert: false, archiviert_am: null, archiviert_grund: null }));
+    try {
+      await base44.entities.Mitglied.update(mitglied.id, {
+        archiviert: false,
+        archiviert_am: null,
+        archiviert_grund: null,
+      });
+      setMitglied(p => ({ ...p, archiviert: false, archiviert_am: null, archiviert_grund: null }));
+    } catch (e) {
+      console.error('Reaktivieren:', e);
+      setError('Reaktivieren fehlgeschlagen.');
+    }
   };
 
   const alter = mitglied.geburtsdatum ? differenceInYears(new Date(), new Date(mitglied.geburtsdatum)) : null;
 
-  // Warnung wenn Status nicht zum Alter passt
   const statusAltersWarnung = (() => {
     if (!mitglied.geburtsdatum || !mitglied.mitgliedsstatus || alter === null) return null;
     const s = mitglied.mitgliedsstatus;
-    if (s === 'Kleinkind 0-3' && alter > 3) return `Alter ${alter} passt nicht zu "Kleinkind 0–3"`;
-    if (s === 'Kinder 4-10' && (alter < 4 || alter > 10)) return `Alter ${alter} passt nicht zu "Kinder 4–10"`;
-    if (s === 'Jugendliche 11-14' && (alter < 11 || alter > 14)) return `Alter ${alter} passt nicht zu "Jugendliche 11–14"`;
-    if (s === 'Jungaktive 15-17' && (alter < 15 || alter > 17)) return `Alter ${alter} passt nicht zu "Jungaktive 15–17"`;
+    if (s === 'Kleinkind 0-3' && alter > 3) return `Alter ${alter} passt nicht zu „Kleinkind 0–3"`;
+    if (s === 'Kinder 4-10' && (alter < 4 || alter > 10)) return `Alter ${alter} passt nicht zu „Kinder 4–10"`;
+    if (s === 'Jugendliche 11-14' && (alter < 11 || alter > 14)) return `Alter ${alter} passt nicht zu „Jugendliche 11–14"`;
+    if (s === 'Jungaktive 15-17' && (alter < 15 || alter > 17)) return `Alter ${alter} passt nicht zu „Jungaktive 15–17"`;
     if (s === 'Aktiv' && alter < 18) return `Alter ${alter}: Mitglied ist noch nicht 18 Jahre alt`;
     return null;
   })();
@@ -232,7 +275,6 @@ export default function MitgliedDetail() {
   const handleFieldChange = (field, value) => {
     setMitglied(p => {
       const updated = { ...p, [field]: value };
-      // Automatisch archivieren wenn Status auf Verstorben gesetzt wird
       if (field === 'mitgliedsstatus' && value === 'Verstorben') {
         updated.archiviert = true;
         updated.archiviert_am = new Date().toISOString().split('T')[0];
@@ -244,19 +286,20 @@ export default function MitgliedDetail() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-9 h-9 border-[3px] border-border border-t-primary rounded-full animate-spin" />
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="w-10 h-10 border-[3px] border-border border-t-primary rounded-full animate-spin mb-3" />
+        <p className="text-sm text-muted-foreground">Mitglied wird geladen…</p>
       </div>
     );
   }
 
   if (accessDenied) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
-        <div className="text-5xl mb-4">🔒</div>
-        <h2 className="text-xl font-bold text-foreground mb-2">Kein Zugriff</h2>
-        <p className="text-sm text-muted-foreground text-center mb-4">Du hast keine Berechtigung, dieses Mitgliederprofil zu öffnen.</p>
-        <button onClick={() => navigate(-1)} className="px-4 py-2 rounded-lg bg-secondary text-sm text-foreground hover:bg-border transition-colors">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+        <Lock size={40} className="text-muted-foreground mb-3" />
+        <h2 className="text-xl font-bold font-oswald uppercase tracking-wide text-white mb-2">Kein Zugriff</h2>
+        <p className="text-sm text-muted-foreground mb-4">Du hast keine Berechtigung, dieses Mitgliederprofil zu öffnen.</p>
+        <button onClick={() => navigate(-1)} className="px-4 py-2 rounded-lg bg-neutral-800 text-sm text-white hover:bg-neutral-700 transition-colors">
           Zurück
         </button>
       </div>
@@ -267,47 +310,46 @@ export default function MitgliedDetail() {
     <div className="px-4 lg:px-6 py-6 max-w-3xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground">
+        <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-neutral-800 transition-colors text-muted-foreground hover:text-white">
           <ArrowLeft size={20} />
         </button>
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-foreground">
+          <h1 className="text-xl font-bold font-oswald uppercase tracking-wide text-white">
             {isNew ? 'Neues Mitglied' : `${mitglied.vorname} ${mitglied.nachname}`}
           </h1>
           {alter !== null && <p className="text-sm text-muted-foreground">{alter} Jahre alt</p>}
         </div>
         {admin && !editing && (
-          <div className="flex gap-2">
-            <button
-              onClick={() => setEditing(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-            >
-              <Edit size={14} /> Bearbeiten
-            </button>
-          </div>
+          <button onClick={() => setEditing(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-red-700 transition-colors">
+            <Edit size={14} /> Bearbeiten
+          </button>
         )}
         {admin && editing && (
           <div className="flex gap-2">
-            <button
-              onClick={() => { setEditing(false); if (isNew) navigate(-1); }}
-              className="p-2 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-            >
+            <button onClick={() => { setEditing(false); if (isNew) navigate(-1); }}
+              className="p-2 rounded-lg bg-neutral-800 text-muted-foreground hover:text-white transition-colors">
               <X size={18} />
             </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
-            >
-              <Save size={14} /> {saving ? 'Speichern...' : 'Speichern'}
+            <button onClick={handleSave} disabled={saving}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50">
+              <Save size={14} /> {saving ? 'Speichern…' : 'Speichern'}
             </button>
           </div>
         )}
       </div>
 
+      {/* Error Banner */}
+      {error && (
+        <div className="mb-4 p-3 rounded-lg bg-red-900/20 border border-red-700/40 text-sm text-red-400 flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="shrink-0 ml-2"><AlertCircle size={16} /></button>
+        </div>
+      )}
+
       {/* Alters-Warnung */}
       {statusAltersWarnung && (
-        <div className="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-3 mb-4">
+        <div className="flex items-center gap-2 bg-yellow-900/20 border border-yellow-700/30 rounded-xl px-4 py-3 mb-4">
           <AlertTriangle size={16} className="text-yellow-400 shrink-0" />
           <p className="text-sm text-yellow-400">{statusAltersWarnung}</p>
         </div>
@@ -324,41 +366,24 @@ export default function MitgliedDetail() {
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-foreground text-lg">{mitglied.vorname} {mitglied.nachname}</p>
+            <p className="font-bold text-white text-lg">{mitglied.vorname} {mitglied.nachname}</p>
             {alter !== null && <p className="text-sm text-muted-foreground">{alter} Jahre alt</p>}
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               {mitglied.archiviert && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 font-medium flex items-center gap-1">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-900/20 text-yellow-400 border border-yellow-700/30 font-medium flex items-center gap-1">
                   <Archive size={10} /> Archiviert
                 </span>
               )}
-              {(() => {
-                const sc = {
-                  'Aktiv':'bg-green-500/20 text-green-400',
-                  'Passiv':'bg-yellow-500/20 text-yellow-400',
-                  'Passiv mit Häs':'bg-primary/20 text-primary',
-                  'Ehrenmitglied':'bg-purple-500/20 text-purple-400',
-                  'Jugendliche 11-14':'bg-blue-500/20 text-blue-400',
-                  'Jungaktive 15-17':'bg-cyan-500/20 text-cyan-400',
-                  'Kinder 4-10':'bg-pink-500/20 text-pink-400',
-                  'Kleinkind 0-3':'bg-rose-500/20 text-rose-400',
-                  'Verstorben':'bg-gray-600/30 text-gray-400',
-                };
-                return (
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${sc[mitglied.mitgliedsstatus] || 'bg-secondary text-muted-foreground'}`}>
-                    {mitglied.mitgliedsstatus}
-                  </span>
-                );
-              })()}
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE_COLORS[mitglied.mitgliedsstatus] || 'bg-neutral-800 text-muted-foreground'}`}>
+                {mitglied.mitgliedsstatus}
+              </span>
               {(mitglied.haesgruppen_ids || (mitglied.haesgruppe_id ? [mitglied.haesgruppe_id] : [])).map(gid => {
                 const g = haesgruppen.find(g => g.id === gid);
-                return g ? <span key={gid} className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">📍 {g.name}</span> : null;
+                return g ? <span key={gid} className="text-xs px-2 py-0.5 rounded-full bg-neutral-800 text-muted-foreground flex items-center gap-1"><MapPin size={10} /> {g.name}</span> : null;
               })}
               {mitglied.ort && <span className="text-xs text-muted-foreground">{mitglied.ort}</span>}
               {mitglied.eintrittsdatum && (
-                <span className="text-xs text-muted-foreground">
-                  seit {format(new Date(mitglied.eintrittsdatum), 'yyyy', { locale: de })}
-                </span>
+                <span className="text-xs text-muted-foreground">seit {format(new Date(mitglied.eintrittsdatum), 'yyyy', { locale: de })}</span>
               )}
             </div>
           </div>
@@ -369,22 +394,14 @@ export default function MitgliedDetail() {
       {!isNew && (
         <div className="flex gap-1.5 overflow-x-auto pb-1 mb-4 scrollbar-hide">
           {[
-            { id: 'profil',        label: 'Profil' },
-            { id: 'antrag',        label: 'Antrag' },
-            { id: 'familie',       label: 'Familie' },
-            { id: 'aktivitaet',    label: 'Aktivität' },
-            { id: 'arbeitsdienste',label: 'Dienste' },
-            { id: 'ehrungen',      label: 'Ehrungen' },
+            { id: 'profil', label: 'Profil' }, { id: 'antrag', label: 'Antrag' },
+            { id: 'familie', label: 'Familie' }, { id: 'aktivitaet', label: 'Aktivität' },
+            { id: 'arbeitsdienste', label: 'Dienste' }, { id: 'ehrungen', label: 'Ehrungen' },
           ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeTab === tab.id
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80'
-              }`}
-            >
+                activeTab === tab.id ? 'bg-primary text-white shadow-sm' : 'bg-neutral-800 text-muted-foreground hover:text-white hover:bg-neutral-700'
+              }`}>
               {tab.label}
             </button>
           ))}
@@ -392,33 +409,21 @@ export default function MitgliedDetail() {
       )}
 
       {/* Tab: Antrag */}
-      {activeTab === 'antrag' && !isNew && (
-        <AntragTab mitglied={mitglied} isAdmin={admin} />
-      )}
+      {activeTab === 'antrag' && !isNew && <AntragTab mitglied={mitglied} isAdmin={admin} />}
 
       {/* Tab: Familie */}
       {activeTab === 'familie' && !isNew && (
-        <FamilieTab
-          mitglied={mitglied}
-          isAdmin={admin}
-          onFamilieChanged={(familieId) => setMitglied(p => ({ ...p, familie_id: familieId }))}
-        />
+        <FamilieTab mitglied={mitglied} isAdmin={admin} onFamilieChanged={(familieId) => setMitglied(p => ({ ...p, familie_id: familieId }))} />
       )}
 
       {/* Tab: Aktivität */}
-      {activeTab === 'aktivitaet' && !isNew && (
-        <AktivitaetTab mitgliedId={mitglied.id} />
-      )}
+      {activeTab === 'aktivitaet' && !isNew && <AktivitaetTab mitgliedId={mitglied.id} />}
 
       {/* Tab: Arbeitsdienste */}
-      {activeTab === 'arbeitsdienste' && !isNew && (
-        <ArbeitsdiensteMitgliedTab mitgliedId={mitglied.id} />
-      )}
+      {activeTab === 'arbeitsdienste' && !isNew && <ArbeitsdiensteMitgliedTab mitgliedId={mitglied.id} />}
 
       {/* Tab: Ehrungen */}
-      {activeTab === 'ehrungen' && !isNew && (
-        <EhrungsStatus mitglied={mitglied} />
-      )}
+      {activeTab === 'ehrungen' && !isNew && <EhrungsStatus mitglied={mitglied} />}
 
       {/* Tab: Profil */}
       {(activeTab === 'profil' || isNew) && (
@@ -426,9 +431,7 @@ export default function MitgliedDetail() {
 
       {/* Persönliche Daten */}
       <div className="bg-card border border-border rounded-xl p-5 mb-4">
-        <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-          <User size={16} className="text-primary" /> Persönliche Daten
-        </h2>
+        <h2 className="font-semibold text-white mb-4 flex items-center gap-2"><User size={16} className="text-primary" /> Persönliche Daten</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Vorname" field="vorname" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           <Field label="Nachname" field="nachname" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
@@ -459,47 +462,36 @@ export default function MitgliedDetail() {
                         <button type="button" onClick={() => {
                           const aktuell = mitglied.haesgruppen_ids || (mitglied.haesgruppe_id ? [mitglied.haesgruppe_id] : []);
                           handleFieldChange('haesgruppen_ids', aktuell.filter(id => id !== gid));
-                        }} className="hover:text-destructive transition-colors ml-0.5">✕</button>
+                        }} className="hover:text-red-400 transition-colors ml-0.5"><X size={10} /></button>
                       </span>
                     ) : null;
                   })}
                 </div>
-                <select
-                  value=""
-                  onChange={e => {
-                    if (!e.target.value) return;
-                    const aktuell = mitglied.haesgruppen_ids || (mitglied.haesgruppe_id ? [mitglied.haesgruppe_id] : []);
-                    if (!aktuell.includes(e.target.value)) handleFieldChange('haesgruppen_ids', [...aktuell, e.target.value]);
-                  }}
-                  className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
-                >
-                  <option value="">+ Gruppe hinzufügen...</option>
-                  {haesgruppen
-                    .filter(g => !(mitglied.haesgruppen_ids || [mitglied.haesgruppe_id]).includes(g.id))
+                <select value="" onChange={e => {
+                  if (!e.target.value) return;
+                  const aktuell = mitglied.haesgruppen_ids || (mitglied.haesgruppe_id ? [mitglied.haesgruppe_id] : []);
+                  if (!aktuell.includes(e.target.value)) handleFieldChange('haesgruppen_ids', [...aktuell, e.target.value]);
+                }} className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors">
+                  <option value="">+ Gruppe hinzufügen…</option>
+                  {haesgruppen.filter(g => !(mitglied.haesgruppen_ids || [mitglied.haesgruppe_id]).includes(g.id))
                     .map(g => <option key={g.id} value={g.id}>{g.name} {g.typ && g.typ !== 'Häsgruppe' ? `(${g.typ})` : ''}</option>)}
                 </select>
               </div>
             ) : (
-              <p className="text-sm text-foreground py-1">
+              <p className="text-sm text-white py-1">
                 {(mitglied.haesgruppen_ids || (mitglied.haesgruppe_id ? [mitglied.haesgruppe_id] : []))
-                  .map(gid => haesgruppen.find(g => g.id === gid)?.name)
-                  .filter(Boolean)
-                  .join(', ') || '–'}
+                  .map(gid => haesgruppen.find(g => g.id === gid)?.name).filter(Boolean).join(', ') || '–'}
               </p>
             )}
           </div>
           <div>
             <label className="text-xs text-muted-foreground font-medium block mb-1">Umzüge vor Digitalisierung</label>
             {editing ? (
-              <input
-                type="number"
-                min="0"
-                value={mitglied.umzuege_vor_digitalisierung || 0}
+              <input type="number" min="0" value={mitglied.umzuege_vor_digitalisierung || 0}
                 onChange={e => handleFieldChange('umzuege_vor_digitalisierung', parseInt(e.target.value) || 0)}
-                className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
-              />
+                className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
             ) : (
-              <p className="text-sm text-foreground py-1">{mitglied.umzuege_vor_digitalisierung || 0} Umzüge (historisch)</p>
+              <p className="text-sm text-white py-1">{mitglied.umzuege_vor_digitalisierung || 0} Umzüge (historisch)</p>
             )}
             {editing && <p className="text-xs text-muted-foreground mt-1">Anzahl Erwachsenen-Umzüge vor Einführung dieser App</p>}
           </div>
@@ -509,48 +501,36 @@ export default function MitgliedDetail() {
       {/* Kontakt */}
       {!isNew && !editing && (
         <div className="bg-card border border-border rounded-xl p-5 mb-4">
-          <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-            <Phone size={16} className="text-primary" /> Kontakt
-          </h2>
+          <h2 className="font-semibold text-white mb-4 flex items-center gap-2"><Phone size={16} className="text-primary" /> Kontakt</h2>
           <div className="flex flex-col gap-2">
             {mitglied.email && (
-              <a
-                href={`mailto:${mitglied.email}`}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg bg-secondary/50 border border-border hover:border-primary/50 hover:bg-primary/5 transition-all"
-              >
+              <a href={`mailto:${mitglied.email}`} className="flex items-center gap-3 px-4 py-3 rounded-lg bg-neutral-800/50 border border-border hover:border-primary/50 hover:bg-primary/10 transition-all">
                 <Mail size={18} className="text-primary shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground">E-Mail</p>
-                  <p className="text-sm font-medium text-foreground truncate">{mitglied.email}</p>
+                  <p className="text-sm font-medium text-white truncate">{mitglied.email}</p>
                 </div>
                 <ChevronRight size={16} className="text-muted-foreground shrink-0" />
               </a>
             )}
             {mitglied.telefon && (
               <>
-                <a
-                  href={`tel:${mitglied.telefon}`}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-secondary/50 border border-border hover:border-primary/50 hover:bg-primary/5 transition-all"
-                >
+                <a href={`tel:${mitglied.telefon}`} className="flex items-center gap-3 px-4 py-3 rounded-lg bg-neutral-800/50 border border-border hover:border-primary/50 hover:bg-primary/10 transition-all">
                   <Phone size={18} className="text-primary shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-muted-foreground">Telefon</p>
-                    <p className="text-sm font-medium text-foreground truncate">{mitglied.telefon}</p>
+                    <p className="text-sm font-medium text-white truncate">{mitglied.telefon}</p>
                   </div>
                   <ChevronRight size={16} className="text-muted-foreground shrink-0" />
                 </a>
                 {(() => {
                   const waLink = getWhatsAppLink(mitglied.telefon);
                   return waLink ? (
-                    <a
-                      href={waLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 px-4 py-3 rounded-lg bg-green-500/10 border border-green-500/30 hover:border-green-500/50 hover:bg-green-500/15 transition-all"
-                    >
+                    <a href={waLink} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg bg-green-900/20 border border-green-700/30 hover:border-green-700/50 hover:bg-green-900/30 transition-all">
                       <MessageCircle size={18} className="text-green-400 shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-green-500">WhatsApp</p>
+                        <p className="text-xs text-green-400">WhatsApp</p>
                         <p className="text-sm font-medium text-green-400">Direktnachricht</p>
                       </div>
                       <ChevronRight size={16} className="text-green-400 shrink-0" />
@@ -559,56 +539,42 @@ export default function MitgliedDetail() {
                 })()}
               </>
             )}
-            {!mitglied.email && !mitglied.telefon && (
-              <p className="text-sm text-muted-foreground text-center py-4">Keine Kontaktdaten hinterlegt</p>
-            )}
+            {!mitglied.email && !mitglied.telefon && <p className="text-sm text-muted-foreground text-center py-4">Keine Kontaktdaten hinterlegt</p>}
           </div>
         </div>
       )}
 
       {/* Adresse */}
       <div className="bg-card border border-border rounded-xl p-5 mb-4">
-        <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-          <MapPin size={16} className="text-primary" /> Adresse
-        </h2>
+        <h2 className="font-semibold text-white mb-4 flex items-center gap-2"><MapPin size={16} className="text-primary" /> Adresse</h2>
         {editing ? (
           <div className="space-y-3">
             <div>
               <label className="text-xs text-muted-foreground font-medium block mb-1">Adresse suchen</label>
-              <AdresseAutocomplete
-                value=""
-                onChange={(val, addr) => {
-                  if (addr) {
-                    const strasse = [addr.road, addr.house_number].filter(Boolean).join(' ');
-                    handleFieldChange('strasse', strasse || mitglied.strasse);
-                    handleFieldChange('plz', addr.postcode || mitglied.plz);
-                    handleFieldChange('ort', addr.city || addr.town || addr.village || addr.municipality || mitglied.ort);
-                  }
-                }}
-                placeholder="Adresse suchen und übernehmen..."
-              />
-              <p className="text-xs text-muted-foreground mt-1">Suche befüllt die Felder automatisch – oder manuell eingeben:</p>
+              <AdresseAutocomplete value="" onChange={(val, addr) => {
+                if (addr) {
+                  const strasse = [addr.road, addr.house_number].filter(Boolean).join(' ');
+                  handleFieldChange('strasse', strasse || mitglied.strasse);
+                  handleFieldChange('plz', addr.postcode || mitglied.plz);
+                  handleFieldChange('ort', addr.city || addr.town || addr.village || mitglied.ort);
+                }
+              }} />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="sm:col-span-2">
-                <Field label="Straße & Hausnummer" field="strasse" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
-              </div>
+            <Field label="Straße" field="strasse" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+            <div className="grid grid-cols-2 gap-3">
               <Field label="PLZ" field="plz" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
               <Field label="Ort" field="ort" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
             </div>
           </div>
         ) : (
           <div className="space-y-1">
-            {mitglied.strasse && <p className="text-sm text-foreground">{mitglied.strasse}</p>}
-            {(mitglied.plz || mitglied.ort) && <p className="text-sm text-foreground">{[mitglied.plz, mitglied.ort].filter(Boolean).join(' ')}</p>}
+            {mitglied.strasse && <p className="text-sm text-white">{mitglied.strasse}</p>}
+            {(mitglied.plz || mitglied.ort) && <p className="text-sm text-white">{[mitglied.plz, mitglied.ort].filter(Boolean).join(' ')}</p>}
             {!mitglied.strasse && !mitglied.ort && <p className="text-sm text-muted-foreground">–</p>}
             {mitglied.strasse && (
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([mitglied.strasse, mitglied.plz, mitglied.ort].filter(Boolean).join(' '))}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors mt-1"
-              >
+              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([mitglied.strasse, mitglied.plz, mitglied.ort].filter(Boolean).join(' '))}`}
+                target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/70 transition-colors mt-1">
                 <MapPin size={11} /> Navigation öffnen
               </a>
             )}
@@ -618,16 +584,14 @@ export default function MitgliedDetail() {
 
       {/* Notfallkontakt */}
       <div className="bg-card border border-border rounded-xl p-5 mb-4">
-        <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-          🚨 Notfallkontakt
-        </h2>
+        <h2 className="font-semibold text-white mb-4 flex items-center gap-2"><AlertTriangle size={16} className="text-red-400" /> Notfallkontakt</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Name" field="notfallkontakt_name" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           <div>
             <Field label="Telefon" field="notfallkontakt_telefon" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
             {!editing && mitglied.notfallkontakt_telefon && (
-              <a href={`tel:${mitglied.notfallkontakt_telefon}`} className="inline-flex items-center gap-1 mt-1 text-xs text-primary hover:text-primary/80 transition-colors">
-                📞 Anrufen
+              <a href={`tel:${mitglied.notfallkontakt_telefon}`} className="inline-flex items-center gap-1 mt-1 text-xs text-primary hover:text-primary/70 transition-colors">
+                <Phone size={11} /> Anrufen
               </a>
             )}
           </div>
@@ -636,31 +600,23 @@ export default function MitgliedDetail() {
 
       {/* Notizen */}
       <div className="bg-card border border-border rounded-xl p-5 mb-4">
-        <h2 className="font-semibold text-foreground mb-4">Notizen</h2>
+        <h2 className="font-semibold text-white mb-4">Notizen</h2>
         {editing ? (
-          <textarea
-            value={mitglied.notizen || ''}
-            onChange={e => setMitglied(p => ({ ...p, notizen: e.target.value }))}
-            rows={4}
-            className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary resize-none"
-          />
+          <textarea value={mitglied.notizen || ''} onChange={e => setMitglied(p => ({ ...p, notizen: e.target.value }))} rows={4}
+            className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary resize-none transition-colors" />
         ) : (
-          <p className="text-sm text-foreground whitespace-pre-wrap">{mitglied.notizen || 'Keine Notizen'}</p>
+          <p className="text-sm text-white whitespace-pre-wrap">{mitglied.notizen || 'Keine Notizen'}</p>
         )}
       </div>
 
       {/* Bankverbindung */}
       {kannBank && (
         <div className="bg-card border border-border rounded-xl p-5 mb-4">
-          <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-            <CreditCard size={16} className="text-primary" /> Bankverbindung (SEPA)
-          </h2>
+          <h2 className="font-semibold text-white mb-4 flex items-center gap-2"><CreditCard size={16} className="text-primary" /> Bankverbindung (SEPA)</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Kontoinhaber" field="kontoinhaber" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
             <Field label="Bank" field="bankname" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
-            <div className="sm:col-span-2">
-              <Field label="IBAN" field="iban" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
-            </div>
+            <div className="sm:col-span-2"><Field label="IBAN" field="iban" editing={editing} mitglied={mitglied} onChange={handleFieldChange} /></div>
             <Field label="Mandatnummer" field="sepa_mandatnummer" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
             <Field label="Mandatdatum" field="sepa_mandatdatum" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           </div>
@@ -671,14 +627,10 @@ export default function MitgliedDetail() {
       {!isNew && (
         <div className="bg-card border border-border rounded-xl p-5 mb-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-foreground flex items-center gap-2">
-              <Shirt size={16} className="text-primary" /> Häs ({haes.length})
-            </h2>
+            <h2 className="font-semibold text-white flex items-center gap-2"><Shirt size={16} className="text-primary" /> Häs ({haes.length})</h2>
             {admin && (
-              <button
-                onClick={() => setShowHaesModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
-              >
+              <button onClick={() => setShowHaesModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-red-700 transition-colors">
                 <Plus size={13} /> Zuweisen
               </button>
             )}
@@ -689,14 +641,11 @@ export default function MitgliedDetail() {
             haes.map(h => (
               <Link key={h.id} to={`/haes/${h.id}`} className="flex items-center justify-between py-2 border-b border-border last:border-0 hover:opacity-75 transition-opacity">
                 <div>
-                  <p className="text-sm font-medium text-foreground">Nr. {h.haesnummer}</p>
+                  <p className="text-sm font-medium text-white">Nr. {h.haesnummer}</p>
                   <p className="text-xs text-muted-foreground">{h.bezeichnung}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {(() => {
-                    const hsc = { 'Aktiv':'bg-green-500/20 text-green-400', 'Frei':'bg-yellow-500/20 text-yellow-400', 'Verliehen':'bg-blue-500/20 text-blue-400', 'Stillgelegt':'bg-gray-500/20 text-gray-400', 'Verkauft':'bg-red-500/20 text-red-400' };
-                    return <span className={`text-xs px-2 py-0.5 rounded-full ${hsc[h.status] || 'bg-secondary text-muted-foreground'}`}>{h.status}</span>;
-                  })()}
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${HAES_STATUS_COLORS[h.status] || 'bg-neutral-800 text-muted-foreground'}`}>{h.status}</span>
                   <ChevronRight size={14} className="text-muted-foreground" />
                 </div>
               </Link>
@@ -708,51 +657,33 @@ export default function MitgliedDetail() {
       {/* App-Zugang & Rolle */}
       {admin && !isNew && (
         <div className="bg-card border border-border rounded-xl p-5 mb-4">
-          <h2 className="font-semibold text-foreground mb-1 flex items-center gap-2">
-            <Shield size={16} className="text-primary" /> App-Zugang & Rolle
-          </h2>
-          <p className="text-xs text-muted-foreground mb-4">
-            Rolle jetzt festlegen – wird beim ersten Login automatisch übernommen.
-          </p>
+          <h2 className="font-semibold text-white mb-1 flex items-center gap-2"><Shield size={16} className="text-primary" /> App-Zugang & Rolle</h2>
+          <p className="text-xs text-muted-foreground mb-4">Rolle jetzt festlegen – wird beim ersten Login automatisch übernommen.</p>
 
-          {/* Verknüpfter User (falls vorhanden) */}
           {linkedUser && (
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 mb-4">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-800/50 mb-4">
               <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0">
                 {linkedUser.full_name?.[0] || '?'}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate">{linkedUser.full_name}</p>
+                <p className="text-sm font-semibold text-white truncate">{linkedUser.full_name}</p>
                 <p className="text-xs text-muted-foreground truncate">{linkedUser.email}</p>
               </div>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium shrink-0">Aktiv</span>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-green-900/20 text-green-400 border border-green-700/30 font-medium shrink-0">Aktiv</span>
             </div>
           )}
 
-          {/* Rollen-Kacheln – immer sichtbar */}
           <div className="grid grid-cols-2 gap-2 mb-4">
-            {[
-              { value: 'mitglied', label: 'Mitglied', desc: 'Grundzugang', icon: '👤' },
-              { value: 'elternkonto', label: 'Elternkonto', desc: 'Für Erziehungsberechtigte', icon: '👨‍👩‍👧' },
-              { value: 'spartenleiter', label: 'Spartenleiter', desc: 'Dienste & Check-In', icon: '📋' },
-              { value: 'kassierer', label: 'Kassierer', desc: 'Finanzen & Beiträge', icon: '💰' },
-              { value: 'stellv_vorstand', label: 'Stv. Vorstand', desc: 'Vollzugriff (ohne Admin)', icon: '🎭' },
-              { value: 'vorstand', label: 'Vorstand', desc: 'Vollzugriff', icon: '👑' },
-            ].map(rolle => {
+            {ROLE_TILES.map(rolle => {
+              const Icon = rolle.icon;
               const currentRole = linkedUser ? (linkedUser.role || 'mitglied') : (mitglied.app_rolle || 'mitglied');
               const isSelected = currentRole === rolle.value;
               return (
-                <button
-                  key={rolle.value}
-                  onClick={() => handleAppRolleChange(rolle.value)}
-                  disabled={roleSaving}
+                <button key={rolle.value} onClick={() => handleAppRolleChange(rolle.value)} disabled={roleSaving}
                   className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all disabled:opacity-50 ${
-                    isSelected
-                      ? 'bg-primary/15 border-primary'
-                      : 'bg-secondary/40 border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'
-                  }`}
-                >
-                  <span className="text-base shrink-0">{rolle.icon}</span>
+                    isSelected ? 'bg-primary/10 border-primary' : 'bg-neutral-800/40 border-border text-muted-foreground hover:border-primary/40 hover:text-white'
+                  }`}>
+                  <Icon size={16} className="shrink-0" />
                   <div className="min-w-0">
                     <p className={`text-xs font-semibold truncate ${isSelected ? 'text-primary' : ''}`}>{rolle.label}</p>
                     <p className="text-[10px] text-muted-foreground truncate">{rolle.desc}</p>
@@ -762,12 +693,11 @@ export default function MitgliedDetail() {
               );
             })}
           </div>
-          {/* Häsgruppen für Spartenleiter – mehrere möglich */}
+
           {(mitglied.app_rolle === 'spartenleiter' || linkedUser?.role === 'spartenleiter') && (
             <div className="mb-3">
               <label className="text-xs text-muted-foreground font-medium block mb-1">Zuständige Gruppen (Spartenleiter)</label>
               <div className="space-y-2">
-                {/* Ausgewählte Gruppen als Tags */}
                 <div className="flex flex-wrap gap-1.5">
                   {(mitglied.spartenleiter_haesgruppen_ids || (mitglied.spartenleiter_haesgruppe_id ? [mitglied.spartenleiter_haesgruppe_id] : [])).map(gid => {
                     const g = haesgruppen.find(g => g.id === gid);
@@ -778,31 +708,20 @@ export default function MitgliedDetail() {
                           const aktuell = mitglied.spartenleiter_haesgruppen_ids || (mitglied.spartenleiter_haesgruppe_id ? [mitglied.spartenleiter_haesgruppe_id] : []);
                           const neu = aktuell.filter(id => id !== gid);
                           handleFieldChange('spartenleiter_haesgruppen_ids', neu);
-                          // Mitglied aus verantwortliche_ids der Gruppe entfernen
-                          const gruppeData = await base44.entities.Haesgruppe.filter({ id: gid });
-                          const gruppe = gruppeData[0];
-                          const aktuelleV = gruppe?.verantwortliche_ids?.length ? gruppe.verantwortliche_ids : (gruppe?.verantwortlicher_id ? [gruppe.verantwortlicher_id] : []);
-                          const neueV = aktuelleV.filter(id => id !== mitglied.id);
-                          await Promise.all([
-                            base44.entities.Mitglied.update(mitglied.id, { spartenleiter_haesgruppen_ids: neu }),
-                            base44.entities.Haesgruppe.update(gid, { verantwortliche_ids: neueV, verantwortlicher_id: neueV[0] || '' }),
-                          ]);
-                        }} className="hover:text-destructive transition-colors ml-0.5">✕</button>
+                          await base44.entities.Mitglied.update(mitglied.id, { spartenleiter_haesgruppen_ids: neu });
+                        }} className="hover:text-red-400 transition-colors ml-0.5"><X size={10} /></button>
                       </span>
                     ) : null;
                   })}
                 </div>
-                {/* Dropdown zum Hinzufügen */}
-                <select
-                  value=""
-                  onChange={async (e) => {
-                    if (!e.target.value) return;
-                    const gruppeId = e.target.value;
-                    const aktuell = mitglied.spartenleiter_haesgruppen_ids || (mitglied.spartenleiter_haesgruppe_id ? [mitglied.spartenleiter_haesgruppe_id] : []);
-                    if (aktuell.includes(gruppeId)) return;
-                    const neu = [...aktuell, gruppeId];
-                    handleFieldChange('spartenleiter_haesgruppen_ids', neu);
-                    // Gruppe laden um bestehende verantwortliche_ids zu erhalten
+                <select value="" onChange={async (e) => {
+                  const gruppeId = e.target.value;
+                  if (!gruppeId) return;
+                  const aktuell = mitglied.spartenleiter_haesgruppen_ids || (mitglied.spartenleiter_haesgruppe_id ? [mitglied.spartenleiter_haesgruppe_id] : []);
+                  if (aktuell.includes(gruppeId)) return;
+                  const neu = [...aktuell, gruppeId];
+                  handleFieldChange('spartenleiter_haesgruppen_ids', neu);
+                  try {
                     const gruppeData = await base44.entities.Haesgruppe.filter({ id: gruppeId });
                     const gruppe = gruppeData[0];
                     const aktuelleV = gruppe?.verantwortliche_ids?.length ? gruppe.verantwortliche_ids : (gruppe?.verantwortlicher_id ? [gruppe.verantwortlicher_id] : []);
@@ -811,12 +730,13 @@ export default function MitgliedDetail() {
                       base44.entities.Mitglied.update(mitglied.id, { spartenleiter_haesgruppen_ids: neu }),
                       base44.entities.Haesgruppe.update(gruppeId, { verantwortliche_ids: neueV, verantwortlicher_id: mitglied.id }),
                     ]);
-                  }}
-                  className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
-                >
-                  <option value="">+ Gruppe hinzufügen...</option>
-                  {haesgruppen
-                    .filter(g => !(mitglied.spartenleiter_haesgruppen_ids || (mitglied.spartenleiter_haesgruppe_id ? [mitglied.spartenleiter_haesgruppe_id] : [])).includes(g.id))
+                  } catch (e) {
+                    console.error('Spartenleiter-Gruppe aktualisieren:', e);
+                    setError('Gruppe konnte nicht zugewiesen werden.');
+                  }
+                }} className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors">
+                  <option value="">+ Gruppe hinzufügen…</option>
+                  {haesgruppen.filter(g => !(mitglied.spartenleiter_haesgruppen_ids || (mitglied.spartenleiter_haesgruppe_id ? [mitglied.spartenleiter_haesgruppe_id] : [])).includes(g.id))
                     .map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                 </select>
               </div>
@@ -826,29 +746,25 @@ export default function MitgliedDetail() {
           {roleSaving && (
             <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
               <div className="w-3 h-3 border-2 border-border border-t-primary rounded-full animate-spin" />
-              Wird gespeichert...
+              Wird gespeichert…
             </div>
           )}
 
-          {/* Einladung – nur wenn noch kein User verknüpft */}
           {!linkedUser && (
             <div className="border-t border-border pt-3 space-y-2">
               {mitglied.einladung_gesendet_am && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                  <span className="text-yellow-400 text-xs">📧</span>
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-900/20 border border-yellow-700/30">
+                  <Mail size={14} className="text-yellow-400 shrink-0" />
                   <p className="text-xs text-yellow-400">
                     Einladung gesendet am {format(new Date(mitglied.einladung_gesendet_am), 'dd.MM.yyyy', { locale: de })} – noch nicht angemeldet
                   </p>
                 </div>
               )}
               {mitglied.email ? (
-                <button
-                  onClick={handleInvite}
-                  disabled={inviting || inviteSent}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60 w-full justify-center"
-                >
+                <button onClick={handleInvite} disabled={inviting || inviteSent}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-60 w-full justify-center">
                   <Send size={14} />
-                  {inviteSent ? '✓ Einladung gesendet!' : inviting ? 'Sende...' : mitglied.einladung_gesendet_am ? 'Einladung erneut senden' : `Einladung senden an ${mitglied.email}`}
+                  {inviteSent ? <><Check size={14} /> Einladung gesendet!</> : inviting ? 'Sende…' : mitglied.einladung_gesendet_am ? 'Einladung erneut senden' : `Einladung senden an ${mitglied.email}`}
                 </button>
               ) : (
                 <p className="text-xs text-muted-foreground">Keine E-Mail-Adresse hinterlegt – Einladung nicht möglich.</p>
@@ -858,30 +774,31 @@ export default function MitgliedDetail() {
         </div>
       )}
 
-      {/* Löschen */}
+      {/* Archivieren / Reaktivieren */}
       {admin && !isNew && (
         <div className="flex flex-col gap-2 mt-2">
           {mitglied.archiviert ? (
             <div className="space-y-2">
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-900/20 border border-yellow-700/30">
                 <Archive size={14} className="text-yellow-400 shrink-0" />
                 <div>
                   <p className="text-xs text-yellow-400 font-medium">Archiviert{mitglied.archiviert_am ? ` am ${format(new Date(mitglied.archiviert_am), 'dd.MM.yyyy', { locale: de })}` : ''}</p>
                   {mitglied.archiviert_grund && <p className="text-xs text-muted-foreground">Grund: {mitglied.archiviert_grund}</p>}
                 </div>
               </div>
-              <button
-                onClick={handleReaktivieren}
-                className="flex items-center gap-2 text-sm text-green-400 hover:text-green-300 transition-colors"
-              >
+              <button onClick={handleReaktivieren} className="flex items-center gap-2 text-sm text-green-400 hover:text-green-300 transition-colors">
                 <RotateCcw size={14} /> Mitglied reaktivieren
               </button>
             </div>
+          ) : confirmArchive ? (
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-red-900/20 border border-red-700/30">
+              <AlertTriangle size={14} className="text-red-400 shrink-0" />
+              <span className="text-xs text-red-400">„{mitglied.vorname} {mitglied.nachname}" archivieren?</span>
+              <button onClick={handleArchivieren} className="text-xs px-2 py-1 rounded bg-red-900/80 text-white font-medium ml-auto">Ja, archivieren</button>
+              <button onClick={() => setConfirmArchive(false)} className="text-xs px-2 py-1 rounded text-muted-foreground hover:text-white">Abbrechen</button>
+            </div>
           ) : (
-            <button
-              onClick={handleArchivieren}
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-yellow-400 transition-colors"
-            >
+            <button onClick={() => setConfirmArchive(true)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-yellow-400 transition-colors">
               <Archive size={14} /> Mitglied archivieren
             </button>
           )}
@@ -896,76 +813,53 @@ export default function MitgliedDetail() {
         <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
           <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-foreground">Häs zuweisen</h3>
-              <button onClick={() => { setShowHaesModal(false); setHaessuche(''); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"><X size={16} /></button>
+              <h3 className="font-bold text-white">Häs zuweisen</h3>
+              <button onClick={() => { setShowHaesModal(false); setHaessuche(''); setHaesError(null); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-white"><X size={16} /></button>
             </div>
+            {haesError && (
+              <div className="mb-3 p-2 rounded-lg bg-red-900/20 border border-red-700/30 text-xs text-red-400 flex items-center gap-2">
+                <AlertCircle size={14} /> {haesError}
+              </div>
+            )}
             <div className="space-y-3">
               <p className="text-xs text-muted-foreground mb-1">Freie Häs werden zuerst angezeigt.</p>
               <div className="relative">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Häs-Nummer oder Bezeichnung..."
-                  value={haessuche}
-                  onChange={e => setHaessuche(e.target.value)}
-                  autoFocus
-                  className="w-full pl-8 pr-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
-                />
+                <input type="text" placeholder="Häs-Nummer oder Bezeichnung…" value={haessuche} onChange={e => setHaessuche(e.target.value)} autoFocus
+                  className="w-full pl-8 pr-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors" />
               </div>
-
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {[...allHaes]
-                  .filter(h =>
-                    !haes.some(m => m.id === h.id) &&
-                    (haessuche === '' ||
-                      h.haesnummer.toLowerCase().includes(haessuche.toLowerCase()) ||
-                      (h.bezeichnung || '').toLowerCase().includes(haessuche.toLowerCase()))
-                  )
+                  .filter(h => !haes.some(m => m.id === h.id) &&
+                    (haessuche === '' || h.haesnummer.toLowerCase().includes(haessuche.toLowerCase()) || (h.bezeichnung || '').toLowerCase().includes(haessuche.toLowerCase())))
                   .sort((a, b) => {
-                    // Freie Häs zuerst, dann Aktiv, Rest hinten
                     const order = { 'Frei': 0, 'Aktiv': 1, 'Verliehen': 2, 'Stillgelegt': 3, 'Verkauft': 4 };
                     return (order[a.status] ?? 5) - (order[b.status] ?? 5);
                   })
                   .slice(0, 30)
                   .map(h => (
-                    <button
-                      key={h.id}
-                      onClick={async () => {
-                        setAssigningHaes(true);
-                        try {
-                          await base44.functions.invoke('weiseHaesZuSicher', {
-                            haes_id: h.id,
-                            mitglied_id: mitglied.id,
-                            aktion: 'verliehen',
-                          });
-                          setShowHaesModal(false);
-                          setHaessuche('');
-                          loadMitglied();
-                        } catch (e) {
-                          console.error('Häs-Zuweisung fehlgeschlagen:', e);
-                          alert('Häs konnte nicht zugewiesen werden: ' + (e?.response?.data?.error || e.message));
-                        }
-                        setAssigningHaes(false);
-                      }}
-                      disabled={assigningHaes}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary border border-border text-left transition-colors disabled:opacity-50"
-                    >
-                      <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
-                        {h.haesnummer[0]}
-                      </div>
+                    <button key={h.id} onClick={async () => {
+                      setAssigningHaes(true); setHaesError(null);
+                      try {
+                        await base44.functions.invoke('weiseHaesZuSicher', { haes_id: h.id, mitglied_id: mitglied.id, aktion: 'verliehen' });
+                        setShowHaesModal(false); setHaessuche(''); loadMitglied();
+                      } catch (e) {
+                        console.error('Häs-Zuweisung fehlgeschlagen:', e);
+                        setHaesError('Häs konnte nicht zugewiesen werden: ' + (e?.response?.data?.error || e.message));
+                      }
+                      setAssigningHaes(false);
+                    }} disabled={assigningHaes}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-neutral-800 border border-border text-left transition-colors disabled:opacity-50">
+                      <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">{h.haesnummer[0]}</div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground">#{h.haesnummer}</p>
+                        <p className="text-sm font-medium text-white">#{h.haesnummer}</p>
                         {h.bezeichnung && <p className="text-xs text-muted-foreground truncate">{h.bezeichnung}</p>}
                       </div>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">{h.status}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${HAES_STATUS_COLORS[h.status] || 'bg-neutral-800 text-muted-foreground'}`}>{h.status}</span>
                     </button>
                   ))}
-                {allHaes.filter(h =>
-                  !haes.some(m => m.id === h.id) &&
-                  (haessuche === '' ||
-                    h.haesnummer.toLowerCase().includes(haessuche.toLowerCase()) ||
-                    (h.bezeichnung || '').toLowerCase().includes(haessuche.toLowerCase()))
-                ).length === 0 && (
+                {allHaes.filter(h => !haes.some(m => m.id === h.id) &&
+                  (haessuche === '' || h.haesnummer.toLowerCase().includes(haessuche.toLowerCase()) || (h.bezeichnung || '').toLowerCase().includes(haessuche.toLowerCase()))).length === 0 && (
                   <p className="text-xs text-muted-foreground text-center py-4">Keine verfügbaren Häs gefunden</p>
                 )}
               </div>
