@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { ChevronDown, ChevronUp, Edit, Trash2, Plus, UserMinus, Search, Users, Calendar, Euro } from 'lucide-react';
+import { ChevronDown, ChevronUp, Edit, Trash2, Plus, UserMinus, Search, Users, Calendar, Euro, Shirt, Music, Footprints, Users2, UserCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import SpartenKalender from './SpartenKalender';
 import AuslagenTab from './AuslagenTab';
 
-const TYP_EMOJI = {
-  'Häsgruppe': '🎭',
-  'Tanzgruppe': '💃',
-  'Musikgruppe': '🎵',
-  'Sonstige': '👥',
+const TYP_ICON = {
+  'Häsgruppe': Shirt,
+  'Tanzgruppe': Footprints,
+  'Musikgruppe': Music,
+  'Sonstige': Users2,
 };
 
 export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten, onEdit, onDelete, onMitgliederChanged }) {
@@ -45,8 +45,8 @@ export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten
     onMitgliederChanged();
   };
 
-  const farbe = gruppe.farbe || '#f97316';
-  const emoji = TYP_EMOJI[gruppe.typ] || '👥';
+  const farbe = gruppe.farbe || '#EA2525';
+  const TypIcon = TYP_ICON[gruppe.typ] || Users2;
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
@@ -55,12 +55,12 @@ export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten
         className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-secondary/30 transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-lg" style={{ backgroundColor: farbe + '25', border: `1.5px solid ${farbe}50` }}>
-          {emoji}
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: farbe + '20', border: `1.5px solid ${farbe}50` }}>
+          <TypIcon size={18} style={{ color: farbe }} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-foreground">{gruppe.name}</h3>
+            <h3 className="font-oswald font-semibold text-foreground tracking-wide">{gruppe.name}</h3>
             <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: farbe + '20', color: farbe }}>
               {gruppe.typ || 'Häsgruppe'}
             </span>
@@ -74,7 +74,7 @@ export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten
                 {verantw.map(v => (
                   <Link key={v.id} to={`/mitglieder/${v.id}`} onClick={e => e.stopPropagation()}
                     className="text-xs text-primary font-semibold hover:underline inline-flex items-center gap-1">
-                    👤 {v.vorname} {v.nachname}
+                    <UserCircle size={11} className="inline" /> {v.vorname} {v.nachname}
                   </Link>
                 ))}
               </div>
@@ -107,19 +107,19 @@ export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten
           <div className="flex gap-1 p-2 bg-secondary/50">
             <button
               onClick={() => setActiveTab('mitglieder')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'mitglieder' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'mitglieder' ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground hover:bg-primary/10'}`}
             >
               <Users size={12} /> Mitglieder ({mitglieder.length})
             </button>
             <button
               onClick={() => setActiveTab('kalender')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'kalender' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'kalender' ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground hover:bg-primary/10'}`}
             >
               <Calendar size={12} /> Termine
             </button>
             <button
               onClick={() => setActiveTab('auslagen')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'auslagen' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'auslagen' ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground hover:bg-primary/10'}`}
             >
               <Euro size={12} /> Auslagen
             </button>
