@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannMitgliederlisteSehn } from '@/lib/roles';
-import { Search, Plus, User, ChevronRight, Archive, Download, ArrowUpDown, Shirt } from 'lucide-react';
+import { Search, Plus, User, ChevronRight, Archive, Download, ArrowUpDown, Shirt, FileText, FolderOpen, ChevronDown } from 'lucide-react';
 import NeuerAntragModal from '@/components/mitglied/NeuerAntragModal';
 import { format, differenceInYears } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -71,25 +71,31 @@ export default function Mitglieder() {
 
   // Status-Zähler
   const statusCounts = useMemo(() => {
-    const aktive = mitglieder.filter(m => !m.archiviert);
+    const sichtbare = mitglieder.filter(m => zeigeArchiviert ? m.archiviert : !m.archiviert);
     return ALLE_STATUS.reduce((acc, s) => {
-      acc[s] = s === 'Alle' ? aktive.length : aktive.filter(m => m.mitgliedsstatus === s).length;
+      acc[s] = s === 'Alle' ? sichtbare.length : sichtbare.filter(m => m.mitgliedsstatus === s).length;
       return acc;
     }, {});
-  }, [mitglieder]);
+  }, [mitglieder, zeigeArchiviert]);
 
   // Filter + Sort
   const filtered = useMemo(() => {
     let result = mitglieder.filter(m => zeigeArchiviert ? m.archiviert : !m.archiviert);
 
     if (search) {
-      const s = search.toLowerCase();
-      result = result.filter(m =>
-        `${m.vorname} ${m.nachname}`.toLowerCase().includes(s) ||
-        m.email?.toLowerCase().includes(s) ||
-        m.ort?.toLowerCase().includes(s) ||
-        m.mitgliedsnummer?.toString().includes(s)
-      );
+      let s = search.toLowerCase().trim();
+      // #-Präfix für Mitgliedsnummern-Suche strippen
+      const nummerOnly = s.startsWith('#') ? s.substring(1) : null;
+      if (nummerOnly !== null) {
+        result = result.filter(m => m.mitgliedsnummer?.toString().includes(nummerOnly));
+      } else {
+        result = result.filter(m =>
+          `${m.vorname} ${m.nachname}`.toLowerCase().includes(s) ||
+          m.email?.toLowerCase().includes(s) ||
+          m.ort?.toLowerCase().includes(s) ||
+          m.mitgliedsnummer?.toString().includes(s)
+        );
+      }
     }
 
     if (statusFilter !== 'Alle') {
@@ -207,7 +213,7 @@ export default function Mitglieder() {
             onClick={() => setShowAntragModal(true)}
             className="flex-1 flex items-center gap-3 px-4 py-3 rounded-lg bg-primary/10 border border-primary/30 hover:bg-primary/20 transition-colors text-left"
           >
-            <span className="text-xl">📋</span>
+            <FileText size={20} className="text-primary shrink-0" />
             <div className="flex-1">
               <p className="text-sm font-semibold text-primary">Neues Mitglied aufnehmen</p>
               <p className="text-xs text-muted-foreground">Antrag ausfüllen & direkt anlegen</p>
@@ -217,7 +223,7 @@ export default function Mitglieder() {
             to="/mitgliedsantraege"
             className="flex items-center gap-2 px-4 py-3 rounded-lg bg-secondary border border-border hover:border-primary/40 transition-colors text-sm font-medium text-foreground"
           >
-            <span className="text-base">📂</span>
+            <FolderOpen size={18} className="text-muted-foreground" />
             <span className="hidden sm:inline">Anträge</span>
           </Link>
         </div>
@@ -230,25 +236,29 @@ export default function Mitglieder() {
         />
       )}
 
-      {/* Suche + Sort */}
+      {/* Suche + Sort + Filter — sticky */}
+      <div className="sticky top-0 z-20 -mx-4 lg:-mx-6 px-4 lg:px-6 pb-2 pt-2 bg-background/95 backdrop-blur-sm mb-3">
       <div className="flex gap-2 mb-3">
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Name, Nummer, E-Mail, Ort…"
+            placeholder="Name, #Nr, E-Mail, Ort…"
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-colors"
           />
         </div>
-        <select
-          value={sortBy}
-          onChange={e => setSortBy(e.target.value)}
-          className="px-3 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground focus:outline-none focus:border-primary/60 transition-colors cursor-pointer"
-        >
-          {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+        <div className="relative">
+          <select
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value)}
+            className="appearance-none pl-3 pr-9 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground focus:outline-none focus:border-primary/60 transition-colors cursor-pointer"
+          >
+            {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+        </div>
       </div>
 
       {/* Status-Filter mit Zählern */}
@@ -273,6 +283,7 @@ export default function Mitglieder() {
             </button>
           ))}
         </div>
+      </div>
       </div>
 
       {/* Info-Zeile */}
