@@ -1,15 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { isAdmin } from '@/lib/roles';
-import { ArrowLeft, ScanLine, CheckCircle2, XCircle, AlertTriangle, Users, Bus, QrCode } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { isAdmin, isDeveloper, kannCheckinDurchfuehren } from '@/lib/roles';
+import { ArrowLeft, ScanLine, CheckCircle2, XCircle, AlertTriangle, Users, QrCode, Calendar } from 'lucide-react';
+import { format, parseISO, isToday, isSameDay } from 'date-fns';
 import { de } from 'date-fns/locale';
 
 export default function AusfahrtScanner() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { user } = useAuth();
 
   const [ausfahrt, setAusfahrt] = useState(null);
@@ -46,10 +45,23 @@ export default function AusfahrtScanner() {
     }
   };
 
-  // Prüfe ob User Busverantwortlicher oder Admin ist
+  // ── Berechtigungslogik ──
   const currentMitglied = mitglieder.find(m => m.user_id === user?.id || m.email === user?.email);
   const isBusverantwortlicher = ausfahrt?.bus_verantwortliche?.includes(currentMitglied?.id);
-  const canScan = isAdmin(user) || isBusverantwortlicher;
+
+  // Vorstand / Admin / Spartenleiter können immer scannen (über kannCheckinDurchfuehren aus roles.js)
+  const hasGeneralAccess = kannCheckinDurchfuehren(user) || isAdmin(user) || isDeveloper(user);
+
+  // Busverantwortliche nur am Ausfahrttag
+  const isAusfahrtTag = () => {
+    if (!ausfahrt?.datum) return false;
+    try {
+      const eventDate = parseISO(ausfahrt.datum);
+      return isToday(eventDate);
+    } catch { return false; }
+  };
+
+  const canScan = hasGeneralAccess || (isBusverantwortlicher && isAusfahrtTag());
 
   const getMitgliedName = (mitgliedId) => {
     const m = mitglieder.find(m => m.id === mitgliedId);
@@ -61,14 +73,12 @@ export default function AusfahrtScanner() {
   const gesamtCount = activeAnmeldungen.length;
 
   const handleScanResult = useCallback(async (decodedText) => {
-    // Verhindere Mehrfach-Scan derselben ID innerhalb kurzem Zeitraum
     if (lastScan && lastScan.id === decodedText && Date.now() - lastScan.timestamp < 3000) {
       return;
     }
     setLastScan({ id: decodedText, timestamp: Date.now() });
 
     try {
-      // API-Aufruf an die checkinAusfahrt Backend-Function via SDK
       const response = await base44.functions.invoke('checkinAusfahrt', {
         anmeldung_id: decodedText,
         eingeloggter_name: user?.full_name || user?.email || 'Busverantwortlicher'
@@ -90,7 +100,7 @@ export default function AusfahrtScanner() {
       setScanResults(prev => [newEntry, ...prev].slice(0, 30));
 
       if (result.erfolg) {
-        fetchData(); // Aktualisiere Anmeldungs-Liste
+        fetchData();
       }
     } catch (err) {
       console.error('Check-in API error:', err);
@@ -106,7 +116,6 @@ export default function AusfahrtScanner() {
 
   const startScanner = async () => {
     try {
-      // Dynamically load html5-qrcode from CDN
       if (!window.Html5Qrcode) {
         await new Promise((resolve, reject) => {
           const script = document.createElement('script');
@@ -145,9 +154,7 @@ export default function AusfahrtScanner() {
       try {
         await html5QrCodeRef.current.stop();
         html5QrCodeRef.current.clear();
-      } catch (e) {
-        console.error('Stop scanner error:', e);
-      }
+      } catch (e) { console.error('Stop scanner error:', e); }
       html5QrCodeRef.current = null;
     }
     setScanning(false);
@@ -192,6 +199,8 @@ export default function AusfahrtScanner() {
   }
 
   if (!canScan) {
+    // Differenzierte Meldung: Busverantwortlicher aber nicht am Ausfahrttag
+    const isBusButNotToday = isBusverantwortlicher && !isAusfahrtTag();
     return (
       <div className="min-h-[60vh] p-6">
         <div className="max-w-2xl mx-auto">
@@ -200,8 +209,23 @@ export default function AusfahrtScanner() {
           </Link>
           <div className="bg-card border border-border rounded-xl p-8 text-center">
             <AlertTriangle className="w-10 h-10 text-yellow-500 mx-auto mb-4" />
-            <p className="text-white font-semibold mb-2">Keine Berechtigung</p>
-            <p className="text-gray-400 text-sm">Du bist nicht als Busverantwortlicher für diese Ausfahrt eingetragen.</p>
+            <p className="text-white font-semibold mb-2">
+              {isBusButNotToday ? 'Noch nicht möglich' : 'Keine Berechtigung'}
+            </p>
+            {isBusButNotToday ? (
+              <>
+                <p className="text-gray-400 text-sm mb-2">
+                  Du bist als Busverantwortlicher eingetragen, aber der QR-Scanner ist erst <strong className="text-primary">am Tag der Ausfahrt</strong> verfügbar.
+                </p>
+                <p className="text-gray-500 text-xs flex items-center justify-center gap-1.5 mt-3">
+                  <Calendar className="w-4 h-4" /> {formatDisplayDate(ausfahrt.datum)}
+                </p>
+              </>
+            ) : (
+              <p className="text-gray-400 text-sm">
+                Du bist nicht als Busverantwortlicher für diese Ausfahrt eingetragen. Nur Vorstände, Admins, Spartenleiter und zugewiesene Busverantwortliche (am Ausfahrtstag) haben Zugriff.
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -230,6 +254,11 @@ export default function AusfahrtScanner() {
             </div>
           </div>
           <p className="text-gray-500 text-xs mt-2">{formatDisplayDate(ausfahrt.datum)}</p>
+          {isBusverantwortlicher && !hasGeneralAccess && (
+            <p className="text-primary text-xs mt-2 font-medium flex items-center gap-1">
+              <Users className="w-3.5 h-3.5" /> Du bist heute als Busverantwortlicher eingetragen
+            </p>
+          )}
         </div>
 
         {/* Stats */}
