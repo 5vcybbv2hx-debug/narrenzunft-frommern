@@ -2,29 +2,25 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
-import { CreditCard, Search, Plus, Settings, Bus } from 'lucide-react';
+import { CreditCard, Search, Plus, Settings, Bus, AlertCircle, Check, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import BeitraegeEinstellungen from '@/components/beitraege/BeitraegeEinstellungen';
 import Buskosten from '@/components/beitraege/Buskosten';
 
 const STATUS_COLORS = {
-  'Offen': 'bg-yellow-500/20 text-yellow-400',
-  'Bezahlt': 'bg-green-500/20 text-green-400',
-  'Überfällig': 'bg-red-500/20 text-red-400',
-  'Erlassen': 'bg-gray-500/20 text-gray-400',
+  'Offen':      'bg-yellow-900/20 text-yellow-400 border border-yellow-700/30',
+  'Bezahlt':    'bg-green-900/20 text-green-400 border border-green-700/30',
+  'Überfällig': 'bg-red-900/20 text-red-400 border border-red-700/30',
+  'Erlassen':   'bg-neutral-700 text-neutral-300',
 };
 
 const DEFAULT_BEITRAEGE_SATZ = {
-  'Aktiv': 60,
-  'Passiv': 30,
-  'Passiv mit Häs': 45,
-  'Leihäs': 40,
-  'Jugendliche 11-14': 20,
-  'Jungaktive 15-17': 25,
-  'Kinder 4-10': 15,
-  'Kleinkind 0-3': 0,
-  'Ehrenmitglied': 0,
+  'Aktiv': 60, 'Passiv': 30, 'Passiv mit Häs': 45, 'Leihäs': 40,
+  'Jugendliche 11-14': 20, 'Jungaktive 15-17': 25, 'Kinder 4-10': 15,
+  'Kleinkind 0-3': 0, 'Ehrenmitglied': 0,
 };
+
+const inputCls = "w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors";
 
 export default function Beitraege() {
   const { user } = useAuth();
@@ -38,37 +34,39 @@ export default function Beitraege() {
   const [showEinstellungen, setShowEinstellungen] = useState(false);
   const [beitraegeSatz, setBeitraegeSatz] = useState(DEFAULT_BEITRAEGE_SATZ);
   const [activeTab, setActiveTab] = useState('jahresbeitraege');
+  const [error, setError] = useState(null);
+  const [confirmCreate, setConfirmCreate] = useState(false);
   const isAdminUser = isAdmin(user);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     setLoading(true);
+    setError(null);
     try {
       const einst = await base44.entities.AppEinstellung.filter({ schluessel: 'beitraege_saetze' });
-      if (einst[0]?.wert_json) setBeitraegeSatz({ ...DEFAULT_BEITRAEGE_SATZ, ...einst[0].wert_json });
+      if (einst?.[0]?.wert_json) setBeitraegeSatz({ ...DEFAULT_BEITRAEGE_SATZ, ...einst[0].wert_json });
 
       if (isAdminUser) {
-        // Admins sehen alle Beiträge + alle Mitglieder für Namensauflösung
         const [bData, m] = await Promise.all([
           base44.entities.Beitrag.list('-jahr', 500),
           base44.entities.Mitglied.list('nachname', 300),
         ]);
-        setBeitraege(bData);
-        setMitglieder(m);
+        setBeitraege(bData || []);
+        setMitglieder(m || []);
       } else {
-        // Normales Mitglied: nur eigene Daten
         const me = await base44.auth.me();
         const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
-        if (myM[0]) {
+        if (myM?.[0]) {
           setMitglieder([myM[0]]);
           const bData = await base44.entities.Beitrag.filter({ mitglied_id: myM[0].id });
-          setBeitraege(bData);
+          setBeitraege(bData || []);
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('Beiträge laden:', e);
+      setError('Beiträge konnten nicht geladen werden.');
+    }
     setLoading(false);
   };
 
@@ -81,30 +79,31 @@ export default function Beitraege() {
         zahlungsdatum: new Date().toISOString().split('T')[0]
       });
       setBeitraege(prev => prev.map(b => b.id === beitrag.id ? { ...b, zahlungsstatus: 'Bezahlt', zahlungsdatum: updated.zahlungsdatum } : b));
-    } catch (e) {}
+    } catch (e) {
+      console.error('Bezahlt markieren:', e);
+    }
   };
 
   const handleJahresbeitraegeErstellen = async () => {
-    if (!window.confirm(`Jahresbeiträge für ${selectedYear} erstellen?`)) return;
+    setConfirmCreate(false);
     setCreating(true);
     try {
       const aktiveMitglieder = mitglieder.filter(m => m.mitgliedsstatus !== 'Ehrenmitglied' && m.mitgliedsstatus !== 'Kleinkind 0-3');
       const existierende = beitraege.filter(b => b.jahr === selectedYear).map(b => b.mitglied_id);
       const neueM = aktiveMitglieder.filter(m => !existierende.includes(m.id));
-
       const neueBeitraege = neueM.map(m => ({
-        mitglied_id: m.id,
-        jahr: selectedYear,
+        mitglied_id: m.id, jahr: selectedYear,
         betrag: beitraegeSatz[m.mitgliedsstatus] || 0,
-        mitgliedsstatus: m.mitgliedsstatus,
-        zahlungsstatus: 'Offen',
+        mitgliedsstatus: m.mitgliedsstatus, zahlungsstatus: 'Offen',
       }));
-
       if (neueBeitraege.length > 0) {
         await base44.entities.Beitrag.bulkCreate(neueBeitraege);
         await loadData();
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('Jahresbeiträge erstellen:', e);
+      setError('Jahresbeiträge konnten nicht erstellt werden.');
+    }
     setCreating(false);
   };
 
@@ -128,217 +127,201 @@ export default function Beitraege() {
   };
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-9 h-9 border-[3px] border-border border-t-primary rounded-full animate-spin" />
-        <p className="text-xs text-muted-foreground">Beiträge werden geladen…</p>
-      </div>
+    <div className="flex flex-col items-center justify-center min-h-[60vh]">
+      <div className="w-10 h-10 border-[3px] border-border border-t-primary rounded-full animate-spin mb-3" />
+      <p className="text-sm text-muted-foreground">Beiträge werden geladen…</p>
     </div>
   );
 
   return (
     <div className="px-4 lg:px-6 py-6 max-w-4xl mx-auto">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-oswald font-semibold text-foreground tracking-wide">Beiträge</h1>
+          <h1 className="text-2xl font-bold font-oswald uppercase tracking-wide text-white">Beiträge</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{beitraege.filter(b => b.jahr === selectedYear).length} Einträge · {selectedYear}</p>
         </div>
         {isAdminUser && activeTab === 'jahresbeitraege' && (
-          <button
-            onClick={() => setShowEinstellungen(true)}
-            className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground hover:bg-border transition-colors"
-            title="Beitragssätze anpassen"
-          >
+          <button onClick={() => setShowEinstellungen(true)}
+            className="p-2.5 rounded-xl bg-neutral-800 text-muted-foreground hover:text-white hover:bg-neutral-700 transition-colors"
+            title="Beitragssätze anpassen">
             <Settings size={18} />
           </button>
         )}
       </div>
 
+      {/* Error Banner */}
+      {error && (
+        <div className="mb-4 p-3 rounded-lg bg-red-900/20 border border-red-700/40 text-sm text-red-400 flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="shrink-0 ml-2"><AlertCircle size={16} /></button>
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="flex gap-1.5 mb-5">
-        <button
-          onClick={() => setActiveTab('jahresbeitraege')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'jahresbeitraege' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
-        >
+        <button onClick={() => setActiveTab('jahresbeitraege')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'jahresbeitraege' ? 'bg-primary text-white shadow-sm' : 'bg-neutral-800 text-muted-foreground hover:text-white'}`}>
           <CreditCard size={14} /> Jahresbeiträge
         </button>
-        <button
-          onClick={() => setActiveTab('buskosten')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'buskosten' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
-        >
+        <button onClick={() => setActiveTab('buskosten')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'buskosten' ? 'bg-primary text-white shadow-sm' : 'bg-neutral-800 text-muted-foreground hover:text-white'}`}>
           <Bus size={14} /> Buskosten
         </button>
       </div>
 
       {/* Buskosten Tab */}
-      {activeTab === 'buskosten' && (
-        <Buskosten isAdmin={isAdminUser} />
-      )}
+      {activeTab === 'buskosten' && <Buskosten isAdmin={isAdminUser} />}
 
       {activeTab !== 'buskosten' && <>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <div className="bg-card border border-border rounded-xl p-4">
-          <p className="text-xs text-muted-foreground">Gesamt {selectedYear}</p>
-          <p className="text-xl font-oswald font-semibold text-foreground mt-1">{stats.total.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
-        </div>
-        <div className="bg-card border border-green-500/20 rounded-xl p-4">
-          <p className="text-xs text-muted-foreground">Bezahlt</p>
-          <p className="text-xl font-oswald font-semibold text-green-400 mt-1">{stats.bezahlt.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
-        </div>
-        <div className="bg-card border border-yellow-500/20 rounded-xl p-4">
-          <p className="text-xs text-muted-foreground">Offen</p>
-          <p className="text-xl font-oswald font-semibold text-yellow-400 mt-1">{stats.offen.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
-        </div>
-        <div className="bg-card border border-red-500/20 rounded-xl p-4">
-          <p className="text-xs text-muted-foreground">Überfällig</p>
-          <p className="text-xl font-oswald font-semibold text-red-400 mt-1">{stats.ueberfaellig.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
-        </div>
-      </div>
-
-      {/* Jahresbeiträge erstellen */}
-      {isAdminUser && (
-        <div className="bg-card border border-border rounded-xl p-4 mb-4 flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-muted-foreground">Jahr:</label>
-            <input
-              type="number"
-              value={selectedYear}
-              onChange={e => setSelectedYear(parseInt(e.target.value))}
-              className="w-24 px-3 py-1.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
-            />
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+          <div className="bg-card border border-border rounded-xl p-4">
+            <p className="text-xs text-muted-foreground">Gesamt {selectedYear}</p>
+            <p className="text-xl font-oswald font-semibold text-white mt-1">{stats.total.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
           </div>
-          <button
-            onClick={handleJahresbeitraegeErstellen}
-            disabled={creating}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
-          >
-            <Plus size={14} /> {creating ? 'Erstelle...' : `Jahresbeiträge ${selectedYear} erstellen`}
-          </button>
+          <div className="bg-card border border-green-700/30 rounded-xl p-4">
+            <p className="text-xs text-muted-foreground">Bezahlt</p>
+            <p className="text-xl font-oswald font-semibold text-green-400 mt-1">{stats.bezahlt.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
+          </div>
+          <div className="bg-card border border-yellow-700/30 rounded-xl p-4">
+            <p className="text-xs text-muted-foreground">Offen</p>
+            <p className="text-xl font-oswald font-semibold text-yellow-400 mt-1">{stats.offen.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
+          </div>
+          <div className="bg-card border border-red-700/30 rounded-xl p-4">
+            <p className="text-xs text-muted-foreground">Überfällig</p>
+            <p className="text-xl font-oswald font-semibold text-red-400 mt-1">{stats.ueberfaellig.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
+          </div>
         </div>
-      )}
 
-      {/* Search & Filter */}
-      <div className="relative mb-3">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <input
-          type="text"
-          placeholder="Mitglied suchen..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
-        />
-      </div>
-
-      <div className="flex gap-2 overflow-x-auto pb-1 mb-4 scrollbar-hide">
-        {(() => {
-          const jahresB = beitraege.filter(b => b.jahr === selectedYear);
-          const fc = {
-            'Alle':        jahresB.length,
-            'Offen':       jahresB.filter(b => b.zahlungsstatus === 'Offen').length,
-            'Bezahlt':     jahresB.filter(b => b.zahlungsstatus === 'Bezahlt').length,
-            'Überfällig': jahresB.filter(b => b.zahlungsstatus === 'Überfällig').length,
-            'Erlassen':    jahresB.filter(b => b.zahlungsstatus === 'Erlassen').length,
-          };
-          return ['Alle', 'Offen', 'Bezahlt', 'Überfällig', 'Erlassen'].map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                filter === f ? 'bg-primary text-white' : 'bg-card border border-border text-muted-foreground hover:border-primary/50'
-              }`}
-            >
-              {f}
-              <span className={`text-[10px] font-bold px-1 rounded-full ${filter === f ? 'bg-white/20' : 'bg-secondary'}`}>
-                {fc[f] ?? 0}
-              </span>
+        {/* Jahresbeiträge erstellen */}
+        {isAdminUser && (
+          <div className="bg-card border border-border rounded-xl p-4 mb-4 flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-muted-foreground">Jahr:</label>
+              <input type="number" value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))}
+                className="w-24 px-3 py-1.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+            </div>
+            <button onClick={() => setConfirmCreate(true)} disabled={creating}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50">
+              <Plus size={14} /> {creating ? 'Erstelle…' : `Jahresbeiträge ${selectedYear} erstellen`}
             </button>
-          ));
-        })()}
-      </div>
+            {confirmCreate && (
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-red-900/20 border border-red-700/30">
+                <AlertTriangle size={14} className="text-red-400 shrink-0" />
+                <span className="text-xs text-red-400">Für {selectedYear} erstellen?</span>
+                <button onClick={handleJahresbeitraegeErstellen} className="text-xs px-2 py-1 rounded bg-red-900/80 text-white font-medium">Ja</button>
+                <button onClick={() => setConfirmCreate(false)} className="text-xs px-2 py-1 rounded text-muted-foreground hover:text-white">Abbrechen</button>
+              </div>
+            )}
+          </div>
+        )}
 
-      {/* Tabelle */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="border-b border-border">
-              <tr>
-                <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Mitglied</th>
-                <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3 hidden sm:table-cell">Jahr</th>
-                <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Betrag</th>
-                <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Status</th>
-                {isAdminUser && <th className="text-right text-xs font-medium text-muted-foreground px-4 py-3">Aktion</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {filteredBeitraege.map(b => {
-                const m = getMitglied(b.mitglied_id);
-                return (
-                  <tr key={b.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
-                    <td className="px-4 py-3">
-                      <p className="text-sm font-medium text-foreground">{m ? `${m.vorname} ${m.nachname}` : '–'}</p>
-                      <p className="text-xs text-muted-foreground">{b.mitgliedsstatus}</p>
-                    </td>
-                    <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className="text-sm text-muted-foreground">{b.jahr}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-sm font-semibold text-foreground">{b.betrag} €</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[b.zahlungsstatus]}`}>
-                        {b.zahlungsstatus}
-                      </span>
-                    </td>
-                    {isAdminUser && (
-                      <td className="px-4 py-3 text-right">
-                        {b.zahlungsstatus !== 'Bezahlt' && b.zahlungsstatus !== 'Erlassen' && (
-                          <button
-                            onClick={() => handleMarkBezahlt(b)}
-                            className="text-xs px-3 py-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors font-medium"
-                          >
-                            ✓ Bezahlt
-                          </button>
-                        )}
+        {/* Search & Filter */}
+        <div className="relative mb-3">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input type="text" placeholder="Mitglied suchen…" value={search} onChange={e => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-card border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors" />
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto pb-1 mb-4 scrollbar-hide">
+          {(() => {
+            const jahresB = beitraege.filter(b => b.jahr === selectedYear);
+            const fc = {
+              'Alle': jahresB.length,
+              'Offen': jahresB.filter(b => b.zahlungsstatus === 'Offen').length,
+              'Bezahlt': jahresB.filter(b => b.zahlungsstatus === 'Bezahlt').length,
+              'Überfällig': jahresB.filter(b => b.zahlungsstatus === 'Überfällig').length,
+              'Erlassen': jahresB.filter(b => b.zahlungsstatus === 'Erlassen').length,
+            };
+            return ['Alle', 'Offen', 'Bezahlt', 'Überfällig', 'Erlassen'].map(f => (
+              <button key={f} onClick={() => setFilter(f)}
+                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  filter === f ? 'bg-primary text-white' : 'bg-card border border-border text-muted-foreground hover:border-primary/50'
+                }`}>
+                {f}
+                <span className={`text-[10px] font-bold px-1 rounded-full ${filter === f ? 'bg-white/20' : 'bg-neutral-800'}`}>
+                  {fc[f] ?? 0}
+                </span>
+              </button>
+            ));
+          })()}
+        </div>
+
+        {/* Tabelle */}
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="border-b border-border">
+                <tr>
+                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Mitglied</th>
+                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3 hidden sm:table-cell">Jahr</th>
+                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Betrag</th>
+                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Status</th>
+                  {isAdminUser && <th className="text-right text-xs font-medium text-muted-foreground px-4 py-3">Aktion</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredBeitraege.map(b => {
+                  const m = getMitglied(b.mitglied_id);
+                  return (
+                    <tr key={b.id} className="border-b border-border last:border-0 hover:bg-neutral-800/30 transition-colors">
+                      <td className="px-4 py-3">
+                        <p className="text-sm font-medium text-white">{m ? `${m.vorname} ${m.nachname}` : '–'}</p>
+                        <p className="text-xs text-muted-foreground">{b.mitgliedsstatus}</p>
                       </td>
-                    )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      <td className="px-4 py-3 hidden sm:table-cell">
+                        <span className="text-sm text-muted-foreground">{b.jahr}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-sm font-semibold text-white">{b.betrag} €</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[b.zahlungsstatus] || ''}`}>
+                          {b.zahlungsstatus}
+                        </span>
+                      </td>
+                      {isAdminUser && (
+                        <td className="px-4 py-3 text-right">
+                          {b.zahlungsstatus !== 'Bezahlt' && b.zahlungsstatus !== 'Erlassen' && (
+                            <button onClick={() => handleMarkBezahlt(b)}
+                              className="text-xs px-3 py-1.5 rounded-lg bg-green-900/20 text-green-400 hover:bg-green-900/30 transition-colors font-medium flex items-center gap-1 ml-auto">
+                              <Check size={12} /> Bezahlt
+                            </button>
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
 
-      {showEinstellungen && (
-        <BeitraegeEinstellungen
-          onClose={() => setShowEinstellungen(false)}
-          onSaved={(newSaetze) => { setBeitraegeSatz(newSaetze); setShowEinstellungen(false); }}
-        />
-      )}
+        {showEinstellungen && (
+          <BeitraegeEinstellungen
+            onClose={() => setShowEinstellungen(false)}
+            onSaved={(newSaetze) => { setBeitraegeSatz(newSaetze); setShowEinstellungen(false); }}
+          />
+        )}
 
-      {filteredBeitraege.length === 0 && (
-        <div className="text-center py-12">
-          <CreditCard size={36} className="text-muted-foreground/40 mx-auto mb-3" />
-          <p className="text-foreground font-medium">Keine Beiträge für {selectedYear}</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            {filter !== 'Alle' ? `Keine Einträge mit Status „${filter}"` : `Noch keine Jahresbeiträge für ${selectedYear} erstellt`}
-          </p>
-          {filter !== 'Alle' && (
-            <button onClick={() => setFilter('Alle')} className="mt-3 text-xs text-primary hover:underline">
-              Filter zurücksetzen
-            </button>
-          )}
-          {filter === 'Alle' && isAdminUser && (
-            <button onClick={handleJahresbeitraegeErstellen} disabled={creating} className="mt-3 text-xs text-primary hover:underline">
-              Jetzt erstellen
-            </button>
-          )}
-        </div>
-      )}
-
-      </> }
+        {filteredBeitraege.length === 0 && (
+          <div className="text-center py-12">
+            <CreditCard size={36} className="text-muted-foreground/40 mx-auto mb-3" />
+            <p className="text-white font-medium">Keine Beiträge für {selectedYear}</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {filter !== 'Alle' ? `Keine Einträge mit Status „${filter}"` : `Noch keine Jahresbeiträge für ${selectedYear} erstellt`}
+            </p>
+            {filter !== 'Alle' && (
+              <button onClick={() => setFilter('Alle')} className="mt-3 text-xs text-primary hover:underline">Filter zurücksetzen</button>
+            )}
+            {filter === 'Alle' && isAdminUser && (
+              <button onClick={() => setConfirmCreate(true)} disabled={creating} className="mt-3 text-xs text-primary hover:underline">Jetzt erstellen</button>
+            )}
+          </div>
+        )}
+      </>}
     </div>
   );
 }
