@@ -21,7 +21,7 @@ const ZUWEISUNG_COLORS = {
   'Bestätigt':     'bg-green-500/20 text-green-400',
   'Erledigt':      'bg-green-500/20 text-green-400',
   'Abgesagt':      'bg-red-500/20 text-red-400',
-  'Nicht erledigt':'bg-primary/20 text-primary',
+  'Nicht erledigt':'bg-orange-500/20 text-orange-400',
 };
 
 export default function Arbeitsdienste() {
@@ -32,7 +32,7 @@ export default function Arbeitsdienste() {
   const [veranstaltungen, setVeranstaltungen] = useState([]);
   const [myMitglied, setMyMitglied] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('Alle');
+  const [filter, setFilter] = useState('Kommend');
   const [editDienst, setEditDienst] = useState(null);
   const [expandedEvents, setExpandedEvents] = useState({});
   const [showVorlagen, setShowVorlagen] = useState(false);
@@ -85,7 +85,8 @@ export default function Arbeitsdienste() {
     .sort((a, b) => {
       const aKey = `${a.datum || ''}T${a.uhrzeit || '00:00'}`;
       const bKey = `${b.datum || ''}T${b.uhrzeit || '00:00'}`;
-      return aKey.localeCompare(bKey);
+      // Vergangen: absteigend (neueste zuerst), sonst aufsteigend
+      return filter === 'Vergangen' ? bKey.localeCompare(aKey) : aKey.localeCompare(bKey);
     });
 
   // Gruppiere nach Veranstaltung (und nicht zugeordnete Dienste)
@@ -133,7 +134,7 @@ export default function Arbeitsdienste() {
             </button>
             <Link
               to="/arbeitsdienste/neu"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
             >
               <Plus size={16} />
               <span className="hidden sm:inline">Neuer Dienst</span>
@@ -214,11 +215,11 @@ export default function Arbeitsdienste() {
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-secondary/60 border border-border hover:border-primary/40 transition-all"
               >
                 {event ? (
-                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex flex-col items-center justify-center">
-                    <span className="text-[9px] text-muted-foreground uppercase leading-none font-medium">
+                  <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex flex-col items-center justify-center ${event.datum === today ? 'bg-primary' : 'bg-primary/10'}`}>
+                    <span className={`text-[9px] uppercase leading-none font-medium ${event.datum === today ? 'text-white/80' : 'text-muted-foreground'}`}>
                       {format(new Date(event.datum), 'MMM', { locale: de })}
                     </span>
-                    <span className="text-base font-oswald font-bold text-primary leading-tight">
+                    <span className={`text-base font-oswald font-bold leading-tight ${event.datum === today ? 'text-white' : 'text-primary'}`}>
                       {format(new Date(event.datum), 'd')}
                     </span>
                   </div>
@@ -252,6 +253,9 @@ export default function Arbeitsdienste() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <h3 className="font-semibold text-foreground text-sm">{d.titel}</h3>
+                                {d.datum === today && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary text-white font-semibold">HEUTE</span>
+                                )}
                                 <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${STATUS_COLORS[d.status] || 'bg-gray-500/20 text-gray-400'}`}>
                                   {d.status}
                                 </span>
@@ -338,7 +342,7 @@ export default function Arbeitsdienste() {
                                           key={z.id}
                                           className={`text-[10px] px-1.5 py-0.5 rounded-full ${ZUWEISUNG_COLORS[z.status] || ZUWEISUNG_COLORS['Offen']}`}
                                         >
-                                          {m ? `${m.vorname}` : '–'}
+                                          {m ? `${m.vorname} ${m.nachname?.[0] || ''}.` : '–'}
                                         </span>
                                       );
                                     })}
