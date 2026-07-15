@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { kannInventarSehn, isAdmin } from '@/lib/roles';
-import { Package, Plus, Lock, ChevronRight, Calendar, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { Package, Plus, Lock, ChevronRight, Calendar, CheckCircle2, Clock, XCircle, Globe, User, AlertCircle, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import AusruestungKarte from '@/components/inventar/AusruestungKarte';
@@ -20,6 +20,7 @@ export default function Inventar() {
   const [externePersonen, setExternePersonen] = useState([]);
   const [meinMitglied, setMeinMitglied] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('uebersicht');
   const [showAusruestungForm, setShowAusruestungForm] = useState(false);
   const [editAusruestung, setEditAusruestung] = useState(null);
@@ -34,23 +35,30 @@ export default function Inventar() {
 
   const loadData = async () => {
     setLoading(true);
-    const me = await base44.auth.me();
-    const [a, al, ep, myMArr] = await Promise.all([
-      base44.entities.Ausruestung.list('name', 200),
-      base44.entities.Ausleihe.list('-von_datum', 300),
-      admin ? base44.entities.ExternePerson.list('name', 200) : Promise.resolve([]),
-      base44.entities.Mitglied.filter({ user_id: me?.id }),
-    ]);
-    setAusruestungen(a.filter(x => x.aktiv !== false));
-    setAusleihen(al);
-    setExternePersonen(ep);
-    setMeinMitglied(myMArr[0] || null);
-    // Mitgliedernamen nur für Admins laden (für Ausleiher-Anzeige und Form)
-    if (admin) {
-      const m = await base44.entities.Mitglied.list('nachname', 500);
-      setMitglieder(m.filter(x => !x.archiviert));
+    setError(null);
+    try {
+      const me = await base44.auth.me();
+      const [a, al, ep, myMArr] = await Promise.all([
+        base44.entities.Ausruestung.list('name', 200),
+        base44.entities.Ausleihe.list('-von_datum', 300),
+        admin ? base44.entities.ExternePerson.list('name', 200) : Promise.resolve([]),
+        base44.entities.Mitglied.filter({ user_id: me?.id }),
+      ]);
+      setAusruestungen(a.filter(x => x.aktiv !== false));
+      setAusleihen(al);
+      setExternePersonen(ep);
+      setMeinMitglied(myMArr[0] || null);
+      // Mitgliedernamen nur für Admins laden (für Ausleiher-Anzeige und Form)
+      if (admin) {
+        const m = await base44.entities.Mitglied.list('nachname', 500);
+        setMitglieder(m.filter(x => !x.archiviert));
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Fehler beim Laden des Inventars. Bitte versuchen Sie es erneut.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const today = new Date().toISOString().split('T')[0];
@@ -78,22 +86,34 @@ export default function Inventar() {
   };
 
   const handleAusruestungSave = async (form) => {
-    if (editAusruestung) {
-      const updated = await base44.entities.Ausruestung.update(editAusruestung.id, form);
-      setAusruestungen(prev => prev.map(a => a.id === updated.id ? updated : a));
-    } else {
-      const neu = await base44.entities.Ausruestung.create({ ...form, aktiv: true });
-      setAusruestungen(prev => [...prev, neu]);
+    setError(null);
+    try {
+      if (editAusruestung) {
+        const updated = await base44.entities.Ausruestung.update(editAusruestung.id, form);
+        setAusruestungen(prev => prev.map(a => a.id === updated.id ? updated : a));
+      } else {
+        const neu = await base44.entities.Ausruestung.create({ ...form, aktiv: true });
+        setAusruestungen(prev => [...prev, neu]);
+      }
+      setShowAusruestungForm(false);
+      setEditAusruestung(null);
+    } catch (err) {
+      console.error(err);
+      setError('Fehler beim Speichern des Gegenstands.');
     }
-    setShowAusruestungForm(false);
-    setEditAusruestung(null);
   };
 
   const handleAusruestungDelete = async (id) => {
-    await base44.entities.Ausruestung.update(id, { aktiv: false });
-    setAusruestungen(prev => prev.filter(a => a.id !== id));
-    setShowAusruestungForm(false);
-    setEditAusruestung(null);
+    setError(null);
+    try {
+      await base44.entities.Ausruestung.update(id, { aktiv: false });
+      setAusruestungen(prev => prev.filter(a => a.id !== id));
+      setShowAusruestungForm(false);
+      setEditAusruestung(null);
+    } catch (err) {
+      console.error(err);
+      setError('Fehler beim Löschen des Gegenstands.');
+    }
   };
 
   const handleAusleiheStart = (ausruestung) => {
@@ -109,26 +129,38 @@ export default function Inventar() {
   };
 
   const handleAusleihesSave = async (form) => {
-    if (editAusleihe) {
-      const updated = await base44.entities.Ausleihe.update(editAusleihe.id, form);
-      setAusleihen(prev => prev.map(a => a.id === updated.id ? updated : a));
-    } else {
-      const neu = await base44.entities.Ausleihe.create({
-        ...form,
-        verantwortlicher_id: meinMitglied?.id || '',
-      });
-      setAusleihen(prev => [neu, ...prev]);
+    setError(null);
+    try {
+      if (editAusleihe) {
+        const updated = await base44.entities.Ausleihe.update(editAusleihe.id, form);
+        setAusleihen(prev => prev.map(a => a.id === updated.id ? updated : a));
+      } else {
+        const neu = await base44.entities.Ausleihe.create({
+          ...form,
+          verantwortlicher_id: meinMitglied?.id || '',
+        });
+        setAusleihen(prev => [neu, ...prev]);
+      }
+      setShowAusleiheForm(false);
+      setEditAusleihe(null);
+      setSelectedAusruestung(null);
+    } catch (err) {
+      console.error(err);
+      setError('Fehler beim Speichern der Ausleihe.');
     }
-    setShowAusleiheForm(false);
-    setEditAusleihe(null);
-    setSelectedAusruestung(null);
   };
 
   const handleAusleiheDelete = async (id) => {
-    await base44.entities.Ausleihe.delete(id);
-    setAusleihen(prev => prev.filter(a => a.id !== id));
-    setShowAusleiheForm(false);
-    setEditAusleihe(null);
+    setError(null);
+    try {
+      await base44.entities.Ausleihe.delete(id);
+      setAusleihen(prev => prev.filter(a => a.id !== id));
+      setShowAusleiheForm(false);
+      setEditAusleihe(null);
+    } catch (err) {
+      console.error(err);
+      setError('Fehler beim Löschen der Ausleihe.');
+    }
   };
 
   const aktuelleAusleihen = ausleihen.filter(al =>
@@ -142,23 +174,35 @@ export default function Inventar() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
         <Lock size={40} className="text-muted-foreground mb-3" />
-        <h2 className="text-xl font-bold text-foreground mb-2">Kein Zugriff</h2>
+        <h2 className="text-xl font-oswald uppercase text-white mb-2">Kein Zugriff</h2>
         <p className="text-sm text-muted-foreground">Dieser Bereich ist nur für Vorstand und berechtigte Personen.</p>
       </div>
     );
   }
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="w-9 h-9 border-[3px] border-border border-t-primary rounded-full animate-spin" />
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
+      <div className="w-10 h-10 border-[3px] border-border border-t-primary rounded-full animate-spin" />
+      <span className="text-sm text-muted-foreground font-medium">Inventar wird geladen…</span>
     </div>
   );
 
   return (
     <div className="px-4 lg:px-6 py-6 max-w-3xl mx-auto">
+      {error && (
+        <div className="mb-5 flex items-start gap-2.5 p-3 rounded-xl bg-red-900/20 border border-red-700/30 text-sm text-red-400">
+          <AlertCircle size={18} className="shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-semibold">Fehler aufgetreten</p>
+            <p className="text-xs mt-0.5">{error}</p>
+          </div>
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-white text-xs">Schließen</button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+          <h1 className="text-2xl font-oswald uppercase tracking-wide text-white flex items-center gap-2">
             <Package size={22} className="text-primary" /> Inventar & Verleih
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
@@ -168,7 +212,7 @@ export default function Inventar() {
         {admin && (
           <button
             onClick={() => { setEditAusruestung(null); setShowAusruestungForm(true); }}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-red-700 transition-colors"
           >
             <Plus size={16} /> Gegenstand
           </button>
@@ -176,17 +220,21 @@ export default function Inventar() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-secondary rounded-xl p-1 mb-5">
+      <div className="flex gap-1 bg-neutral-800 rounded-xl p-1 mb-5">
         {[
-          { id: 'uebersicht', label: '📦 Übersicht' },
-          { id: 'ausleihen', label: `📋 Ausleihen (${aktuelleAusleihen.length})` },
-          { id: 'historie', label: '🕐 Historie' },
-        ].map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}>
-            {tab.label}
-          </button>
-        ))}
+          { id: 'uebersicht', label: 'Übersicht', icon: Package },
+          { id: 'ausleihen', label: `Ausleihen (${aktuelleAusleihen.length})`, icon: Clock },
+          { id: 'historie', label: 'Historie', icon: Calendar },
+        ].map(tab => {
+          const Icon = tab.icon;
+          return (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${activeTab === tab.id ? 'bg-primary text-white shadow-sm' : 'text-muted-foreground hover:text-white'}`}>
+              <Icon size={14} />
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* ÜBERSICHT */}
@@ -293,28 +341,37 @@ export default function Inventar() {
 
 function AusleiheKarte({ ausleihe, ausruestung, ausleiherName, today, onClick, vergangen }) {
   const STATUS_STYLE = {
-    'Reserviert':     'bg-blue-500/20 text-blue-400',
-    'Ausgeliehen':    'bg-primary/20 text-primary',
-    'Zurückgegeben':  'bg-green-500/20 text-green-400',
-    'Abgesagt':       'bg-gray-500/20 text-gray-400',
+    'Reserviert':     'bg-blue-900/20 text-blue-400 border border-blue-700/30',
+    'Ausgeliehen':    'bg-primary/20 text-primary border border-primary/30',
+    'Zurückgegeben':  'bg-green-900/20 text-green-400 border border-green-700/30',
+    'Abgesagt':       'bg-neutral-700 text-gray-400',
   };
   const istUeberfaellig = ausleihe.bis_datum < today && ausleihe.status === 'Ausgeliehen';
 
   return (
-    <button onClick={onClick} className={`w-full bg-card border rounded-xl p-4 text-left hover:border-primary/40 transition-all ${istUeberfaellig ? 'border-red-500/40' : 'border-border'}`}>
+    <button onClick={onClick} className={`w-full bg-card border rounded-xl p-4 text-left hover:border-primary/40 transition-all ${istUeberfaellig ? 'border-red-700/40' : 'border-border'}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground">{ausruestung?.name || '–'}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {ausleihe.ausleiher_typ === 'extern' ? '🌐' : '👤'} {ausleiherName}
-            {ausleihe.zweck && ` · ${ausleihe.zweck}`}
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            📅 {ausleihe.von_datum} → {ausleihe.bis_datum}
-            {istUeberfaellig && <span className="ml-2 text-red-400 font-medium">⚠ Überfällig!</span>}
-          </p>
+          <p className="text-sm font-semibold text-white">{ausruestung?.name || '–'}</p>
+          <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+            {ausleihe.ausleiher_typ === 'extern' ? <Globe size={13} className="inline" /> : <User size={13} className="inline" />}
+            <span className="text-white">{ausleiherName}</span>
+            {ausleihe.zweck && <span className="text-white">· {ausleihe.zweck}</span>}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <Calendar size={13} className="inline" />
+            <span className="text-white">{ausleihe.von_datum} → {ausleihe.bis_datum}</span>
+            {istUeberfaellig && (
+              <span className="flex items-center gap-1 text-red-400 font-medium">
+                <AlertTriangle size={12} /> Überfällig!
+              </span>
+            )}
+          </div>
           {ausleihe.schadensbericht && (
-            <p className="text-xs text-red-400 mt-1">🔴 {ausleihe.schadensbericht}</p>
+            <div className="text-xs text-red-400 mt-1 flex items-center gap-1">
+              <AlertCircle size={12} />
+              <span>{ausleihe.schadensbericht}</span>
+            </div>
           )}
         </div>
         <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ${STATUS_STYLE[ausleihe.status]}`}>

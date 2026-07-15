@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { User, Mail, Phone, MapPin, Calendar, LogOut, Award, Shirt, Trash2, Flag, Edit, Save, X, AlertTriangle } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, LogOut, Award, Shirt, Trash2, Flag, Edit, Save, X, AlertTriangle, Check, FileText } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { format, differenceInYears } from 'date-fns';
+
+import AktivitaetTab from '@/components/mitglied/AktivitaetTab';
+import ArbeitsdiensteMitgliedTab from '@/components/mitglied/ArbeitsdiensteMitgliedTab';
 
 export default function Profil() {
   const { user } = useAuth();
@@ -22,6 +26,7 @@ export default function Profil() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [saved, setSaved] = useState(false);
+  const [activeTab, setActiveTab] = useState('profil');
 
   useEffect(() => {
     loadData();
@@ -126,38 +131,49 @@ export default function Profil() {
 
       {/* Saved Feedback */}
       {saved && (
-        <div className="mb-4 p-3 rounded-lg bg-green-900/20 border border-green-700/40 text-sm text-green-400">
-          ✓ Profil erfolgreich gespeichert
+        <div className="mb-4 p-3 rounded-lg bg-green-900/20 border border-green-700/40 text-sm text-green-400 flex items-center gap-2">
+          <Check size={16} /> Profil erfolgreich gespeichert
         </div>
       )}
 
-      {/* Avatar */}
-      <div className="bg-card border border-border rounded-xl p-6 mb-4 flex items-center gap-4">
-        <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-3xl overflow-hidden shrink-0">
-          {mitglied?.profilbild_url ? (
-            <img src={mitglied.profilbild_url} alt="" className="w-full h-full object-cover" />
-          ) : (
-            `${mitglied?.vorname?.[0] || user?.full_name?.[0] || '?'}${mitglied?.nachname?.[0] || ''}`
-          )}
-        </div>
-        <div>
-          <h2 className="text-xl font-bold text-white">{vollname || user?.full_name || 'Benutzer'}</h2>
-          <p className="text-sm text-muted-foreground">{user?.email}</p>
-          {mitglied ? (
-            <div className="flex flex-wrap gap-1.5 mt-1">
-              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary font-medium">
-                {mitglied.mitgliedsstatus}
-              </span>
-              {mitglied.eintrittsdatum && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-800 text-muted-foreground">
-                  seit {format(new Date(mitglied.eintrittsdatum), 'yyyy')}
+      {/* Avatar Section */}
+      <div className="bg-card border border-border rounded-xl p-6 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-3xl overflow-hidden shrink-0">
+            {mitglied?.profilbild_url ? (
+              <img src={mitglied.profilbild_url} alt="" className="w-full h-full object-cover" />
+            ) : (
+              `${mitglied?.vorname?.[0] || user?.full_name?.[0] || '?'}${mitglied?.nachname?.[0] || ''}`
+            )}
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-white">{vollname || user?.full_name || 'Benutzer'}</h2>
+            <p className="text-sm text-muted-foreground">{user?.email}</p>
+            {mitglied ? (
+              <div className="flex flex-wrap gap-1.5 mt-1">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/30 font-medium">
+                  {mitglied.mitgliedsstatus}
                 </span>
-              )}
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground mt-1">Kein Mitgliedsprofil verknüpft</p>
-          )}
+                {mitglied.eintrittsdatum && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-800 text-muted-foreground">
+                    seit {format(new Date(mitglied.eintrittsdatum), 'yyyy')}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-1">Kein Mitgliedsprofil verknüpft</p>
+            )}
+          </div>
         </div>
+
+        {mitglied && (
+          <Link
+            to={`/mitglieder/${mitglied.id}`}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-neutral-800 text-sm text-white hover:bg-neutral-700 border border-border transition-colors font-medium self-start sm:self-center"
+          >
+            <FileText size={15} /> Vollständige Akte
+          </Link>
+        )}
       </div>
 
       {/* Kein Profil verknüpft */}
@@ -171,236 +187,285 @@ export default function Profil() {
         </div>
       )}
 
-      {/* Mitgliedsdaten */}
+      {/* Tabs Switcher */}
       {mitglied && (
-        <div className="bg-card border border-border rounded-xl p-5 mb-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold font-oswald uppercase tracking-wide text-white flex items-center gap-2">
-              <User size={16} className="text-primary" /> Meine Daten
-            </h3>
-            {!editing ? (
-              <button
-                onClick={handleEditStart}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800 text-sm text-muted-foreground hover:text-white transition-colors"
-              >
-                <Edit size={13} /> Bearbeiten
-              </button>
-            ) : (
-              <div className="flex gap-2">
-                <button onClick={() => setEditing(false)} className="p-1.5 rounded-lg text-muted-foreground hover:text-white hover:bg-neutral-800 transition-colors">
-                  <X size={15} />
-                </button>
+        <div className="flex gap-2 mb-6 border-b border-border pb-3 overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('profil')}
+            className={`px-4 py-2 text-sm font-oswald uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap ${
+              activeTab === 'profil'
+                ? 'bg-primary text-white'
+                : 'bg-neutral-800 text-muted-foreground hover:text-white'
+            }`}
+          >
+            Mein Profil
+          </button>
+          <button
+            onClick={() => setActiveTab('aktivitaet')}
+            className={`px-4 py-2 text-sm font-oswald uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap ${
+              activeTab === 'aktivitaet'
+                ? 'bg-primary text-white'
+                : 'bg-neutral-800 text-muted-foreground hover:text-white'
+            }`}
+          >
+            Aktivität
+          </button>
+          <button
+            onClick={() => setActiveTab('dienste')}
+            className={`px-4 py-2 text-sm font-oswald uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap ${
+              activeTab === 'dienste'
+                ? 'bg-primary text-white'
+                : 'bg-neutral-800 text-muted-foreground hover:text-white'
+            }`}
+          >
+            Dienste
+          </button>
+        </div>
+      )}
+
+      {/* Tab Contents */}
+      {mitglied && activeTab === 'profil' && (
+        <>
+          {/* Mitgliedsdaten */}
+          <div className="bg-card border border-border rounded-xl p-5 mb-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold font-oswald uppercase tracking-wide text-white flex items-center gap-2">
+                <User size={16} className="text-primary" /> Meine Daten
+              </h3>
+              {!editing ? (
                 <button
-                  onClick={handleEditSave}
-                  disabled={saving}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-sm font-medium disabled:opacity-50 hover:bg-red-700 transition-colors"
+                  onClick={handleEditStart}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800 text-sm text-muted-foreground hover:text-white transition-colors"
                 >
-                  <Save size={13} /> {saving ? '…' : 'Speichern'}
+                  <Edit size={13} /> Bearbeiten
                 </button>
+              ) : (
+                <div className="flex gap-2">
+                  <button onClick={() => setEditing(false)} className="p-1.5 rounded-lg text-muted-foreground hover:text-white hover:bg-neutral-800 transition-colors">
+                    <X size={15} />
+                  </button>
+                  <button
+                    onClick={handleEditSave}
+                    disabled={saving}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-sm font-medium disabled:opacity-50 hover:bg-red-700 transition-colors"
+                  >
+                    <Save size={13} /> {saving ? '…' : 'Speichern'}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {editing ? (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-muted-foreground font-medium block mb-1">Telefon</label>
+                  <input value={editForm.telefon} onChange={e => setEditForm(p => ({ ...p, telefon: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground font-medium block mb-1">E-Mail</label>
+                  <input type="email" value={editForm.email} onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground font-medium block mb-1">Straße & Hausnummer</label>
+                  <input value={editForm.strasse} onChange={e => setEditForm(p => ({ ...p, strasse: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-muted-foreground font-medium block mb-1">PLZ</label>
+                    <input value={editForm.plz} onChange={e => setEditForm(p => ({ ...p, plz: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground font-medium block mb-1">Ort</label>
+                    <input value={editForm.ort} onChange={e => setEditForm(p => ({ ...p, ort: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                  </div>
+                </div>
+                <div className="border-t border-border pt-3">
+                  <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1">
+                    <AlertTriangle size={12} className="text-yellow-400" /> Notfallkontakt
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-muted-foreground font-medium block mb-1">Name</label>
+                      <input value={editForm.notfallkontakt_name} onChange={e => setEditForm(p => ({ ...p, notfallkontakt_name: e.target.value }))}
+                        className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground font-medium block mb-1">Telefon</label>
+                      <input value={editForm.notfallkontakt_telefon} onChange={e => setEditForm(p => ({ ...p, notfallkontakt_telefon: e.target.value }))}
+                        className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {mitglied.telefon && (
+                  <div className="flex items-center gap-3">
+                    <Phone size={14} className="text-muted-foreground shrink-0" />
+                    <span className="text-sm text-white">{mitglied.telefon}</span>
+                  </div>
+                )}
+                {mitglied.email && (
+                  <div className="flex items-center gap-3">
+                    <Mail size={14} className="text-muted-foreground shrink-0" />
+                    <span className="text-sm text-white">{mitglied.email}</span>
+                  </div>
+                )}
+                {(mitglied.strasse || mitglied.ort) && (
+                  <div className="flex items-start gap-3">
+                    <MapPin size={14} className="text-muted-foreground shrink-0 mt-0.5" />
+                    <div>
+                      {mitglied.strasse && <p className="text-sm text-white">{mitglied.strasse}</p>}
+                      {(mitglied.plz || mitglied.ort) && (
+                        <p className="text-sm text-white">{[mitglied.plz, mitglied.ort].filter(Boolean).join(' ')}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {mitglied.geburtsdatum && (
+                  <div className="flex items-center gap-3">
+                    <Calendar size={14} className="text-muted-foreground shrink-0" />
+                    <span className="text-sm text-white">
+                      {format(new Date(mitglied.geburtsdatum), 'dd.MM.yyyy')} ({alter} Jahre)
+                    </span>
+                  </div>
+                )}
+                {mitglied.eintrittsdatum && (
+                  <div className="flex items-center gap-3">
+                    <Calendar size={14} className="text-muted-foreground shrink-0" />
+                    <span className="text-sm text-white">
+                      Mitglied seit {format(new Date(mitglied.eintrittsdatum), 'dd.MM.yyyy')}
+                    </span>
+                  </div>
+                )}
+                {(mitglied.notfallkontakt_name || mitglied.notfallkontakt_telefon) && (
+                  <div className="flex items-start gap-3 pt-1 border-t border-border">
+                    <AlertTriangle size={14} className="text-yellow-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Notfallkontakt</p>
+                      {mitglied.notfallkontakt_name && <p className="text-sm text-white">{mitglied.notfallkontakt_name}</p>}
+                      {mitglied.notfallkontakt_telefon && <p className="text-sm text-white">{mitglied.notfallkontakt_telefon}</p>}
+                    </div>
+                  </div>
+                )}
+                {!mitglied.telefon && !mitglied.email && !mitglied.strasse && (
+                  <p className="text-sm text-muted-foreground italic">Noch keine Daten hinterlegt – jetzt bearbeiten</p>
+                )}
               </div>
             )}
           </div>
 
-          {editing ? (
-            <div className="space-y-3">
+          {/* Statistiken */}
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
+              <Flag size={20} className="text-primary shrink-0" />
               <div>
-                <label className="text-xs text-muted-foreground font-medium block mb-1">Telefon</label>
-                <input value={editForm.telefon} onChange={e => setEditForm(p => ({ ...p, telefon: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground font-medium block mb-1">E-Mail</label>
-                <input type="email" value={editForm.email} onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground font-medium block mb-1">Straße & Hausnummer</label>
-                <input value={editForm.strasse} onChange={e => setEditForm(p => ({ ...p, strasse: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-xs text-muted-foreground font-medium block mb-1">PLZ</label>
-                  <input value={editForm.plz} onChange={e => setEditForm(p => ({ ...p, plz: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground font-medium block mb-1">Ort</label>
-                  <input value={editForm.ort} onChange={e => setEditForm(p => ({ ...p, ort: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
-                </div>
-              </div>
-              <div className="border-t border-border pt-3">
-                <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1">
-                  <AlertTriangle size={12} className="text-yellow-400" /> Notfallkontakt
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-xs text-muted-foreground font-medium block mb-1">Name</label>
-                    <input value={editForm.notfallkontakt_name} onChange={e => setEditForm(p => ({ ...p, notfallkontakt_name: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground font-medium block mb-1">Telefon</label>
-                    <input value={editForm.notfallkontakt_telefon} onChange={e => setEditForm(p => ({ ...p, notfallkontakt_telefon: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
-                  </div>
-                </div>
+                <p className="text-xl font-bold font-oswald text-white">{umzuegeGesamt}</p>
+                <p className="text-xs text-muted-foreground">Umzüge gesamt</p>
               </div>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {mitglied.telefon && (
-                <div className="flex items-center gap-3">
-                  <Phone size={14} className="text-muted-foreground shrink-0" />
-                  <span className="text-sm text-white">{mitglied.telefon}</span>
-                </div>
-              )}
-              {mitglied.email && (
-                <div className="flex items-center gap-3">
-                  <Mail size={14} className="text-muted-foreground shrink-0" />
-                  <span className="text-sm text-white">{mitglied.email}</span>
-                </div>
-              )}
-              {(mitglied.strasse || mitglied.ort) && (
-                <div className="flex items-start gap-3">
-                  <MapPin size={14} className="text-muted-foreground shrink-0 mt-0.5" />
+            <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
+              <Award size={20} className="text-primary shrink-0" />
+              <div>
+                <p className="text-xl font-bold font-oswald text-white">{verlieheneEhrungen}</p>
+                <p className="text-xs text-muted-foreground">Ehrungen</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Mein Häs */}
+          {haes.length > 0 && (
+            <div className="bg-card border border-border rounded-xl p-5 mb-4">
+              <h3 className="font-semibold font-oswald uppercase tracking-wide text-white mb-3 flex items-center gap-2">
+                <Shirt size={16} className="text-primary" /> Mein Häs ({haes.length})
+              </h3>
+              {haes.map(h => (
+                <div key={h.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                   <div>
-                    {mitglied.strasse && <p className="text-sm text-white">{mitglied.strasse}</p>}
-                    {(mitglied.plz || mitglied.ort) && (
-                      <p className="text-sm text-white">{[mitglied.plz, mitglied.ort].filter(Boolean).join(' ')}</p>
-                    )}
+                    <p className="text-sm font-oswald font-bold text-primary">#{h.haesnummer}</p>
+                    <p className="text-xs text-muted-foreground">{h.bezeichnung || '–'}</p>
                   </div>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/30">{h.status}</span>
                 </div>
-              )}
-              {mitglied.geburtsdatum && (
-                <div className="flex items-center gap-3">
-                  <Calendar size={14} className="text-muted-foreground shrink-0" />
-                  <span className="text-sm text-white">
-                    {format(new Date(mitglied.geburtsdatum), 'dd.MM.yyyy')} ({alter} Jahre)
-                  </span>
-                </div>
-              )}
-              {mitglied.eintrittsdatum && (
-                <div className="flex items-center gap-3">
-                  <Calendar size={14} className="text-muted-foreground shrink-0" />
-                  <span className="text-sm text-white">
-                    Mitglied seit {format(new Date(mitglied.eintrittsdatum), 'dd.MM.yyyy')}
-                  </span>
-                </div>
-              )}
-              {(mitglied.notfallkontakt_name || mitglied.notfallkontakt_telefon) && (
-                <div className="flex items-start gap-3 pt-1 border-t border-border">
-                  <AlertTriangle size={14} className="text-yellow-400 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Notfallkontakt</p>
-                    {mitglied.notfallkontakt_name && <p className="text-sm text-white">{mitglied.notfallkontakt_name}</p>}
-                    {mitglied.notfallkontakt_telefon && <p className="text-sm text-white">{mitglied.notfallkontakt_telefon}</p>}
-                  </div>
-                </div>
-              )}
-              {!mitglied.telefon && !mitglied.email && !mitglied.strasse && (
-                <p className="text-sm text-muted-foreground italic">Noch keine Daten hinterlegt – jetzt bearbeiten</p>
-              )}
+              ))}
             </div>
           )}
-        </div>
-      )}
 
-      {/* Statistiken */}
-      {mitglied && (
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
-            <Flag size={20} className="text-primary shrink-0" />
-            <div>
-              <p className="text-xl font-bold font-oswald text-white">{umzuegeGesamt}</p>
-              <p className="text-xs text-muted-foreground">Umzüge gesamt</p>
+          {/* Meine Ehrungen */}
+          {ehrungen.length > 0 && (
+            <div className="bg-card border border-border rounded-xl p-5 mb-4">
+              <h3 className="font-semibold font-oswald uppercase tracking-wide text-white mb-3 flex items-center gap-2">
+                <Award size={16} className="text-primary" /> Meine Ehrungen ({ehrungen.length})
+              </h3>
+              {ehrungen.map(e => (
+                <div key={e.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                  <div>
+                    <p className="text-sm text-white">{e.typ}{e.wert ? ` – ${e.wert}` : ''}</p>
+                    {e.jahr && <p className="text-xs text-muted-foreground">Jahr {e.jahr}</p>}
+                  </div>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                    e.status === 'Verliehen'
+                      ? 'bg-primary/10 text-primary border border-primary/30'
+                      : 'bg-yellow-900/20 text-yellow-400 border border-yellow-700/30'
+                  }`}>{e.status}</span>
+                </div>
+              ))}
             </div>
-          </div>
-          <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
-            <Award size={20} className="text-primary shrink-0" />
-            <div>
-              <p className="text-xl font-bold font-oswald text-white">{verlieheneEhrungen}</p>
-              <p className="text-xs text-muted-foreground">Ehrungen</p>
-            </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* Mein Häs */}
-      {haes.length > 0 && (
-        <div className="bg-card border border-border rounded-xl p-5 mb-4">
-          <h3 className="font-semibold font-oswald uppercase tracking-wide text-white mb-3 flex items-center gap-2">
-            <Shirt size={16} className="text-primary" /> Mein Häs ({haes.length})
-          </h3>
-          {haes.map(h => (
-            <div key={h.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-              <div>
-                <p className="text-sm font-mono font-bold text-primary">#{h.haesnummer}</p>
-                <p className="text-xs text-muted-foreground">{h.bezeichnung || '–'}</p>
-              </div>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary">{h.status}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Meine Ehrungen */}
-      {ehrungen.length > 0 && (
-        <div className="bg-card border border-border rounded-xl p-5 mb-4">
-          <h3 className="font-semibold font-oswald uppercase tracking-wide text-white mb-3 flex items-center gap-2">
-            <Award size={16} className="text-primary" /> Meine Ehrungen ({ehrungen.length})
-          </h3>
-          {ehrungen.map(e => (
-            <div key={e.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-              <div>
-                <p className="text-sm text-white">{e.typ}{e.wert ? ` – ${e.wert}` : ''}</p>
-                {e.jahr && <p className="text-xs text-muted-foreground">Jahr {e.jahr}</p>}
-              </div>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                e.status === 'Verliehen'
-                  ? 'bg-primary/15 text-primary'
-                  : 'bg-yellow-900/20 text-yellow-400 border border-yellow-700/30'
-              }`}>{e.status}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Abmelden */}
-      <button
-        onClick={handleLogout}
-        className="w-full flex items-center justify-center gap-3 py-3.5 rounded-xl bg-red-900/20 text-red-400 border border-red-700/30 font-semibold hover:bg-red-900/30 transition-colors mt-2"
-      >
-        <LogOut size={18} /> Abmelden
-      </button>
-
-      {/* Account löschen */}
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <button className="w-full flex items-center justify-center gap-3 py-3 rounded-xl text-muted-foreground hover:text-red-400 transition-colors mt-2 text-sm">
-            <Trash2 size={15} /> Account löschen
+          {/* Abmelden */}
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-3 py-3.5 rounded-xl bg-red-900/20 text-red-400 border border-red-700/30 font-semibold hover:bg-red-900/30 transition-colors mt-2"
+          >
+            <LogOut size={18} /> Abmelden
           </button>
-        </AlertDialogTrigger>
-        <AlertDialogContent className="bg-card border-border">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="font-oswald uppercase tracking-wide text-white">Account wirklich löschen?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Eine Löschungsanfrage wird an die Administratoren gesendet. Du wirst anschließend abgemeldet. Der Vorgang kann nicht rückgängig gemacht werden.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteAccount}
-              disabled={deleting}
-              className="bg-red-900/80 text-white hover:bg-red-900 disabled:opacity-60"
-            >
-              {deleting ? 'Anfrage wird gesendet…' : 'Account löschen'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+
+          {/* Account löschen */}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button className="w-full flex items-center justify-center gap-3 py-3 rounded-xl text-muted-foreground hover:text-red-400 transition-colors mt-2 text-sm">
+                <Trash2 size={15} /> Account löschen
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="bg-card border-border">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="font-oswald uppercase tracking-wide text-white">Account wirklich löschen?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Eine Löschungsanfrage wird an die Administratoren gesendet. Du wirst anschließend abgemeldet. Der Vorgang kann nicht rückgängig gemacht werden.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={deleting}>Abbrechen</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteAccount}
+                  disabled={deleting}
+                  className="bg-red-900/80 text-white hover:bg-red-900 disabled:opacity-60"
+                >
+                  {deleting ? 'Anfrage wird gesendet…' : 'Account löschen'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      )}
+
+      {mitglied && activeTab === 'aktivitaet' && (
+        <div className="space-y-4">
+          <AktivitaetTab mitgliedId={mitglied.id} />
+        </div>
+      )}
+
+      {mitglied && activeTab === 'dienste' && (
+        <div className="space-y-4">
+          <ArbeitsdiensteMitgliedTab mitgliedId={mitglied.id} />
+        </div>
+      )}
     </div>
   );
 }
