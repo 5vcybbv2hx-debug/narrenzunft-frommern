@@ -1114,7 +1114,7 @@ export default function AusfahrtDetail() {
               onClick={saveBusVerantwortliche}
               className="w-full bg-primary hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors"
             >
-              {selectedBusVw.length} {selectedBusVw.length === 1 ? 'Verantwortliche' : 'Verantwortliche'} speichern
+              {selectedBusVw.length} {selectedBusVw.length === 1 ? 'Verantwortlicher' : 'Verantwortliche'} speichern
             </button>
           </div>
         </div>
