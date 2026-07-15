@@ -30,11 +30,12 @@ Deno.serve(async (req) => {
     const eigeneMitglieder = await base44.asServiceRole.entities.Mitglied.filter({ user_id: user.id });
     const eigenesMitglied = eigeneMitglieder && eigeneMitglieder.length > 0 ? eigeneMitglieder[0] : null;
 
-    const isAdmin = user.role === 'admin';
+    // Genereller Check-in-Zugang: Vorstand, Stv. Vorstand, Spartenleiter, Admin
+    const hasGeneralAccess = ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'].includes(user.role);
     const isBusverantwortlich = eigenesMitglied && Array.isArray(ausfahrt.bus_verantwortliche) &&
       ausfahrt.bus_verantwortliche.includes(eigenesMitglied.id);
 
-    if (!isAdmin && !isBusverantwortlich) {
+    if (!hasGeneralAccess && !isBusverantwortlich) {
       return Response.json({ erfolg: false, fehler: 'Keine Berechtigung für den Check-in.' }, { status: 403 });
     }
 
