@@ -30,8 +30,8 @@ export default function AusfahrtNeu() {
     startnummer: '',
     busparkplatz: '',
     bus_kapazitaet: '',
-    sparte_hat_auftritt: false,
-    sparte_auftritt_id: '',
+    sparte_auftritt: false,
+    sparte_id: '',
     anmeldung_start: todayStr,
     anmeldung_ende: '',
     notizen: ''
@@ -130,24 +130,23 @@ export default function AusfahrtNeu() {
         ort: formData.ort.trim(),
         abfahrt_zeit: formData.abfahrt_zeit,
         abfahrt_ort: formData.abfahrt_ort.trim(),
-        veranstaltungsbeginn: formData.veranstaltungsbeginn || null,
-        rueckfahrt_zeit: formData.rueckfahrt_zeit || null,
-        aufstellung: formData.aufstellung.trim() || null,
-        startnummer: formData.startnummer.trim() || null,
-        busparkplatz: formData.busparkplatz.trim() || null,
+        veranstaltungsbeginn: formData.veranstaltungsbeginn || '',
+        rueckfahrt_zeit: formData.rueckfahrt_zeit || '',
+        aufstellung: formData.aufstellung.trim() || '',
+        startnummer: formData.startnummer.trim() || '',
+        busparkplatz: formData.busparkplatz.trim() || '',
         bus_kapazitaet: formData.bus_kapazitaet ? parseInt(formData.bus_kapazitaet, 10) : null,
-        sparte_hat_auftritt: formData.sparte_hat_auftritt,
-        sparte_auftritt_id: formData.sparte_hat_auftritt ? formData.sparte_auftritt_id : null,
+        sparte_auftritt: formData.sparte_auftritt,
+        sparte_id: formData.sparte_auftritt ? formData.sparte_id : '',
         anmeldung_start: formData.anmeldung_start,
         anmeldung_ende: formData.anmeldung_ende,
-        notizen: formData.notizen.trim() || null,
+        notizen: formData.notizen.trim() || '',
         status: initialStatus
       };
 
       // Create record
       const createdAusfahrt = await base44.entities.Ausfahrt.create(payload);
-      
-      // Navigate to detail page
+      if (!createdAusfahrt?.id) throw new Error('Keine ID erhalten');
       navigate(`/ausfahrten/${createdAusfahrt.id}`);
     } catch (err) {
       console.error('Fehler beim Erstellen der Ausfahrt:', err);
@@ -343,23 +342,23 @@ export default function AusfahrtNeu() {
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input
                     type="checkbox"
-                    name="sparte_hat_auftritt"
-                    checked={formData.sparte_hat_auftritt}
+                    name="sparte_auftritt"
+                    checked={formData.sparte_auftritt}
                     onChange={handleChange}
                     className="w-4 h-4 rounded text-primary focus:ring-primary focus:ring-offset-0 bg-background border-border"
                   />
                   <span className="text-sm font-medium">Sparte hat einen Auftritt?</span>
                 </label>
 
-                {formData.sparte_hat_auftritt && (
+                {formData.sparte_auftritt && (
                   <div className="mt-3">
                     <label className="text-sm text-muted-foreground mb-1.5 block">Sparte (Häsgruppe) auswählen</label>
                     {loadingSparten ? (
                       <p className="text-xs text-muted-foreground">Spaten werden geladen...</p>
                     ) : (
                       <select
-                        name="sparte_auftritt_id"
-                        value={formData.sparte_auftritt_id}
+                        name="sparte_id"
+                        value={formData.sparte_id}
                         onChange={handleChange}
                         className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
                       >
