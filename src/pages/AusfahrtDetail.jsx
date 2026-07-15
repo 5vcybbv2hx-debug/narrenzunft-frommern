@@ -28,6 +28,8 @@ export default function AusfahrtDetail() {
 
   // Inline Fremdanmeldung form states
   const [showFremdForm, setShowFremdForm] = useState(false);
+  const [verwandtschaften, setVerwandtschaften] = useState([]);
+  const [ausgewaehlteFamilienmitglieder, setAusgewaehlteFamilienmitglieder] = useState([]);
   const [fremdName, setFremdName] = useState('');
   const [fremdTransport, setFremdTransport] = useState('Bus');
   const [fremdAnzahlBegleitpersonen, setFremdAnzahlBegleitpersonen] = useState(0);
@@ -48,6 +50,14 @@ export default function AusfahrtDetail() {
         base44.entities.Haesgruppe.list('name', 200)
       ]);
 
+      // Verwandtschaft des aktuellen Mitglieds laden
+      let verwandt = [];
+      try {
+        verwandt = await base44.entities.Verwandtschaft.list('mitglied_id', 500);
+      } catch (e) {
+        console.error('Verwandtschaft laden:', e);
+      }
+
       if (!ausfahrtRes) {
         setError('Ausfahrt nicht gefunden.');
       } else {
@@ -57,6 +67,7 @@ export default function AusfahrtDetail() {
       setAnmeldungen(anmeldungenRes || []);
       setMitglieder(mitgliederRes || []);
       setSparten(spartenRes || []);
+      setVerwandtschaften(verwandt || []);
     } catch (err) {
       console.error('Error fetching Ausfahrt detail data:', err);
       setError('Fehler beim Laden der Ausfahrtdetails.');
@@ -97,6 +108,35 @@ export default function AusfahrtDetail() {
     ? anmeldungen.find(a => a.mitglied_id === currentMitglied.id && a.status !== 'Abgemeldet')
     : null;
 
+  // Familienmitglieder des aktuellen Mitglieds (nur Ehepartner/in und Kind)
+  const familienmitglieder = currentMitglied
+    ? verwandtschaften
+        .filter(v => v.mitglied_id === currentMitglied.id && ['Ehepartner/in', 'Kind'].includes(v.beziehung))
+        .map(v => {
+          const verwandtesMitglied = mitglieder.find(m => m.id === v.verwandter_id);
+          return {
+            id: v.verwandter_id,
+            name: verwandtesMitglied ? `${verwandtesMitglied.vorname || ''} ${verwandtesMitglied.nachname || ''}`.trim() : 'Unbekannt',
+            beziehung: v.beziehung,
+            alter: verwandtesMitglied?.geburtsdatum ? (() => {
+              try {
+                const bd = new Date(verwandtesMitglied.geburtsdatum);
+                const diff = Date.now() - bd.getTime();
+                return Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000));
+              } catch { return null; }
+            })() : null
+          };
+        })
+    : [];
+
+  const toggleFamilienmitglied = (mitgliedId) => {
+    setAusgewaehlteFamilienmitglieder(prev =>
+      prev.includes(mitgliedId)
+        ? prev.filter(id => id !== mitgliedId)
+        : [...prev, mitgliedId]
+    );
+  };
+
   const handleRegister = async (transportType) => {
     if (!currentMitglied) {
       alert('Kein verknüpftes Mitgliedsprofil gefunden. Registrierung nicht möglich.');
@@ -105,10 +145,13 @@ export default function AusfahrtDetail() {
 
     try {
       const todayStr = format(new Date(), 'yyyy-MM-dd');
-      const filteredBegleitpersonen = begleitpersonen.slice(0, anzahlBegleitpersonen).map(bp => ({
-        name: bp.name,
-        alter: parseInt(bp.alter) || null
-      }));
+      const selectedBegleitpersonen = familienmitglieder
+        .filter(fm => ausgewaehlteFamilienmitglieder.includes(fm.id))
+        .map(fm => ({
+          name: fm.name,
+          alter: fm.alter,
+          mitglied_id: fm.id
+        }));
 
       await base44.entities.AusfahrtAnmeldung.create({
           ausfahrt_id: id,
@@ -116,14 +159,13 @@ export default function AusfahrtDetail() {
           transport: transportType,
           status: 'Angemeldet',
           angemeldet_am: todayStr,
-          anzahl_begleitpersonen: anzahlBegleitpersonen,
-          begleitpersonen: filteredBegleitpersonen,
+          anzahl_begleitpersonen: selectedBegleitpersonen.length,
+          begleitpersonen: selectedBegleitpersonen,
           is_fremdangemeldet: false
         });
 
       // Reset form states and refresh
-      setAnzahlBegleitpersonen(0);
-      setBegleitpersonen([]);
+      setAusgewaehlteFamilienmitglieder([]);
       fetchData();
     } catch (err) {
       console.error('Error during registration:', err);
@@ -558,44 +600,36 @@ export default function AusfahrtDetail() {
                     </div>
                   ) : (
                     <>
-                      {/* Family members registration */}
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                          Familienglieder / Begleitpersonen
-                        </label>
-                        <select
-                          value={anzahlBegleitpersonen}
-                          onChange={(e) => handleAnzahlChange(e.target.value)}
-                          className="w-full bg-[#121212] border border-border text-white text-sm rounded-lg p-2.5 focus:ring-1 focus:ring-primary focus:border-primary focus:outline-none"
-                        >
-                          <option value="0">Keine Begleitpersonen</option>
-                          <option value="1">1 Person</option>
-                          <option value="2">2 Personen</option>
-                          <option value="3">3 Personen</option>
-                          <option value="4">4 Personen</option>
-                        </select>
-                      </div>
-
-                      {begleitpersonen.map((bp, idx) => (
-                        <div key={idx} className="space-y-2 p-3 bg-neutral-950 border border-border rounded-lg">
-                          <p className="text-xs font-semibold text-gray-500">Begleitperson #{idx + 1}</p>
-                          <input
-                            type="text"
-                            placeholder="Name"
-                            value={bp.name || ''}
-                            onChange={(e) => handleBegleitpersonenChange(idx, 'name', e.target.value)}
-                            className="w-full bg-[#121212] border border-border text-white text-sm rounded-lg p-2 focus:ring-1 focus:ring-primary focus:outline-none"
-                            required
-                          />
-                          <input
-                            type="number"
-                            placeholder="Alter"
-                            value={bp.alter || ''}
-                            onChange={(e) => handleBegleitpersonenChange(idx, 'alter', e.target.value)}
-                            className="w-full bg-[#121212] border border-border text-white text-sm rounded-lg p-2 focus:ring-1 focus:ring-primary focus:outline-none"
-                          />
+                      {/* Familienmitglieder als Begleitpersonen — nur Ehepartner/in und Kind */}
+                      {familienmitglieder.length > 0 && (
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                            Familienmitglieder / Begleitpersonen
+                          </label>
+                          <div className="space-y-2">
+                            {familienmitglieder.map(fm => (
+                              <label
+                                key={fm.id}
+                                className="flex items-center gap-3 p-3 bg-neutral-950 border border-border rounded-lg cursor-pointer hover:border-primary/40 transition-colors"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={ausgewaehlteFamilienmitglieder.includes(fm.id)}
+                                  onChange={() => toggleFamilienmitglied(fm.id)}
+                                  className="w-4 h-4 rounded accent-[#EA2525]"
+                                />
+                                <div className="flex-1">
+                                  <p className="text-sm text-white font-medium">{fm.name}</p>
+                                  <p className="text-xs text-gray-500">
+                                    {fm.beziehung}
+                                    {fm.alter ? ` · ${fm.alter} Jahre` : ''}
+                                  </p>
+                                </div>
+                              </label>
+                            ))}
+                          </div>
                         </div>
-                      ))}
+                      )}
 
                       <div className="pt-2 grid grid-cols-1 gap-2.5">
                         <button
