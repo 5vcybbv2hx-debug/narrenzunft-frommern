@@ -112,9 +112,7 @@ export default function AusfahrtDetail() {
         alter: parseInt(bp.alter) || null
       }));
 
-      await base44.create_entity({
-        entity_name: 'AusfahrtAnmeldung',
-        data: {
+      await base44.entities.AusfahrtAnmeldung.create({
           ausfahrt_id: id,
           mitglied_id: currentMitglied.id,
           transport: transportType,
@@ -123,8 +121,7 @@ export default function AusfahrtDetail() {
           anzahl_begleitpersonen: anzahlBegleitpersonen,
           begleitpersonen: filteredBegleitpersonen,
           is_fremdangemeldet: false
-        }
-      });
+        });
 
       // Reset form states and refresh
       setAnzahlBegleitpersonen(0);
@@ -153,15 +150,10 @@ export default function AusfahrtDetail() {
 
     try {
       const todayStr = format(new Date(), 'yyyy-MM-dd');
-      await base44.update_entity({
-        entity_name: 'AusfahrtAnmeldung',
-        id: myRegistration.id,
-        data: {
-          ...myRegistration,
+      await base44.entities.AusfahrtAnmeldung.update(myRegistration.id, {
           status: 'Abgemeldet',
           abgemeldet_am: todayStr
-        }
-      });
+        });
       fetchData();
     } catch (err) {
       console.error('Error during deregistration:', err);
@@ -183,9 +175,7 @@ export default function AusfahrtDetail() {
         alter: parseInt(bp.alter) || null
       }));
 
-      await base44.create_entity({
-        entity_name: 'AusfahrtAnmeldung',
-        data: {
+      await base44.entities.AusfahrtAnmeldung.create({
           ausfahrt_id: id,
           mitglied_id: null,
           transport: fremdTransport,
@@ -197,7 +187,7 @@ export default function AusfahrtDetail() {
           fremdname: fremdName,
           durch_admin_angemeldet: true,
           durch_admin_name: user?.full_name || user?.email || 'Admin'
-        }
+        });
       });
 
       // Reset form and refresh
@@ -216,16 +206,11 @@ export default function AusfahrtDetail() {
   const handleCheckIn = async (registration) => {
     try {
       const nowIso = new Date().toISOString();
-      await base44.update_entity({
-        entity_name: 'AusfahrtAnmeldung',
-        id: registration.id,
-        data: {
-          ...registration,
+      await base44.entities.AusfahrtAnmeldung.update(registration.id, {
           status: 'Eingecheckt',
           eingecheckt_am: nowIso,
           eingecheckt_von: user?.full_name || user?.email || 'Admin'
-        }
-      });
+        });
       fetchData();
     } catch (err) {
       console.error('Error during check-in:', err);
