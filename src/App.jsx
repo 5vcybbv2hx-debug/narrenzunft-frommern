@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import { Guard, ROLLEN_VORSTAND, ROLLEN_FUEHRUNG, ROLLEN_FINANZEN, ROLLEN_MITGLIEDER } from '@/components/RouteGuard';
 
 // Layout
 import Layout from './components/Layout';
@@ -94,40 +95,90 @@ const AuthenticatedApp = () => {
     >
     <Routes location={location}>
       <Route element={<Layout />}>
+        {/* ── Öffentlich (alle authentifizierten User) ── */}
         <Route path="/" element={<Dashboard />} />
-        <Route path="/mitglieder" element={<Mitglieder />} />
-        <Route path="/mitglieder/:id" element={<MitgliedDetail />} />
+        <Route path="/kalender" element={<Kalender />} />
         <Route path="/veranstaltungen" element={<Veranstaltungen />} />
-        <Route path="/veranstaltungen/neu" element={<VeranstaltungNeu />} />
         <Route path="/veranstaltungen/:id" element={<VeranstaltungDetail />} />
+        <Route path="/ausfahrten" element={<Ausfahrten />} />
+        <Route path="/ausfahrten/:id" element={<AusfahrtDetail />} />
         <Route path="/arbeitsdienste" element={<Arbeitsdienste />} />
-        <Route path="/arbeitsdienste/neu" element={<ArbeitsdienstNeu />} />
-        <Route path="/ehrungen" element={<Ehrungen />} />
-        <Route path="/beitraege" element={<Beitraege />} />
         <Route path="/haes" element={<Haes />} />
         <Route path="/haes/:id" element={<HaesDetail />} />
-        <Route path="/umzuege" element={<Umzuege />} />
+        <Route path="/sparten" element={<Sparten />} />
         <Route path="/profil" element={<Profil />} />
         <Route path="/benachrichtigungen" element={<Benachrichtigungen />} />
         <Route path="/suche" element={<Suche />} />
         <Route path="/mehr" element={<Mehr />} />
-        <Route path="/vorstand" element={<VorstandDashboard />} />
-        <Route path="/datenqualitaet" element={<Datenqualitaet />} />
-        <Route path="/kalender" element={<Kalender />} />
-        <Route path="/ausschuss" element={<Ausschuss />} />
-        <Route path="/ausschuss/sitzung/:id" element={<SitzungDetail />} />
-        <Route path="/familie" element={<FamilienDashboard />} />
-        <Route path="/vereine" element={<Vereine />} />
-        <Route path="/sparten" element={<Sparten />} />
-        <Route path="/ausfahrten" element={<Ausfahrten />} />
-        <Route path="/ausfahrten/neu" element={<AusfahrtNeu />} />
-        <Route path="/ausfahrten/:id" element={<AusfahrtDetail />} />
-        <Route path="/ausfahrten/:id/scanner" element={<AusfahrtScanner />} />
-        <Route path="/todos" element={<Todos />} />
-        <Route path="/inventar" element={<Inventar />} />
-        <Route path="/berechtigungen" element={<Berechtigungen />} />
         <Route path="/nachrichten" element={<Nachrichten />} />
-        <Route path="/mitgliedsantraege" element={<Mitgliedsantraege />} />
+
+        {/* ── Mitglieder: Detail frei (Seite prüft selbst), Liste nur für Führung ── */}
+        <Route path="/mitglieder" element={
+          <Guard roles={ROLLEN_MITGLIEDER}><Mitglieder /></Guard>
+        } />
+        <Route path="/mitglieder/:id" element={<MitgliedDetail />} />
+
+        {/* ── Nur Führung (Vorstand + Stv. + Spartenleiter + Admin) ── */}
+        <Route path="/vorstand" element={
+          <Guard roles={ROLLEN_FUEHRUNG}><VorstandDashboard /></Guard>
+        } />
+        <Route path="/veranstaltungen/neu" element={
+          <Guard roles={ROLLEN_FUEHRUNG}><VeranstaltungNeu /></Guard>
+        } />
+        <Route path="/arbeitsdienste/neu" element={
+          <Guard roles={ROLLEN_FUEHRUNG}><ArbeitsdienstNeu /></Guard>
+        } />
+        <Route path="/ausfahrten/neu" element={
+          <Guard roles={ROLLEN_FUEHRUNG}><AusfahrtNeu /></Guard>
+        } />
+        <Route path="/ausfahrten/:id/scanner" element={
+          <Guard roles={ROLLEN_FUEHRUNG}><AusfahrtScanner /></Guard>
+        } />
+
+        {/* ── Ausschuss (Rollen + Zusatz-Berechtigung 'ausschuss') ── */}
+        <Route path="/ausschuss" element={
+          <Guard roles={ROLLEN_FUEHRUNG} zusatz={['ausschuss']}><Ausschuss /></Guard>
+        } />
+        <Route path="/ausschuss/sitzung/:id" element={
+          <Guard roles={ROLLEN_FUEHRUNG} zusatz={['ausschuss']}><SitzungDetail /></Guard>
+        } />
+
+        {/* ── Todos (Rollen + Zusatz-Berechtigung 'todos') ── */}
+        <Route path="/todos" element={
+          <Guard roles={ROLLEN_FUEHRUNG} zusatz={['todos']}><Todos /></Guard>
+        } />
+
+        {/* ── Nur Vorstand + Admin ── */}
+        <Route path="/ehrungen" element={
+          <Guard roles={ROLLEN_VORSTAND}><Ehrungen /></Guard>
+        } />
+        <Route path="/vereine" element={
+          <Guard roles={ROLLEN_VORSTAND}><Vereine /></Guard>
+        } />
+        <Route path="/datenqualitaet" element={
+          <Guard roles={ROLLEN_VORSTAND}><Datenqualitaet /></Guard>
+        } />
+        <Route path="/berechtigungen" element={
+          <Guard roles={ROLLEN_VORSTAND}><Berechtigungen /></Guard>
+        } />
+        <Route path="/mitgliedsantraege" element={
+          <Guard roles={ROLLEN_VORSTAND}><Mitgliedsantraege /></Guard>
+        } />
+
+        {/* ── Finanzen (Vorstand + Kassierer + Admin) ── */}
+        <Route path="/beitraege" element={
+          <Guard roles={ROLLEN_FINANZEN}><Beitraege /></Guard>
+        } />
+
+        {/* ── Inventar (Rollen + Zusatz-Berechtigung 'inventar') ── */}
+        <Route path="/inventar" element={
+          <Guard roles={ROLLEN_VORSTAND} zusatz={['inventar']}><Inventar /></Guard>
+        } />
+
+        {/* ── Elternkonto ── */}
+        <Route path="/familie" element={
+          <Guard roles={['elternkonto']}><FamilienDashboard /></Guard>
+        } />
       </Route>
       <Route path="/mitgliedsantrag" element={<MitgliedsantragFormular />} />
       <Route path="/busfahrer/:token" element={<BusfahrerInfo />} />
