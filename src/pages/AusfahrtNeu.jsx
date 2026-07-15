@@ -346,7 +346,7 @@ export default function AusfahrtNeu() {
                     name="sparte_hat_auftritt"
                     checked={formData.sparte_hat_auftritt}
                     onChange={handleChange}
-                    className="w-4 h-4 rounded text-primary focus:ring-primary focus:ring-offset-0 bg-[#080808] border-border"
+                    className="w-4 h-4 rounded text-primary focus:ring-primary focus:ring-offset-0 bg-background border-border"
                   />
                   <span className="text-sm font-medium">Sparte hat einen Auftritt?</span>
                 </label>
