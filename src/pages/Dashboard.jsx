@@ -95,6 +95,7 @@ export default function Dashboard() {
   const [arbeitsdienste, setArbeitsdienste] = useState([]);
   const [beitraegeStats, setBeitraegeStats] = useState({ offen: 0, ueberfaellig: 0, bezahlt: 0 });
   const [neueMitglieder, setNeueMitglieder] = useState([]);
+  const [naechsteGeburtstage, setNaechsteGeburtstage] = useState([]);
   const [loading, setLoading] = useState(true);
   const isAdminUser = isAdmin(user);
   const kannVerwalten = kannArbeitsdiensteVerwalten(user);
@@ -135,6 +136,27 @@ export default function Dashboard() {
         (b.eintrittsdatum||'') > (a.eintrittsdatum||'') ? 1 : -1
       ).slice(0, 3));
 
+      // Nächste Geburtstage (heute + nächste 30 Tage)
+      const heute4B = new Date();
+      heute4B.setHours(0,0,0,0);
+      const in30Tagen = addDays(heute4B, 30);
+      const geburtstage = mitglieder
+        .filter(m => m.geburtsdatum && !m.archiviert && m.mitgliedsstatus !== 'Verstorben')
+        .map(m => {
+          const geb = new Date(m.geburtsdatum);
+          const diesesJ = new Date(heute4B.getFullYear(), geb.getMonth(), geb.getDate());
+          let naechste = diesesJ < heute4B ? addDays(diesesJ, 365) : diesesJ;
+          // Schaltjahr-Edge-Case: 29. Feb → 28. Feb wenn nicht Schaltjahr
+          if (naechste.getMonth() === 2 && naechste.getDate() === 1 && geb.getMonth() === 1 && geb.getDate() === 28) {
+            // Edge case handled by date-fns
+          }
+          return { ...m, _naechsteGeb: naechste, _alter: new Date().getFullYear() - geb.getFullYear() };
+        })
+        .filter(m => m._naechsteGeb <= in30Tagen)
+        .sort((a, b) => a._naechsteGeb - b._naechsteGeb)
+        .slice(0, 5);
+      setNaechsteGeburtstage(geburtstage);
+
       // Beiträge
       const offenB = beitraege.filter(b => b.zahlungsstatus === 'Offen');
       const uebB   = beitraege.filter(b => b.zahlungsstatus === 'Überfällig');
@@ -159,7 +181,7 @@ export default function Dashboard() {
         mitglieder:    mitglieder.length,
         mitgliedAktiv: mitglieder.filter(m => m.mitgliedsstatus === 'Aktiv').length,
         mitgliedPassiv:mitglieder.filter(m => m.mitgliedsstatus === 'Passiv').length,
-        mitgliedJugend:mitglieder.filter(m => m.mitgliedsstatus === 'Jugend').length,
+        mitgliedJugend:mitglieder.filter(m => ['Jugendliche 11-14','Jungaktive 15-17','Kinder 4-10','Kleinkind 0-3','Leihäs'].includes(m.mitgliedsstatus)).length,
         veranstaltungen: veranstaltungen.filter(e => e.datum >= today).length,
         offeneEhrungen:  offeneEh.length,
         offeneBeitraege: offenB.length + uebB.length,
@@ -195,7 +217,7 @@ export default function Dashboard() {
         <p className="text-muted-foreground text-sm mt-1">
           {format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}
         </p>
-        {kannVerwalten && (
+        {isAdminUser && (
           <Link
             to="/vorstand"
             className="inline-flex items-center gap-2 mt-3 px-4 py-2 rounded-xl bg-primary/10 border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/20 transition-colors"
@@ -203,28 +225,63 @@ export default function Dashboard() {
             <Shield size={15} /> Führungs-Dashboard <ChevronRight size={14} />
           </Link>
         )}
+
+        {/* Schnellaktionen */}
+        {isAdminUser && (
+          <div className="flex flex-wrap gap-2 mt-3">
+            <Link to="/veranstaltungen/neu" className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary border border-border text-xs font-medium text-foreground hover:border-primary/40 transition-colors">
+              <Calendar size={13} className="text-primary" /> Termin
+            </Link>
+            <Link to="/mitglieder/neu" className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary border border-border text-xs font-medium text-foreground hover:border-primary/40 transition-colors">
+              <Users size={13} className="text-primary" /> Mitglied
+            </Link>
+            <Link to="/arbeitsdienste/neu" className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary border border-border text-xs font-medium text-foreground hover:border-primary/40 transition-colors">
+              <Briefcase size={13} className="text-primary" /> Dienst
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Stats Row */}
-      {isAdminUser && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-6">
-          <StatCard
-            icon={Users} label="Mitglieder" value={stats.mitglieder}
-            sub={`${stats.mitgliedAktiv} aktiv · ${stats.mitgliedPassiv} passiv`}
-          />
-          <StatCard
-            icon={Calendar} label="Kommende Events" value={stats.veranstaltungen}
-          />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-6">
+        <StatCard
+          icon={Users} label="Mitglieder" value={stats.mitglieder}
+          sub={`${stats.mitgliedAktiv} aktiv · ${stats.mitgliedPassiv} passiv`}
+          onClick={() => window.location.href = '/mitglieder'}
+        />
+        <StatCard
+          icon={Calendar} label="Kommende Events" value={stats.veranstaltungen}
+          onClick={() => window.location.href = '/veranstaltungen'}
+        />
+        {isAdminUser && (
           <StatCard
             icon={Award} label="Offene Ehrungen" value={stats.offeneEhrungen}
             color="text-yellow-400"
+            onClick={() => window.location.href = '/ehrungen'}
           />
+        )}
+        {isAdminUser && (
           <StatCard
             icon={CreditCard} label="Offene Beiträge" value={stats.offeneBeitraege}
             color="text-red-400"
+            onClick={() => window.location.href = '/beitraege'}
           />
-        </div>
-      )}
+        )}
+        {!isAdminUser && (
+          <StatCard
+            icon={Briefcase} label="Arbeitsdienste" value={stats.arbeitsdienste}
+            color="text-primary"
+            onClick={() => window.location.href = '/arbeitsdienste'}
+          />
+        )}
+        {!isAdminUser && (
+          <StatCard
+            icon={Shirt} label="Häs gesamt" value={stats.haesGesamt}
+            color="text-primary"
+            onClick={() => window.location.href = '/haes'}
+          />
+        )}
+      </div>
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -243,11 +300,11 @@ export default function Dashboard() {
             <div className="space-y-3">
               {naechsteEvents.map(event => (
                 <Link key={event.id} to={`/veranstaltungen/${event.id}`} className="flex items-center gap-3 group">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex flex-col items-center justify-center">
-                    <span className="text-[10px] text-muted-foreground font-medium leading-none uppercase">
+                  <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex flex-col items-center justify-center ${event.datum === today ? 'bg-primary' : 'bg-primary/10'}`}>
+                    <span className={`text-[10px] font-medium leading-none uppercase ${event.datum === today ? 'text-white/80' : 'text-muted-foreground'}`}>
                       {format(new Date(event.datum), 'MMM', { locale: de })}
                     </span>
-                    <span className="text-sm font-bold text-primary leading-none">
+                    <span className={`text-sm font-bold leading-none ${event.datum === today ? 'text-white' : 'text-primary'}`}>
                       {format(new Date(event.datum), 'd')}
                     </span>
                   </div>
@@ -255,9 +312,13 @@ export default function Dashboard() {
                     <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">{event.titel}</p>
                     <p className="text-xs text-muted-foreground truncate">{event.ort || 'Kein Ort'}</p>
                   </div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${EVENT_TYP_STYLE[event.typ] || 'bg-secondary text-muted-foreground'}`}>
-                    {event.typ}
-                  </span>
+                  {event.datum === today ? (
+                    <span className="text-xs px-2 py-0.5 rounded-full shrink-0 bg-primary text-white font-semibold animate-pulse">HEUTE</span>
+                  ) : (
+                    <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${EVENT_TYP_STYLE[event.typ] || 'bg-secondary text-muted-foreground'}`}>
+                      {event.typ}
+                    </span>
+                  )}
                 </Link>
               ))}
             </div>
@@ -342,6 +403,37 @@ export default function Dashboard() {
           )}
         </SectionCard>
 
+        {/* Geburtstage */}
+        <SectionCard
+          title="Nächste Geburtstage"
+          subtitle="In den nächsten 30 Tagen"
+          icon={Star}
+        >
+          {naechsteGeburtstage.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">Keine Geburtstage in nächster Zeit</p>
+          ) : (
+            <div className="space-y-2.5">
+              {naechsteGeburtstage.map(m => {
+                const istHeute = format(m._naechsteGeb, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+                return (
+                  <div key={m.id} className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${istHeute ? 'bg-primary' : 'bg-primary/10'}`}>
+                      <span className={`text-xs ${istHeute ? 'text-white' : 'text-primary'}">🎂</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{m.vorname} {m.nachname}</p>
+                      <p className="text-xs text-muted-foreground">wird {m._alter + 1} Jahre</p>
+                    </div>
+                    <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${istHeute ? 'bg-primary text-white font-semibold' : 'bg-secondary text-muted-foreground'}`}>
+                      {istHeute ? 'HEUTE' : format(m._naechsteGeb, 'dd.MM.', { locale: de })}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </SectionCard>
+
         {/* Beiträge */}
         {isAdminUser && (
           <SectionCard
@@ -414,7 +506,8 @@ export default function Dashboard() {
           </div>
         </SectionCard>
 
-        {/* Häs */}
+        {/* Häs — nur für Admins */}
+        {isAdminUser && (
         <SectionCard
           title="Häs & Masken"
           subtitle="Kostümübersicht"
@@ -464,6 +557,7 @@ export default function Dashboard() {
             </div>
           )}
         </SectionCard>
+        )}
 
       </div>
     </div>
