@@ -205,19 +205,6 @@ export default function Haes() {
         />
       </div>
 
-      {/* Status Filter */}
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
-        {['Alle', 'Aktiv', 'Verliehen', 'Frei', 'Verkauft', 'Stillgelegt'].map(s => (
-          <button
-            key={s}
-            onClick={() => setStatusFilter(s)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${statusFilter === s ? 'bg-primary text-white' : 'bg-card border border-border text-muted-foreground'}`}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
-
       {/* Häs Liste */}
       <div className="space-y-2">
         {filtered.map(h => (
