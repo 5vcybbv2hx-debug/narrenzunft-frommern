@@ -6,30 +6,55 @@ import {
   LayoutDashboard, Users, Shirt, Calendar, Briefcase,
   Award, CreditCard, Bell, Menu, X, ChevronRight,
   LogOut, User, MoreHorizontal, Shield, ClipboardList,
-  AlertTriangle, Lock, Database, CheckSquare, Package, Bus
+  AlertTriangle, Lock, CheckSquare, Package, Bus, FileText
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import SecureSearch from './SecureSearch';
 
-const sidebarNavItems = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard, roles: null },
-  { path: '/vorstand', label: 'Führungs-Dashboard', icon: ClipboardList, roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'] },
-  { path: '/mitglieder', label: 'Mitglieder', icon: Users, roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter', 'admin'] },
-  { path: '/kalender', label: 'Veranstaltungen', icon: Calendar, roles: null },
-  { path: '/ausfahrten', label: 'Ausfahrten', icon: Bus, roles: null },
-  { path: '/arbeitsdienste', label: 'Arbeitsdienste', icon: Briefcase, roles: null },
-  { path: '/ehrungen', label: 'Ehrungen', icon: Award, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
-  { path: '/beitraege', label: 'Beiträge', icon: CreditCard, roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'] },
-  { path: '/haes', label: 'Häs', icon: Shirt, roles: null },
-  { path: '/sparten', label: 'Sparten & Gruppen', icon: Users, roles: null },
-  { path: '/vereine', label: 'Vereine & Zünfte', icon: Users, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
-  { path: '/datenqualitaet', label: 'Datenqualität', icon: AlertTriangle, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
-  { path: '/ausschuss', label: 'Ausschussbereich', icon: Lock, roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'] },
-  { path: '/todos', label: 'Aufgaben', icon: CheckSquare, roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'] },
-  { path: '/inventar', label: 'Inventar & Verleih', icon: Package, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
-  { path: '/berechtigungen', label: 'Berechtigungen', icon: Shield, roles: ['admin', 'vorstand', 'stellv_vorstand'] },
-  { path: '/daten-import', label: 'Daten-Import', icon: Database, roles: ['admin'] },
-  { path: '/familie', label: 'Familie', icon: Users, roles: ['elternkonto'] },
+const sidebarGroups = [
+  {
+    title: 'Übersicht',
+    items: [
+      { path: '/', label: 'Dashboard', icon: LayoutDashboard, roles: null },
+      { path: '/kalender', label: 'Veranstaltungen', icon: Calendar, roles: null },
+      { path: '/ausfahrten', label: 'Ausfahrten', icon: Bus, roles: null },
+      { path: '/arbeitsdienste', label: 'Arbeitsdienste', icon: Briefcase, roles: null },
+      { path: '/haes', label: 'Häs', icon: Shirt, roles: null },
+      { path: '/sparten', label: 'Sparten & Gruppen', icon: Users, roles: null },
+    ]
+  },
+  {
+    title: 'Verwaltung',
+    items: [
+      { path: '/vorstand', label: 'Führungs-Dashboard', icon: ClipboardList, roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'] },
+      { path: '/mitglieder', label: 'Mitglieder', icon: Users, roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter', 'admin'] },
+      { path: '/ehrungen', label: 'Ehrungen', icon: Award, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
+      { path: '/beitraege', label: 'Beiträge', icon: CreditCard, roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'] },
+      { path: '/vereine', label: 'Vereine & Zünfte', icon: Users, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
+    ]
+  },
+  {
+    title: 'Organisation',
+    items: [
+      { path: '/ausschuss', label: 'Ausschussbereich', icon: Lock, roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'] },
+      { path: '/todos', label: 'Aufgaben', icon: CheckSquare, roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'] },
+      { path: '/inventar', label: 'Inventar & Verleih', icon: Package, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
+    ]
+  },
+  {
+    title: 'System',
+    items: [
+      { path: '/datenqualitaet', label: 'Datenqualität', icon: AlertTriangle, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
+      { path: '/berechtigungen', label: 'Berechtigungen', icon: Shield, roles: ['admin', 'vorstand', 'stellv_vorstand'] },
+      { path: '/mitgliedsantraege', label: 'Mitgliedsanträge', icon: FileText, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
+    ]
+  },
+  {
+    title: 'Familie',
+    items: [
+      { path: '/familie', label: 'Familie', icon: Users, roles: ['elternkonto'] },
+    ]
+  },
 ];
 
 const bottomNavItems = [
@@ -98,8 +123,6 @@ export default function Layout() {
     return location.pathname.startsWith(path);
   };
 
-  const visibleSidebarItems = sidebarNavItems.filter(item => canSee(item, user));
-
   return (
     <div className="min-h-screen bg-background flex">
 
@@ -125,24 +148,37 @@ export default function Layout() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 py-3 px-2 overflow-y-auto space-y-0.5">
-          {visibleSidebarItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.path);
+        <nav className="flex-1 py-3 px-2 overflow-y-auto space-y-1">
+          {sidebarGroups.map(group => {
+            const visibleItems = group.items.filter(item => canSee(item, user));
+            if (visibleItems.length === 0) return null;
             return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-150 group ${
-                  active
-                    ? 'bg-primary text-white font-semibold shadow-sm shadow-primary/20'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-                }`}
-              >
-                <Icon size={17} className="shrink-0" strokeWidth={active ? 2.2 : 1.8} />
-                <span className="text-sm truncate">{item.label}</span>
-                {active && <ChevronRight size={13} className="ml-auto opacity-70" />}
-              </Link>
+              <div key={group.title} className="mb-3">
+                <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider px-3 mb-1">
+                  {group.title}
+                </p>
+                <div className="space-y-0.5">
+                  {visibleItems.map((item) => {
+                    const Icon = item.icon;
+                    const active = isActive(item.path);
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-150 group ${
+                          active
+                            ? 'bg-primary text-white font-semibold shadow-sm shadow-primary/20'
+                            : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                        }`}
+                      >
+                        <Icon size={17} className="shrink-0" strokeWidth={active ? 2.2 : 1.8} />
+                        <span className="text-sm truncate">{item.label}</span>
+                        {active && <ChevronRight size={13} className="ml-auto opacity-70" />}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
             );
           })}
         </nav>
@@ -187,29 +223,42 @@ export default function Layout() {
                 </div>
               </div>
               <button onClick={() => setSidebarOpen(false)}
-                className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors">
+                className="p-2 rounded-md text-muted-foreground hover:text-white hover:bg-sidebar-accent transition-colors">
                 <X size={18} />
               </button>
             </div>
 
-            <nav className="flex-1 py-3 px-2 overflow-y-auto space-y-0.5">
-              {visibleSidebarItems.map((item) => {
-                const Icon = item.icon;
-                const active = isActive(item.path);
+            <nav className="flex-1 py-3 px-2 overflow-y-auto space-y-1">
+              {sidebarGroups.map(group => {
+                const visibleItems = group.items.filter(item => canSee(item, user));
+                if (visibleItems.length === 0) return null;
                 return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-3 rounded-md transition-all ${
-                      active
-                        ? 'bg-primary text-white font-semibold'
-                        : 'text-sidebar-foreground hover:bg-sidebar-accent'
-                    }`}
-                  >
-                    <Icon size={18} strokeWidth={active ? 2.2 : 1.8} />
-                    <span className="font-medium">{item.label}</span>
-                  </Link>
+                  <div key={group.title} className="mb-3">
+                    <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider px-3 mb-1">
+                      {group.title}
+                    </p>
+                    <div className="space-y-0.5">
+                      {visibleItems.map((item) => {
+                        const Icon = item.icon;
+                        const active = isActive(item.path);
+                        return (
+                          <Link
+                            key={item.path}
+                            to={item.path}
+                            onClick={() => setSidebarOpen(false)}
+                            className={`flex items-center gap-3 px-3 py-3 rounded-md transition-all ${
+                              active
+                                ? 'bg-primary text-white font-semibold'
+                                : 'text-sidebar-foreground hover:bg-sidebar-accent'
+                            }`}
+                          >
+                            <Icon size={18} strokeWidth={active ? 2.2 : 1.8} />
+                            <span className="font-medium">{item.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
                 );
               })}
             </nav>
@@ -241,7 +290,7 @@ export default function Layout() {
           <div className="absolute bottom-0 left-0 right-0 h-px bg-primary/30" />
 
           <button
-            className="lg:hidden p-2 rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+            className="lg:hidden p-2 rounded-md text-muted-foreground hover:bg-neutral-800 hover:text-white transition-colors"
             onClick={() => setSidebarOpen(true)}
           >
             <Menu size={20} />
@@ -252,22 +301,22 @@ export default function Layout() {
           </div>
 
           <div className="flex md:hidden flex-1 items-center gap-2">
-            <div className="w-1 h-5 bg-primary rounded-full" />
-            <span className="font-oswald font-semibold text-foreground text-base uppercase tracking-wide">
+            <div className="w-1 h-5 bg-primary/10 border border-primary/30 rounded-full" />
+            <span className="font-oswald font-semibold text-white text-base uppercase tracking-wide">
               Narrenzunft
             </span>
           </div>
 
           <div className="flex items-center gap-1.5">
             <Link to="/benachrichtigungen"
-              className="relative p-2 rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors">
+              className="relative p-2 rounded-md text-muted-foreground hover:bg-neutral-800 hover:text-white transition-colors">
               <Bell size={18} />
               {notifications > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full shadow-sm shadow-primary/50" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary/10 border border-primary/30 rounded-full shadow-sm shadow-primary/50" />
               )}
             </Link>
             <Link to="/profil"
-              className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm hover:bg-primary/80 transition-colors shadow-sm shadow-primary/30">
+              className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm hover:bg-red-700 transition-colors shadow-sm shadow-primary/30">
               {user?.full_name?.[0] || 'U'}
             </Link>
           </div>
@@ -295,7 +344,7 @@ export default function Layout() {
                   className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg transition-all min-w-[52px] ${
                     active
                       ? 'text-primary'
-                      : 'text-muted-foreground hover:text-foreground'
+                      : 'text-muted-foreground hover:text-white'
                   }`}
                 >
                   <Icon size={21} strokeWidth={active ? 2.4 : 1.7} />
