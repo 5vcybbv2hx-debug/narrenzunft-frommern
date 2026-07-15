@@ -98,6 +98,7 @@ export default function Haes() {
     aktiv:       haes.filter(h => h.status === 'Aktiv').length,
     verliehen:   haes.filter(h => h.status === 'Verliehen').length,
     frei:        haes.filter(h => h.status === 'Frei').length,
+    verkauft:    haes.filter(h => h.status === 'Verkauft').length,
     stillgelegt: haes.filter(h => h.status === 'Stillgelegt').length,
   };
 
@@ -122,13 +123,13 @@ export default function Haes() {
 
             <button
               onClick={() => setShowNewGruppe(true)}
-              className="px-3 py-2.5 rounded-xl bg-secondary text-foreground text-sm font-medium hover:bg-border transition-colors"
+              className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-secondary text-foreground text-sm font-medium hover:bg-border transition-colors"
             >
-              + Gruppe
+              <Plus size={16} /> <span className="hidden sm:inline">Gruppe</span>
             </button>
             <button
               onClick={() => setShowNewHaes(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
             >
               <Plus size={16} /> Häs
             </button>
@@ -137,13 +138,14 @@ export default function Haes() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-5 gap-2 mb-4">
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4">
         {[
-          { label: 'Gesamt',     value: stats.gesamt,      color: 'text-foreground',  filter: 'Alle' },
-          { label: 'Aktiv',      value: stats.aktiv,       color: 'text-green-400',   filter: 'Aktiv' },
-          { label: 'Verliehen',  value: stats.verliehen,   color: 'text-blue-400',    filter: 'Verliehen' },
-          { label: 'Frei',       value: stats.frei,        color: 'text-yellow-400',  filter: 'Frei' },
-          { label: 'Stillgelegt',value: stats.stillgelegt, color: 'text-red-400',     filter: 'Stillgelegt' },
+          { label: 'Gesamt',      value: stats.gesamt,      color: 'text-foreground',  filter: 'Alle' },
+          { label: 'Aktiv',       value: stats.aktiv,       color: 'text-green-400',   filter: 'Aktiv' },
+          { label: 'Verliehen',   value: stats.verliehen,   color: 'text-blue-400',    filter: 'Verliehen' },
+          { label: 'Frei',        value: stats.frei,        color: 'text-yellow-400',  filter: 'Frei' },
+          { label: 'Verkauft',    value: stats.verkauft,    color: 'text-gray-400',    filter: 'Verkauft' },
+          { label: 'Stillgelegt', value: stats.stillgelegt, color: 'text-red-400',     filter: 'Stillgelegt' },
         ].map(s => (
           <button
             key={s.label}
@@ -161,7 +163,7 @@ export default function Haes() {
         <div className="flex gap-2 overflow-x-auto pb-2 mb-3">
           <button
             onClick={() => setGruppeFilter('Alle')}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${gruppeFilter === 'Alle' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground'}`}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${gruppeFilter === 'Alle' ? 'bg-primary text-white' : 'bg-card border border-border text-muted-foreground'}`}
           >
             Alle Gruppen
           </button>
@@ -180,7 +182,7 @@ export default function Haes() {
                 <button
                   onClick={() => setSelectedGruppeToken(g)}
                   title="Kalender-Feed"
-                  className="absolute -right-1 -top-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg bg-primary text-white text-[10px] hover:bg-primary/90"
+                  className="absolute -right-1 -top-1 p-1 rounded-lg bg-primary text-white hover:bg-primary/90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                 >
                   <Calendar size={12} />
                 </button>
@@ -209,7 +211,7 @@ export default function Haes() {
           <button
             key={s}
             onClick={() => setStatusFilter(s)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${statusFilter === s ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground'}`}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${statusFilter === s ? 'bg-primary text-white' : 'bg-card border border-border text-muted-foreground'}`}
           >
             {s}
           </button>
@@ -243,8 +245,19 @@ export default function Haes() {
 
       {filtered.length === 0 && (
         <div className="text-center py-12">
-          <Shirt size={40} className="text-muted-foreground/40 mx-auto mb-3" />
-          <p className="text-muted-foreground">Keine Häs gefunden</p>
+          <Shirt size={36} className="text-muted-foreground/40 mx-auto mb-3" />
+          <p className="text-foreground font-medium">Keine Häs gefunden</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {search ? `Für „${search}" wurde kein Häs gefunden` : 'In dieser Kategorie sind keine Häs vorhanden'}
+          </p>
+          {(search || statusFilter !== 'Alle' || gruppeFilter !== 'Alle') && (
+            <button
+              onClick={() => { setSearch(''); setStatusFilter('Alle'); setGruppeFilter('Alle'); }}
+              className="mt-3 text-xs text-primary hover:underline"
+            >
+              Filter zurücksetzen
+            </button>
+          )}
         </div>
       )}
 
@@ -252,7 +265,7 @@ export default function Haes() {
       {showNewGruppe && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
           <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
-            <h3 className="font-bold text-foreground mb-4">Neue Häsgruppe</h3>
+            <h3 className="font-oswald font-semibold text-foreground mb-4 tracking-wide">Neue Häsgruppe</h3>
             <input
               type="text"
               placeholder="Name der Gruppe"
@@ -269,7 +282,7 @@ export default function Haes() {
             />
             <div className="flex gap-2">
               <button onClick={() => setShowNewGruppe(false)} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium">Abbrechen</button>
-              <button onClick={handleCreateGruppe} className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold">Erstellen</button>
+              <button onClick={handleCreateGruppe} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold">Erstellen</button>
             </div>
           </div>
         </div>
@@ -279,7 +292,7 @@ export default function Haes() {
       {showNewHaes && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
           <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
-            <h3 className="font-bold text-foreground mb-4">Neues Häs</h3>
+            <h3 className="font-oswald font-semibold text-foreground mb-4 tracking-wide">Neues Häs</h3>
             <div className="space-y-3">
               <input
                 type="text"
@@ -313,7 +326,7 @@ export default function Haes() {
             </div>
             <div className="flex gap-2 mt-4">
               <button onClick={() => setShowNewHaes(false)} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium">Abbrechen</button>
-              <button onClick={handleCreateHaes} className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold">Erstellen</button>
+              <button onClick={handleCreateHaes} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold">Erstellen</button>
             </div>
           </div>
         </div>
