@@ -22,10 +22,6 @@ export default function AusfahrtDetail() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  // Registration form states for main member
-  const [anzahlBegleitpersonen, setAnzahlBegleitpersonen] = useState(0);
-  const [begleitpersonen, setBegleitpersonen] = useState([]);
-
   // Inline Fremdanmeldung form states
   const [showFremdForm, setShowFremdForm] = useState(false);
   const [verwandtschaften, setVerwandtschaften] = useState([]);
@@ -76,24 +72,11 @@ export default function AusfahrtDetail() {
     }
   };
 
-  const handleBegleitpersonenChange = (index, field, value) => {
-    const updated = [...begleitpersonen];
-    if (!updated[index]) updated[index] = { name: '', alter: '' };
-    updated[index][field] = value;
-    setBegleitpersonen(updated);
-  };
-
   const handleFremdBegleitpersonenChange = (index, field, value) => {
     const updated = [...fremdBegleitpersonen];
     if (!updated[index]) updated[index] = { name: '', alter: '' };
     updated[index][field] = value;
     setFremdBegleitpersonen(updated);
-  };
-
-  const handleAnzahlChange = (val) => {
-    const num = Math.max(0, parseInt(val) || 0);
-    setAnzahlBegleitpersonen(num);
-    setBegleitpersonen(Array.from({ length: num }, (_, i) => begleitpersonen[i] || { name: '', alter: '' }));
   };
 
   const handleFremdAnzahlChange = (val) => {
