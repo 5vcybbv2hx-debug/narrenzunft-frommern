@@ -272,6 +272,8 @@ export default function Ausfahrten() {
               statusBadgeStyle = 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
             } else if (ausfahrt.status === 'Abgeschlossen') {
               statusBadgeStyle = 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+            } else if (ausfahrt.status === 'Abgesagt') {
+              statusBadgeStyle = 'bg-red-500/20 text-red-400 border-red-500/30';
             }
 
             return (

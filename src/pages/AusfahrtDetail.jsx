@@ -3,7 +3,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
-import { Bus, MapPin, Clock, Calendar, Users, ChevronRight, ArrowLeft, UserPlus, CheckCircle2, Download, X } from 'lucide-react';
+import { Bus, MapPin, Clock, Calendar, Users, ChevronRight, ArrowLeft, UserPlus, CheckCircle2, Download, X, Pencil, Trash2, Ban, AlertTriangle } from 'lucide-react';
+import AusfahrtEditModal from '@/components/ausfahrt/AusfahrtEditModal';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -17,6 +18,9 @@ export default function AusfahrtDetail() {
   const [mitglieder, setMitglieder] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sparten, setSparten] = useState([]);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Registration form states for main member
   const [anzahlBegleitpersonen, setAnzahlBegleitpersonen] = useState(0);
@@ -37,10 +41,11 @@ export default function AusfahrtDetail() {
     setLoading(true);
     try {
       // Load Ausfahrt, Anmeldungen, and Mitglieder in parallel
-      const [ausfahrtRes, anmeldungenRes, mitgliederRes] = await Promise.all([
+      const [ausfahrtRes, anmeldungenRes, mitgliederRes, spartenRes] = await Promise.all([
         base44.entities.Ausfahrt.get(id),
         base44.entities.AusfahrtAnmeldung.filter({ ausfahrt_id: id }),
-        base44.entities.Mitglied.list('-nachname', 500)
+        base44.entities.Mitglied.list('-nachname', 500),
+        base44.entities.Haesgruppe.list('name', 200)
       ]);
 
       if (!ausfahrtRes) {
@@ -51,6 +56,7 @@ export default function AusfahrtDetail() {
 
       setAnmeldungen(anmeldungenRes || []);
       setMitglieder(mitgliederRes || []);
+      setSparten(spartenRes || []);
     } catch (err) {
       console.error('Error fetching Ausfahrt detail data:', err);
       setError('Fehler beim Laden der Ausfahrtdetails.');
@@ -246,6 +252,31 @@ export default function AusfahrtDetail() {
     document.body.removeChild(link);
   };
 
+  const handleAbsagen = async () => {
+    if (!confirm('Soll diese Ausfahrt wirklich abgesagt werden? Alle Anmeldungen bleiben erhalten, aber die Ausfahrt wird als abgesagt markiert.')) return;
+    try {
+      await base44.entities.Ausfahrt.update(id, { status: 'Abgesagt' });
+      fetchData();
+    } catch (err) {
+      alert('Absagen fehlgeschlagen: ' + (err?.message || 'Unbekannter Fehler'));
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      // Zuerst alle verknüpften Anmeldungen löschen
+      const relatedAnmeldungen = await base44.entities.AusfahrtAnmeldung.filter({ ausfahrt_id: id });
+      if (relatedAnmeldungen && relatedAnmeldungen.length > 0) {
+        await base44.entities.AusfahrtAnmeldung.deleteMany({ ausfahrt_id: id });
+      }
+      await base44.entities.Ausfahrt.delete(id);
+      navigate('/ausfahrten');
+    } catch (err) {
+      alert('Löschen fehlgeschlagen: ' + (err?.message || 'Unbekannter Fehler'));
+      setShowDeleteConfirm(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-[60vh] flex flex-col justify-center items-center">
@@ -352,7 +383,44 @@ export default function AusfahrtDetail() {
               </div>
             </div>
           </div>
+
+          {/* Admin Action Buttons */}
+          {isAdmin(user) && (
+            <div className="flex flex-wrap items-center gap-2 mt-6 pt-6 border-t border-border">
+              <button
+                onClick={() => setShowEditModal(true)}
+                className="inline-flex items-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white border border-border font-semibold px-4 py-2 rounded-lg text-sm transition-colors"
+              >
+                <Pencil size={14} /> Bearbeiten
+              </button>
+              {ausfahrt.status !== 'Abgesagt' && (
+                <button
+                  onClick={handleAbsagen}
+                  className="inline-flex items-center gap-2 bg-yellow-900/30 hover:bg-yellow-900/50 text-yellow-400 border border-yellow-700/40 font-semibold px-4 py-2 rounded-lg text-sm transition-colors"
+                >
+                  <Ban size={14} /> Absagen
+                </button>
+              )}
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="inline-flex items-center gap-2 bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-700/40 font-semibold px-4 py-2 rounded-lg text-sm transition-colors"
+              >
+                <Trash2 size={14} /> Löschen
+              </button>
+            </div>
+          )}
         </div>
+
+        {/* Abgesagt Banner */}
+        {ausfahrt.status === 'Abgesagt' && (
+          <div className="bg-red-900/20 border border-red-700/40 rounded-xl p-4 mb-6 flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
+            <div>
+              <p className="text-red-400 font-semibold text-sm">Diese Ausfahrt wurde abgesagt.</p>
+              <p className="text-red-300/60 text-xs mt-0.5">Alle Anmeldungen bleiben bestehen, aber die Ausfahrt findet nicht statt.</p>
+            </div>
+          </div>
+        )}
 
         {/* Info Grid & Registration Column */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
@@ -378,7 +446,7 @@ export default function AusfahrtDetail() {
                   <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Veranstaltungsbeginn</h3>
                   <p className="text-white font-medium flex items-center">
                     <Clock className="w-4 h-4 mr-2 text-primary shrink-0" />
-                    {ausfahrt.veranstaltungsbeginn_zeit || '--- Uhr'}
+                    {ausfahrt.veranstaltungsbeginn || '--- Uhr'}
                   </p>
                 </div>
 
@@ -423,16 +491,16 @@ export default function AusfahrtDetail() {
                 <div className="mt-6 pt-6 border-t border-border">
                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">Sparte mit Auftritt</span>
                   <div className="inline-block bg-primary/10 border border-primary/20 text-primary px-3 py-1.5 rounded-lg text-sm font-semibold">
-                    🎭 {ausfahrt.sparte_auftritt}
+                    🎭 {sparten.find(s => s.id === ausfahrt.sparte_id)?.name || 'Auftritt'}
                   </div>
                 </div>
               )}
 
-              {ausfahrt.beschreibung && (
+              {ausfahrt.notizen && (
                 <div className="mt-6 pt-6 border-t border-border">
                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">Zusatzinformationen</span>
                   <p className="text-gray-300 leading-relaxed text-sm whitespace-pre-wrap">
-                    {ausfahrt.beschreibung}
+                    {ausfahrt.notizen}
                   </p>
                 </div>
               )}
@@ -484,7 +552,7 @@ export default function AusfahrtDetail() {
               ) : (
                 // Not registered yet
                 <div className="space-y-4">
-                  {ausfahrt.anmeldung_offen === false ? (
+                  {ausfahrt.status !== 'Anmeldung offen' ? (
                     <div className="bg-neutral-900 border border-border rounded-xl p-4 text-center">
                       <p className="text-gray-400 text-sm font-medium">Die Anmeldung ist für diese Ausfahrt geschlossen.</p>
                     </div>
@@ -771,6 +839,44 @@ export default function AusfahrtDetail() {
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Modal */}
+        {showEditModal && (
+          <AusfahrtEditModal
+            ausfahrt={ausfahrt}
+            sparten={sparten}
+            onSave={() => { setShowEditModal(false); fetchData(); }}
+            onClose={() => setShowEditModal(false)}
+          />
+        )}
+
+        {/* Delete Confirmation */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-red-900/30 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-red-400" />
+                </div>
+                <h3 className="font-oswald font-semibold text-foreground text-lg">Ausfahrt löschen?</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-1">
+                Möchtest du <strong className="text-foreground">"{ausfahrt.titel}"</strong> unwiderruflich löschen?
+              </p>
+              <p className="text-xs text-muted-foreground mb-5">
+                Alle Anmeldungen ({anmeldungen.length}) werden ebenfalls gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
+              </p>
+              <div className="flex gap-3">
+                <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium hover:text-foreground transition-colors">
+                  Abbrechen
+                </button>
+                <button onClick={handleDelete} className="flex-1 py-2.5 rounded-lg bg-destructive text-white text-sm font-semibold hover:bg-destructive/90 transition-colors">
+                  Löschen
+                </button>
+              </div>
             </div>
           </div>
         )}

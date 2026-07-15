@@ -72,7 +72,8 @@
         "Geplant",
         "Anmeldung offen",
         "Anmeldung geschlossen",
-        "Abgeschlossen"
+        "Abgeschlossen",
+        "Abgesagt"
       ],
       "default": "Geplant"
     },
