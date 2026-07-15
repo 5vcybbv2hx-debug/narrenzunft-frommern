@@ -49,10 +49,11 @@ export default function AusfahrtNeu() {
   useEffect(() => {
     (async () => {
       try {
-        const resp = await base44.entities.Haesgruppe.list('name', 200);
+        const resp = await base44.entities.Haesgruppe.filter({});
         setSparten(Array.isArray(resp) ? resp : (resp?.data || []));
       } catch (e) {
         console.error('Sparten laden:', e);
+        // Nicht blockieren — Sparten sind optional
       } finally {
         setLoadingSparten(false);
       }
