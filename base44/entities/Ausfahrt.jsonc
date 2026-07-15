@@ -48,6 +48,13 @@
     "bus_kapazitaet": {
       "type": "number"
     },
+    "bus_verantwortliche": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs der Mitglieder, die als Busverantwortliche den QR-Check-in durchf\u00fchren d\u00fcrfen"
+    },
     "sparte_auftritt": {
       "type": "boolean",
       "default": false

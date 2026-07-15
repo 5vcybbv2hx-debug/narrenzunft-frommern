@@ -302,6 +302,16 @@ export default function AusfahrtDetail() {
     }
   };
 
+  const saveBusVerantwortliche = async () => {
+    try {
+      await base44.entities.Ausfahrt.update(id, { bus_verantwortliche: selectedBusVw });
+      setShowBusVwModal(false);
+      fetchData();
+    } catch (err) {
+      alert('Speichern fehlgeschlagen: ' + (err?.message || 'Unbekannter Fehler'));
+    }
+  };
+
   const handleDelete = async () => {
     try {
       // Zuerst alle verknüpften Anmeldungen löschen
@@ -491,7 +501,7 @@ export default function AusfahrtDetail() {
               </button>
               {kannScannen && (
                 <a
-                  href={\`/ausfahrten/\${id}/scanner\`}
+                  href={`/ausfahrten/${id}/scanner`}
                   className="inline-flex items-center gap-2 bg-primary hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors"
                 >
                   <ScanLine size={14} /> QR-Scanner
@@ -989,7 +999,7 @@ export default function AusfahrtDetail() {
             </p>
             <div className="flex justify-center mb-4">
               <img
-                src={\`https://api.qrserver.com/v1/create-qr-code/?size=250x250&bgcolor=ffffff&data=\${encodeURIComponent(myRegistration.id)}\`}
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&bgcolor=ffffff&data=${encodeURIComponent(myRegistration.id)}`}
                 alt="QR Code"
                 className="rounded-xl"
               />

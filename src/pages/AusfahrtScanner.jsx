@@ -58,7 +58,7 @@ export default function AusfahrtScanner() {
 
   const activeAnmeldungen = anmeldungen.filter(a => a.status !== 'Abgemeldet');
   const eingechecktCount = activeAnmeldungen.filter(a => a.status === 'Eingecheckt').length;
-  constgesamtCount = activeAnmeldungen.length;
+  const gesamtCount = activeAnmeldungen.length;
 
   const handleScanResult = useCallback(async (decodedText) => {
     // Verhindere Mehrfach-Scan derselben ID innerhalb kurzem Zeitraum
@@ -68,16 +68,12 @@ export default function AusfahrtScanner() {
     setLastScan({ id: decodedText, timestamp: Date.now() });
 
     try {
-      // API-Aufruf an die checkinAusfahrt Backend-Function
-      const response = await fetch(`/api/apps/${import.meta.env.VITE_BASE44_APP_ID}/functions/checkinAusfahrt`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          anmeldung_id: decodedText,
-          eingeloggter_name: user?.full_name || user?.email || 'Busverantwortlicher'
-        })
+      // API-Aufruf an die checkinAusfahrt Backend-Function via SDK
+      const response = await base44.functions.invoke('checkinAusfahrt', {
+        anmeldung_id: decodedText,
+        eingeloggter_name: user?.full_name || user?.email || 'Busverantwortlicher'
       });
-      const result = await response.json();
+      const result = response.data || response;
 
       const newEntry = {
         id: decodedText,

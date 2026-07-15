@@ -40,6 +40,7 @@ import Sparten from './pages/Sparten';
 import Ausfahrten from './pages/Ausfahrten';
 import AusfahrtDetail from './pages/AusfahrtDetail';
 import AusfahrtNeu from './pages/AusfahrtNeu';
+import AusfahrtScanner from './pages/AusfahrtScanner';
 import Todos from './pages/Todos';
 import Inventar from './pages/Inventar';
 import Berechtigungen from './pages/Berechtigungen';
@@ -121,6 +122,7 @@ const AuthenticatedApp = () => {
         <Route path="/ausfahrten" element={<Ausfahrten />} />
         <Route path="/ausfahrten/neu" element={<AusfahrtNeu />} />
         <Route path="/ausfahrten/:id" element={<AusfahrtDetail />} />
+        <Route path="/ausfahrten/:id/scanner" element={<AusfahrtScanner />} />
         <Route path="/todos" element={<Todos />} />
         <Route path="/inventar" element={<Inventar />} />
         <Route path="/berechtigungen" element={<Berechtigungen />} />
