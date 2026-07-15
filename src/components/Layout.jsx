@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Shirt, Calendar, Briefcase,
   Award, CreditCard, Bell, Menu, X, ChevronRight,
   LogOut, User, MoreHorizontal, Shield, ClipboardList,
-  AlertTriangle, Lock, Database, CheckSquare, Package
+  AlertTriangle, Lock, Database, CheckSquare, Package, Bus
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import SecureSearch from './SecureSearch';

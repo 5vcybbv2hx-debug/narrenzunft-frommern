@@ -188,7 +188,6 @@ export default function AusfahrtDetail() {
           durch_admin_angemeldet: true,
           durch_admin_name: user?.full_name || user?.email || 'Admin'
         });
-      });
 
       // Reset form and refresh
       setFremdName('');
