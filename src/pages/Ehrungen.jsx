@@ -11,7 +11,7 @@ import {
 } from '@/lib/ehrungsLogik';
 import {
   Award, AlertTriangle, CheckCircle2, Clock, Download,
-  Star, TrendingUp, User, ChevronDown, ChevronUp, RefreshCw
+  Star, TrendingUp, User, ChevronDown, ChevronUp, RefreshCw, Tent
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -36,7 +36,8 @@ function EhrungsBadge({ typ, wert }) {
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${
       isUmzug ? 'bg-blue-500/20 text-blue-400' : 'bg-yellow-500/20 text-yellow-400'
     }`}>
-      {isUmzug ? '🎪' : '⭐'} {typ === 'Mitgliedsjahre' ? `${wert} Jahre` : `${wert} Umzüge`}
+      {isUmzug ? <Tent size={11} /> : <Star size={11} />}
+      {typ === 'Mitgliedsjahre' ? `${wert} Jahre` : `${wert} Umzüge`}
     </span>
   );
 }
@@ -47,6 +48,7 @@ export default function Ehrungen() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(null);
+  const [showExport, setShowExport] = useState(false);
   const [activeTab, setActiveTab] = useState('faellig');
   const [mitglieder, setMitglieder] = useState([]);
   const [teilnahmen, setTeilnahmen] = useState([]);
@@ -223,7 +225,7 @@ export default function Ehrungen() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
         <Award size={40} className="text-muted-foreground mb-3" />
-        <h2 className="text-xl font-bold text-foreground mb-2">Kein Zugriff</h2>
+        <h2 className="text-xl font-oswald font-semibold text-foreground mb-2">Kein Zugriff</h2>
         <p className="text-sm text-muted-foreground">Diese Seite ist nur für Ehrungsverwalter.</p>
       </div>
     );
@@ -231,7 +233,10 @@ export default function Ehrungen() {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="w-9 h-9 border-[3px] border-border border-t-primary rounded-full animate-spin" />
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-9 h-9 border-[3px] border-border border-t-primary rounded-full animate-spin" />
+        <p className="text-xs text-muted-foreground">Ehrungen werden berechnet…</p>
+      </div>
     </div>
   );
 
@@ -240,7 +245,7 @@ export default function Ehrungen() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Ehrungen</h1>
+          <h1 className="text-2xl font-oswald font-semibold text-foreground tracking-wide">Ehrungen</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             {faelligeEhrungen.length} fällig · {verlieheneEhrungen.length} verliehen
           </p>
@@ -254,15 +259,23 @@ export default function Ehrungen() {
             <RefreshCw size={16} />
           </button>
           {kannVerwalten && (
-            <div className="relative group">
-              <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary text-sm text-foreground hover:bg-border transition-colors">
+            <div className="relative">
+              <button
+                onClick={() => setShowExport(v => !v)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary text-sm text-foreground hover:bg-border transition-colors"
+              >
                 <Download size={14} /> Export
               </button>
-              <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-lg z-10 w-48 hidden group-hover:block">
-                <button onClick={exportFaellig} className="w-full px-4 py-2.5 text-left text-sm text-foreground hover:bg-secondary transition-colors rounded-t-xl">Fällige (CSV)</button>
-                <button onClick={exportBaldFaellig} className="w-full px-4 py-2.5 text-left text-sm text-foreground hover:bg-secondary transition-colors">Bald fällige (CSV)</button>
-                <button onClick={exportVerliehen} className="w-full px-4 py-2.5 text-left text-sm text-foreground hover:bg-secondary transition-colors rounded-b-xl">Verliehene (CSV)</button>
-              </div>
+              {showExport && (
+                <>
+                  <div className="fixed inset-0 z-20" onClick={() => setShowExport(false)} />
+                  <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-lg z-30 w-48 overflow-hidden">
+                    <button onClick={() => { exportFaellig(); setShowExport(false); }} className="w-full px-4 py-2.5 text-left text-sm text-foreground hover:bg-secondary transition-colors">Fällige (CSV)</button>
+                    <button onClick={() => { exportBaldFaellig(); setShowExport(false); }} className="w-full px-4 py-2.5 text-left text-sm text-foreground hover:bg-secondary transition-colors">Bald fällige (CSV)</button>
+                    <button onClick={() => { exportVerliehen(); setShowExport(false); }} className="w-full px-4 py-2.5 text-left text-sm text-foreground hover:bg-secondary transition-colors">Verliehene (CSV)</button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -272,30 +285,29 @@ export default function Ehrungen() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <div className={`bg-card border rounded-xl p-4 ${faelligeEhrungen.length > 0 ? 'border-yellow-500/30' : 'border-border'}`}>
           <p className="text-xs text-muted-foreground">Fällig</p>
-          <p className={`text-2xl font-bold mt-1 ${faelligeEhrungen.length > 0 ? 'text-yellow-400' : 'text-foreground'}`}>
+          <p className={`text-2xl font-oswald font-semibold mt-1 ${faelligeEhrungen.length > 0 ? 'text-yellow-400' : 'text-foreground'}`}>
             {faelligeEhrungen.length}
           </p>
         </div>
         <div className="bg-card border border-border rounded-xl p-4">
           <p className="text-xs text-muted-foreground">Bald fällig</p>
-          <p className="text-2xl font-bold text-foreground mt-1">{baldFaellige.length}</p>
+          <p className="text-2xl font-oswald font-semibold text-foreground mt-1">{baldFaellige.length}</p>
         </div>
         <div className="bg-card border border-green-500/20 rounded-xl p-4">
           <p className="text-xs text-muted-foreground">Verliehen</p>
-          <p className="text-2xl font-bold text-green-400 mt-1">{verlieheneEhrungen.length}</p>
+          <p className="text-2xl font-oswald font-semibold text-green-400 mt-1">{verlieheneEhrungen.length}</p>
         </div>
         <div className={`bg-card border rounded-xl p-4 ${dataProbleme.length > 0 ? 'border-red-500/30' : 'border-border'}`}>
           <p className="text-xs text-muted-foreground">Datenprobleme</p>
-          <p className={`text-2xl font-bold mt-1 ${dataProbleme.length > 0 ? 'text-red-400' : 'text-green-400'}`}>
+          <p className={`text-2xl font-oswald font-semibold mt-1 ${dataProbleme.length > 0 ? 'text-red-400' : 'text-green-400'}`}>
             {dataProbleme.length}
           </p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-secondary rounded-xl p-1 mb-4 overflow-x-auto">
+      <div className="flex gap-1.5 overflow-x-auto pb-1 mb-4 scrollbar-hide">
         {TABS.map(tab => {
-          const Icon = tab.icon;
           let count = 0;
           if (tab.id === 'faellig') count = faelligeEhrungen.length;
           if (tab.id === 'bald') count = baldFaellige.length;
@@ -305,14 +317,16 @@ export default function Ehrungen() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeTab === tab.id ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'
+              className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === tab.id
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80'
               }`}
             >
               {tab.label}
               {count > 0 && (
-                <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
-                  activeTab === tab.id ? 'bg-primary text-primary-foreground' : 'bg-border text-muted-foreground'
+                <span className={`text-[10px] font-bold px-1 rounded-full ${
+                  activeTab === tab.id ? 'bg-white/20' : 'bg-secondary text-muted-foreground'
                 }`}>{count}</span>
               )}
             </button>
@@ -353,14 +367,14 @@ export default function Ehrungen() {
                         onClick={() => handleEhrungAktualisieren(item.mitglied, item.typ, item.stufe, 'Geplant')}
                         className="flex-1 py-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors text-sm font-medium disabled:opacity-50"
                       >
-                        📅 Planen
+                        Planen
                       </button>
                       <button
                         disabled={isSaving}
                         onClick={() => handleEhrungAktualisieren(item.mitglied, item.typ, item.stufe, 'Verliehen')}
                         className="flex-1 py-2 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors text-sm font-medium disabled:opacity-50"
                       >
-                        ✓ Verliehen
+                        Verliehen
                       </button>
                     </div>
                   )}
@@ -376,8 +390,9 @@ export default function Ehrungen() {
         <div className="space-y-3">
           {baldFaellige.length === 0 ? (
             <div className="text-center py-12">
-              <Clock size={40} className="text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">Keine bald fälligen Ehrungen</p>
+              <Clock size={36} className="text-muted-foreground/40 mx-auto mb-3" />
+              <p className="text-foreground font-medium">Keine bald fälligen Ehrungen</p>
+              <p className="text-sm text-muted-foreground mt-1">In nächster Zeit steht keine Ehrung an</p>
             </div>
           ) : (
             baldFaellige.map((item, idx) => (
@@ -405,8 +420,9 @@ export default function Ehrungen() {
         <div className="space-y-2">
           {verlieheneEhrungen.length === 0 ? (
             <div className="text-center py-12">
-              <Award size={40} className="text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">Noch keine verliehenen Ehrungen</p>
+              <Award size={36} className="text-muted-foreground/40 mx-auto mb-3" />
+              <p className="text-foreground font-medium">Noch keine verliehenen Ehrungen</p>
+              <p className="text-sm text-muted-foreground mt-1">Ehrungen werden hier nach Vergabe angezeigt</p>
             </div>
           ) : (
             verlieheneEhrungen.map(e => (
