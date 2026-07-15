@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
-import { Bus, MapPin, Clock, Calendar, Users, ChevronRight, ArrowLeft, UserPlus, CheckCircle2, Download, X, Pencil, Trash2, Ban, AlertTriangle } from 'lucide-react';
+import { Bus, MapPin, Clock, Calendar, Users, ChevronRight, ArrowLeft, UserPlus, CheckCircle2, Download, X, Pencil, Trash2, Ban, AlertTriangle, QrCode, ScanLine } from 'lucide-react';
 import AusfahrtEditModal from '@/components/ausfahrt/AusfahrtEditModal';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -21,6 +21,9 @@ export default function AusfahrtDetail() {
   const [sparten, setSparten] = useState([]);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showQR, setShowQR] = useState(false);
+  const [showBusVwModal, setShowBusVwModal] = useState(false);
+  const [selectedBusVw, setSelectedBusVw] = useState([]);
 
   // Inline Fremdanmeldung form states
   const [showFremdForm, setShowFremdForm] = useState(false);
@@ -90,6 +93,10 @@ export default function AusfahrtDetail() {
   const myRegistration = currentMitglied 
     ? anmeldungen.find(a => a.mitglied_id === currentMitglied.id && a.status !== 'Abgemeldet')
     : null;
+
+  // Ist aktueller User Busverantwortlicher?
+  const isBusverantwortlicher = ausfahrt?.bus_verantwortliche?.includes(currentMitglied?.id);
+  const kannScannen = isAdmin(user) || isBusverantwortlicher;
 
   // Familienmitglieder des aktuellen Mitglieds (nur Ehepartner/in und Kind)
   const familienmitglieder = currentMitglied
@@ -474,6 +481,23 @@ export default function AusfahrtDetail() {
                 </button>
               )}
               <button
+                onClick={() => {
+                  setSelectedBusVw(ausfahrt.bus_verantwortliche || []);
+                  setShowBusVwModal(true);
+                }}
+                className="inline-flex items-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white border border-border font-semibold px-4 py-2 rounded-lg text-sm transition-colors"
+              >
+                <Users size={14} /> Busverantwortliche
+              </button>
+              {kannScannen && (
+                <a
+                  href={\`/ausfahrten/\${id}/scanner\`}
+                  className="inline-flex items-center gap-2 bg-primary hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors"
+                >
+                  <ScanLine size={14} /> QR-Scanner
+                </a>
+              )}
+              <button
                 onClick={() => setShowDeleteConfirm(true)}
                 className="inline-flex items-center gap-2 bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-700/40 font-semibold px-4 py-2 rounded-lg text-sm transition-colors"
               >
@@ -607,6 +631,14 @@ export default function AusfahrtDetail() {
                       </div>
                     )}
                   </div>
+
+                  {/* QR Code Button */}
+                  <button
+                    onClick={() => setShowQR(true)}
+                    className="w-full bg-neutral-800 hover:bg-neutral-700 text-white border border-border font-semibold py-2.5 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
+                  >
+                    <QrCode className="w-4 h-4 text-primary" /> Mein QR-Code anzeigen
+                  </button>
 
                   {isDeregisterAvailable ? (
                     <button
@@ -941,6 +973,74 @@ export default function AusfahrtDetail() {
           </div>
         )}
       </div>
+
+      {/* QR Code Modal */}
+      {showQR && myRegistration && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setShowQR(false)}>
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold font-oswald uppercase tracking-wider text-white">Dein Check-in QR</h3>
+              <button onClick={() => setShowQR(false)} className="text-gray-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-xs text-gray-400 mb-4 text-center">
+              Zeige diesen Code dem Busverantwortlichen beim Einsteigen.
+            </p>
+            <div className="flex justify-center mb-4">
+              <img
+                src={\`https://api.qrserver.com/v1/create-qr-code/?size=250x250&bgcolor=ffffff&data=\${encodeURIComponent(myRegistration.id)}\`}
+                alt="QR Code"
+                className="rounded-xl"
+              />
+            </div>
+            <p className="text-center text-sm text-gray-300 font-medium">{getMitgliedName(myRegistration.mitglied_id)}</p>
+            {myRegistration.transport && (
+              <p className="text-center text-xs text-gray-500 mt-1">
+                {myRegistration.transport === 'Bus' ? '🚌 Bus' : '🚗 Privat'}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Busverantwortliche Modal */}
+      {showBusVwModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setShowBusVwModal(false)}>
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold font-oswald uppercase tracking-wider text-white">Busverantwortliche</h3>
+              <button onClick={() => setShowBusVwModal(false)} className="text-gray-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-xs text-gray-400 mb-4">
+              Wähle Mitglieder, die den QR-Check-in durchführen dürfen.
+            </p>
+            <div className="space-y-2 mb-4">
+              {mitglieder.filter(m => m.mitgliedsstatus === 'Aktiv').sort((a,b) => (a.nachname||'').localeCompare(b.nachname||'')).map(m => (
+                <label key={m.id} className="flex items-center gap-3 p-2.5 bg-neutral-900 border border-border rounded-lg cursor-pointer hover:border-primary/40">
+                  <input
+                    type="checkbox"
+                    checked={selectedBusVw.includes(m.id)}
+                    onChange={() => setSelectedBusVw(prev =>
+                      prev.includes(m.id) ? prev.filter(id => id !== m.id) : [...prev, m.id]
+                    )}
+                    className="w-4 h-4 accent-[#EA2525]"
+                  />
+                  <span className="text-sm text-white">{m.vorname || ''} {m.nachname || ''}</span>
+                </label>
+              ))}
+            </div>
+            <button
+              onClick={saveBusVerantwortliche}
+              className="w-full bg-primary hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors"
+            >
+              Speichern
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
