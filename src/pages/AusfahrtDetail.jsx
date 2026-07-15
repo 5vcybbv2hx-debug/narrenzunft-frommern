@@ -814,7 +814,6 @@ export default function AusfahrtDetail() {
                     <th className="py-3 px-4">Name</th>
                     <th className="py-3 px-4">Anmeldetyp</th>
                     <th className="py-3 px-4">Transport</th>
-                    <th className="py-3 px-4">Begleitung</th>
                     <th className="py-3 px-4">Status</th>
                     <th className="py-3 px-4 text-right">Aktion</th>
                   </tr>
@@ -822,7 +821,7 @@ export default function AusfahrtDetail() {
                 <tbody className="divide-y divide-border text-sm">
                   {sortedRegistrations.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="py-6 text-center text-gray-400">
+                      <td colSpan="5" className="py-6 text-center text-gray-400">
                         Keine aktiven Anmeldungen für diese Ausfahrt gefunden.
                       </td>
                     </tr>
@@ -860,9 +859,6 @@ export default function AusfahrtDetail() {
                           </td>
                           <td className="py-3.5 px-4 text-xs font-medium">
                             {entry.transport === 'Bus' ? '🚌 Bus' : '🚗 Privat'}
-                          </td>
-                          <td className="py-3.5 px-4 text-gray-500 text-xs">
-                            {entry.isBegleitperson ? '-' : '-'}
                           </td>
                           <td className="py-3.5 px-4 text-xs">
                             {entry.status === 'Eingecheckt' ? (
