@@ -1,0 +1,89 @@
+{
+  "name": "Ausfahrt",
+  "type": "object",
+  "properties": {
+    "titel": {
+      "type": "string"
+    },
+    "typ": {
+      "type": "string",
+      "enum": [
+        "Umzug",
+        "Veranstaltung"
+      ],
+      "description": "Art der Ausfahrt"
+    },
+    "datum": {
+      "type": "string",
+      "format": "date"
+    },
+    "ort": {
+      "type": "string"
+    },
+    "abfahrt_zeit": {
+      "type": "string",
+      "description": "HH:MM"
+    },
+    "abfahrt_ort": {
+      "type": "string",
+      "default": "Schulhof Frommern"
+    },
+    "veranstaltungsbeginn": {
+      "type": "string",
+      "description": "HH:MM"
+    },
+    "rueckfahrt_zeit": {
+      "type": "string",
+      "description": "HH:MM"
+    },
+    "aufstellung": {
+      "type": "string"
+    },
+    "startnummer": {
+      "type": "string"
+    },
+    "busparkplatz": {
+      "type": "string"
+    },
+    "bus_kapazitaet": {
+      "type": "number"
+    },
+    "sparte_auftritt": {
+      "type": "boolean",
+      "default": false
+    },
+    "sparte_id": {
+      "type": "string"
+    },
+    "verantworlicher_id": {
+      "type": "string"
+    },
+    "anmeldung_start": {
+      "type": "string",
+      "format": "date"
+    },
+    "anmeldung_ende": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Geplant",
+        "Anmeldung offen",
+        "Anmeldung geschlossen",
+        "Abgeschlossen"
+      ],
+      "default": "Geplant"
+    },
+    "notizen": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "titel",
+    "typ",
+    "datum",
+    "ort"
+  ]
+}

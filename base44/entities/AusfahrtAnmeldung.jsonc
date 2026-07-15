@@ -1,0 +1,88 @@
+{
+  "name": "AusfahrtAnmeldung",
+  "type": "object",
+  "properties": {
+    "ausfahrt_id": {
+      "type": "string",
+      "description": "ID der verkn\u00fcpften Ausfahrt"
+    },
+    "mitglied_id": {
+      "type": "string",
+      "description": "ID des angemeldeten Mitglieds (leer bei Fremdanmeldung)"
+    },
+    "transport": {
+      "type": "string",
+      "enum": [
+        "Bus",
+        "Privat"
+      ],
+      "default": "Bus"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Angemeldet",
+        "Abgemeldet",
+        "Eingecheckt",
+        "Nicht erschienen"
+      ],
+      "default": "Angemeldet"
+    },
+    "angemeldet_am": {
+      "type": "string",
+      "format": "date"
+    },
+    "abgemeldet_am": {
+      "type": "string",
+      "format": "date"
+    },
+    "eingecheckt_am": {
+      "type": "string",
+      "description": "ISO-Datumzeit der Eincheckung"
+    },
+    "eingecheckt_von": {
+      "type": "string",
+      "description": "Name der Person, die eingecheckt hat"
+    },
+    "anzahl_begleitpersonen": {
+      "type": "number",
+      "default": 0
+    },
+    "begleitpersonen": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "alter": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "is_fremdangemeldet": {
+      "type": "boolean",
+      "default": false
+    },
+    "fremdname": {
+      "type": "string"
+    },
+    "durch_admin_angemeldet": {
+      "type": "boolean",
+      "default": false
+    },
+    "durch_admin_name": {
+      "type": "string"
+    },
+    "kommentar": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ausfahrt_id",
+    "transport",
+    "status"
+  ]
+}
