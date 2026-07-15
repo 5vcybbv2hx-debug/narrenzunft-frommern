@@ -109,6 +109,7 @@ export default function Beitraege() {
   };
 
   const filteredBeitraege = beitraege.filter(b => {
+    if (b.jahr !== selectedYear) return false;
     if (filter !== 'Alle' && b.zahlungsstatus !== filter) return false;
     if (search) {
       const m = getMitglied(b.mitglied_id);
@@ -118,16 +119,20 @@ export default function Beitraege() {
     return true;
   });
 
+  const jahresBeitraege = beitraege.filter(b => b.jahr === selectedYear);
   const stats = {
-    total: beitraege.reduce((s, b) => s + (b.betrag || 0), 0),
-    bezahlt: beitraege.filter(b => b.zahlungsstatus === 'Bezahlt').reduce((s, b) => s + (b.betrag || 0), 0),
-    offen: beitraege.filter(b => b.zahlungsstatus === 'Offen').reduce((s, b) => s + (b.betrag || 0), 0),
-    ueberfaellig: beitraege.filter(b => b.zahlungsstatus === 'Überfällig').reduce((s, b) => s + (b.betrag || 0), 0),
+    total: jahresBeitraege.reduce((s, b) => s + (b.betrag || 0), 0),
+    bezahlt: jahresBeitraege.filter(b => b.zahlungsstatus === 'Bezahlt').reduce((s, b) => s + (b.betrag || 0), 0),
+    offen: jahresBeitraege.filter(b => b.zahlungsstatus === 'Offen').reduce((s, b) => s + (b.betrag || 0), 0),
+    ueberfaellig: jahresBeitraege.filter(b => b.zahlungsstatus === 'Überfällig').reduce((s, b) => s + (b.betrag || 0), 0),
   };
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="w-9 h-9 border-[3px] border-border border-t-primary rounded-full animate-spin" />
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-9 h-9 border-[3px] border-border border-t-primary rounded-full animate-spin" />
+        <p className="text-xs text-muted-foreground">Beiträge werden geladen…</p>
+      </div>
     </div>
   );
 
@@ -135,8 +140,8 @@ export default function Beitraege() {
     <div className="px-4 lg:px-6 py-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Beiträge</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{beitraege.length} Einträge</p>
+          <h1 className="text-2xl font-oswald font-semibold text-foreground tracking-wide">Beiträge</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{beitraege.filter(b => b.jahr === selectedYear).length} Einträge · {selectedYear}</p>
         </div>
         {isAdminUser && activeTab === 'jahresbeitraege' && (
           <button
@@ -150,16 +155,16 @@ export default function Beitraege() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-secondary rounded-xl p-1 mb-5">
+      <div className="flex gap-1.5 mb-5">
         <button
           onClick={() => setActiveTab('jahresbeitraege')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'jahresbeitraege' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'jahresbeitraege' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
         >
           <CreditCard size={14} /> Jahresbeiträge
         </button>
         <button
           onClick={() => setActiveTab('buskosten')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'buskosten' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'buskosten' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
         >
           <Bus size={14} /> Buskosten
         </button>
@@ -175,20 +180,20 @@ export default function Beitraege() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <div className="bg-card border border-border rounded-xl p-4">
-          <p className="text-xs text-muted-foreground">Gesamt</p>
-          <p className="text-xl font-bold text-foreground mt-1">{stats.total.toFixed(0)} €</p>
+          <p className="text-xs text-muted-foreground">Gesamt {selectedYear}</p>
+          <p className="text-xl font-oswald font-semibold text-foreground mt-1">{stats.total.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
         </div>
         <div className="bg-card border border-green-500/20 rounded-xl p-4">
           <p className="text-xs text-muted-foreground">Bezahlt</p>
-          <p className="text-xl font-bold text-green-400 mt-1">{stats.bezahlt.toFixed(0)} €</p>
+          <p className="text-xl font-oswald font-semibold text-green-400 mt-1">{stats.bezahlt.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
         </div>
         <div className="bg-card border border-yellow-500/20 rounded-xl p-4">
           <p className="text-xs text-muted-foreground">Offen</p>
-          <p className="text-xl font-bold text-yellow-400 mt-1">{stats.offen.toFixed(0)} €</p>
+          <p className="text-xl font-oswald font-semibold text-yellow-400 mt-1">{stats.offen.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
         </div>
         <div className="bg-card border border-red-500/20 rounded-xl p-4">
           <p className="text-xs text-muted-foreground">Überfällig</p>
-          <p className="text-xl font-bold text-red-400 mt-1">{stats.ueberfaellig.toFixed(0)} €</p>
+          <p className="text-xl font-oswald font-semibold text-red-400 mt-1">{stats.ueberfaellig.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
         </div>
       </div>
 
@@ -207,7 +212,7 @@ export default function Beitraege() {
           <button
             onClick={handleJahresbeitraegeErstellen}
             disabled={creating}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
             <Plus size={14} /> {creating ? 'Erstelle...' : `Jahresbeiträge ${selectedYear} erstellen`}
           </button>
@@ -226,18 +231,31 @@ export default function Beitraege() {
         />
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
-        {['Alle', 'Offen', 'Bezahlt', 'Überfällig', 'Erlassen'].map(f => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-              filter === f ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground'
-            }`}
-          >
-            {f}
-          </button>
-        ))}
+      <div className="flex gap-2 overflow-x-auto pb-1 mb-4 scrollbar-hide">
+        {(() => {
+          const jahresB = beitraege.filter(b => b.jahr === selectedYear);
+          const fc = {
+            'Alle':        jahresB.length,
+            'Offen':       jahresB.filter(b => b.zahlungsstatus === 'Offen').length,
+            'Bezahlt':     jahresB.filter(b => b.zahlungsstatus === 'Bezahlt').length,
+            'Überfällig': jahresB.filter(b => b.zahlungsstatus === 'Überfällig').length,
+            'Erlassen':    jahresB.filter(b => b.zahlungsstatus === 'Erlassen').length,
+          };
+          return ['Alle', 'Offen', 'Bezahlt', 'Überfällig', 'Erlassen'].map(f => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                filter === f ? 'bg-primary text-white' : 'bg-card border border-border text-muted-foreground hover:border-primary/50'
+              }`}
+            >
+              {f}
+              <span className={`text-[10px] font-bold px-1 rounded-full ${filter === f ? 'bg-white/20' : 'bg-secondary'}`}>
+                {fc[f] ?? 0}
+              </span>
+            </button>
+          ));
+        })()}
       </div>
 
       {/* Tabelle */}
@@ -301,9 +319,22 @@ export default function Beitraege() {
       )}
 
       {filteredBeitraege.length === 0 && (
-        <div className="text-center py-8">
-          <CreditCard size={32} className="text-muted-foreground mx-auto mb-2" />
-          <p className="text-muted-foreground text-sm">Keine Beiträge gefunden</p>
+        <div className="text-center py-12">
+          <CreditCard size={36} className="text-muted-foreground/40 mx-auto mb-3" />
+          <p className="text-foreground font-medium">Keine Beiträge für {selectedYear}</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {filter !== 'Alle' ? `Keine Einträge mit Status „${filter}"` : `Noch keine Jahresbeiträge für ${selectedYear} erstellt`}
+          </p>
+          {filter !== 'Alle' && (
+            <button onClick={() => setFilter('Alle')} className="mt-3 text-xs text-primary hover:underline">
+              Filter zurücksetzen
+            </button>
+          )}
+          {filter === 'Alle' && isAdminUser && (
+            <button onClick={handleJahresbeitraegeErstellen} disabled={creating} className="mt-3 text-xs text-primary hover:underline">
+              Jetzt erstellen
+            </button>
+          )}
         </div>
       )}
 
