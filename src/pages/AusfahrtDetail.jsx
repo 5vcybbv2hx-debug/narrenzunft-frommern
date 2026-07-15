@@ -240,31 +240,39 @@ export default function AusfahrtDetail() {
     }
   };
 
+  const handleBegleitpersonCheckIn = async (parentId, begleitIndex) => {
+    try {
+      const parent = anmeldungen.find(a => a.id === parentId);
+      if (!parent || !parent.begleitpersonen) return;
+      const updatedBp = [...parent.begleitpersonen];
+      if (!updatedBp[begleitIndex]) return;
+      updatedBp[begleitIndex] = {
+        ...updatedBp[begleitIndex],
+        eingecheckt: !updatedBp[begleitIndex].eingecheckt,
+        eingecheckt_am: new Date().toISOString(),
+        eingecheckt_von: user?.full_name || user?.email || 'Admin'
+      };
+      await base44.entities.AusfahrtAnmeldung.update(parentId, {
+        begleitpersonen: updatedBp
+      });
+      fetchData();
+    } catch (err) {
+      console.error('Error during Begleitperson check-in:', err);
+      alert('Check-in fehlgeschlagen.');
+    }
+  };
+
   const handleExportCSV = () => {
-    const activeAnmeldungen = anmeldungen.filter(a => a.status !== 'Abgemeldet');
-    
     let csvContent = 'data:text/csv;charset=utf-8,';
-    csvContent += 'Name,Typ,Transport,Status,Begleitpersonen Anzahl,Begleitpersonen Details,Angemeldet Am\n';
+    csvContent += 'Name,Typ,Transport,Status,Angemeldet Am\n';
 
-    activeAnmeldungen.forEach(a => {
-      let displayName = '';
-      if (a.is_fremdangemeldet) {
-        displayName = a.fremdname || 'Fremdperson';
-      } else {
-        const mitglied = mitglieder.find(m => m.id === a.mitglied_id);
-        displayName = mitglied ? `${mitglied.vorname || ''} ${mitglied.nachname || ''}`.trim() : 'Unbekannt';
-      }
-
-      const typeLabel = a.is_fremdangemeldet ? 'Fremdanmeldung' : 'Mitglied';
-      const transport = a.transport || 'Bus';
-      const status = a.status || 'Angemeldet';
-      const count = a.anzahl_begleitpersonen || 0;
-      
-      const bpDetails = a.begleitpersonen && Array.isArray(a.begleitpersonen)
-        ? a.begleitpersonen.map(p => `${p.name} (${p.alter || '?'})`).join('; ')
-        : '';
-
-      const line = `"${displayName.replace(/"/g, '""')}","${typeLabel}","${transport}","${status}",${count},"${bpDetails.replace(/"/g, '""')}","${a.angemeldet_am || ''}"`;
+    sortedRegistrations.forEach(entry => {
+      const typeLabel = entry.isFremd ? 'Extern' : entry.isBegleitperson ? 'Begleitung' : 'Mitglied';
+      const transport = entry.transport || 'Bus';
+      const status = entry.status || 'Angemeldet';
+      const parent = anmeldungen.find(a => a.id === entry.parentId);
+      const angemeldetAm = parent?.angemeldet_am || '';
+      const line = `"${entry.name.replace(/"/g, '""')}","${typeLabel}","${transport}","${status}","${angemeldetAm}"`;
       csvContent += line + '\n';
     });
 
@@ -352,12 +360,51 @@ export default function AusfahrtDetail() {
     return mitglied ? `${mitglied.vorname || ''} ${mitglied.nachname || ''}`.trim() : 'Unbekanntes Mitglied';
   };
 
-  // Sort registrations for admin view (members + non-members sorted alphabetically by name)
-  const sortedRegistrations = [...activeRegistrations].sort((a, b) => {
-    const nameA = a.is_fremdangemeldet ? (a.fremdname || '') : getMitgliedName(a.mitglied_id);
-    const nameB = b.is_fremdangemeldet ? (b.fremdname || '') : getMitgliedName(b.mitglied_id);
-    return nameA.localeCompare(nameB, 'de');
+  // Flatten registrations: Hauptmitglied + jede Begleitperson als eigener Eintrag
+  const flatRegistrations = [];
+  activeRegistrations.forEach(reg => {
+    const mainName = reg.is_fremdangemeldet
+      ? (reg.fremdname || 'Fremder Name')
+      : getMitgliedName(reg.mitglied_id);
+    // Hauptperson
+    flatRegistrations.push({
+      id: reg.id,
+      parentId: reg.id,
+      name: mainName,
+      isFremd: reg.is_fremdangemeldet,
+      isBegleitperson: false,
+      begleitIndex: -1,
+      transport: reg.transport,
+      status: reg.status,
+      durchAdmin: reg.durch_admin_angemeldet,
+      durchAdminName: reg.durch_admin_name,
+      beziehung: null
+    });
+    // Begleitpersonen als eigene Einträge
+    if (reg.begleitpersonen && Array.isArray(reg.begleitpersonen)) {
+      reg.begleitpersonen.forEach((bp, idx) => {
+        flatRegistrations.push({
+          id: `${reg.id}_bp_${idx}`,
+          parentId: reg.id,
+          name: bp.name || 'Unbekannt',
+          isFremd: reg.is_fremdangemeldet,
+          isBegleitperson: true,
+          begleitIndex: idx,
+          transport: reg.transport,
+          status: bp.eingecheckt ? 'Eingecheckt' : reg.status,
+          durchAdmin: reg.durch_admin_angemeldet,
+          durchAdminName: reg.durch_admin_name,
+          beziehung: bp.beziehung || null,
+          alter: bp.alter || null
+        });
+      });
+    }
   });
+
+  // Sort by name
+  const sortedRegistrations = flatRegistrations.sort((a, b) =>
+    a.name.localeCompare(b.name, 'de')
+  );
 
   const isDeregisterAvailable = myRegistration && (
     ausfahrt.datum ? differenceInDays(parseISO(ausfahrt.datum), new Date()) >= 3 : false
@@ -780,26 +827,30 @@ export default function AusfahrtDetail() {
                       </td>
                     </tr>
                   ) : (
-                    sortedRegistrations.map((registration) => {
-                      const isFremd = registration.is_fremdangemeldet;
-                      const displayName = isFremd 
-                        ? (registration.fremdname || 'Fremder Name')
-                        : getMitgliedName(registration.mitglied_id);
-
+                    sortedRegistrations.map((entry) => {
                       return (
-                        <tr key={registration.id} className="hover:bg-neutral-900/30 transition-colors">
+                        <tr key={entry.id} className="hover:bg-neutral-900/30 transition-colors">
                           <td className="py-3.5 px-4 font-medium text-white">
-                            {displayName}
-                            {registration.durch_admin_angemeldet && (
+                            {entry.name}
+                            {entry.isBegleitperson && entry.beziehung && (
+                              <span className="ml-2 text-xs text-gray-500 font-normal">
+                                ({entry.beziehung}{entry.alter ? `, ${entry.alter} J.` : ''})
+                              </span>
+                            )}
+                            {entry.durchAdmin && (
                               <span className="block text-[10px] text-gray-500 font-normal mt-0.5">
-                                Hinzugefügt von: {registration.durch_admin_name || 'Admin'}
+                                Hinzugefügt von: {entry.durchAdminName || 'Admin'}
                               </span>
                             )}
                           </td>
                           <td className="py-3.5 px-4 text-xs">
-                            {isFremd ? (
+                            {entry.isFremd ? (
                               <span className="bg-yellow-950/40 text-yellow-500 border border-yellow-800/30 px-2 py-0.5 rounded-full font-medium">
                                 Extern
+                              </span>
+                            ) : entry.isBegleitperson ? (
+                              <span className="bg-purple-950/40 text-purple-400 border border-purple-800/30 px-2 py-0.5 rounded-full font-medium">
+                                Begleitung
                               </span>
                             ) : (
                               <span className="bg-blue-950/40 text-blue-400 border border-blue-800/30 px-2 py-0.5 rounded-full font-medium">
@@ -808,22 +859,13 @@ export default function AusfahrtDetail() {
                             )}
                           </td>
                           <td className="py-3.5 px-4 text-xs font-medium">
-                            {registration.transport === 'Bus' ? '🚌 Bus' : '🚗 Privat'}
+                            {entry.transport === 'Bus' ? '🚌 Bus' : '🚗 Privat'}
                           </td>
-                          <td className="py-3.5 px-4">
-                            {registration.anzahl_begleitpersonen > 0 ? (
-                              <div>
-                                <span className="font-semibold text-white">+{registration.anzahl_begleitpersonen}</span>
-                                <span className="text-gray-400 text-xs ml-1.5">
-                                  ({registration.begleitpersonen?.map(p => p.name).join(', ')})
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-gray-500">-</span>
-                            )}
+                          <td className="py-3.5 px-4 text-gray-500 text-xs">
+                            {entry.isBegleitperson ? '-' : '-'}
                           </td>
                           <td className="py-3.5 px-4 text-xs">
-                            {registration.status === 'Eingecheckt' ? (
+                            {entry.status === 'Eingecheckt' ? (
                               <span className="bg-green-950/40 text-green-400 border border-green-800/30 px-2.5 py-1 rounded-full font-semibold flex items-center w-fit gap-1">
                                 <CheckCircle2 className="w-3.5 h-3.5" /> Eingecheckt
                               </span>
@@ -834,16 +876,21 @@ export default function AusfahrtDetail() {
                             )}
                           </td>
                           <td className="py-3.5 px-4 text-right">
-                            {registration.status === 'Eingecheckt' ? (
+                            {entry.status === 'Eingecheckt' ? (
                               <button
-                                disabled
-                                className="bg-neutral-800 text-gray-500 border border-border cursor-not-allowed font-semibold px-3 py-1.5 rounded-lg text-xs"
+                                onClick={() => entry.isBegleitperson
+                                  ? handleBegleitpersonCheckIn(entry.parentId, entry.begleitIndex)
+                                  : null}
+                                disabled={!entry.isBegleitperson}
+                                className={`${entry.isBegleitperson ? 'bg-transparent hover:bg-neutral-900 text-yellow-500 border border-yellow-500/40' : 'bg-neutral-800 text-gray-500 border border-border cursor-not-allowed'} font-semibold px-3 py-1.5 rounded-lg text-xs transition-colors`}
                               >
-                                ✓ Eingecheckt
+                                {entry.isBegleitperson ? 'Auschecken' : '✓ Eingecheckt'}
                               </button>
                             ) : (
                               <button
-                                onClick={() => handleCheckIn(registration)}
+                                onClick={() => entry.isBegleitperson
+                                  ? handleBegleitpersonCheckIn(entry.parentId, entry.begleitIndex)
+                                  : handleCheckIn({ id: entry.parentId })}
                                 className="bg-primary hover:bg-red-700 text-white font-semibold px-3 py-1.5 rounded-lg text-xs transition-colors"
                               >
                                 Einchecken
