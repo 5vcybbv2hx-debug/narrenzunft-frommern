@@ -162,6 +162,13 @@
     "antrag_pdf_name": {
       "type": "string",
       "description": "Dateiname des hochgeladenen Antrags"
+    },
+    "haes_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs aller H\u00e4s, die diesem Mitglied aktuell zugeordnet sind (R\u00fcckverweis zu Haes.aktueller_besitzer_id)"
     }
   },
   "required": [
