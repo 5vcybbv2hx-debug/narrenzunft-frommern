@@ -6,7 +6,7 @@
       "type": "string",
       "description": "ID des bestellenden Mitglieds"
     },
-    "besteller_name": {
+    "mitglied_name": {
       "type": "string",
       "description": "Name des Bestellers (denormalisiert)"
     },
@@ -18,24 +18,33 @@
           "artikel_id": {
             "type": "string"
           },
-          "name": {
+          "artikel_name": {
             "type": "string"
           },
-          "preis": {
+          "einzelpreis": {
             "type": "number"
           },
           "menge": {
             "type": "number"
           },
-          "sparte_id": {
+          "groesse": {
             "type": "string"
+          },
+          "sparte": {
+            "type": "string",
+            "description": "Sparte-Name (denormalisiert)"
+          },
+          "fremdname": {
+            "type": "string",
+            "description": "Name der Person, f\u00fcr die bestellt wurde (leer = Eigenbedarf)"
           },
           "fuer_mitglied_id": {
             "type": "string",
             "description": "Falls f\u00fcr Familienmitglied bestellt"
           },
-          "fuer_name": {
-            "type": "string"
+          "typ": {
+            "type": "string",
+            "description": "Kategorie des Artikels"
           }
         }
       },
@@ -62,6 +71,15 @@
         "Storniert"
       ],
       "default": "Offen"
+    },
+    "saison": {
+      "type": "string",
+      "description": "Saison/Jahr der Bestellung"
+    },
+    "frist_datum": {
+      "type": "string",
+      "format": "date",
+      "description": "Frist der Sammelbestellung"
     },
     "datum": {
       "type": "string",
