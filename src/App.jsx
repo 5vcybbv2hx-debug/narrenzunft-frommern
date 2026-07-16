@@ -29,6 +29,10 @@ import Profil from './pages/Profil';
 import Benachrichtigungen from './pages/Benachrichtigungen';
 import Suche from './pages/Suche';
 import Mehr from './pages/Mehr';
+import HubPage from './components/HubPage';
+import Aktivitaeten from './pages/Aktivitaeten';
+import VerwaltungHub from './pages/VerwaltungHub';
+import MehrHub from './pages/MehrHub';
 import VorstandDashboard from './pages/VorstandDashboard';
 import Datenqualitaet from './pages/Datenqualitaet';
 import Kalender from './pages/Kalender';
@@ -113,7 +117,9 @@ const AuthenticatedApp = () => {
         <Route path="/profil" element={<Profil />} />
         <Route path="/benachrichtigungen" element={<Benachrichtigungen />} />
         <Route path="/suche" element={<Suche />} />
-        <Route path="/mehr" element={<Mehr />} />
+        <Route path="/aktivitaeten" element={<Aktivitaeten />} />
+        <Route path="/verwaltung" element={<Guard roles={ROLLEN_FUEHRUNG}><VerwaltungHub /></Guard>} />
+        <Route path="/mehr" element={<MehrHub />} />
         <Route path="/nachrichten" element={<Nachrichten />} />
 
         {/* ── Mitglieder: Detail frei (Seite prüft selbst), Liste nur für Führung ── */}

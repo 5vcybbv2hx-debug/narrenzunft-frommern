@@ -3,81 +3,28 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, isDeveloper, getRollenLabel } from '@/lib/roles';
 import {
-  LayoutDashboard, Users, Shirt, Calendar, Briefcase,
-  Award, CreditCard, Bell, Menu, X, ChevronRight,
-  LogOut, User, MoreHorizontal, Shield, ClipboardList,
-  AlertTriangle, Lock, CheckSquare, Package, Bus, FileText, ShoppingBag
+  LayoutDashboard, Users, Briefcase, MoreHorizontal,
+  Bell, Menu, X, ChevronRight,
+  LogOut, User, Calendar, Shield,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import SecureSearch from './SecureSearch';
 
-const sidebarGroups = [
-  {
-    title: 'Übersicht',
-    items: [
-      { path: '/', label: 'Dashboard', icon: LayoutDashboard, roles: null },
-      { path: '/kalender', label: 'Veranstaltungen', icon: Calendar, roles: null },
-      { path: '/ausfahrten', label: 'Ausfahrten', icon: Bus, roles: null },
-      { path: '/shop', label: 'Shop', icon: ShoppingBag, roles: null },
-      { path: '/arbeitsdienste', label: 'Arbeitsdienste', icon: Briefcase, roles: null },
-      { path: '/haes', label: 'Häs', icon: Shirt, roles: null },
-      { path: '/sparten', label: 'Sparten & Gruppen', icon: Users, roles: null },
-    ]
-  },
-  {
-    title: 'Verwaltung',
-    items: [
-      { path: '/vorstand', label: 'Führungs-Dashboard', icon: ClipboardList, roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'] },
-      { path: '/mitglieder', label: 'Mitglieder', icon: Users, roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter', 'admin'] },
-      { path: '/ehrungen', label: 'Ehrungen', icon: Award, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
-      { path: '/beitraege', label: 'Beiträge', icon: CreditCard, roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'] },
-      { path: '/shop/verwaltung', label: 'Shop-Verwaltung', icon: ShoppingBag, roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'] },
-      { path: '/vereine', label: 'Vereine & Zünfte', icon: Users, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
-    ]
-  },
-  {
-    title: 'Organisation',
-    items: [
-      { path: '/ausschuss', label: 'Ausschussbereich', icon: Lock, roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'] },
-      { path: '/todos', label: 'Aufgaben', icon: CheckSquare, roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'] },
-      { path: '/inventar', label: 'Inventar & Verleih', icon: Package, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
-    ]
-  },
-  {
-    title: 'System',
-    items: [
-      { path: '/datenqualitaet', label: 'Datenqualität', icon: AlertTriangle, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
-      { path: '/berechtigungen', label: 'Berechtigungen', icon: Shield, roles: ['admin', 'vorstand', 'stellv_vorstand'] },
-      { path: '/mitgliedsantraege', label: 'Mitgliedsanträge', icon: FileText, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
-    ]
-  },
-  {
-    title: 'Familie',
-    items: [
-      { path: '/familie', label: 'Familie', icon: Users, roles: ['elternkonto'] },
-    ]
-  },
+// Hauptnavigation — nur noch 5 Oberpunkte
+const NAV_ITEMS = [
+  { path: '/',            label: 'Start',       icon: LayoutDashboard, hub: false, roles: null },
+  { path: '/aktivitaeten', label: 'Aktivitäten', icon: Calendar,      hub: true,  roles: null },
+  { path: '/verwaltung',  label: 'Verwaltung',  icon: Briefcase,       hub: true,  roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter', 'admin'] },
+  { path: '/mehr',        label: 'Mehr',        icon: MoreHorizontal,  hub: true,  roles: null },
+  { path: '/profil',      label: 'Profil',      icon: User,            hub: false, roles: null },
 ];
 
-const bottomNavItems = [
-  { path: '/', label: 'Start', icon: LayoutDashboard },
-  { path: '/kalender', label: 'Termine', icon: Calendar },
-  { path: '/ausfahrten', label: 'Ausfahrten', icon: Bus },
-  { path: '/arbeitsdienste', label: 'Dienste', icon: Briefcase },
-  { path: '/profil', label: 'Profil', icon: User },
-  { path: '/mehr', label: 'Mehr', icon: MoreHorizontal },
-];
+const TAB_ROOTS = ['/', '/aktivitaeten', '/verwaltung', '/mehr', '/profil'];
 
-const TAB_ROOTS = ['/', '/kalender', '/arbeitsdienste', '/profil', '/mehr'];
-
-function canSee(item, user) {
+function canSeeNav(item, user) {
   if (!item.roles) return true;
   if (isDeveloper(user)) return true;
   if (item.roles.includes(user?.role)) return true;
-  const zusatz = user?._mitglied?.zusatz_berechtigungen || [];
-  if (item.path === '/inventar' && zusatz.includes('inventar')) return true;
-  if (item.path === '/ausschuss' && zusatz.includes('ausschuss')) return true;
-  if (item.path === '/todos' && zusatz.includes('todos')) return true;
   return false;
 }
 
@@ -93,9 +40,18 @@ export default function Layout() {
     Object.fromEntries(TAB_ROOTS.map(r => [r, r]))
   );
 
-  const currentTabRoot = TAB_ROOTS.find(root =>
-    root === '/' ? location.pathname === '/' : location.pathname.startsWith(root)
-  );
+  const currentTabRoot = TAB_ROOTS.find(root => {
+    if (root === '/') return location.pathname === '/';
+    // Ein Hub-Pfad matched auch seine Unterseiten
+    if (root === '/aktivitaeten') return location.pathname === '/aktivitaeten' ||
+      ['/kalender', '/veranstaltungen', '/ausfahrten', '/sparten', '/sparte/', '/haes', '/shop', '/arbeitsdienste'].some(p => location.pathname.startsWith(p));
+    if (root === '/verwaltung') return location.pathname === '/verwaltung' ||
+      ['/vorstand', '/mitglieder', '/beitraege', '/ehrungen', '/vereine'].some(p => location.pathname.startsWith(p));
+    if (root === '/mehr') return location.pathname === '/mehr' ||
+      ['/ausschuss', '/todos', '/inventar', '/datenqualitaet', '/berechtigungen', '/mitgliedsantraege', '/familie', '/benachrichtigungen', '/nachrichten', '/suche'].some(p => location.pathname.startsWith(p));
+    if (root === '/profil') return location.pathname.startsWith('/profil');
+    return false;
+  });
   if (currentTabRoot && tabHistory[currentTabRoot] !== location.pathname + location.search) {
     setTabHistory(prev => ({ ...prev, [currentTabRoot]: location.pathname + location.search }));
   }
@@ -122,19 +78,28 @@ export default function Layout() {
 
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/';
+    if (path === '/aktivitaeten')
+      return ['/kalender', '/veranstaltungen', '/ausfahrten', '/sparten', '/sparte/', '/haes', '/shop', '/arbeitsdienste', '/aktivitaeten'].some(p => location.pathname.startsWith(p));
+    if (path === '/verwaltung')
+      return ['/vorstand', '/mitglieder', '/beitraege', '/ehrungen', '/vereine', '/verwaltung'].some(p => location.pathname.startsWith(p));
+    if (path === '/mehr')
+      return ['/ausschuss', '/todos', '/inventar', '/datenqualitaet', '/berechtigungen', '/mitgliedsantraege', '/familie', '/benachrichtigungen', '/nachrichten', '/suche', '/mehr'].some(p => location.pathname.startsWith(p));
+    if (path === '/profil')
+      return location.pathname.startsWith('/profil');
     return location.pathname.startsWith(path);
   };
+
+  const visibleNav = NAV_ITEMS.filter(item => canSeeNav(item, user));
 
   return (
     <div className="min-h-screen bg-background flex">
 
       {/* ── Desktop Sidebar ── */}
-      <aside className="hidden lg:flex flex-col w-64 fixed h-full z-30"
+      <aside className="hidden lg:flex flex-col w-56 fixed h-full z-30"
              style={{ background: 'hsl(var(--sidebar-background))' }}>
 
-        {/* Logo-Bereich – roter Akzentbalken */}
+        {/* Logo-Bereich */}
         <div className="relative px-5 py-5 border-b border-sidebar-border overflow-hidden">
-          {/* roter Streifen links */}
           <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
           <div className="flex items-center gap-3 pl-2">
             <div className="w-11 h-11 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-primary/30 shrink-0">
@@ -149,38 +114,25 @@ export default function Layout() {
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 py-3 px-2 overflow-y-auto space-y-1">
-          {sidebarGroups.map(group => {
-            const visibleItems = group.items.filter(item => canSee(item, user));
-            if (visibleItems.length === 0) return null;
+        {/* Navigation — nur 5 Hauptpunkte */}
+        <nav className="flex-1 py-4 px-2 space-y-1">
+          {visibleNav.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.path);
             return (
-              <div key={group.title} className="mb-3">
-                <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider px-3 mb-1">
-                  {group.title}
-                </p>
-                <div className="space-y-0.5">
-                  {visibleItems.map((item) => {
-                    const Icon = item.icon;
-                    const active = isActive(item.path);
-                    return (
-                      <Link
-                        key={item.path}
-                        to={item.path}
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-150 group ${
-                          active
-                            ? 'bg-primary text-white font-semibold shadow-sm shadow-primary/20'
-                            : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-                        }`}
-                      >
-                        <Icon size={17} className="shrink-0" strokeWidth={active ? 2.2 : 1.8} />
-                        <span className="text-sm truncate">{item.label}</span>
-                        {active && <ChevronRight size={13} className="ml-auto opacity-70" />}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center gap-3 px-3 py-3 rounded-md transition-all duration-150 group ${
+                  active
+                    ? 'bg-primary text-white font-semibold shadow-sm shadow-primary/20'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                }`}
+              >
+                <Icon size={18} className="shrink-0" strokeWidth={active ? 2.2 : 1.8} />
+                <span className="text-sm truncate">{item.label}</span>
+                {item.hub && <ChevronRight size={12} className={`ml-auto opacity-50 ${active ? 'opacity-90' : ''}`} />}
+              </Link>
             );
           })}
         </nav>
@@ -206,13 +158,12 @@ export default function Layout() {
         </div>
       </aside>
 
-      {/* ── Mobile Sidebar Overlay ── */}
+      {/* ── Mobile Sidebar Overlay (nur noch für Suche + Abmelden) ── */}
       {sidebarOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
           <aside className="relative flex flex-col w-72 h-full z-50 shadow-2xl"
                  style={{ background: 'hsl(var(--sidebar-background))' }}>
-
             <div className="relative flex items-center justify-between px-4 py-4 border-b border-sidebar-border overflow-hidden">
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
               <div className="flex items-center gap-3 pl-2">
@@ -230,37 +181,31 @@ export default function Layout() {
               </button>
             </div>
 
-            <nav className="flex-1 py-3 px-2 overflow-y-auto space-y-1">
-              {sidebarGroups.map(group => {
-                const visibleItems = group.items.filter(item => canSee(item, user));
-                if (visibleItems.length === 0) return null;
+            {/* Suche im Overlay */}
+            <div className="px-3 py-3">
+              <SecureSearch />
+            </div>
+
+            {/* Gleiche 5 Nav-Items wie Desktop */}
+            <nav className="flex-1 py-2 px-2 space-y-1 overflow-y-auto">
+              {visibleNav.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.path);
                 return (
-                  <div key={group.title} className="mb-3">
-                    <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider px-3 mb-1">
-                      {group.title}
-                    </p>
-                    <div className="space-y-0.5">
-                      {visibleItems.map((item) => {
-                        const Icon = item.icon;
-                        const active = isActive(item.path);
-                        return (
-                          <Link
-                            key={item.path}
-                            to={item.path}
-                            onClick={() => setSidebarOpen(false)}
-                            className={`flex items-center gap-3 px-3 py-3 rounded-md transition-all ${
-                              active
-                                ? 'bg-primary text-white font-semibold'
-                                : 'text-sidebar-foreground hover:bg-sidebar-accent'
-                            }`}
-                          >
-                            <Icon size={18} strokeWidth={active ? 2.2 : 1.8} />
-                            <span className="font-medium">{item.label}</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-3 rounded-md transition-all ${
+                      active
+                        ? 'bg-primary text-white font-semibold'
+                        : 'text-sidebar-foreground hover:bg-sidebar-accent'
+                    }`}
+                  >
+                    <Icon size={18} strokeWidth={active ? 2.2 : 1.8} />
+                    <span className="font-medium">{item.label}</span>
+                    {item.hub && <ChevronRight size={12} className="ml-auto opacity-50" />}
+                  </Link>
                 );
               })}
             </nav>
@@ -279,7 +224,7 @@ export default function Layout() {
       )}
 
       {/* ── Main Content ── */}
-      <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
+      <div className="flex-1 lg:ml-56 flex flex-col min-h-screen">
 
         {/* Top Bar */}
         <header className="sticky top-0 z-20 border-b border-border px-4 lg:px-6 py-3 flex items-center gap-3"
@@ -288,7 +233,6 @@ export default function Layout() {
                   backdropFilter: 'blur(12px)',
                   paddingTop: 'max(0.75rem, env(safe-area-inset-top))'
                 }}>
-          {/* roter Strich unten am Header */}
           <div className="absolute bottom-0 left-0 right-0 h-px bg-primary/30" />
 
           <button
@@ -309,7 +253,7 @@ export default function Layout() {
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 ml-auto">
             <Link to="/benachrichtigungen"
               className="relative p-2 rounded-md text-muted-foreground hover:bg-neutral-800 hover:text-white transition-colors">
               <Bell size={18} />
@@ -329,27 +273,26 @@ export default function Layout() {
           <Outlet />
         </main>
 
-        {/* ── Bottom Navigation (Mobile) ── */}
+        {/* ── Bottom Navigation (Mobile) — gleiche 5 Punkte wie Desktop ── */}
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-20 border-t border-border pb-safe"
              style={{ background: 'hsl(var(--sidebar-background))' }}>
-          {/* roter Akzentstreifen oben */}
           <div className="absolute top-0 left-0 right-0 h-px bg-primary/50" />
           <div className="flex items-center justify-around px-1 py-1">
-            {bottomNavItems.map((item) => {
+            {visibleNav.map((item) => {
               const Icon = item.icon;
-              const active = item.path === '/mehr' ? isActive('/mehr') : isActive(item.path);
+              const active = isActive(item.path);
               const destination = tabHistory[item.path] || item.path;
               return (
                 <button
                   key={item.path}
                   onClick={() => navigate(destination)}
-                  className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg transition-all min-w-[52px] ${
+                  className={`flex flex-col items-center gap-0.5 px-2 py-2 rounded-lg transition-all min-w-[48px] ${
                     active
                       ? 'text-primary'
                       : 'text-muted-foreground hover:text-white'
                   }`}
                 >
-                  <Icon size={21} strokeWidth={active ? 2.4 : 1.7} />
+                  <Icon size={20} strokeWidth={active ? 2.4 : 1.7} />
                   <span className={`text-[10px] font-medium leading-none mt-0.5 ${active ? 'text-primary' : ''}`}>
                     {item.label}
                   </span>
