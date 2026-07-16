@@ -33,11 +33,11 @@ export default function Shop() {
   const [mitglied, setMitglied] = useState(null);
   const [familienMitglieder, setFamilienMitglieder] = useState([]);
   const [meineBestellungen, setMeineBestellungen] = useState([]);
-  const [spartenMap, setSpartenMap] = useState({});
+  const [gruppenMap, setGruppenMap] = useState({}); // haesgruppe_id -> name
 
   const [activeTab, setActiveTab] = useState('shop');
   const [selectedKategorie, setSelectedKategorie] = useState('Alle');
-  const [selectedSparte, setSelectedSparte] = useState('Alle');
+  const [selectedGruppe, setSelectedGruppe] = useState('Alle');
   const [searchQuery, setSearchQuery] = useState('');
 
   const [warenkorb, setWarenkorb] = useState([]);
@@ -67,6 +67,12 @@ export default function Shop() {
       if (!myMitglied) throw new Error('Kein verknüpfter Mitgliedsdatensatz gefunden.');
       setMitglied(myMitglied);
 
+      // Haesgruppen laden (das SIND die Sparten)
+      const gruppen = await base44.entities.Haesgruppe.list('name', 200);
+      const gMap = {};
+      (gruppen || []).forEach((g) => { gMap[g.id] = g.name || g.bezeichnung || ''; });
+      setGruppenMap(gMap);
+
       const iSizes = {}, iQty = {}, iFuer = {};
       sorted.forEach((art) => {
         if (art.groessen && art.groessen.length > 0) iSizes[art.id] = art.groessen[0];
@@ -90,17 +96,6 @@ export default function Shop() {
           return dB - dA;
         })
       );
-
-      try {
-        const spartenData = await base44.entities.Sparte.filter({});
-        if (spartenData && spartenData.length > 0) {
-          const mapping = {};
-          spartenData.forEach((s) => { mapping[s.id] = s.name || s.bezeichnung; });
-          setSpartenMap(mapping);
-        }
-      } catch (err) {
-        console.warn('Sparte entity loading failed:', err);
-      }
     } catch (err) {
       console.error('Error loading shop data:', err);
       setError(err.message || 'Fehler beim Laden der Daten.');
@@ -111,9 +106,9 @@ export default function Shop() {
 
   useEffect(() => { loadData(); }, []);
 
-  const getSparteName = (sparteId) => {
-    if (!sparteId) return '';
-    return spartenMap[sparteId] || sparteId;
+  const getGruppenName = (gruppenId) => {
+    if (!gruppenId) return '';
+    return gruppenMap[gruppenId] || '';
   };
 
   const getMitgliedInfo = (id) => {
@@ -123,8 +118,8 @@ export default function Shop() {
         id: mitglied.id,
         name: `${mitglied.vorname} ${mitglied.nachname} (Ich selbst)`,
         rawName: `${mitglied.vorname} ${mitglied.nachname}`,
-        sparte_id: mitglied.sparte_id,
-        sparte_name: getSparteName(mitglied.sparte_id)
+        gruppen_id: mitglied.haesgruppe_id,
+        gruppen_name: getGruppenName(mitglied.haesgruppe_id)
       };
     }
     const found = familienMitglieder.find((m) => m.id === id);
@@ -133,29 +128,29 @@ export default function Shop() {
         id: found.id,
         name: `${found.vorname} ${found.nachname}`,
         rawName: `${found.vorname} ${found.nachname}`,
-        sparte_id: found.sparte_id,
-        sparte_name: getSparteName(found.sparte_id)
+        gruppen_id: found.haesgruppe_id,
+        gruppen_name: getGruppenName(found.haesgruppe_id)
       };
     }
     return null;
   };
 
-  const availableSparten = useMemo(() => {
+  const availableGruppen = useMemo(() => {
     const ids = new Set();
     artikel.forEach((art) => {
       if (art.sparten && Array.isArray(art.sparten)) art.sparten.forEach((sp) => ids.add(sp));
     });
-    if (mitglied?.sparte_id) ids.add(mitglied.sparte_id);
-    familienMitglieder.forEach((m) => { if (m.sparte_id) ids.add(m.sparte_id); });
-    return Array.from(ids).map((id) => ({ id, name: getSparteName(id) })).filter((s) => s.name);
-  }, [artikel, mitglied, familienMitglieder, spartenMap]);
+    if (mitglied?.haesgruppe_id) ids.add(mitglied.haesgruppe_id);
+    familienMitglieder.forEach((m) => { if (m.haesgruppe_id) ids.add(m.haesgruppe_id); });
+    return Array.from(ids).map((id) => ({ id, name: getGruppenName(id) })).filter((s) => s.name);
+  }, [artikel, mitglied, familienMitglieder, gruppenMap]);
 
   const filteredArtikel = useMemo(() => {
     return artikel.filter((art) => {
       if (selectedKategorie !== 'Alle' && art.kategorie !== selectedKategorie) return false;
-      if (selectedSparte !== 'Alle') {
+      if (selectedGruppe !== 'Alle') {
         const artSparten = art.sparten && Array.isArray(art.sparten) ? art.sparten : [];
-        if (artSparten.length > 0 && !artSparten.includes(selectedSparte)) return false;
+        if (artSparten.length > 0 && !artSparten.includes(selectedGruppe)) return false;
       }
       if (searchQuery.trim() !== '') {
         const q = searchQuery.toLowerCase();
@@ -164,11 +159,11 @@ export default function Shop() {
       const targetMitgliedId = fuerWenSelections[art.id] || mitglied?.id;
       const targetMitglied = getMitgliedInfo(targetMitgliedId);
       if (art.sparten && Array.isArray(art.sparten) && art.sparten.length > 0) {
-        if (!targetMitglied || !art.sparten.includes(targetMitglied.sparte_id)) return false;
+        if (!targetMitglied || !art.sparten.includes(targetMitglied.gruppen_id)) return false;
       }
       return true;
     });
-  }, [artikel, selectedKategorie, selectedSparte, searchQuery, fuerWenSelections, mitglied, familienMitglieder, spartenMap]);
+  }, [artikel, selectedKategorie, selectedGruppe, searchQuery, fuerWenSelections, mitglied, familienMitglieder, gruppenMap]);
 
   const totalCartAmount = useMemo(() => warenkorb.reduce((t, i) => t + (i.einzelpreis * i.menge), 0), [warenkorb]);
   const totalCartCount = useMemo(() => warenkorb.reduce((t, i) => t + i.menge, 0), [warenkorb]);
@@ -184,6 +179,10 @@ export default function Shop() {
     const recipientInfo = getMitgliedInfo(recipientId);
     if (!recipientInfo) { setError('Ausgewähltes Mitglied konnte nicht zugeordnet werden.'); return; }
 
+    // Sparte/Gruppe automatisch aus dem Empfänger ziehen — das ist der Design-Kennzeichner!
+    const gruppenId = recipientInfo.gruppen_id || '';
+    const gruppenName = recipientInfo.gruppen_name || '';
+
     const newItem = {
       artikel_id: art.id,
       artikel_name: art.name,
@@ -193,7 +192,9 @@ export default function Shop() {
       fremdname: recipientId === mitglied.id ? '' : recipientInfo.rawName,
       fuer_mitglied_id: recipientId === mitglied.id ? '' : recipientId,
       typ: art.kategorie || 'Allgemein',
-      sparte: recipientInfo.sparte_name || recipientInfo.sparte_id || '',
+      // Sparte als Design-Kennzeichner — wichtig für Sammelbestellung und Packliste
+      sparte: gruppenName,
+      sparte_id: gruppenId,
       mitglied_id: recipientId
     };
 
@@ -208,7 +209,8 @@ export default function Shop() {
       setWarenkorb([...warenkorb, newItem]);
     }
     setQuantities((prev) => ({ ...prev, [art.id]: 1 }));
-    setSuccessMessage(`"${art.name}" wurde in den Warenkorb gelegt.`);
+    const sparteText = gruppenName ? ` (${gruppenName})` : '';
+    setSuccessMessage(`"${art.name}"${sparteText} wurde in den Warenkorb gelegt.`);
     setTimeout(() => setSuccessMessage(null), 3000);
   };
 
@@ -231,13 +233,13 @@ export default function Shop() {
     warenkorb.forEach((item) => {
       const memberInfo = getMitgliedInfo(item.mitglied_id);
       const name = memberInfo ? memberInfo.name : 'Unbekannt';
-      const sparte = memberInfo ? memberInfo.sparte_name : '';
+      const sparte = memberInfo ? memberInfo.gruppen_name : '';
       const key = item.mitglied_id;
       if (!groups[key]) groups[key] = { name, sparte, items: [] };
       groups[key].items.push(item);
     });
     return Object.values(groups);
-  }, [warenkorb, mitglied, familienMitglieder, spartenMap]);
+  }, [warenkorb, mitglied, familienMitglieder, gruppenMap]);
 
   const handleCheckoutSubmit = async () => {
     if (warenkorb.length === 0) { setError('Dein Warenkorb ist leer.'); return; }
@@ -300,9 +302,7 @@ export default function Shop() {
     }
   };
 
-  const toggleOrderExpand = (orderId) => {
-    setExpandedOrders((prev) => ({ ...prev, [orderId]: !prev[orderId] }));
-  };
+  const toggleOrderExpand = (orderId) => setExpandedOrders((prev) => ({ ...prev, [orderId]: !prev[orderId] }));
 
   const getStatusBadgeClass = (status) => {
     switch (status) {
@@ -328,7 +328,6 @@ export default function Shop() {
 
   return (
     <div className="min-h-screen bg-[#080808] text-white font-sans pb-32">
-      {/* HEADER */}
       <div className="border-b border-border bg-[#080808] sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -341,10 +340,7 @@ export default function Shop() {
           {!showCheckout && !checkoutSuccess && (
             <div className="flex items-center gap-3">
               {warenkorb.length > 0 && (
-                <button
-                  onClick={() => setShowCheckout(true)}
-                  className="relative flex items-center gap-2 bg-neutral-900 border border-border px-3 py-1.5 rounded-xl hover:bg-neutral-800 transition"
-                >
+                <button onClick={() => setShowCheckout(true)} className="relative flex items-center gap-2 bg-neutral-900 border border-border px-3 py-1.5 rounded-xl hover:bg-neutral-800 transition">
                   <ShoppingCart className="w-5 h-5 text-primary" />
                   <span className="text-sm font-medium">{totalCartCount}</span>
                   <span className="text-xs text-neutral-400">{totalCartAmount.toFixed(2)} €</span>
@@ -365,10 +361,7 @@ export default function Shop() {
       <div className="max-w-7xl mx-auto px-4 mt-6">
         {error && (
           <div className="bg-red-950 border border-red-500/30 text-red-200 p-4 rounded-xl mb-6 flex items-start justify-between">
-            <div className="flex gap-3">
-              <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-              <div><p className="font-semibold text-sm">Fehler aufgetreten</p><p className="text-xs mt-1 text-red-300">{error}</p></div>
-            </div>
+            <div className="flex gap-3"><AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" /><div><p className="font-semibold text-sm">Fehler aufgetreten</p><p className="text-xs mt-1 text-red-300">{error}</p></div></div>
             <button onClick={() => setError(null)} className="text-red-400 hover:text-white"><X className="w-5 h-5" /></button>
           </div>
         )}
@@ -415,6 +408,7 @@ export default function Shop() {
                               <button onClick={() => updateCartItemQuantity(cartIdx, 1)} className="text-neutral-400 hover:text-white"><Plus className="w-3.5 h-3.5" /></button>
                               <span className="truncate">{item.artikel_name}</span>
                               <span className="text-xs bg-neutral-800 px-1.5 py-0.5 rounded text-neutral-300">{item.groesse}</span>
+                              {item.sparte && <span className="text-[10px] bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-primary">{item.sparte}</span>}
                               <button onClick={() => removeCartItem(cartIdx)} className="text-red-400 hover:text-red-300 ml-1"><Trash2 className="w-3.5 h-3.5" /></button>
                             </div>
                             <div className="font-semibold text-neutral-200">{(item.einzelpreis * item.menge).toFixed(2)} €</div>
@@ -444,7 +438,7 @@ export default function Shop() {
               </div>
               <div className="bg-neutral-900 border border-border p-3.5 rounded-xl flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
-                <p className="text-xs text-neutral-400 leading-normal">Die Bestellfrist für diese Sammelbestellung endet am <span className="text-neutral-200 font-semibold">15.09.2026</span>. Deine Bestellung ist verbindlich.</p>
+                <p className="text-xs text-neutral-400 leading-normal">Die Bestellfrist endet am <span className="text-neutral-200 font-semibold">15.09.2026</span>. Deine Bestellung ist verbindlich. Der Aufdruck/Stick wird automatisch nach deiner Sparte bestimmt.</p>
               </div>
               <div className="pt-4 border-t border-border flex items-center justify-between">
                 <div><p className="text-xs text-neutral-400 uppercase tracking-wider">Gesamtsumme</p><p className="text-3xl font-oswald uppercase tracking-wide text-primary">{totalCartAmount.toFixed(2)} €</p></div>
@@ -462,12 +456,12 @@ export default function Shop() {
                   <button key={kat} onClick={() => setSelectedKategorie(kat)} className={`px-3 py-1.5 rounded-lg text-xs font-medium uppercase tracking-wide transition-colors ${selectedKategorie === kat ? 'bg-primary text-white' : 'bg-neutral-900 border border-border hover:bg-neutral-800 text-neutral-400 hover:text-white'}`}>{kat}</button>
                 ))}
               </div>
-              {availableSparten.length > 0 && (
+              {availableGruppen.length > 0 && (
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-[10px] text-neutral-500 uppercase font-bold tracking-wide">Sparte:</span>
-                  <button onClick={() => setSelectedSparte('Alle')} className={`px-2.5 py-1 rounded text-[11px] font-medium border transition-all ${selectedSparte === 'Alle' ? 'bg-primary text-white border-primary' : 'bg-neutral-900 border-border text-neutral-400 hover:text-white'}`}>Alle</button>
-                  {availableSparten.map((sp) => (
-                    <button key={sp.id} onClick={() => setSelectedSparte(sp.id)} className={`px-2.5 py-1 rounded text-[11px] font-medium border transition-all ${selectedSparte === sp.id ? 'bg-primary text-white border-primary' : 'bg-neutral-900 border-border text-neutral-400 hover:text-white'}`}>{sp.name}</button>
+                  <span className="text-[10px] text-neutral-500 uppercase font-bold tracking-wide">Sparte/Design:</span>
+                  <button onClick={() => setSelectedGruppe('Alle')} className={`px-2.5 py-1 rounded text-[11px] font-medium border transition-all ${selectedGruppe === 'Alle' ? 'bg-primary text-white border-primary' : 'bg-neutral-900 border-border text-neutral-400 hover:text-white'}`}>Alle</button>
+                  {availableGruppen.map((sp) => (
+                    <button key={sp.id} onClick={() => setSelectedGruppe(sp.id)} className={`px-2.5 py-1 rounded text-[11px] font-medium border transition-all ${selectedGruppe === sp.id ? 'bg-primary text-white border-primary' : 'bg-neutral-900 border-border text-neutral-400 hover:text-white'}`}>{sp.name}</button>
                   ))}
                 </div>
               )}
@@ -490,6 +484,8 @@ export default function Shop() {
                   const qty = quantities[art.id] || 1;
                   const currentRecipient = fuerWenSelections[art.id] || mitglied?.id;
                   const inCartCount = warenkorb.filter((item) => item.artikel_id === art.id && item.mitglied_id === currentRecipient).reduce((total, item) => total + item.menge, 0);
+                  const recipientInfo = getMitgliedInfo(currentRecipient);
+                  const showSparteHint = recipientInfo && recipientInfo.gruppen_name;
                   return (
                     <div key={art.id} className="bg-card border border-border rounded-xl p-4 flex flex-col justify-between transition-all hover:border-primary/20">
                       <div>
@@ -502,7 +498,7 @@ export default function Shop() {
                         {art.sparten && art.sparten.length > 0 && (
                           <div className="mt-2.5 flex flex-wrap gap-1 items-center">
                             <span className="text-[9px] text-primary uppercase font-bold tracking-wide">Nur für Sparte:</span>
-                            {art.sparten.map((sp) => (<span key={sp} className="text-[9px] bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-primary">{getSparteName(sp)}</span>))}
+                            {art.sparten.map((sp) => (<span key={sp} className="text-[9px] bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-primary">{getGruppenName(sp)}</span>))}
                           </div>
                         )}
                         {art.groessen && art.groessen.length > 0 && (
@@ -518,9 +514,14 @@ export default function Shop() {
                         <div className="mt-4">
                           <label className="block text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-1.5">Für wen bestellen?</label>
                           <select value={currentRecipient} onChange={(e) => setFuerWenSelections((prev) => ({ ...prev, [art.id]: e.target.value }))} className="w-full bg-neutral-900 border border-border rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-primary/50">
-                            <option value={mitglied?.id}>Ich selbst{mitglied?.sparte_id ? ` (${getSparteName(mitglied.sparte_id) || ''})` : ''}</option>
-                            {familienMitglieder.map((fam) => (<option key={fam.id} value={fam.id}>{fam.vorname} {fam.nachname} ({getSparteName(fam.sparte_id) || 'Keine Sparte'})</option>))}
+                            <option value={mitglied?.id}>Ich selbst{mitglied?.haesgruppe_id ? ` (${getGruppenName(mitglied.haesgruppe_id) || ''})` : ''}</option>
+                            {familienMitglieder.map((fam) => (<option key={fam.id} value={fam.id}>{fam.vorname} {fam.nachname} ({getGruppenName(fam.haesgruppe_id) || 'Keine Sparte'})</option>))}
                           </select>
+                          {showSparteHint && (
+                            <p className="text-[10px] text-primary mt-1.5 flex items-center gap-1">
+                              <Shirt className="w-3 h-3" /> Design/Aufdruck: {recipientInfo.gruppen_name}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <div className="mt-5 pt-4 border-t border-border/60">
@@ -560,10 +561,7 @@ export default function Shop() {
                     <div key={ord.id} className="bg-card border border-border rounded-xl overflow-hidden">
                       <div onClick={() => toggleOrderExpand(ord.id)} className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer hover:bg-neutral-900/30 transition-colors">
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-sm">Bestellung vom {orderDate}</span>
-                            <span className="text-[10px] text-neutral-400 bg-neutral-900 px-2 py-0.5 rounded border border-border">Saison {ord.saison || '2026'}</span>
-                          </div>
+                          <div className="flex items-center gap-2"><span className="font-semibold text-sm">Bestellung vom {orderDate}</span><span className="text-[10px] text-neutral-400 bg-neutral-900 px-2 py-0.5 rounded border border-border">Saison {ord.saison || '2026'}</span></div>
                           <p className="text-xs text-neutral-400">{positionenCount} {positionenCount === 1 ? 'Artikel' : 'Artikel'} · Gesamtsumme: <span className="text-primary font-bold">{(ord.gesamtbetrag || 0).toFixed(2)} €</span></p>
                         </div>
                         <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
@@ -579,7 +577,7 @@ export default function Shop() {
                               <div key={posIdx} className="flex justify-between items-start text-xs border-b border-border/40 pb-2 last:border-0 last:pb-0">
                                 <div>
                                   <div className="flex items-center gap-2"><span className="font-semibold">{pos.menge}x {pos.artikel_name}</span><span className="bg-neutral-800 px-1.5 py-0.5 rounded text-[10px] text-neutral-300">{pos.groesse}</span></div>
-                                  <p className="text-neutral-400 text-[10px] mt-0.5">Für: {pos.fremdname || 'Eigenbedarf'}{pos.sparte ? ` · Sparte: ${pos.sparte}` : ''}{' · '}Einzelpreis: {(pos.einzelpreis || 0).toFixed(2)} €</p>
+                                  <p className="text-neutral-400 text-[10px] mt-0.5">Für: {pos.fremdname || 'Eigenbedarf'}{pos.sparte ? ` · Sparte/Design: ${pos.sparte}` : ''}{' · '}Einzelpreis: {(pos.einzelpreis || 0).toFixed(2)} €</p>
                                 </div>
                                 <div className="text-right"><p className="text-neutral-200 font-semibold">{((pos.einzelpreis || 0) * (pos.menge || 1)).toFixed(2)} €</p></div>
                               </div>
@@ -589,9 +587,7 @@ export default function Shop() {
                             <span className="text-neutral-400">Zahlungsart: <span className="text-white font-medium">{ord.zahlungsart || 'N/A'}</span></span>
                             {ord.notiz && <span className="text-neutral-400">Notiz: <span className="text-white">{ord.notiz}</span></span>}
                           </div>
-                          {canCancel && (
-                            <button onClick={() => handleCancelOrder(ord.id)} className="flex items-center gap-1.5 bg-red-600/10 border border-red-500/30 text-red-400 text-xs px-3 py-1.5 rounded-lg hover:bg-red-600/20 transition"><X className="w-4 h-4" /> Bestellung stornieren</button>
-                          )}
+                          {canCancel && <button onClick={() => handleCancelOrder(ord.id)} className="flex items-center gap-1.5 bg-red-600/10 border border-red-500/30 text-red-400 text-xs px-3 py-1.5 rounded-lg hover:bg-red-600/20 transition"><X className="w-4 h-4" /> Bestellung stornieren</button>}
                         </div>
                       )}
                     </div>
