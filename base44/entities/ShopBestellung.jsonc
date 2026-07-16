@@ -1,0 +1,79 @@
+{
+  "name": "ShopBestellung",
+  "type": "object",
+  "properties": {
+    "mitglied_id": {
+      "type": "string",
+      "description": "ID des bestellenden Mitglieds"
+    },
+    "besteller_name": {
+      "type": "string",
+      "description": "Name des Bestellers (denormalisiert)"
+    },
+    "positionen": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "artikel_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "preis": {
+            "type": "number"
+          },
+          "menge": {
+            "type": "number"
+          },
+          "sparte_id": {
+            "type": "string"
+          },
+          "fuer_mitglied_id": {
+            "type": "string",
+            "description": "Falls f\u00fcr Familienmitglied bestellt"
+          },
+          "fuer_name": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Bestellte Positionen"
+    },
+    "gesamtbetrag": {
+      "type": "number",
+      "description": "Gesamtbetrag in Euro"
+    },
+    "zahlungsart": {
+      "type": "string",
+      "enum": [
+        "Bar",
+        "\u00dcberweisung"
+      ],
+      "default": "Bar"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Offen",
+        "Bezahlt",
+        "Abgeholt",
+        "Storniert"
+      ],
+      "default": "Offen"
+    },
+    "datum": {
+      "type": "string",
+      "format": "date"
+    },
+    "notiz": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "mitglied_id",
+    "gesamtbetrag",
+    "zahlungsart"
+  ]
+}

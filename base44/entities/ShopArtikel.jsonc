@@ -1,0 +1,51 @@
+{
+  "name": "ShopArtikel",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Artikelbezeichnung"
+    },
+    "beschreibung": {
+      "type": "string",
+      "description": "Detailbeschreibung"
+    },
+    "preis": {
+      "type": "number",
+      "description": "Preis in Euro"
+    },
+    "kategorie": {
+      "type": "string",
+      "enum": [
+        "Kleidung",
+        "Accessoires",
+        "Getr\u00e4nke",
+        "Essen",
+        "Sonstiges"
+      ],
+      "default": "Sonstiges"
+    },
+    "sparte_id": {
+      "type": "string",
+      "description": "Sparte/Gruppe f\u00fcr filterbaren Shop-Bereich (leer = allgemeiner Shop)"
+    },
+    "bild_url": {
+      "type": "string",
+      "description": "URL des Artikelbildes"
+    },
+    "aktiv": {
+      "type": "boolean",
+      "default": true,
+      "description": "Ist der Artikel im Shop sichtbar?"
+    },
+    "bestand": {
+      "type": "number",
+      "default": -1,
+      "description": "Lagerbestand (-1 = unbegrenzt)"
+    }
+  },
+  "required": [
+    "name",
+    "preis"
+  ]
+}
