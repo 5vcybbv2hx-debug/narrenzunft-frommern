@@ -461,19 +461,53 @@ function ShopVerwaltungContent({ user }) {
                         </div>
                         {isExpanded && (
                           <div className="p-4 bg-neutral-900/40 border-t border-border space-y-4">
-                            {Object.entries(itemsByPerson).map(([person, items]) => (
-                              <div key={person} className="border border-border/60 rounded-lg p-3 bg-neutral-900/60">
-                                <h5 className="font-oswald uppercase tracking-wide text-sm text-primary mb-2 border-b border-border/40 pb-1">Für: {person === 'Eigenbedarf' ? mName : person}</h5>
-                                <div className="space-y-1">
-                                  {items.map((item, idx) => (
-                                    <div key={idx} className="flex justify-between text-sm py-1">
-                                      <span className="text-white">{item.artikel_name} <span className="text-xs text-gray-400">({item.groesse})</span>{item.sparte && <span className="text-[10px] bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-primary ml-1">{item.sparte}</span>}</span>
-                                      <span className="text-gray-400 font-medium">x{item.menge || 1}</span>
-                                    </div>
-                                  ))}
-                                </div>
+                            {/* Zahlstatus-Banner vor Ort */}
+                            <div className={`flex items-center justify-between p-3 rounded-lg border ${group.paymentStatus === 'Bezahlt' ? 'bg-green-500/10 border-green-500/30' : 'bg-yellow-500/10 border-yellow-500/30'}`}>
+                              <div className="flex items-center gap-2">
+                                <span className={`text-xs font-bold uppercase tracking-wider ${group.paymentStatus === 'Bezahlt' ? 'text-green-400' : 'text-yellow-400'}`}>{group.paymentStatus === 'Bezahlt' ? '✓ Bezahlt' : '⚠ Offen'}</span>
+                                <span className="text-xs text-gray-400">·</span>
+                                <span className="text-xs text-gray-400">Zahlungsart: {group.orders[0]?.zahlungsart || 'N/A'}</span>
                               </div>
-                            ))}
+                              <div className="text-right">
+                                <span className="text-xs text-gray-400">Gesamtbetrag: </span>
+                                <span className="text-lg font-oswald font-bold text-primary">{formatEuro(group.totalAmount)}</span>
+                              </div>
+                            </div>
+
+                            {Object.entries(itemsByPerson).map(([person, items]) => {
+                              const personTotal = items.reduce((sum, item) => sum + ((item.einzelpreis || 0) * (item.menge || 1)), 0);
+                              return (
+                                <div key={person} className="border border-border/60 rounded-lg p-3 bg-neutral-900/60">
+                                  <h5 className="font-oswald uppercase tracking-wide text-sm text-primary mb-2 border-b border-border/40 pb-1">Für: {person === 'Eigenbedarf' ? mName : person}</h5>
+                                  <div className="space-y-1">
+                                    {items.map((item, idx) => (
+                                      <div key={idx} className="flex justify-between items-center text-sm py-1">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          <span className="text-white">{item.artikel_name}</span>
+                                          <span className="text-xs text-gray-400">({item.groesse})</span>
+                                          {item.sparte && <span className="text-[10px] bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-primary">{item.sparte}</span>}
+                                        </div>
+                                        <div className="flex items-center gap-3 shrink-0">
+                                          <span className="text-xs text-gray-400">{item.menge || 1}x {formatEuro(item.einzelpreis || 0)}</span>
+                                          <span className="text-white font-medium">{formatEuro((item.einzelpreis || 0) * (item.menge || 1))}</span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                    {/* Zwischensumme pro Person */}
+                                    <div className="flex justify-between items-center pt-1.5 mt-1 border-t border-border/40">
+                                      <span className="text-[10px] text-gray-400 uppercase font-semibold tracking-wider">Zwischensumme</span>
+                                      <span className="text-sm text-white font-semibold">{formatEuro(personTotal)}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+
+                            {/* Gesamtbetrag unten — bezahlen vor Ort */}
+                            <div className="flex items-center justify-between p-3 bg-neutral-900 rounded-lg border border-border">
+                              <span className="text-xs text-gray-400 uppercase font-semibold tracking-wider">Zu zahlen vor Ort</span>
+                              <span className="text-xl font-oswald font-bold text-primary">{formatEuro(group.totalAmount)}</span>
+                            </div>
                           </div>
                         )}
                       </div>

@@ -49,6 +49,7 @@ export default function Shop() {
   const [selectedSizes, setSelectedSizes] = useState({});
   const [quantities, setQuantities] = useState({});
   const [fuerWenSelections, setFuerWenSelections] = useState({});
+  const [sparteOverrides, setSparteOverrides] = useState({}); // art.id -> haesgruppe_id (override)
   const [expandedOrders, setExpandedOrders] = useState({});
 
   const loadData = async () => {
@@ -179,9 +180,10 @@ export default function Shop() {
     const recipientInfo = getMitgliedInfo(recipientId);
     if (!recipientInfo) { setError('Ausgewähltes Mitglied konnte nicht zugeordnet werden.'); return; }
 
-    // Sparte/Gruppe automatisch aus dem Empfänger ziehen — das ist der Design-Kennzeichner!
-    const gruppenId = recipientInfo.gruppen_id || '';
-    const gruppenName = recipientInfo.gruppen_name || '';
+    // Sparte/Design: Override prüfen, sonst aus Empfänger ziehen
+    const overrideId = sparteOverrides[art.id];
+    const gruppenId = overrideId || recipientInfo.gruppen_id || '';
+    const gruppenName = overrideId ? getGruppenName(overrideId) : (recipientInfo.gruppen_name || '');
 
     const newItem = {
       artikel_id: art.id,
@@ -233,9 +235,9 @@ export default function Shop() {
     warenkorb.forEach((item) => {
       const memberInfo = getMitgliedInfo(item.mitglied_id);
       const name = memberInfo ? memberInfo.name : 'Unbekannt';
-      const sparte = memberInfo ? memberInfo.gruppen_name : '';
+      // Nutze die sparte vom Cart-Item (die ggf. override enthält), nicht vom Mitglied
       const key = item.mitglied_id;
-      if (!groups[key]) groups[key] = { name, sparte, items: [] };
+      if (!groups[key]) groups[key] = { name, sparte: item.sparte || '', items: [] };
       groups[key].items.push(item);
     });
     return Object.values(groups);
