@@ -38,6 +38,7 @@ import SitzungDetail from './pages/SitzungDetail';
 import FamilienDashboard from './pages/FamilienDashboard';
 import Vereine from './pages/Vereine';
 import Sparten from './pages/Sparten';
+import SpartenDashboard from './pages/SpartenDashboard';
 import Ausfahrten from './pages/Ausfahrten';
 import AusfahrtDetail from './pages/AusfahrtDetail';
 import AusfahrtNeu from './pages/AusfahrtNeu';
@@ -108,6 +109,7 @@ const AuthenticatedApp = () => {
         <Route path="/haes" element={<Haes />} />
         <Route path="/haes/:id" element={<HaesDetail />} />
         <Route path="/sparten" element={<Sparten />} />
+        <Route path="/sparte/:id" element={<SpartenDashboard />} />
         <Route path="/profil" element={<Profil />} />
         <Route path="/benachrichtigungen" element={<Benachrichtigungen />} />
         <Route path="/suche" element={<Suche />} />
