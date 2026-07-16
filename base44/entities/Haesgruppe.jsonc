@@ -35,6 +35,10 @@
         "type": "string"
       },
       "description": "IDs aller verantwortlichen Mitglieder (Spartenleiter)"
+    },
+    "whatsapp_gruppe_name": {
+      "type": "string",
+      "description": "Name der verknüpften WhatsApp-Gruppe"
     }
   },
   "required": [

@@ -10,28 +10,47 @@
       "type": "string",
       "description": "ID des Mitglieds, das Geld ausgelegt hat"
     },
+    "mitglied_name": {
+      "type": "string",
+      "description": "Name (denormalisiert)"
+    },
     "betrag": {
       "type": "number",
-      "description": "Betrag in Euro"
+      "description": "Gesamtbetrag der Auslage in Euro"
     },
     "beschreibung": {
       "type": "string",
-      "description": "Wof\u00fcr wurde das Geld ausgegeben?"
+      "description": "Wofür wurde das Geld ausgegeben?"
     },
     "datum": {
       "type": "string",
       "format": "date",
       "description": "Datum der Auslage"
     },
+    "typ": {
+      "type": "string",
+      "enum": ["Einzelerstattung", "Umlage"],
+      "default": "Einzelerstattung",
+      "description": "Einzelerstattung (Verein erstattet) oder Umlage (Mitglieder zahlen anteilig)"
+    },
+    "anteile": {
+      "type": "array",
+      "items": {
+        "properties": {
+          "mitglied_id": {"type": "string"},
+          "mitglied_name": {"type": "string"},
+          "betrag": {"type": "number"},
+          "status": {"type": "string", "enum": ["Offen", "Bezahlt"], "default": "Offen"}
+        },
+        "type": "object"
+      },
+      "description": "Anteile der Mitglieder (nur bei Umlage)"
+    },
     "status": {
       "type": "string",
-      "enum": [
-        "Offen",
-        "Erstattet",
-        "Storniert"
-      ],
+      "enum": ["Offen", "Erstattet", "Storniert"],
       "default": "Offen",
-      "description": "Status der Erstattung"
+      "description": "Status der Erstattung (Haupt-Status)"
     },
     "erstattungsdatum": {
       "type": "string",

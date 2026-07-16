@@ -16,6 +16,7 @@
         "Auftritt",
         "Besprechung",
         "Ausflug",
+        "Training",
         "Sonstiges"
       ],
       "default": "Probe"
@@ -37,6 +38,21 @@
     },
     "beschreibung": {
       "type": "string"
+    },
+    "wiederkehrend": {
+      "type": "boolean",
+      "default": false,
+      "description": "Ist dies ein wiederkehrender Termin?"
+    },
+    "intervall_typ": {
+      "type": "string",
+      "enum": ["woechentlich", "14taegig", "monatlich"],
+      "description": "Wiederholungsintervall (nur wenn wiederkehrend=true)"
+    },
+    "enddatum": {
+      "type": "string",
+      "format": "date",
+      "description": "Enddatum der Wiederholung (nur wenn wiederkehrend=true)"
     }
   },
   "required": [
