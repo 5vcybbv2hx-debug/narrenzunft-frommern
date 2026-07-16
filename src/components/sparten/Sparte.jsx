@@ -5,11 +5,11 @@ import { Link } from 'react-router-dom';
 import SpartenKalender from './SpartenKalender';
 import AuslagenTab from './AuslagenTab';
 
-const TYP_ICON = {
-  'Häsgruppe': Shirt,
-  'Tanzgruppe': Footprints,
-  'Musikgruppe': Music,
-  'Sonstige': Users2,
+const TYP_META = {
+  'Häsgruppe':  { icon: Shirt,     farbe: '#EA2525' },
+  'Tanzgruppe': { icon: Footprints, farbe: '#F59E0B' },
+  'Musikgruppe': { icon: Music,     farbe: '#8B5CF6' },
+  'Sonstige':   { icon: Users2,    farbe: '#6B7280' },
 };
 
 export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten, onEdit, onDelete, onMitgliederChanged }) {
@@ -45,11 +45,13 @@ export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten
     onMitgliederChanged();
   };
 
-  const farbe = gruppe.farbe || '#EA2525';
-  const TypIcon = TYP_ICON[gruppe.typ] || Users2;
+  const typKey = gruppe.typ || 'Häsgruppe';
+  const typMeta = TYP_META[typKey] || TYP_META['Sonstige'];
+  const farbe = gruppe.farbe || typMeta.farbe;
+  const TypIcon = typMeta.icon;
 
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden">
+    <div className="bg-card border border-border rounded-xl overflow-hidden" style={{ borderLeft: `3px solid ${farbe}` }}>
       {/* Header */}
       <div
         className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-secondary/30 transition-colors"
