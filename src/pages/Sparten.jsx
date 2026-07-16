@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
-import { Users, Plus, Edit, Trash2, X, Save, Search, ChevronDown, ChevronUp, UserMinus } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Users, Plus, Edit, Trash2, X, Save, Search, ChevronDown, ChevronUp, UserMinus, ChevronRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import SparteFormModal from '@/components/sparten/SparteFormModal';
 import Sparte from '@/components/sparten/Sparte';
 
 export default function Sparten() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const admin = isAdmin(user);
   const isSpartenleiter = user?.role === 'spartenleiter';
 
@@ -122,21 +123,41 @@ export default function Sparten() {
       )}
 
       <div className="space-y-3">
-        {filtered.map(gruppe => (
-          <Sparte
-            key={gruppe.id}
-            gruppe={gruppe}
-            alleMitglieder={mitglieder}
-            isAdmin={admin}
-            kannBearbeiten={isSpartenleiter && (
-              (meinMitglied?.spartenleiter_haesgruppen_ids || []).includes(gruppe.id) ||
-              meinMitglied?.spartenleiter_haesgruppe_id === gruppe.id
-            )}
-            onEdit={() => { setEditGruppe(gruppe); setShowForm(true); }}
-            onDelete={() => handleDelete(gruppe.id)}
-            onMitgliederChanged={loadData}
-          />
-        ))}
+        {filtered.map(gruppe => {
+          const isResponsible = isSpartenleiter && (
+            (meinMitglied?.spartenleiter_haesgruppen_ids || []).includes(gruppe.id) ||
+            meinMitglied?.spartenleiter_haesgruppe_id === gruppe.id
+          );
+          
+          return (
+            <div 
+              key={gruppe.id} 
+              onClick={() => navigate(`/sparte/${gruppe.id}`)}
+              className="group cursor-pointer block relative transition-all"
+            >
+              <Sparte
+                gruppe={gruppe}
+                alleMitglieder={mitglieder}
+                isAdmin={admin}
+                kannBearbeiten={isResponsible}
+                onEdit={() => { setEditGruppe(gruppe); setShowForm(true); }}
+                onDelete={() => handleDelete(gruppe.id)}
+                onMitgliederChanged={loadData}
+              />
+              <div 
+                className="absolute right-12 top-3 z-10" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/sparte/${gruppe.id}`);
+                }}
+              >
+                <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-medium border border-neutral-700 transition-all shadow-sm">
+                  Verwalten <ChevronRight size={14} />
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {showForm && (
