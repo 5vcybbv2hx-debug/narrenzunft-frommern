@@ -392,13 +392,15 @@ export default function FamilienDashboard() {
             </h2>
             <div className="space-y-2">
               {dienste.slice(0, 8).map((d, idx) => {
-                const mitglied = d.mitglied_id === selbst?.id ? selbst :
-                  kinder.find(k => k.id === d.mitglied_id) || ehepartner || verwandte.find(v => v.id === d.mitglied_id);
+                const dienstData = d.dienst || d;
+                const mid = d.mitglied_id;
+                const mitglied = mid === selbst?.id ? selbst :
+                  kinder.find(k => k.id === mid) || (mid ? verwandte.find(v => v.id === mid) : null) || ehepartner;
                 return (
                   <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg bg-neutral-900/30">
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">{d.dienst.titel}</p>
-                      <p className="text-xs text-neutral-400">{formatDate(d.dienst.datum)}</p>
+                      <p className="text-sm font-medium truncate">{dienstData.titel}</p>
+                      <p className="text-xs text-neutral-400">{formatDate(dienstData.datum)}</p>
                     </div>
                     {mitglied && (
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-400 ml-2 shrink-0">
