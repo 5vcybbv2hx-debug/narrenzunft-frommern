@@ -15,8 +15,8 @@ Deno.serve(async (req) => {
       // Admin: alle Dienste + alle Zuweisungen
       const [dienste, zuweisungen, mitglieder, veranstaltungen] = await Promise.all([
         base44.asServiceRole.entities.Arbeitsdienst.list('-datum', 300),
-        base44.asServiceRole.entities.ArbeitsdienstZuweisung.list('-created_date', 500),
-        base44.asServiceRole.entities.Mitglied.list('nachname', 300),
+        base44.asServiceRole.entities.ArbeitsdienstZuweisung.list('-created_date', 1000),
+        base44.asServiceRole.entities.Mitglied.list('nachname', 1000),
         base44.asServiceRole.entities.Veranstaltung.list('-datum', 300),
       ]);
 
@@ -48,8 +48,8 @@ Deno.serve(async (req) => {
       const spartenIds = myMitglied.spartenleiter_haesgruppen_ids || [];
       const [alleDienste, allZuweisungen, mitgliederResp, veranstaltungen] = await Promise.all([
         base44.asServiceRole.entities.Arbeitsdienst.list('-datum', 300),
-        base44.asServiceRole.entities.ArbeitsdienstZuweisung.list('-created_date', 500),
-        base44.asServiceRole.entities.Mitglied.list('nachname', 300),
+        base44.asServiceRole.entities.ArbeitsdienstZuweisung.list('-created_date', 1000),
+        base44.asServiceRole.entities.Mitglied.list('nachname', 1000),
         base44.asServiceRole.entities.Veranstaltung.list('-datum', 300),
       ]);
       const dienste = alleDienste.filter(d => spartenIds.includes(d.haesgruppe_id) || !d.haesgruppe_id);
