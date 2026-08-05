@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
     // Admin-Dashboard
     if (isAdminUser) {
       const [mitglieder, veranstaltungen, arbeitsdienste, ehrungen, beitraege, haesgruppen] = await Promise.all([
-        base44.asServiceRole.entities.Mitglied.list('nachname', 300),
+        base44.asServiceRole.entities.Mitglied.list('nachname', 1000),
         base44.asServiceRole.entities.Veranstaltung.list('-datum', 100),
         base44.asServiceRole.entities.Arbeitsdienst.list('-datum', 100),
         base44.asServiceRole.entities.Ehrung.list('-created_date', 100),
