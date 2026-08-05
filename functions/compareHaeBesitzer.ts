@@ -55,10 +55,9 @@ Deno.serve(async (req) => {
       if (h.haesnummer) dbHaesMap[h.haesnummer] = h;
     }
 
-    // Categorize discrepancies
-    const realDiscrepancies = [];   // Excel matched to member, but DB has different member
-    const excelUnmatched = [];      // Excel name couldn't be matched to any member
-    const dbOnly = [];              // In DB but not in Excel
+    const realDiscrepancies = [];
+    const excelUnmatched = [];
+    const dbOnly = [];
     let matchedCount = 0;
 
     for (const [dbNr, excelData] of Object.entries(excelOwners)) {
@@ -66,14 +65,13 @@ Deno.serve(async (req) => {
       if (!dbHaes) continue;
 
       const dbOwnerId = dbHaes.aktueller_besitzer_id;
-      const dbOwnerName = dbOwnerId ? (memberMap[dbOwnerId] || `Unbekannt`) : 'Kein Besitzer';
+      const dbOwnerName = dbOwnerId ? (memberMap[dbOwnerId] || 'Unbekannt') : 'Kein Besitzer';
       const excelOwnerName = excelData.owner;
       const excelOwnerId = tryMatchMember(excelOwnerName);
 
       if (dbOwnerId === excelOwnerId) {
         matchedCount++;
       } else if (excelOwnerId) {
-        // Excel found a member, but DB has different owner - REAL discrepancy
         realDiscrepancies.push({
           haesnummer: dbNr,
           db_owner: dbOwnerName,
@@ -82,7 +80,6 @@ Deno.serve(async (req) => {
           db_status: dbHaes.status
         });
       } else {
-        // Excel name couldn't be matched - could be same person with different spelling
         excelUnmatched.push({
           haesnummer: dbNr,
           db_owner: dbOwnerName,
