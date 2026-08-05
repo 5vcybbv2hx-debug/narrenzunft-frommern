@@ -259,6 +259,22 @@ export default function MitgliedDetail() {
     if (!austrittDatum) { setError('Bitte Austrittsdatum angeben.'); return; }
     setProcessingExit(true);
     try {
+      // Häs zurücknehmen falls gewünscht
+      let haeFreigegeben = 0;
+      if (haeFreigeben) {
+        const eigeneHaes = await base44.entities.Haes.filter({ aktueller_besitzer_id: mitglied.id });
+        for (const h of eigeneHaes) {
+          try {
+            await base44.functions.invoke('weiseHaesZuSicher', {
+              haes_id: h.id,
+              aktion: 'zurueckgegeben',
+              datum: austrittDatum,
+              notiz: 'Zurücknahme bei Austritt',
+            });
+            haeFreigegeben++;
+          } catch (e) { console.error('Häs-Rücknahme fehlgeschlagen:', h.id, e); }
+        }
+      }
       const updates = {
         austrittsdatum: austrittDatum,
         mitgliedsstatus: 'Passiv',
@@ -271,7 +287,9 @@ export default function MitgliedDetail() {
       setShowAustrittModal(false);
       setAustrittDatum('');
       setHaeFreigeben(true);
-      setSuccess('Austritt erfasst. Alle Daten bleiben erhalten.');
+      setSuccess(haeFreigegeben > 0
+        ? `Austritt erfasst. ${haeFreigegeben} Häs zurückgenommen.`
+        : 'Austritt erfasst. Alle Daten bleiben erhalten.');
     } catch (e) {
       console.error('Austritt:', e);
       setError('Austritt konnte nicht erfasst werden: ' + e.message);
@@ -283,6 +301,22 @@ export default function MitgliedDetail() {
     if (!todesfallDatum) { setError('Bitte Todesdatum angeben.'); return; }
     setProcessingExit(true);
     try {
+      // Häs zurücknehmen falls gewünscht
+      let haeFreigegeben = 0;
+      if (haeFreigeben) {
+        const eigeneHaes = await base44.entities.Haes.filter({ aktueller_besitzer_id: mitglied.id });
+        for (const h of eigeneHaes) {
+          try {
+            await base44.functions.invoke('weiseHaesZuSicher', {
+              haes_id: h.id,
+              aktion: 'zurueckgegeben',
+              datum: todesfallDatum,
+              notiz: 'Zurücknahme bei Todesfall',
+            });
+            haeFreigegeben++;
+          } catch (e) { console.error('Häs-Rücknahme fehlgeschlagen:', h.id, e); }
+        }
+      }
       const updates = {
         todesdatum: todesfallDatum,
         mitgliedsstatus: 'Verstorben',
@@ -295,7 +329,9 @@ export default function MitgliedDetail() {
       setShowTodesfallModal(false);
       setTodesfallDatum('');
       setHaeFreigeben(true);
-      setSuccess('Todesfall erfasst. Alle Daten bleiben erhalten.');
+      setSuccess(haeFreigegeben > 0
+        ? `Todesfall erfasst. ${haeFreigegeben} Häs zurückgenommen.`
+        : 'Todesfall erfasst. Alle Daten bleiben erhalten.');
     } catch (e) {
       console.error('Todesfall:', e);
       setError('Todesfall konnte nicht erfasst werden: ' + e.message);
