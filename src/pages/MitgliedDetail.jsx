@@ -946,7 +946,7 @@ export default function MitgliedDetail() {
                 <LogOut size={16} /> Austritt erfassen
               </button>
               <button
-                onClick={() => { setShowTodesfallModal(true); setTodesfallDatum(''); setHaeFreigeben(true); }}
+                onClick={() => { setShowTodesfallModal(true); setTodesfallDatum(''); setHaeFreigeben(false); }}
                 className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-neutral-900 border border-border text-sm font-medium text-red-400 hover:border-red-700/50 hover:bg-red-900/10 transition-all"
               >
                 <Heart size={16} /> Todesfall erfassen
@@ -1016,7 +1016,7 @@ export default function MitgliedDetail() {
                 <AlertTriangle size={16} className="text-red-400 shrink-0 mt-0.5" />
                 <div className="text-xs text-red-400">
                   <p className="font-medium">Alle Daten bleiben erhalten!</p>
-                  <p className="mt-1 text-muted-foreground">Das Mitglied wird als "Verstorben" markiert und archiviert. Die komplette Historie bleibt zur Erinnerung und für Nachforschungen erhalten.</p>
+                  <p className="mt-1 text-muted-foreground">Das Mitglied wird als "Verstorben" markiert und archiviert. Die Häs bleiben im Besitz der Familie. Die komplette Historie bleibt erhalten und das System zeigt, wo sich jedes Häs befindet.</p>
                 </div>
               </div>
               <div>
@@ -1028,7 +1028,7 @@ export default function MitgliedDetail() {
                 <input type="checkbox" id="haeFreiTod" checked={haeFreigeben} onChange={e => setHaeFreigeben(e.target.checked)}
                   className="w-4 h-4 rounded accent-primary" />
                 <label htmlFor="haeFreiTod" className="text-xs text-white flex-1 cursor-pointer">
-                  Zugewiesene Häs zurücknehmen (an den Häs-Bestand zurückgeben)
+                  <span className="font-medium text-red-400">Achtung:</span> Häs aus dem Familienbesitz zurücknehmen. Nur wenn die Familie das Häs bereits zurückgegeben hat!
                 </label>
               </div>
               <div className="flex gap-2 pt-2">
