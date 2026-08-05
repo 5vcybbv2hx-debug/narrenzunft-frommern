@@ -5,7 +5,7 @@ import { isAdmin } from '@/lib/roles';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Calendar, List, ChevronLeft, ChevronRight, Plus, Clock,
-  MapPin, Download, Filter, X, Edit, Bus, LayoutTemplate
+  MapPin, Download, Filter, X, Edit, LayoutTemplate
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth,
   addMonths, subMonths, parseISO, isToday } from 'date-fns';
@@ -201,14 +201,6 @@ export default function Kalender() {
                     <div className="text-left">
                       <p className="font-medium">Kalendertermin</p>
                       <p className="text-xs text-muted-foreground">Sitzung, Arbeitsdienst, intern…</p>
-                    </div>
-                  </button>
-                  <button onClick={() => { setShowNeuDropdown(false); setEditVeranstaltung(null); setShowVeranstaltungModal(true); }}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-secondary transition-colors border-b border-border">
-                    <Bus size={15} className="text-primary shrink-0" />
-                    <div className="text-left">
-                      <p className="font-medium">Auswärtiger Termin</p>
-                      <p className="text-xs text-muted-foreground">Umzug, Abendveranstaltung…</p>
                     </div>
                   </button>
                   <button onClick={() => { setShowNeuDropdown(false); navigate('/veranstaltungen/neu'); }}
