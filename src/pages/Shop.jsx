@@ -440,7 +440,7 @@ export default function Shop() {
               </div>
               <div className="bg-neutral-900 border border-border p-3.5 rounded-xl flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
-                <p className="text-xs text-neutral-400 leading-normal">Die Bestellfrist endet am <span className="text-neutral-200 font-semibold">15.09.2026</span>. Deine Bestellung ist verbindlich. Der Aufdruck/Stick wird automatisch nach deiner Sparte bestimmt.</p>
+                <p className="text-xs text-neutral-400 leading-normal">Die Bestellfrist endet am <span className="text-neutral-200 font-semibold">15.09.2026</span>. Deine Bestellung ist verbindlich. Der Aufdruck/Stick wird nach der gewählten Sparte pro Artikel bestimmt.</p>
               </div>
               <div className="pt-4 border-t border-border flex items-center justify-between">
                 <div><p className="text-xs text-neutral-400 uppercase tracking-wider">Gesamtsumme</p><p className="text-3xl font-oswald uppercase tracking-wide text-primary">{totalCartAmount.toFixed(2)} €</p></div>
@@ -515,15 +515,45 @@ export default function Shop() {
                         )}
                         <div className="mt-4">
                           <label className="block text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-1.5">Für wen bestellen?</label>
-                          <select value={currentRecipient} onChange={(e) => setFuerWenSelections((prev) => ({ ...prev, [art.id]: e.target.value }))} className="w-full bg-neutral-900 border border-border rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-primary/50">
+                          <select value={currentRecipient} onChange={(e) => {
+                    setFuerWenSelections((prev) => ({ ...prev, [art.id]: e.target.value }));
+                    setSparteOverrides((prev) => { const next = { ...prev }; delete next[art.id]; return next; });
+                  }} className="w-full bg-neutral-900 border border-border rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-primary/50">
                             <option value={mitglied?.id}>Ich selbst{mitglied?.haesgruppe_id ? ` (${getGruppenName(mitglied.haesgruppe_id) || ''})` : ''}</option>
                             {familienMitglieder.map((fam) => (<option key={fam.id} value={fam.id}>{fam.vorname} {fam.nachname} ({getGruppenName(fam.haesgruppe_id) || 'Keine Sparte'})</option>))}
                           </select>
-                          {showSparteHint && (
-                            <p className="text-[10px] text-primary mt-1.5 flex items-center gap-1">
-                              <Shirt className="w-3 h-3" /> Design/Aufdruck: {recipientInfo.gruppen_name}
-                            </p>
-                          )}
+                          {(() => {
+                            const currentSparteId = sparteOverrides[art.id] || recipientInfo?.gruppen_id || '';
+                            const currentSparteName = sparteOverrides[art.id] ? getGruppenName(sparteOverrides[art.id]) : (recipientInfo?.gruppen_name || '');
+                            const hasOverride = !!sparteOverrides[art.id];
+                            const allGruppen = Object.entries(gruppenMap).filter(([id, name]) => name);
+                            if (allGruppen.length === 0) return null;
+                            return (
+                              <div className="mt-2">
+                                <label className="block text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                                  <Shirt className="w-3 h-3" /> Sparte/Design {hasOverride && <span className="text-primary">(geändert)</span>}
+                                </label>
+                                <select
+                                  value={currentSparteId}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val === (recipientInfo?.gruppen_id || '')) {
+                                      setSparteOverrides((prev) => { const next = { ...prev }; delete next[art.id]; return next; });
+                                    } else {
+                                      setSparteOverrides((prev) => ({ ...prev, [art.id]: val }));
+                                    }
+                                  }}
+                                  className="w-full bg-neutral-900 border border-border rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-primary/50"
+                                >
+                                  {allGruppen.map(([gid, gname]) => (
+                                    <option key={gid} value={gid}>
+                                      {gname}{gid === (recipientInfo?.gruppen_id || '') ? ' (Standard)' : ''}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
                       <div className="mt-5 pt-4 border-t border-border/60">
