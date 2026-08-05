@@ -58,6 +58,7 @@ export default function SpartenDashboard() {
   const [showVerantwortlicherModal, setShowVerantwortlicherModal] = useState(false);
   const [verantwortlicheSelection, setVerantwortlicheSelection] = useState({}); // { mitgliedId: boolean }
   const [memberSearchTerm, setMemberSearchTerm] = useState('');
+  const [savingVerantwortliche, setSavingVerantwortliche] = useState(false);
 
   const [nachrichtText, setNachrichtText] = useState('');
   const [nachrichtStatus, setNachrichtStatus] = useState(null);
@@ -347,38 +348,57 @@ export default function SpartenDashboard() {
 
   const handleSaveVerantwortliche = async () => {
     const selectedIds = Object.keys(verantwortlicheSelection).filter(k => verantwortlicheSelection[k]);
+    setSavingVerantwortliche(true);
     try {
+      // 1) Haesgruppe aktualisieren
       await base44.entities.Haesgruppe.update(id, {
         verantwortliche_ids: selectedIds
       });
 
+      // 2) Diff berechnen — nur geänderte Mitglieder
+      const oldIds = gruppe?.verantwortliche_ids || [];
+      const toAdd = selectedIds.filter(sid => !oldIds.includes(sid));
+      const toRemove = oldIds.filter(oid => !selectedIds.includes(oid));
+
+      const bulkPayload = [];
       for (const m of alleMitglieder) {
-        const wasVerantwortlich = gruppe.verantwortliche_ids?.includes(m.id);
-        const isVerantwortlichNow = selectedIds.includes(m.id);
+        const isNow = selectedIds.includes(m.id);
+        const was = oldIds.includes(m.id);
+        if (isNow === was) continue;
 
-        if (wasVerantwortlich !== isVerantwortlichNow) {
-          const currentSplatIds = m.spartenleiter_haesgruppen_ids || [];
-          let updatedSplatIds;
+        const currentSplatIds = m.spartenleiter_haesgruppen_ids || [];
+        const updatedSplatIds = isNow
+          ? [...new Set([...currentSplatIds, id])]
+          : currentSplatIds.filter(gId => gId !== id);
 
-          if (isVerantwortlichNow) {
-            updatedSplatIds = [...new Set([...currentSplatIds, id])];
-          } else {
-            updatedSplatIds = currentSplatIds.filter(gId => gId !== id);
-          }
-
-          const appRolle = isVerantwortlichNow && m.app_rolle === 'mitglied' ? 'spartenleiter' : m.app_rolle;
-
-          await base44.entities.Mitglied.update(m.id, {
-            spartenleiter_haesgruppen_ids: updatedSplatIds,
-            app_rolle: appRolle
-          });
+        // app_rolle nur ändern, wenn nötig:
+        // - Hinzugefügt: mitglied → spartenleiter
+        // - Entfernt: spartenleiter → mitglied (nur wenn nirgends mehr Spartenleiter)
+        let appRolle = m.app_rolle || 'mitglied';
+        if (isNow && m.app_rolle === 'mitglied') {
+          appRolle = 'spartenleiter';
+        } else if (!isNow && m.app_rolle === 'spartenleiter' && updatedSplatIds.length === 0) {
+          appRolle = 'mitglied';
         }
+
+        bulkPayload.push({
+          id: m.id,
+          spartenleiter_haesgruppen_ids: updatedSplatIds,
+          app_rolle: appRolle
+        });
+      }
+
+      // 3) Alle geänderten Mitglieder in einem bulkUpdate
+      if (bulkPayload.length > 0) {
+        await base44.entities.Mitglied.bulkUpdate(bulkPayload);
       }
 
       setShowVerantwortlicherModal(false);
       loadData();
     } catch (err) {
       alert('Fehler beim Speichern der Verantwortlichen: ' + err.message);
+    } finally {
+      setSavingVerantwortliche(false);
     }
   };
 
@@ -1389,9 +1409,14 @@ export default function SpartenDashboard() {
                 <button
                   type="button"
                   onClick={handleSaveVerantwortliche}
-                  className="flex-1 py-2 bg-primary hover:bg-red-700 text-white font-semibold text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
+                  disabled={savingVerantwortliche}
+                  className="flex-1 py-2 bg-primary hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
-                  <Save className="w-4 h-4" /> Speichern
+                  {savingVerantwortliche ? (
+                    <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Speichert…</>
+                  ) : (
+                    <><Save className="w-4 h-4" /> Speichern</>
+                  )}
                 </button>
               </div>
             </div>
