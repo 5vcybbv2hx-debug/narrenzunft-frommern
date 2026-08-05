@@ -111,13 +111,23 @@ export default function FamilienDashboard() {
 
   const handleRemove = async (verwandterId, beziehungLabel) => {
     if (!window.confirm(`Beziehung "${beziehungLabel}" wirklich entfernen?`)) return;
+    // Sicherheits-Check: ohne gültige IDs dürfen wir nicht filtern –
+    // sonst ignoriert Base44 das leere Feld und löscht ALLE Verwandten.
+    if (!selbst?.id || !verwandterId) {
+      setError('Beziehung konnte nicht entfernt werden – fehlende ID.');
+      return;
+    }
     try {
-      // Finde die Verwandtschaft (beide Richtungen prüfen)
+      // Nur die exakte Beziehung (beide Richtungen) laden und löschen
       const [vDirect, vReverse] = await Promise.all([
         base44.entities.Verwandtschaft.filter({ mitglied_id: selbst.id, verwandter_id: verwandterId }),
         base44.entities.Verwandtschaft.filter({ mitglied_id: verwandterId, verwandter_id: selbst.id }),
       ]);
       const toDelete = [...vDirect, ...vReverse];
+      if (toDelete.length === 0) {
+        setError('Keine Beziehung zum Entfernen gefunden.');
+        return;
+      }
       for (const v of toDelete) {
         await base44.entities.Verwandtschaft.delete(v.id);
       }
