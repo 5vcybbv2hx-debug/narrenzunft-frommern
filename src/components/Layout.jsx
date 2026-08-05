@@ -66,9 +66,9 @@ const NAV_SECTIONS = [
     id: 'fam',
     title: 'Familie',
     icon: Users,
-    roles: ['elternkonto'],
+    roles: null,
     items: [
-      { path: '/familie', label: 'Familien-Dashboard', icon: Users, roles: ['elternkonto'] },
+      { path: '/familie', label: 'Familie', icon: Users, roles: null },
     ],
   },
 ];

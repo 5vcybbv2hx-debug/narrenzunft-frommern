@@ -183,7 +183,7 @@ const AuthenticatedApp = () => {
 
         {/* ── Elternkonto ── */}
         <Route path="/familie" element={
-          <Guard roles={['elternkonto']}><FamilienDashboard /></Guard>
+          <FamilienDashboard />
         } />
       </Route>
       <Route path="/mitgliedsantrag" element={<MitgliedsantragFormular />} />
