@@ -1,4 +1,4 @@
-// compareHaeBesitzer - force redeploy with realDiscrepancies scope fix
+// compareHaeBesitzer - redeployed with realDiscrepancies variable scope fix
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 Deno.serve(async (req) => {
@@ -21,8 +21,8 @@ Deno.serve(async (req) => {
 
     function normalize(name) {
       return name.toLowerCase().trim().replace(/\.$/, '')
-        .replace(/ä/g, 'a').replace(/ö/g, 'o').replace(/ü/g, 'u').replace(/ß/g, 'ss')
-        .replace(/é/g, 'e').replace(/è/g, 'e').replace(/á/g, 'a')
+        .replace(/\u00e4/g, 'a').replace(/\u00f6/g, 'o').replace(/\u00fc/g, 'u').replace(/\u00df/g, 'ss')
+        .replace(/\u00e9/g, 'e').replace(/\u00e8/g, 'e').replace(/\u00e1/g, 'a')
         .replace(/[^a-z\s-]/g, '').replace(/\s+/g, ' ').trim();
     }
 
