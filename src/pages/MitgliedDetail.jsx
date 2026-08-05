@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/AuthContext';
 import {
   ArrowLeft, Edit, Save, X, Phone, Mail, MapPin, Calendar,
   User, Shirt, Award, CreditCard, Trash2, AlertTriangle, Shield, Send, ChevronRight, Plus, Search, MessageCircle,
-  Archive, RotateCcw, Lock, Check, Users, ClipboardList, Wallet, Crown, AlertCircle
+  Archive, RotateCcw, Lock, Check, Users, ClipboardList, Wallet, Crown, AlertCircle, Heart, LogOut
 } from 'lucide-react';
 import { format, differenceInYears } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -125,7 +125,14 @@ export default function MitgliedDetail() {
   const [haessuche, setHaessuche] = useState('');
   const [assigningHaes, setAssigningHaes] = useState(false);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const [confirmArchive, setConfirmArchive] = useState(false);
+  const [showAustrittModal, setShowAustrittModal] = useState(false);
+  const [showTodesfallModal, setShowTodesfallModal] = useState(false);
+  const [austrittDatum, setAustrittDatum] = useState();
+  const [todesfallDatum, setTodesfallDatum] = useState();
+  const [haeFreigeben, setHaeFreigeben] = useState(true);
+  const [processingExit, setProcessingExit] = useState(false);
   const [haesError, setHaesError] = useState(null);
   const [showNeuEinladen, setShowNeuEinladen] = useState(false);
 
@@ -247,6 +254,55 @@ export default function MitgliedDetail() {
     }
   };
 
+
+  const handleAustritt = async () => {
+    if (!austrittDatum) { setError('Bitte Austrittsdatum angeben.'); return; }
+    setProcessingExit(true);
+    try {
+      const updates = {
+        austrittsdatum: austrittDatum,
+        mitgliedsstatus: 'Passiv',
+        archiviert: true,
+        archiviert_am: austrittDatum,
+        archiviert_grund: 'Ausgetreten',
+      };
+      await base44.entities.Mitglied.update(mitglied.id, updates);
+      setMitglied(p => ({ ...p, ...updates }));
+      setShowAustrittModal(false);
+      setAustrittDatum('');
+      setHaeFreigeben(true);
+      setSuccess('Austritt erfasst. Alle Daten bleiben erhalten.');
+    } catch (e) {
+      console.error('Austritt:', e);
+      setError('Austritt konnte nicht erfasst werden: ' + e.message);
+    }
+    setProcessingExit(false);
+  };
+
+  const handleTodesfall = async () => {
+    if (!todesfallDatum) { setError('Bitte Todesdatum angeben.'); return; }
+    setProcessingExit(true);
+    try {
+      const updates = {
+        todesdatum: todesfallDatum,
+        mitgliedsstatus: 'Verstorben',
+        archiviert: true,
+        archiviert_am: todesfallDatum,
+        archiviert_grund: 'Verstorben',
+      };
+      await base44.entities.Mitglied.update(mitglied.id, updates);
+      setMitglied(p => ({ ...p, ...updates }));
+      setShowTodesfallModal(false);
+      setTodesfallDatum('');
+      setHaeFreigeben(true);
+      setSuccess('Todesfall erfasst. Alle Daten bleiben erhalten.');
+    } catch (e) {
+      console.error('Todesfall:', e);
+      setError('Todesfall konnte nicht erfasst werden: ' + e.message);
+    }
+    setProcessingExit(false);
+  };
+
   const handleReaktivieren = async () => {
     try {
       await base44.entities.Mitglied.update(mitglied.id, {
@@ -260,6 +316,7 @@ export default function MitgliedDetail() {
       setError('Reaktivieren fehlgeschlagen.');
     }
   };
+
 
   const alter = mitglied.geburtsdatum ? differenceInYears(new Date(), new Date(mitglied.geburtsdatum)) : null;
 
@@ -785,34 +842,171 @@ export default function MitgliedDetail() {
         </div>
       )}
 
-      {/* Archivieren / Reaktivieren */}
+      {/* Erfolgsmeldung */}
+      {success && (
+        <div className="flex items-center justify-between p-3 rounded-lg bg-green-900/20 border border-green-700/30 mb-4">
+          <div className="flex items-center gap-2">
+            <Check size={16} className="text-green-400" />
+            <p className="text-sm text-green-400">{success}</p>
+          </div>
+          <button onClick={() => setSuccess(null)} className="text-green-400 hover:text-white"><X size={14} /></button>
+        </div>
+      )}
+
+      {/* Austritt & Todesfall Verwaltung */}
       {admin && !isNew && (
-        <div className="flex flex-col gap-2 mt-2">
-          {mitglied.archiviert ? (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-900/20 border border-yellow-700/30">
-                <Archive size={14} className="text-yellow-400 shrink-0" />
-                <div>
-                  <p className="text-xs text-yellow-400 font-medium">Archiviert{mitglied.archiviert_am ? ` am ${format(new Date(mitglied.archiviert_am), 'dd.MM.yyyy', { locale: de })}` : ''}</p>
-                  {mitglied.archiviert_grund && <p className="text-xs text-muted-foreground">Grund: {mitglied.archiviert_grund}</p>}
-                </div>
+        <div className="bg-card border border-border rounded-xl p-5 mt-4">
+          <h2 className="font-oswald uppercase tracking-wide text-white mb-4 flex items-center gap-2">
+            <Shield size={16} className="text-primary" /> Mitgliedschaft verwalten
+          </h2>
+
+          {/* Status-Badge wenn archiviert/verstorben */}
+          {mitglied.archiviert && (
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg mb-4 border ${
+              mitglied.mitgliedsstatus === 'Verstorben'
+                ? 'bg-red-900/20 border-red-700/30'
+                : 'bg-yellow-900/20 border-yellow-700/30'
+            }`}>
+              {mitglied.mitgliedsstatus === 'Verstorben'
+                ? <Heart size={14} className="text-red-400 shrink-0" />
+                : <Archive size={14} className="text-yellow-400 shrink-0" />
+              }
+              <div>
+                <p className={`text-xs font-medium ${
+                  mitglied.mitgliedsstatus === 'Verstorben' ? 'text-red-400' : 'text-yellow-400'
+                }`}>
+                  {mitglied.mitgliedsstatus === 'Verstorben' ? 'Verstorben' : 'Archiviert'}
+                  {mitglied.archiviert_am ? ` am ${format(new Date(mitglied.archiviert_am), 'dd.MM.yyyy', { locale: de })}` : ''}
+                </p>
+                {mitglied.archiviert_grund && <p className="text-xs text-muted-foreground">Grund: {mitglied.archiviert_grund}</p>}
+                {mitglied.austrittsdatum && mitglied.mitgliedsstatus !== 'Verstorben' && (
+                  <p className="text-xs text-muted-foreground">Austritt: {format(new Date(mitglied.austrittsdatum), 'dd.MM.yyyy', { locale: de })}</p>
+                )}
+                {mitglied.todesdatum && (
+                  <p className="text-xs text-muted-foreground">Verstorben am: {format(new Date(mitglied.todesdatum), 'dd.MM.yyyy', { locale: de })}</p>
+                )}
               </div>
-              <button onClick={handleReaktivieren} className="flex items-center gap-2 text-sm text-green-400 hover:text-green-300 transition-colors">
-                <RotateCcw size={14} /> Mitglied reaktivieren
+              <button onClick={handleReaktivieren} className="ml-auto flex items-center gap-1 text-xs text-green-400 hover:text-green-300 transition-colors">
+                <RotateCcw size={12} /> Reaktivieren
               </button>
             </div>
-          ) : confirmArchive ? (
-            <div className="flex items-center gap-2 p-2 rounded-lg bg-red-900/20 border border-red-700/30">
-              <AlertTriangle size={14} className="text-red-400 shrink-0" />
-              <span className="text-xs text-red-400">„{mitglied.vorname} {mitglied.nachname}" archivieren?</span>
-              <button onClick={handleArchivieren} className="text-xs px-2 py-1 rounded bg-red-900/80 text-white font-medium ml-auto">Ja, archivieren</button>
-              <button onClick={() => setConfirmArchive(false)} className="text-xs px-2 py-1 rounded text-muted-foreground hover:text-white">Abbrechen</button>
-            </div>
-          ) : (
-            <button onClick={() => setConfirmArchive(true)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-yellow-400 transition-colors">
-              <Archive size={14} /> Mitglied archivieren
-            </button>
           )}
+
+          {/* Info-Text */}
+          {!mitglied.archiviert && (
+            <p className="text-xs text-muted-foreground mb-4">
+              Bei Austritt oder Todesfall werden alle Daten erhalten. Das Mitglied wird archiviert und der Status geändert.
+              Zugewiesene Häs können zurückgenommen werden.
+            </p>
+          )}
+
+          {/* Buttons */}
+          {!mitglied.archiviert && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                onClick={() => { setShowAustrittModal(true); setAustrittDatum(''); setHaeFreigeben(true); }}
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-neutral-900 border border-border text-sm font-medium text-yellow-400 hover:border-yellow-700/50 hover:bg-yellow-900/10 transition-all"
+              >
+                <LogOut size={16} /> Austritt erfassen
+              </button>
+              <button
+                onClick={() => { setShowTodesfallModal(true); setTodesfallDatum(''); setHaeFreigeben(true); }}
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-neutral-900 border border-border text-sm font-medium text-red-400 hover:border-red-700/50 hover:bg-red-900/10 transition-all"
+              >
+                <Heart size={16} /> Todesfall erfassen
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Austritt Modal */}
+      {showAustrittModal && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setShowAustrittModal(false)}>
+          <div className="bg-card border border-border rounded-xl max-w-md w-full p-5" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-oswald uppercase tracking-wide text-lg text-white flex items-center gap-2">
+                <LogOut size={18} className="text-yellow-400" /> Austritt erfassen
+              </h2>
+              <button onClick={() => setShowAustrittModal(false)} className="text-muted-foreground hover:text-white"><X size={18} /></button>
+            </div>
+            <div className="space-y-4">
+              <div className="bg-yellow-900/10 border border-yellow-700/20 rounded-lg p-3 flex items-start gap-2">
+                <AlertTriangle size={16} className="text-yellow-400 shrink-0 mt-0.5" />
+                <div className="text-xs text-yellow-400">
+                  <p className="font-medium">Alle Daten bleiben erhalten!</p>
+                  <p className="mt-1 text-muted-foreground">Das Mitglied wird archiviert und als "Passiv" markiert. Historie (Häs, Dienste, Bestellungen) bleibt vollständig einsehbar.</p>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Austrittsdatum</label>
+                <input type="date" value={austrittDatum} onChange={e => setAustrittDatum(e.target.value)} autoFocus
+                  className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-900/50 border border-border">
+                <input type="checkbox" id="haeFreiAustritt" checked={haeFreigeben} onChange={e => setHaeFreigeben(e.target.checked)}
+                  className="w-4 h-4 rounded accent-primary" />
+                <label htmlFor="haeFreiAustritt" className="text-xs text-white flex-1 cursor-pointer">
+                  Zugewiesene Häs zurücknehmen (an den Häs-Bestand zurückgeben)
+                </label>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button onClick={() => setShowAustrittModal(false)}
+                  className="flex-1 py-2.5 rounded-lg bg-neutral-800 text-muted-foreground hover:text-white text-sm font-medium transition-colors">
+                  Abbrechen
+                </button>
+                <button onClick={handleAustritt} disabled={!austrittDatum || processingExit}
+                  className="flex-1 py-2.5 rounded-lg bg-yellow-700 text-white text-sm font-medium hover:bg-yellow-800 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors">
+                  {processingExit ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Wird erfasst...</> : <><Check size={14} /> Austritt bestätigen</>}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Todesfall Modal */}
+      {showTodesfallModal && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setShowTodesfallModal(false)}>
+          <div className="bg-card border border-border rounded-xl max-w-md w-full p-5" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-oswald uppercase tracking-wide text-lg text-white flex items-center gap-2">
+                <Heart size={18} className="text-red-400" /> Todesfall erfassen
+              </h2>
+              <button onClick={() => setShowTodesfallModal(false)} className="text-muted-foreground hover:text-white"><X size={18} /></button>
+            </div>
+            <div className="space-y-4">
+              <div className="bg-red-900/10 border border-red-700/20 rounded-lg p-3 flex items-start gap-2">
+                <AlertTriangle size={16} className="text-red-400 shrink-0 mt-0.5" />
+                <div className="text-xs text-red-400">
+                  <p className="font-medium">Alle Daten bleiben erhalten!</p>
+                  <p className="mt-1 text-muted-foreground">Das Mitglied wird als "Verstorben" markiert und archiviert. Die komplette Historie bleibt zur Erinnerung und für Nachforschungen erhalten.</p>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Todesdatum</label>
+                <input type="date" value={todesfallDatum} onChange={e => setTodesfallDatum(e.target.value)} autoFocus
+                  className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-900/50 border border-border">
+                <input type="checkbox" id="haeFreiTod" checked={haeFreigeben} onChange={e => setHaeFreigeben(e.target.checked)}
+                  className="w-4 h-4 rounded accent-primary" />
+                <label htmlFor="haeFreiTod" className="text-xs text-white flex-1 cursor-pointer">
+                  Zugewiesene Häs zurücknehmen (an den Häs-Bestand zurückgeben)
+                </label>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button onClick={() => setShowTodesfallModal(false)}
+                  className="flex-1 py-2.5 rounded-lg bg-neutral-800 text-muted-foreground hover:text-white text-sm font-medium transition-colors">
+                  Abbrechen
+                </button>
+                <button onClick={handleTodesfall} disabled={!todesfallDatum || processingExit}
+                  className="flex-1 py-2.5 rounded-lg bg-red-800 text-white text-sm font-medium hover:bg-red-900 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors">
+                  {processingExit ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Wird erfasst...</> : <><Check size={14} /> Todesfall bestätigen</>}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
