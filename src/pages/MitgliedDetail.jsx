@@ -16,6 +16,7 @@ import AktivitaetTab from '@/components/mitglied/AktivitaetTab';
 import ArbeitsdiensteMitgliedTab from '@/components/mitglied/ArbeitsdiensteMitgliedTab';
 import FamilieTab from '@/components/mitglied/FamilieTab';
 import AntragTab from '@/components/mitglied/AntragTab';
+import NeuEinladenModal from '@/components/mitglied/NeuEinladenModal';
 
 const ALLE_STATUS = ['Aktiv', 'Passiv', 'Passiv mit Häs', 'Leihäs', 'Jugendliche 11-14', 'Jungaktive 15-17', 'Kinder 4-10', 'Kleinkind 0-3', 'Ehrenmitglied'];
 
@@ -126,6 +127,7 @@ export default function MitgliedDetail() {
   const [error, setError] = useState(null);
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [haesError, setHaesError] = useState(null);
+  const [showNeuEinladen, setShowNeuEinladen] = useState(false);
 
   useEffect(() => {
     if (!isNew) loadMitglied();
@@ -673,6 +675,15 @@ export default function MitgliedDetail() {
             </div>
           )}
 
+          {linkedUser && (
+            <button
+              onClick={() => setShowNeuEinladen(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-secondary text-foreground text-sm font-medium hover:bg-primary hover:text-white transition-colors mb-4"
+            >
+              <Send size={14} /> Mitglied neu einladen
+            </button>
+          )}
+
           <div className="grid grid-cols-2 gap-2 mb-4">
             {ROLE_TILES.map(rolle => {
               const Icon = rolle.icon;
@@ -806,6 +817,17 @@ export default function MitgliedDetail() {
       )}
 
       </div>
+      )}
+
+      {/* Neu einladen Modal */}
+      {showNeuEinladen && !isNew && mitglied?.id && (
+        <NeuEinladenModal
+          mitglied={mitglied}
+          onClose={() => setShowNeuEinladen(false)}
+          onSuccess={(res) => {
+            if (res?.email) setMitglied(p => ({ ...p, email: res.email, einladung_gesendet_am: res.einladung_gesendet_am }));
+          }}
+        />
       )}
 
       {/* Häs Zuweisungs-Modal */}
