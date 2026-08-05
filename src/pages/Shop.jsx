@@ -39,7 +39,7 @@ export default function Shop() {
     setError(null);
     try {
       // Wix-Produkte über Backend-Function laden
-      const wixData = await base44.functions.call('getWixProducts', {});
+      const wixData = await base44.functions.invoke("getWixProducts", {});
       if (wixData && wixData.success) {
         setWixProducts(wixData.products || []);
       } else {
