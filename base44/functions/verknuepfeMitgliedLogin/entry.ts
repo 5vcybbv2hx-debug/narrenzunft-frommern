@@ -46,6 +46,9 @@ Deno.serve(async (req) => {
       }
     }
 
+    // 3. Rolle vom Mitglied-Datensatz übertragen (nur wenn Admin die app_rolle gesetzt hat)
+    // Nicht-fatal: App-Owner können ihre Rolle nicht per API ändern lassen (Systemschutz) -
+    // das darf die restliche Verknüpfung nicht crashen lassen.
     const gewuenschteRolle = mitglied.app_rolle;
     if (gewuenschteRolle && gewuenschteRolle !== user.role) {
       const erlaubteRollen = ['mitglied', 'spartenleiter', 'kassierer', 'stellv_vorstand', 'vorstand'];
@@ -54,6 +57,7 @@ Deno.serve(async (req) => {
           await base44.asServiceRole.entities.User.update(user.id, { role: gewuenschteRolle });
           updates.push('role → ' + gewuenschteRolle);
         } catch (roleError) {
+          // z.B. "You cannot update the role of the owner of the app" - ignorieren, Verknüpfung geht trotzdem durch
           updates.push('role-update fehlgeschlagen (' + roleError.message + ')');
         }
       }

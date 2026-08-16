@@ -1,3 +1,9 @@
+/**
+ * Liefert das eigene Mitgliedsprofil (inkl. Häs, Ehrungen, Teilnahmen) für den
+ * eingeloggten Nutzer - läuft mit Service-Role, um RLS-Probleme zu vermeiden.
+ * (Mitglieds-Datensätze wurden beim Import von einem Admin-Account erstellt,
+ * daher greift die normale RLS-Regel "nur eigene created_by-Records" nicht.)
+ */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 Deno.serve(async (req) => {
