@@ -175,15 +175,17 @@ export default function MitgliedDetail() {
       setEhrungen(e || []);
 
       // Prüfe ob aktuelles Mitglied ein Kind des eingeloggten Nutzers ist
+      let elternIstKind = false;
+      let elternIstEltern = false;
       if (user?.role === 'elternkonto' && m[0]) {
         try {
-          const verwandte = await base44.entities.Verwandtschaft.filter({ mitglied_id: user?.id });
-          // Alternative: check by current user's linked Mitglied
+          // Finde das Mitgliedsprofil des eingeloggten Nutzers
           const meinMitglied = await base44.entities.Mitglied.filter({ user_id: user.id });
           if (meinMitglied && meinMitglied.length > 0) {
             const meineVerwandten = await base44.entities.Verwandtschaft.filter({ mitglied_id: meinMitglied[0].id });
-            const istKind = meineVerwandten.some(v => v.verwandter_id === m[0].id && v.beziehung === 'Kind');
-            setIstKindVonMir(istKind);
+            elternIstKind = meineVerwandten.some(v => v.verwandter_id === m[0].id && v.beziehung === 'Kind');
+            elternIstEltern = true;
+            setIstKindVonMir(elternIstKind);
             setIstElternkonto(true);
           }
         } catch (verr) {
@@ -195,8 +197,8 @@ export default function MitgliedDetail() {
       setError('Mitglied konnte nicht geladen werden.');
     }
     setLoading(false);
-    // Auto-edit mode from FamilienDashboard link
-    if (location.search.includes('edit=1')) {
+    // Auto-edit mode from FamilienDashboard link (nur wenn Edit-Berechtigung besteht)
+    if (location.search.includes('edit=1') && (isAdmin(user) || (elternIstEltern && elternIstKind))) {
       setEditing(true);
     }
   };
@@ -570,7 +572,7 @@ export default function MitgliedDetail() {
           )}
           <div>
             <label className="text-xs text-muted-foreground font-medium block mb-1">Gruppen / Sparten</label>
-            {editing ? (
+            {admin && editing ? (
               <div className="space-y-2">
                 <div className="flex flex-wrap gap-1.5">
                   {(mitglied.haesgruppen_ids || (mitglied.haesgruppe_id ? [mitglied.haesgruppe_id] : [])).map(gid => {
@@ -605,7 +607,7 @@ export default function MitgliedDetail() {
           </div>
           <div>
             <label className="text-xs text-muted-foreground font-medium block mb-1">Umzüge vor Digitalisierung</label>
-            {editing ? (
+            {admin && editing ? (
               <input type="number" min="0" value={mitglied.umzuege_vor_digitalisierung || 0}
                 onChange={e => handleFieldChange('umzuege_vor_digitalisierung', parseInt(e.target.value) || 0)}
                 className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
