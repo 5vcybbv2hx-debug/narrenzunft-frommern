@@ -137,26 +137,41 @@ export default function AusfahrtDetail() {
 
     try {
       const todayStr = format(new Date(), 'yyyy-MM-dd');
-      const selectedBegleitpersonen = familienmitglieder
-        .filter(fm => ausgewaehlteFamilienmitglieder.includes(fm.id))
-        .map(fm => ({
-          name: fm.name,
-          alter: fm.alter,
-          mitglied_id: fm.id
-        }));
-
+      
+      // 1. Eigene Anmeldung erstellen
       await base44.entities.AusfahrtAnmeldung.create({
           ausfahrt_id: id,
           mitglied_id: currentMitglied.id,
           transport: transportType,
           status: 'Angemeldet',
           angemeldet_am: todayStr,
-          anzahl_begleitpersonen: selectedBegleitpersonen.length,
-          begleitpersonen: selectedBegleitpersonen,
+          anzahl_begleitpersonen: 0,
+          begleitpersonen: [],
           is_fremdangemeldet: false
         });
 
-      // Reset form states and refresh
+      // 2. Für jedes ausgewählte Familienmitglied eine EIGENE Anmeldung erstellen
+      const selectedFamily = familienmitglieder
+        .filter(fm => ausgewaehlteFamilienmitglieder.includes(fm.id));
+      
+      for (const fm of selectedFamily) {
+        const existing = anmeldungen.find(a => a.mitglied_id === fm.id && a.status !== 'Abgemeldet');
+        if (existing) continue;
+        
+        await base44.entities.AusfahrtAnmeldung.create({
+          ausfahrt_id: id,
+          mitglied_id: fm.id,
+          transport: transportType,
+          status: 'Angemeldet',
+          angemeldet_am: todayStr,
+          anzahl_begleitpersonen: 0,
+          begleitpersonen: [],
+          is_fremdangemeldet: false,
+          durch_admin_angemeldet: true,
+          durch_admin_name: `${currentMitglied.vorname || ''} ${currentMitglied.nachname || ''}`.trim()
+        });
+      }
+
       setAusgewaehlteFamilienmitglieder([]);
       fetchData();
     } catch (err) {
@@ -685,17 +700,32 @@ export default function AusfahrtDetail() {
                     <p className="text-xs text-gray-400 mt-2">
                       <span className="font-medium text-gray-300">Transport:</span> {myRegistration.transport === 'Bus' ? '🚌 Mit dem Bus' : '🚗 Privat'}
                     </p>
-                    {myRegistration.anzahl_begleitpersonen > 0 && (
-                      <div className="text-xs text-gray-400 mt-2">
-                        <span className="font-medium text-gray-300">Begleitpersonen ({myRegistration.anzahl_begleitpersonen}):</span>
-                        <ul className="list-disc pl-4 mt-1 space-y-1">
-                          {myRegistration.begleitpersonen?.map((bp, i) => (
-                            <li key={i}>{bp.name} {bp.alter ? `(${bp.alter} Jahre)` : ''}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
                   </div>
+
+                  {/* Familienmitglieder-Anmeldungen anzeigen */}
+                  {familienmitglieder.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Familienmitglieder</p>
+                      {familienmitglieder.map(fm => {
+                        const fmReg = anmeldungen.find(a => a.mitglied_id === fm.id && a.status !== 'Abgemeldet');
+                        return (
+                          <div key={fm.id} className="flex items-center justify-between gap-2 p-2.5 bg-neutral-950 border border-border rounded-lg">
+                            <div className="min-w-0">
+                              <p className="text-sm text-white font-medium truncate">{fm.name}</p>
+                              <p className="text-xs text-gray-500">{fm.beziehung}{fm.alter ? ` · ${fm.alter} Jahre` : ''}</p>
+                            </div>
+                            {fmReg ? (
+                              <span className="text-xs text-green-400 font-medium shrink-0 flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3" /> {fmReg.transport === 'Bus' ? 'Bus' : 'Privat'}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-gray-600 shrink-0">nicht angemeldet</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   {/* QR Code Button */}
                   <button
@@ -727,34 +757,55 @@ export default function AusfahrtDetail() {
                     </div>
                   ) : (
                     <>
-                      {/* Familienmitglieder als Begleitpersonen — nur Ehepartner/in und Kind */}
+                      {/* Familienmitglieder mit anmelden (als vollwertige Teilnehmer) */}
                       {familienmitglieder.length > 0 && (
                         <div>
                           <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                            Familienmitglieder / Begleitpersonen
+                            Familienmitglieder mit anmelden
                           </label>
                           <div className="space-y-2">
-                            {familienmitglieder.map(fm => (
-                              <label
-                                key={fm.id}
-                                className="flex items-center gap-3 p-3 bg-neutral-950 border border-border rounded-lg cursor-pointer hover:border-primary/40 transition-colors"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={ausgewaehlteFamilienmitglieder.includes(fm.id)}
-                                  onChange={() => toggleFamilienmitglied(fm.id)}
-                                  className="w-4 h-4 rounded accent-[#EA2525]"
-                                />
-                                <div className="flex-1">
-                                  <p className="text-sm text-white font-medium">{fm.name}</p>
-                                  <p className="text-xs text-gray-500">
-                                    {fm.beziehung}
-                                    {fm.alter ? ` · ${fm.alter} Jahre` : ''}
-                                  </p>
-                                </div>
-                              </label>
-                            ))}
+                            {familienmitglieder.map(fm => {
+                              const fmReg = anmeldungen.find(a => a.mitglied_id === fm.id && a.status !== 'Abgemeldet');
+                              if (fmReg) {
+                                return (
+                                  <div key={fm.id} className="flex items-center gap-3 p-3 bg-green-950/20 border border-green-800/30 rounded-lg opacity-70">
+                                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                                    <div className="flex-1">
+                                      <p className="text-sm text-white font-medium">{fm.name}</p>
+                                      <p className="text-xs text-green-400">
+                                        {fm.beziehung} · Bereits angemeldet ({fmReg.transport === 'Bus' ? 'Bus' : 'Privat'})
+                                      </p>
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return (
+                                <label
+                                  key={fm.id}
+                                  className="flex items-center gap-3 p-3 bg-neutral-950 border border-border rounded-lg cursor-pointer hover:border-primary/40 transition-colors"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={ausgewaehlteFamilienmitglieder.includes(fm.id)}
+                                    onChange={() => toggleFamilienmitglied(fm.id)}
+                                    className="w-4 h-4 rounded accent-[#EA2525]"
+                                  />
+                                  <div className="flex-1">
+                                    <p className="text-sm text-white font-medium">{fm.name}</p>
+                                    <p className="text-xs text-gray-500">
+                                      {fm.beziehung}
+                                      {fm.alter ? ` · ${fm.alter} Jahre` : ''}
+                                    </p>
+                                  </div>
+                                </label>
+                              );
+                            })}
                           </div>
+                          {ausgewaehlteFamilienmitglieder.length > 0 && (
+                            <p className="text-xs text-gray-500 mt-2 italic">
+                              Alle ausgewählten Familienmitglieder erhalten eine eigene, vollwertige Anmeldung mit demselben Transport.
+                            </p>
+                          )}
                         </div>
                       )}
 
@@ -763,13 +814,13 @@ export default function AusfahrtDetail() {
                           onClick={() => handleRegister('Bus')}
                           className="w-full bg-primary hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
                         >
-                          <Bus className="w-4 h-4" /> Mit Bus fahren
+                          <Bus className="w-4 h-4" /> Mit Bus fahren{ausgewaehlteFamilienmitglieder.length > 0 ? ` (+${ausgewaehlteFamilienmitglieder.length})` : ''}
                         </button>
                         <button
                           onClick={() => handleRegister('Privat')}
                           className="w-full bg-neutral-800 hover:bg-neutral-700 text-white border border-border font-semibold py-2.5 px-4 rounded-lg transition-colors text-sm"
                         >
-                          Privat fahren
+                          Privat fahren{ausgewaehlteFamilienmitglieder.length > 0 ? ` (+${ausgewaehlteFamilienmitglieder.length})` : ''}
                         </button>
                       </div>
                     </>
@@ -777,57 +828,7 @@ export default function AusfahrtDetail() {
                 </div>
               )}
 
-              {/* Kinder separat anmelden (für Elternkonten) */}
-              {currentMitglied && familienmitglieder.filter(fm => fm.beziehung === 'Kind').length > 0 && (
-                <div className="mt-6 pt-6 border-t border-border">
-                  <h3 className="font-oswald uppercase tracking-wide text-sm text-white mb-3 flex items-center gap-2">
-                    <Users className="w-4 h-4 text-primary" /> Kinder separat anmelden
-                  </h3>
-                  <div className="space-y-3">
-                    {familienmitglieder.filter(fm => fm.beziehung === 'Kind').map(kind => {
-                      const kindReg = anmeldungen.find(a => a.mitglied_id === kind.id && a.status !== 'Abgemeldet');
-                      return (
-                        <div key={kind.id} className="bg-neutral-950 border border-border rounded-lg p-3">
-                          <div className="flex items-center justify-between gap-3 mb-2">
-                            <div>
-                              <p className="text-sm text-white font-medium">{kind.name}</p>
-                              <p className="text-xs text-gray-500">
-                                {kind.alter !== null ? `${kind.alter} Jahre` : 'Kind'}
-                                {kindReg && <span className="text-green-400 ml-2">· Angemeldet ({kindReg.transport})</span>}
-                              </p>
-                            </div>
-                          </div>
-                          {ausfahrt.status === 'Anmeldung offen' && (
-                            kindReg ? (
-                              <button
-                                onClick={() => handleDeregisterChild(kind.id)}
-                                className="w-full bg-transparent hover:bg-neutral-900 border border-red-500/50 hover:border-red-500 text-red-500 font-semibold py-2 px-4 rounded-lg transition-colors text-xs"
-                              >
-                                Kind abmelden
-                              </button>
-                            ) : (
-                              <div className="grid grid-cols-2 gap-2">
-                                <button
-                                  onClick={() => handleRegisterChild(kind.id, 'Bus')}
-                                  className="bg-primary hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg transition-colors text-xs flex items-center justify-center gap-1.5"
-                                >
-                                  <Bus className="w-3.5 h-3.5" /> Bus
-                                </button>
-                                <button
-                                  onClick={() => handleRegisterChild(kind.id, 'Privat')}
-                                  className="bg-neutral-800 hover:bg-neutral-700 text-white border border-border font-semibold py-2 px-3 rounded-lg transition-colors text-xs"
-                                >
-                                  Privat
-                                </button>
-                              </div>
-                            )
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+
             </div>
           </div>
         </div>

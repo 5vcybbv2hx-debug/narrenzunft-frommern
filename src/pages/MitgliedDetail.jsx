@@ -555,18 +555,18 @@ export default function MitgliedDetail() {
           <Field label="Vorname" field="vorname" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           <Field label="Nachname" field="nachname" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           <Field label="Geburtsdatum" field="geburtsdatum" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
-          <Field label="Mitgliedsstatus" field="mitgliedsstatus" options={getVerfuegbareStatus(mitglied.geburtsdatum)} editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+          <Field label="Mitgliedsstatus" field="mitgliedsstatus" options={getVerfuegbareStatus(mitglied.geburtsdatum)} editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
           {editing && (
             <>
               <Field label="E-Mail" field="email" type="email" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
               <Field label="Telefon" field="telefon" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
             </>
           )}
-          <Field label="Eintrittsdatum" field="eintrittsdatum" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
-          <Field label="Austrittsdatum" field="austrittsdatum" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+          <Field label="Eintrittsdatum" field="eintrittsdatum" type="date" editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
+          <Field label="Austrittsdatum" field="austrittsdatum" type="date" editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
           <Field label="Hochzeitstag" field="hochzeitstag" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           {(mitglied.mitgliedsstatus === 'Verstorben' || mitglied.todesdatum) && (
-            <Field label="Todesdatum" field="todesdatum" type="date" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+            <Field label="Todesdatum" field="todesdatum" type="date" editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
           )}
           <div>
             <label className="text-xs text-muted-foreground font-medium block mb-1">Gruppen / Sparten</label>
@@ -612,7 +612,7 @@ export default function MitgliedDetail() {
             ) : (
               <p className="text-sm text-white py-1">{mitglied.umzuege_vor_digitalisierung || 0} Umzüge (historisch)</p>
             )}
-            {editing && <p className="text-xs text-muted-foreground mt-1">Anzahl Erwachsenen-Umzüge vor Einführung dieser App</p>}
+            {admin && editing && <p className="text-xs text-muted-foreground mt-1">Anzahl Erwachsenen-Umzüge vor Einführung dieser App</p>}
           </div>
         </div>
       </div>
