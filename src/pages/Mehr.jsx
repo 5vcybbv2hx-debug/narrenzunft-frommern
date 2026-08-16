@@ -67,7 +67,7 @@ export default function Mehr() {
     {
       title: 'Familie',
       items: [
-        { path: '/familie', label: 'Familien-Dashboard', icon: Users, roles: ['elternkonto'] }
+        { path: '/familie', label: 'Familien-Dashboard', icon: Users, roles: null }
       ]
     }
   ];

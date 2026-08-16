@@ -6,7 +6,6 @@ import { Shield, Search, ChevronDown, ChevronUp, Lock, Check, AlertCircle, User,
 
 const ROLLEN_OPTIONEN = [
   { value: 'mitglied',        label: 'Mitglied',        desc: 'Grundzugang',          Icon: User },
-  { value: 'elternkonto',     label: 'Elternkonto',     desc: 'Für Erziehungsberechtigte', Icon: Users },
   { value: 'spartenleiter',   label: 'Spartenleiter',   desc: 'Dienste & Check-In',    Icon: ClipboardList },
   { value: 'kassierer',       label: 'Kassierer',       desc: 'Finanzen & Beiträge',   Icon: Wallet },
   { value: 'stellv_vorstand', label: 'Stv. Vorstand',   desc: 'Vollzugriff (ohne Admin)', Icon: Shield },

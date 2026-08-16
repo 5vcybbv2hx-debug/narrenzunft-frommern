@@ -54,7 +54,6 @@ const HAES_STATUS_COLORS = {
 
 const ROLE_TILES = [
   { value: 'mitglied', label: 'Mitglied', desc: 'Grundzugang', icon: User },
-  { value: 'elternkonto', label: 'Elternkonto', desc: 'Für Erziehungsberechtigte', icon: Users },
   { value: 'spartenleiter', label: 'Spartenleiter', desc: 'Dienste & Check-In', icon: ClipboardList },
   { value: 'kassierer', label: 'Kassierer', desc: 'Finanzen & Beiträge', icon: Wallet },
   { value: 'stellv_vorstand', label: 'Stv. Vorstand', desc: 'Vollzugriff (ohne Admin)', icon: Shield },
@@ -121,7 +120,6 @@ export default function MitgliedDetail() {
   const [inviting, setInviting] = useState(false);
   const [inviteSent, setInviteSent] = useState(false);
   const [activeTab, setActiveTab] = useState('profil');
-  const [istElternkonto, setIstElternkonto] = useState(false);
   const [istKindVonMir, setIstKindVonMir] = useState(false);
   const [showHaesModal, setShowHaesModal] = useState(false);
   const [allHaes, setAllHaes] = useState([]);
@@ -176,17 +174,16 @@ export default function MitgliedDetail() {
       setHaes(h || []);
       setEhrungen(e || []);
 
-      // Prüfe ob aktuelles Mitglied ein Kind des eingeloggten Nutzers ist
-      if (user?.role === 'elternkonto' && m[0]) {
+      // Prüfe ob aktuelles Mitglied ein Kind des eingeloggten Nutzers ist (für alle Rollen)
+      let istMeinKind = false;
+      if (m[0] && user?.id) {
         try {
           // Finde das Mitgliedsprofil des eingeloggten Nutzers
           const meinMitglied = await base44.entities.Mitglied.filter({ user_id: user.id });
           if (meinMitglied && meinMitglied.length > 0) {
             const meineVerwandten = await base44.entities.Verwandtschaft.filter({ mitglied_id: meinMitglied[0].id });
-            elternIstKind = meineVerwandten.some(v => v.verwandter_id === m[0].id && v.beziehung === 'Kind');
-            elternIstEltern = true;
-            setIstKindVonMir(elternIstKind);
-            setIstElternkonto(true);
+            istMeinKind = meineVerwandten.some(v => v.verwandter_id === m[0].id && v.beziehung === 'Kind');
+            setIstKindVonMir(istMeinKind);
           }
         } catch (verr) {
           console.error('Verwandtschaft-Check:', verr);
@@ -198,7 +195,7 @@ export default function MitgliedDetail() {
     }
     setLoading(false);
     // Auto-edit mode from FamilienDashboard link (nur wenn Edit-Berechtigung besteht)
-    if (location.search.includes('edit=1') && (isAdmin(user) || (elternIstEltern && elternIstKind))) {
+    if (location.search.includes('edit=1') && (isAdmin(user) || istMeinKind)) {
       setEditing(true);
     }
   };
@@ -440,13 +437,13 @@ export default function MitgliedDetail() {
           </h1>
           {alter !== null && <p className="text-sm text-muted-foreground">{alter} Jahre alt</p>}
         </div>
-        {(admin || (istElternkonto && istKindVonMir)) && !editing && (
+        {(admin || istKindVonMir) && !editing && (
           <button onClick={() => setEditing(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-red-700 transition-colors">
             <Edit size={14} /> Bearbeiten
           </button>
         )}
-        {(admin || (istElternkonto && istKindVonMir)) && editing && (
+        {(admin || istKindVonMir) && editing && (
           <div className="flex gap-2">
             <button onClick={() => { setEditing(false); if (isNew) navigate(-1); }}
               className="p-2 rounded-lg bg-neutral-800 text-muted-foreground hover:text-white transition-colors">

@@ -41,7 +41,6 @@ const TERMINART_DOT = {
 // Welche Terminarten darf die jeweilige Rolle sehen?
 const ROLLE_ERLAUBTE_SICHTBARKEIT = {
   mitglied:        ['alle'],
-  elternkonto:     ['alle'],
   spartenleiter:   ['alle', 'verantwortliche'],
   kassierer:       ['alle', 'verantwortliche'],
   stellv_vorstand: ['alle', 'verantwortliche', 'ausschuss', 'admin'],

@@ -8,7 +8,6 @@
  * - kassierer
  * - spartenleiter
  * - mitglied
- * - elternkonto
  *
  * Ausschusszugang: Spartenleiter sind automatisch Ausschussmitglieder.
  */
@@ -20,7 +19,6 @@ export const ROLLEN = {
   KASSIERER:       'kassierer',
   SPARTENLEITER:   'spartenleiter',
   MITGLIED:        'mitglied',
-  ELTERNKONTO:     'elternkonto',
 };
 
 export const ROLLEN_LABELS = {
@@ -29,7 +27,6 @@ export const ROLLEN_LABELS = {
   kassierer:       'Kassierer',
   spartenleiter:   'Spartenleiter',
   mitglied:        'Mitglied',
-  elternkonto:     'Elternkonto',
   // Legacy-Fallbacks (Base44 Standard-Rollen)
   admin:           'Admin',
   user:            'Mitglied',
@@ -88,7 +85,7 @@ export function getRollenLabel(role) {
 /** Nur einfaches Mitglied oder Elternkonto – kein erweiterter Zugriff (Developer hat Zugriff) */
 export function istNurMitglied(user) {
   if (isDeveloper(user)) return false; // Developer hat immer Zugriff
-  return ['mitglied', 'elternkonto', 'user'].includes(user?.role);
+  return ['mitglied', 'user'].includes(user?.role);
 }
 
 /** Darf dieses Mitglied-Profil sehen?
@@ -97,11 +94,12 @@ export function istNurMitglied(user) {
  *  - Elternkonto: nur wenn gleiche familie_id
  *  - Mitglied: nur eigenes Profil
  */
-export function kannMitgliedProfilSehn(user, myMitglied, zielMitglied) {
+export function kannMitgliedProfilSehn(user, myMitglied, zielMitglied, meineKinder = []) {
   if (!istNurMitglied(user)) return true; // Admin etc. dürfen alles
   if (!myMitglied || !zielMitglied) return false;
   if (myMitglied.id === zielMitglied.id) return true; // eigenes Profil
-  if (user?.role === 'elternkonto' && myMitglied.familie_id && myMitglied.familie_id === zielMitglied.familie_id) return true;
+  // Eltern können Profile ihrer Kinder sehen (auf Basis Verwandtschaft)
+  if (meineKinder.some(k => k === zielMitglied.id)) return true;
   return false;
 }
 

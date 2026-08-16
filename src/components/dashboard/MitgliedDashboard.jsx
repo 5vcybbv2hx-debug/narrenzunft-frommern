@@ -106,10 +106,18 @@ export default function MitgliedDashboard() {
         setMeineSpartenGruppen(gruppen.flat().filter(Boolean));
       }
 
-      // Familienübersicht für Elternkonten
-      if (user?.role === 'elternkonto' && mitglied.familie_id) {
-        const famM = await base44.entities.Mitglied.filter({ familie_id: mitglied.familie_id });
-        setFamilienMitglieder(famM.filter(m => m.id !== mitglied.id));
+      // Familienübersicht: alle mit Kind-Verwandtschaft zeigen Kinder an
+      if (mitglied?.id) {
+        try {
+          const verwandte = await base44.entities.Verwandtschaft.filter({ mitglied_id: mitglied.id });
+          const kinder = verwandte.filter(v => v.beziehung === 'Kind');
+          if (kinder.length > 0) {
+            const kinderMitglieder = await Promise.all(kinder.map(k => base44.entities.Mitglied.get(k.verwandter_id)));
+            setFamilienMitglieder(kinderMitglieder.filter(Boolean));
+          }
+        } catch (e) {
+          console.error('Familienübersicht:', e);
+        }
       }
 
       setVeranstaltungen(events);
