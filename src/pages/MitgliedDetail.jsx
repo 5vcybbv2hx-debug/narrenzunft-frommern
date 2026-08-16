@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import {
@@ -148,6 +148,8 @@ export default function MitgliedDetail() {
   const loadMitglied = async () => {
     setLoading(true);
     setError(null);
+    let elternIstKind = false;
+    let elternIstEltern = false;
     try {
       const [m, h, e] = await Promise.all([
         base44.entities.Mitglied.filter({ id }),
@@ -175,8 +177,6 @@ export default function MitgliedDetail() {
       setEhrungen(e || []);
 
       // Prüfe ob aktuelles Mitglied ein Kind des eingeloggten Nutzers ist
-      let elternIstKind = false;
-      let elternIstEltern = false;
       if (user?.role === 'elternkonto' && m[0]) {
         try {
           // Finde das Mitgliedsprofil des eingeloggten Nutzers
