@@ -4,131 +4,111 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!user) return Response.json({ erfolg: false, error: 'Nicht authentifiziert' }, { status: 401 });
 
-    // 1. Eigenes Mitglied laden
-    const eigeneMResp = await base44.asServiceRole.entities.Mitglied.filter({ user_id: user.id });
-    const eigenMitglied = eigeneMResp[0];
-
-    const isAdmin = user.role === 'admin' || user.role === 'vorstand' || user.role === 'stellv_vorstand';
-    const isEltern = user.role === 'elternkonto';
-
-    // 2. Berechtigung prüfen
-    if (!isAdmin && !isEltern && !eigenMitglied) {
-      return Response.json({ 
-        error: 'Kein Mitgliederprofil gefunden',
-        familie: null,
-        kinder: [],
-        termine: [],
-        dienste: [],
-        ehrungen: [],
-      }, { status: 403 });
+    // Find Mitglied for current user
+    let selbst = null;
+    try {
+      const byUserId = await base44.asServiceRole.entities.Mitglied.filter({ user_id: user.id });
+      if (byUserId && byUserId.length > 0) selbst = byUserId[0];
+    } catch (e) {}
+    
+    if (!selbst) {
+      try {
+        const byEmail = await base44.asServiceRole.entities.Mitglied.filter({ email: user.email });
+        if (byEmail && byEmail.length > 0) selbst = byEmail[0];
+      } catch (e) {}
     }
 
-    let familienMitgliederIds = [];
-    
-    if (isAdmin) {
-      // Admin sieht alle (optional Familie per Query filtern)
-      familienMitgliederIds = []; // wird nicht genutzt bei Admin
-    } else if (isEltern && eigenMitglied) {
-      // Eltern sehen: sich selbst + verwandte Mitglieder
-      familienMitgliederIds = [eigenMitglied.id];
-      
-      // Verwandtschaften laden
-      const verwandtschaften = await base44.asServiceRole.entities.Verwandtschaft.filter({ 
-        mitglied_id: eigenMitglied.id 
-      });
-      const kinderIds = verwandtschaften
-        .filter(v => ['Kind', 'Enkel'].includes(v.beziehung))
-        .map(v => v.verwandter_id);
-      familienMitgliederIds.push(...kinderIds);
-    } else if (eigenMitglied) {
-      // Normales Mitglied: nur sich selbst
-      familienMitgliederIds = [eigenMitglied.id];
+    if (!selbst) {
+      return Response.json({ erfolg: false, error: 'Kein Mitgliedsprofil gefunden' });
     }
 
-    // 3. Mitgliederdaten laden
-    const alleMitglieder = await base44.asServiceRole.entities.Mitglied.filter({ 
-      id: isAdmin ? undefined : undefined 
-    });
-    
-    const familieMitglieder = isAdmin 
-      ? alleMitglieder 
-      : alleMitglieder.filter(m => familienMitgliederIds.includes(m.id));
+    // Get Verwandtschaft entries for this member (both directions)
+    let verwandtschaftenDirect = [];
+    let verwandtschaftenReverse = [];
+    try {
+      verwandtschaftenDirect = await base44.asServiceRole.entities.Verwandtschaft.filter({ mitglied_id: selbst.id });
+    } catch (e) {}
+    try {
+      verwandtschaftenReverse = await base44.asServiceRole.entities.Verwandtschaft.filter({ verwandter_id: selbst.id });
+    } catch (e) {}
 
-    const haupt = familieMitglieder.length > 0 ? familieMitglieder[0] : null;
-    const kinder = familieMitglieder.slice(1);
-
-    // 4. Termine für Familie laden
-    const alleTermine = await base44.asServiceRole.entities.KalenderTermin.list('datum', 300);
-    const familieTermine = alleTermine.filter(t => {
-      if (t.sichtbarkeit === 'admin' && !isAdmin) return false;
-      if (familienMitgliederIds.length > 0) {
-        return t.eingeladene_ids?.some(id => familienMitgliederIds.includes(id));
-      }
-      return true;
-    });
-
-    // 5. Dienste für Familie laden
-    const alleDienste = await base44.asServiceRole.entities.Arbeitsdienst.list('datum', 200);
-    const alleDienstzuweisungen = await base44.asServiceRole.entities.ArbeitsdienstZuweisung.list('-created_date', 500);
-    
-    const familieDienste = [];
-    for (const mid of familienMitgliederIds) {
-      const zuweisungen = alleDienstzuweisungen.filter(z => z.mitglied_id === mid);
-      for (const z of zuweisungen) {
-        const dienst = alleDienste.find(d => d.id === z.arbeitsdienst_id);
-        if (dienst) {
-          familieDienste.push({
-            dienst,
-            zuweisung: z,
-            mitglied_id: mid,
-          });
-        }
-      }
+    // Combine all relationships
+    const alleBeziehungen = [];
+    for (const v of verwandtschaftenDirect) {
+      alleBeziehungen.push({ verwandterId: v.verwandter_id, beziehung: v.beziehung });
+    }
+    for (const v of verwandtschaftenReverse) {
+      let reverseBeziehung = v.beziehung;
+      if (v.beziehung === 'Kind') reverseBeziehung = 'Elternteil';
+      else if (v.beziehung === 'Elternteil') reverseBeziehung = 'Kind';
+      alleBeziehungen.push({ verwandterId: v.mitglied_id, beziehung: reverseBeziehung });
     }
 
-    // 6. Ehrungen für Familie laden
-    const alleEhrungen = await base44.asServiceRole.entities.Ehrung.list('-created_date', 500);
-    const familieEhrungen = alleEhrungen.filter(e => familienMitgliederIds.includes(e.mitglied_id));
+    // Fetch all related members
+    const verwandteIds = [...new Set(alleBeziehungen.map(b => b.verwandterId))];
+    const verwandteMitglieder = [];
+    for (const vid of verwandteIds) {
+      try {
+        const m = await base44.asServiceRole.entities.Mitglied.get(vid);
+        if (m) verwandteMitglieder.push(m);
+      } catch (e) {}
+    }
 
-    // 7. Häs für Familie laden
-    const alleHaes = await base44.asServiceRole.entities.Haes.filter({ 
-      aktueller_besitzer_id: familienMitgliederIds.length > 0 ? undefined : undefined 
-    });
-    const familieHaes = familienMitgliederIds.length > 0
-      ? alleHaes.filter(h => familienMitgliederIds.includes(h.aktueller_besitzer_id))
-      : [];
+    // Categorize by relationship type
+    const ehepartner = alleBeziehungen
+      .filter(b => b.beziehung === 'Ehepartner/in')
+      .map(b => verwandteMitglieder.find(m => m.id === b.verwandterId))
+      .filter(Boolean)[0] || null;
 
-    // 8. Teilnahmen für Familie laden (für Busstatus)
-    const alleVeranstaltungen = await base44.asServiceRole.entities.Veranstaltung.list('datum', 200);
-    const alleTeilnahmen = await base44.asServiceRole.entities.Teilnahme.list('-created_date', 500);
-    
-    const familieTeilnahmen = alleTeilnahmen.filter(t => familienMitgliederIds.includes(t.mitglied_id));
+    const kinder = alleBeziehungen
+      .filter(b => b.beziehung === 'Kind')
+      .map(b => verwandteMitglieder.find(m => m.id === b.verwandterId))
+      .filter(Boolean);
 
-    // 9. Antwort zusammenstellen
+    const verwandte = alleBeziehungen
+      .filter(b => !['Ehepartner/in', 'Kind'].includes(b.beziehung))
+      .map(b => ({
+        ...verwandteMitglieder.find(m => m.id === b.verwandterId),
+        beziehung: b.beziehung
+      }))
+      .filter(Boolean);
+
+    // Get haes, dienste, ausfahrten for the family
+    const familienIds = [selbst.id, ...(ehepartner ? [ehepartner.id] : []), ...kinder.map(k => k.id), ...verwandte.map(v => v.id)];
+
+    let haes = [], dienste = [], ausfahrten = [];
+    try {
+      const alleHaes = await base44.asServiceRole.entities.Haes.list(500);
+      haes = alleHaes.filter(h => familienIds.includes(h.aktueller_besitzer_id));
+    } catch (e) {}
+
+    try {
+      const alleDienste = await base44.asServiceRole.entities.Arbeitsdienst.list(500);
+      dienste = alleDienste.filter(d => familienIds.includes(d.mitglied_id));
+    } catch (e) {}
+
+    try {
+      const alleAusfahrten = await base44.asServiceRole.entities.AusfahrtAnmeldung.list(500);
+      ausfahrten = alleAusfahrten.filter(a => familienIds.includes(a.mitglied_id));
+    } catch (e) {}
+
+    const isAdmin = ['admin', 'vorstand', 'stellv_vorstand'].includes(user.role);
+
     return Response.json({
       erfolg: true,
-      familie: haupt,
+      selbst,
+      ehepartner,
       kinder,
-      termine: familieTermine.slice(0, 20),
-      dienste: familieDienste.slice(0, 30),
-      ehrungen: familieEhrungen,
-      haes: familieHaes,
-      teilnahmen: familieTeilnahmen,
-      veranstaltungen: alleVeranstaltungen.slice(0, 50),
-      darfBearbeiten: isEltern || isAdmin,
+      verwandte,
+      termine: [],
+      dienste,
+      haes,
+      ausfahrten,
+      isAdmin
     });
   } catch (error) {
-    console.error(error);
-    return Response.json({ 
-      error: error.message,
-      erfolg: false,
-      familie: null,
-      kinder: [],
-      termine: [],
-      dienste: [],
-      ehrungen: [],
-    }, { status: 500 });
+    return Response.json({ erfolg: false, error: error.message }, { status: 500 });
   }
 });
