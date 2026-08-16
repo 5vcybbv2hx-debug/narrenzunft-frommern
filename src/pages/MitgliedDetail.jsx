@@ -146,8 +146,7 @@ export default function MitgliedDetail() {
   const loadMitglied = async () => {
     setLoading(true);
     setError(null);
-    let elternIstKind = false;
-    let elternIstEltern = false;
+    let istMeinKind = false;
     try {
       const [m, h, e] = await Promise.all([
         base44.entities.Mitglied.filter({ id }),
@@ -175,7 +174,6 @@ export default function MitgliedDetail() {
       setEhrungen(e || []);
 
       // Prüfe ob aktuelles Mitglied ein Kind des eingeloggten Nutzers ist (für alle Rollen)
-      let istMeinKind = false;
       if (m[0] && user?.id) {
         try {
           // Finde das Mitgliedsprofil des eingeloggten Nutzers
