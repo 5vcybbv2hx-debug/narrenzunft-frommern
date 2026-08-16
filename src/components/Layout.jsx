@@ -267,7 +267,7 @@ export default function Layout() {
   );
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex overflow-x-hidden">
 
       {/* ── Desktop Sidebar ── */}
       <aside className="hidden lg:flex flex-col w-60 fixed h-full z-30"
@@ -312,7 +312,7 @@ export default function Layout() {
       {sidebarOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          <aside className="relative flex flex-col w-72 h-full z-50 shadow-2xl"
+          <aside className="relative flex flex-col w-[85vw] max-w-72 h-full z-50 shadow-2xl"
                  style={{ background: 'hsl(var(--sidebar-background))' }}>
             <div className="relative flex items-center justify-between px-4 py-4 border-b border-sidebar-border overflow-hidden">
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
@@ -356,9 +356,9 @@ export default function Layout() {
                 style={{ background: 'hsl(var(--background) / 0.9)', backdropFilter: 'blur(12px)', paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
           <div className="absolute bottom-0 left-0 right-0 h-px bg-primary/30" />
 
-          <button className="lg:hidden p-2 rounded-md text-muted-foreground hover:bg-neutral-800 hover:text-white transition-colors"
+          <button className="lg:hidden p-2.5 -ml-2 rounded-md text-muted-foreground hover:bg-neutral-800 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
             onClick={() => setSidebarOpen(true)}>
-            <Menu size={20} />
+            <Menu size={22} />
           </button>
 
           <div className="hidden md:flex flex-1 max-w-sm">
@@ -372,14 +372,14 @@ export default function Layout() {
 
           <div className="flex items-center gap-1.5 ml-auto">
             <Link to="/benachrichtigungen"
-              className="relative p-2 rounded-md text-muted-foreground hover:bg-neutral-800 hover:text-white transition-colors">
-              <Bell size={18} />
+              className="relative p-2.5 rounded-md text-muted-foreground hover:bg-neutral-800 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
+              <Bell size={20} />
               {notifications > 0 && (
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary/10 border border-primary/30 rounded-full shadow-sm shadow-primary/50" />
               )}
             </Link>
             <Link to="/profil"
-              className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm hover:bg-red-700 transition-colors shadow-sm shadow-primary/30">
+              className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm hover:bg-red-700 transition-colors shadow-sm shadow-primary/30 shrink-0">
               {user?.full_name?.[0] || 'U'}
             </Link>
           </div>

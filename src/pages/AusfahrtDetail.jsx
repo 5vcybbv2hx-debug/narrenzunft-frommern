@@ -513,7 +513,7 @@ export default function AusfahrtDetail() {
               <span className="inline-block bg-primary/20 text-primary border border-primary/30 text-xs font-semibold px-2.5 py-1 rounded-full mb-3 uppercase tracking-wider">
                 {ausfahrt.typ || 'Ausfahrt'}
               </span>
-              <h1 className="text-3xl md:text-4xl font-bold font-oswald tracking-wide uppercase text-white mb-2">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-oswald tracking-wide uppercase text-white mb-2 break-words">
                 {ausfahrt.titel}
               </h1>
               <p className="text-gray-400 flex items-center text-sm md:text-base">
@@ -529,7 +529,7 @@ export default function AusfahrtDetail() {
             </div>
             
             {/* Bus Capacity Progress */}
-            <div className="bg-[#121212] border border-border p-4 rounded-xl min-w-[240px]">
+            <div className="bg-[#121212] border border-border p-3 sm:p-4 rounded-xl w-full sm:w-auto sm:min-w-[240px]">
               <div className="flex justify-between text-sm mb-1.5 font-medium">
                 <span className="text-gray-400">Bus-Auslastung:</span>
                 <span className="text-white">{busPassengersCount} / {capacityLimit} Plätze</span>
@@ -599,7 +599,7 @@ export default function AusfahrtDetail() {
         )}
 
         {/* Info Grid & Registration Column */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-8">
           {/* Main Info Box */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-card border border-border rounded-xl p-6">
@@ -957,7 +957,7 @@ export default function AusfahrtDetail() {
             )}
 
             {/* Registrations List / Table */}
-            <div className="overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-border text-gray-400 text-xs font-semibold uppercase tracking-wider">
@@ -1050,6 +1050,31 @@ export default function AusfahrtDetail() {
                 </tbody>
               </table>
             </div>
+            <div className="md:hidden space-y-2">
+              {sortedRegistrations.length === 0 ? (
+                <p className="py-6 text-center text-gray-400 text-sm">Keine aktiven Anmeldungen.</p>
+              ) : sortedRegistrations.map((entry) => (
+                <div key={entry.id} className="bg-neutral-900/30 border border-border rounded-xl p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium text-white truncate flex-1">{entry.name}</p>
+                    {entry.status === 'Eingecheckt' ? (
+                      <span className="bg-green-950/40 text-green-400 border border-green-800/30 px-2.5 py-1 rounded-full font-semibold flex items-center gap-1 text-xs shrink-0">&#10003; Eingecheckt</span>
+                    ) : (
+                      <span className="bg-neutral-800 text-gray-300 border border-border px-2.5 py-1 rounded-full font-medium text-xs shrink-0">Angemeldet</span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex gap-2 items-center">
+                      {entry.isFremd ? <span className="text-xs text-yellow-500">Extern</span> : entry.isBegleitperson ? <span className="text-xs text-purple-400">Begleitung</span> : <span className="text-xs text-blue-400">Mitglied</span>}
+                      <span className="text-xs text-gray-300">{entry.transport === 'Bus' ? '🚌' : '🚗'}</span>
+                    </div>
+                    {entry.status !== 'Eingecheckt' && (
+                      <button onClick={() => entry.isBegleitperson ? handleBegleitpersonCheckIn(entry.parentId, entry.begleitIndex) : handleCheckIn({ id: entry.parentId })} className="bg-primary text-white font-semibold px-3 py-1.5 rounded-lg text-xs">Einchecken</button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -1109,7 +1134,7 @@ export default function AusfahrtDetail() {
               <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&bgcolor=ffffff&data=${encodeURIComponent(myRegistration.id)}`}
                 alt="QR Code"
-                className="rounded-xl"
+                className="rounded-xl w-[200px] h-[200px] sm:w-[250px] sm:h-[250px] max-w-full"
               />
             </div>
             <p className="text-center text-sm text-gray-300 font-medium">{getMitgliedName(myRegistration.mitglied_id)}</p>
@@ -1124,7 +1149,7 @@ export default function AusfahrtDetail() {
 
       {/* Busverantwortliche Modal */}
       {showBusVwModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setShowBusVwModal(false)}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4" onClick={() => setShowBusVwModal(false)}>
           <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold font-oswald uppercase tracking-wider text-white">Busverantwortliche</h3>
@@ -1158,9 +1183,9 @@ export default function AusfahrtDetail() {
                       {m.vorname || ''} {m.nachname || ''}
                       <button
                         onClick={() => setSelectedBusVw(prev => prev.filter(id => id !== bvId))}
-                        className="hover:text-primary"
+                        className="hover:text-primary p-1 touch-manipulation"
                       >
-                        <X className="w-3 h-3" />
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     </span>
                   );

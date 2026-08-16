@@ -26,12 +26,12 @@ function getBegruessung(name) {
 function StatCard({ icon: Icon, label, value, color = 'text-primary', sub, onClick }) {
   return (
     <div
-      className={`relative bg-card border border-border rounded-lg p-4 flex items-center gap-4 overflow-hidden ${onClick ? 'cursor-pointer hover:border-primary/40 hover:bg-card/80 transition-all duration-150' : ''}`}
+      className={`relative bg-card border border-border rounded-lg p-3 sm:p-4 flex items-center gap-3 sm:gap-4 overflow-hidden ${onClick ? 'cursor-pointer hover:border-primary/40 hover:bg-card/80 transition-all duration-150' : ''}`}
       onClick={onClick}
     >
       <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-lg" />
-      <div className={`ml-2 w-11 h-11 rounded-lg bg-primary/10 flex items-center justify-center ${color} shrink-0`}>
-        <Icon size={20} />
+      <div className={`ml-1 sm:ml-2 w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-primary/10 flex items-center justify-center ${color} shrink-0`}>
+        <Icon size={18} />
       </div>
       <div className="min-w-0">
         <p className="text-2xl font-oswald font-semibold text-foreground leading-tight">{value}</p>
@@ -57,7 +57,7 @@ function SectionCard({ title, subtitle, icon: Icon, children, linkTo, linkLabel 
         <div className="px-5 pb-4">
           <Link
             to={linkTo}
-            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+            className="flex items-center justify-center gap-2 w-full py-3 min-h-[44px] rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
           >
             {linkLabel} <ArrowRight size={14} />
           </Link>
@@ -221,7 +221,7 @@ export default function Dashboard() {
         {isAdminUser && (
           <Link
             to="/vorstand"
-            className="inline-flex items-center gap-2 mt-3 px-4 py-2 rounded-xl bg-primary/10 border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/20 transition-colors"
+            className="inline-flex items-center gap-2 mt-3 px-4 py-2.5 min-h-[44px] rounded-xl bg-primary/10 border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/20 transition-colors"
           >
             <Shield size={15} /> Führungs-Dashboard <ChevronRight size={14} />
           </Link>
@@ -230,14 +230,14 @@ export default function Dashboard() {
         {/* Schnellaktionen */}
         {isAdminUser && (
           <div className="flex flex-wrap gap-2 mt-3">
-            <Link to="/veranstaltungen/neu" className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary border border-border text-xs font-medium text-foreground hover:border-primary/40 transition-colors">
-              <Calendar size={13} className="text-primary" /> Termin
+            <Link to="/veranstaltungen/neu" className="flex items-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-xs font-medium text-foreground hover:border-primary/40 transition-colors">
+              <Calendar size={14} className="text-primary" /> Termin
             </Link>
-            <Link to="/mitglieder/neu" className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary border border-border text-xs font-medium text-foreground hover:border-primary/40 transition-colors">
-              <Users size={13} className="text-primary" /> Mitglied
+            <Link to="/mitglieder/neu" className="flex items-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-xs font-medium text-foreground hover:border-primary/40 transition-colors">
+              <Users size={14} className="text-primary" /> Mitglied
             </Link>
-            <Link to="/arbeitsdienste/neu" className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary border border-border text-xs font-medium text-foreground hover:border-primary/40 transition-colors">
-              <Briefcase size={13} className="text-primary" /> Dienst
+            <Link to="/arbeitsdienste/neu" className="flex items-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-xs font-medium text-foreground hover:border-primary/40 transition-colors">
+              <Briefcase size={14} className="text-primary" /> Dienst
             </Link>
           </div>
         )}
@@ -445,18 +445,18 @@ export default function Dashboard() {
             linkLabel="Rechnungen prüfen"
           >
             <div className="space-y-3">
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-3">
                   <p className="text-[10px] text-muted-foreground">Bezahlt</p>
-                  <p className="text-base font-oswald font-semibold text-green-400">{beitraegeStats.bezahlt.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
+                  <p className="text-sm sm:text-base font-oswald font-semibold text-green-400">{beitraegeStats.bezahlt.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
                 </div>
                 <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3">
                   <p className="text-[10px] text-muted-foreground">Offen</p>
-                  <p className="text-base font-oswald font-semibold text-yellow-400">{beitraegeStats.offen.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
+                  <p className="text-sm sm:text-base font-oswald font-semibold text-yellow-400">{beitraegeStats.offen.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
                 </div>
                 <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3">
                   <p className="text-[10px] text-muted-foreground">Überfällig</p>
-                  <p className="text-base font-oswald font-semibold text-red-400">{beitraegeStats.ueberfaellig.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
+                  <p className="text-sm sm:text-base font-oswald font-semibold text-red-400">{beitraegeStats.ueberfaellig.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
                 </div>
               </div>
             </div>
@@ -526,7 +526,7 @@ export default function Dashboard() {
                 <span className="font-oswald font-semibold text-foreground text-lg">{stats.haesGesamt}</span>
               </div>
               {/* Aufschlüsselung */}
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-2.5 text-center">
                   <p className="text-lg font-oswald font-semibold text-green-400">{stats.haesAktiv}</p>
                   <p className="text-[10px] text-muted-foreground">Aktiv</p>

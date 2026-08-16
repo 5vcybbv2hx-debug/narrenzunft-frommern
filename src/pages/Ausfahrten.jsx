@@ -204,7 +204,7 @@ export default function Ausfahrten() {
       </div>
 
       {/* Sticky Search & Filters bar */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md py-4 border-b border-border mb-6">
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md pt-3 pb-4 border-b border-border mb-6">
         <div className="relative mb-4">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
@@ -281,7 +281,7 @@ export default function Ausfahrten() {
                 key={ausfahrt.id}
                 className="bg-card border border-border rounded-xl hover:border-gray-700 transition-all duration-300 overflow-hidden flex flex-col justify-between"
               >
-                <div className="p-5 md:p-6">
+                <div className="p-4 sm:p-5 md:p-6">
                   {/* Top badges and actions */}
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                     <div className="flex flex-wrap gap-2 items-center">
@@ -359,7 +359,7 @@ export default function Ausfahrten() {
                 </div>
 
                 {/* Card action footer */}
-                <div className="bg-[#0c0c0c] border-t border-border px-5 py-4 md:px-6 flex flex-wrap items-center justify-between gap-3">
+                <div className="bg-[#0c0c0c] border-t border-border px-4 py-3 sm:px-5 md:px-6 flex flex-wrap items-center justify-between gap-3">
                   <Link 
                     to={`/ausfahrten/${ausfahrt.id}`}
                     className="inline-flex items-center gap-1.5 text-sm text-gray-300 hover:text-white hover:underline font-medium"

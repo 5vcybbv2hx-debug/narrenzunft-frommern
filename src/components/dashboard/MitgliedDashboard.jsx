@@ -13,11 +13,11 @@ import { de } from 'date-fns/locale';
 function Card({ title, icon: Icon, children, linkTo, linkLabel, accent }) {
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
-      <div className={`flex items-center gap-3 px-5 py-4 border-b border-border ${accent ? 'bg-primary/5' : ''}`}>
+      <div className={`flex items-center gap-3 px-4 sm:px-5 py-4 border-b border-border ${accent ? 'bg-primary/5' : ''}`}>
         <Icon size={16} className="text-primary shrink-0" />
         <h3 className="font-semibold text-foreground text-sm flex-1">{title}</h3>
         {linkTo && (
-          <Link to={linkTo} className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-0.5">
+          <Link to={linkTo} className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-0.5 py-2.5 min-h-[44px]">
             Alle <ChevronRight size={12} />
           </Link>
         )}
@@ -27,7 +27,7 @@ function Card({ title, icon: Icon, children, linkTo, linkLabel, accent }) {
         <div className="px-4 pb-4">
           <Link
             to={linkTo}
-            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+            className="flex items-center justify-center gap-2 w-full py-3 min-h-[44px] rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
           >
             {linkLabel} <ChevronRight size={14} />
           </Link>

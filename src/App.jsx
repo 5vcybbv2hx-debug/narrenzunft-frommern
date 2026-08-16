@@ -87,13 +87,14 @@ const AuthenticatedApp = () => {
   }
 
   return (
+    <div className="overflow-x-hidden">
     <AnimatePresence mode="wait" initial={false}>
     <motion.div
       key={location.pathname}
-      initial={{ x: 20, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      exit={{ x: -20, opacity: 0 }}
-      transition={{ duration: 0.18, ease: 'easeInOut' }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15, ease: 'easeInOut' }}
       style={{ display: 'contents' }}
     >
     <Routes location={location}>
@@ -192,6 +193,7 @@ const AuthenticatedApp = () => {
     </Routes>
     </motion.div>
     </AnimatePresence>
+    </div>
   );
 };
 

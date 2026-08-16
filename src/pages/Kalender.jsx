@@ -180,7 +180,7 @@ export default function Kalender() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowFilter(!showFilter)}
-            className={`relative p-2 rounded-lg transition-colors ${showFilter || filterArt !== 'alle' ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+            className={`relative p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors ${showFilter || filterArt !== 'alle' ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
           >
             <Filter size={18} />
           </button>
@@ -188,7 +188,7 @@ export default function Kalender() {
             <div className="relative">
               <button
                 onClick={() => setShowNeuDropdown(v => !v)}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+                className="flex items-center gap-2 px-3 py-2.5 min-h-[44px] rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
               >
                 <Plus size={16} /> <span className="hidden sm:inline">Neu</span> <ChevronRight size={12} className={`transition-transform ${showNeuDropdown ? 'rotate-90' : ''}`} />
               </button>
@@ -289,13 +289,13 @@ export default function Kalender() {
       <div className="flex gap-1.5 mb-4">
         <button
           onClick={() => setAnsicht('liste')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${ansicht === 'liste' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-all ${ansicht === 'liste' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
         >
           <List size={15} /> Liste
         </button>
         <button
           onClick={() => setAnsicht('monat')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${ansicht === 'monat' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-all ${ansicht === 'monat' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
         >
           <Calendar size={15} /> Monat
         </button>
@@ -306,13 +306,13 @@ export default function Kalender() {
         <div className="bg-card border border-border rounded-xl overflow-hidden mb-4">
           {/* Monat-Navigation */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-            <button onClick={() => setMonat(subMonths(monat, 1))} className="p-1.5 rounded-lg hover:bg-secondary transition-colors text-muted-foreground">
+            <button onClick={() => setMonat(subMonths(monat, 1))} className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-secondary transition-colors text-muted-foreground">
               <ChevronLeft size={18} />
             </button>
             <h2 className="font-oswald font-semibold text-foreground text-lg">
               {format(monat, 'MMMM yyyy', { locale: de })}
             </h2>
-            <button onClick={() => setMonat(addMonths(monat, 1))} className="p-1.5 rounded-lg hover:bg-secondary transition-colors text-muted-foreground">
+            <button onClick={() => setMonat(addMonths(monat, 1))} className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-secondary transition-colors text-muted-foreground">
               <ChevronRight size={18} />
             </button>
           </div>
@@ -361,7 +361,7 @@ export default function Kalender() {
                 <p className="text-sm font-semibold text-foreground">
                   {format(selectedTermin.day, 'EEEE, d. MMMM', { locale: de })}
                 </p>
-                <button onClick={() => setSelectedTermin(null)} className="p-1 rounded text-muted-foreground hover:text-foreground">
+                <button onClick={() => setSelectedTermin(null)} className="p-2 rounded text-muted-foreground hover:text-foreground">
                   <X size={14} />
                 </button>
               </div>
@@ -503,7 +503,7 @@ function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, onEditVeranstaltun
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start gap-2 flex-wrap">
-            <p className="font-semibold text-foreground text-sm">{termin.titel}</p>
+            <p className="font-semibold text-foreground text-sm break-words">{termin.titel}</p>
             <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${farbeClass}`}>
               {termin.terminart}
             </span>
@@ -547,7 +547,7 @@ function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, onEditVeranstaltun
           {istVonVeranstaltung && (
             <Link
               to={`/veranstaltungen/${termin._veranstaltung_id}`}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors text-xs"
+              className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors text-xs"
               title="Zur Veranstaltung"
             >
               →
@@ -556,14 +556,14 @@ function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, onEditVeranstaltun
           {onEditVeranstaltung && istVonVeranstaltung && ['Umzug', 'Abendveranstaltung'].includes(termin.terminart) && (
             <button
               onClick={() => onEditVeranstaltung({ id: termin._veranstaltung_id, ...termin, typ: termin.terminart })}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+              className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
               title="Bearbeiten"
             >
               <Edit size={13} />
             </button>
           )}
           {onEdit && !istVonVeranstaltung && (
-            <button onClick={onEdit} className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
+            <button onClick={onEdit} className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
               <Edit size={13} />
             </button>
           )}
@@ -625,7 +625,7 @@ function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, onEditVeranstaltun
         <div className="px-4 pb-3">
           <button
             onClick={onAnmelden}
-            className={`w-full py-2 rounded-lg text-sm font-semibold transition-colors ${
+            className={`w-full py-2.5 min-h-[44px] rounded-lg text-sm font-semibold transition-colors ${
               isAngemeldet
                 ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
                 : 'bg-primary text-primary-foreground hover:bg-primary/90'
@@ -639,7 +639,7 @@ function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, onEditVeranstaltun
         <div className="px-4 pb-3">
           <Link
             to={`/umzuege`}
-            className="block w-full py-2 rounded-lg text-sm font-semibold text-center bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+            className="block w-full py-2.5 min-h-[44px] rounded-lg text-sm font-semibold text-center bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
           >
             Zur Anmeldung →
           </Link>

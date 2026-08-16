@@ -126,9 +126,9 @@ export default function Shop() {
           </div>
           <div className="flex items-center gap-3">
             <div className="flex bg-neutral-900 border border-border p-1 rounded-xl">
-              <button onClick={() => setActiveTab('shop')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${activeTab === 'shop' ? 'bg-primary text-white' : 'text-neutral-400 hover:text-white'}`}>Katalog</button>
+              <button onClick={() => setActiveTab('shop')} className={`px-4 py-2 min-h-[40px] rounded-lg text-sm font-medium transition-all ${activeTab === 'shop' ? 'bg-primary text-white' : 'text-neutral-400 hover:text-white'}`}>Katalog</button>
               {meineBestellungen.length > 0 && (
-                <button onClick={() => setActiveTab('bestellungen')} className={`px-4 py-1.5 rounded-lg text-sm font-medium relative transition-all ${activeTab === 'bestellungen' ? 'bg-primary text-white' : 'text-neutral-400 hover:text-white'}`}>
+                <button onClick={() => setActiveTab('bestellungen')} className={`px-4 py-2 min-h-[40px] rounded-lg text-sm font-medium relative transition-all ${activeTab === 'bestellungen' ? 'bg-primary text-white' : 'text-neutral-400 hover:text-white'}`}>
                   Meine Bestellungen
                   <span className="ml-1.5 px-1.5 py-0.5 text-[10px] bg-neutral-800 text-neutral-300 rounded-full">{meineBestellungen.length}</span>
                 </button>
@@ -148,7 +148,7 @@ export default function Shop() {
                 <p className="text-xs mt-1 text-red-300">{error}</p>
               </div>
             </div>
-            <button onClick={() => setError(null)} className="text-red-400 hover:text-white"><X className="w-5 h-5" /></button>
+            <button onClick={() => setError(null)} className="text-red-400 hover:text-white p-2 -mr-1"><X className="w-5 h-5" /></button>
           </div>
         )}
 
@@ -236,7 +236,7 @@ export default function Shop() {
                           {product.formattedPrice}
                         </span>
                         <a href={product.url} target="_blank" rel="noopener noreferrer"
-                          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all ${product.isInStock
+                          className={`flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-xl text-sm font-medium transition-all ${product.isInStock
                             ? 'bg-primary text-white hover:bg-primary/90'
                             : 'bg-neutral-800 text-neutral-500 cursor-not-allowed pointer-events-none'}`}>
                           {product.isInStock ? 'Bestellen' : 'Nicht verfügbar'}

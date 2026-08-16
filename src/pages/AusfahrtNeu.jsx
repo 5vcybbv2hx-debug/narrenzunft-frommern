@@ -159,7 +159,7 @@ export default function AusfahrtNeu() {
       )}
 
       {/* Form */}
-      <div className="bg-card border border-border rounded-xl p-5 sm:p-6">
+      <div className="bg-card border border-border rounded-xl p-4 sm:p-5 lg:p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
 
           {/* Allgemein */}
@@ -193,7 +193,7 @@ export default function AusfahrtNeu() {
           {/* Zeiten */}
           <div>
             <h2 className="text-base font-oswald font-semibold text-foreground border-b border-border pb-2 mb-4">Zeiten & Logistik</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div>
                 <label className={labelClass}>Abfahrt *</label>
                 <input type="time" name="abfahrt_zeit" value={formData.abfahrt_zeit} onChange={handleChange} className={inputClass} />

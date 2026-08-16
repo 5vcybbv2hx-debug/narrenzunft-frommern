@@ -129,9 +129,11 @@ export default function AusfahrtScanner() {
       const html5QrCode = new window.Html5Qrcode('qr-reader');
       html5QrCodeRef.current = html5QrCode;
 
+      const screenWidth = window.innerWidth || 375;
+      const qrboxSize = Math.min(250, Math.floor(screenWidth * 0.7));
       const qrConfig = {
         fps: 10,
-        qrbox: { width: 250, height: 250 },
+        qrbox: { width: qrboxSize, height: qrboxSize },
         aspectRatio: 1.0,
         experimentalFeatures: { useBarCodeDetectorIfSupported: true }
       };
@@ -262,7 +264,7 @@ export default function AusfahrtScanner() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
           <div className="bg-card border border-border rounded-xl p-4 text-center">
             <p className="text-2xl font-bold font-oswald text-white">{gesamtCount}</p>
             <p className="text-xs text-gray-500 mt-1">Angemeldet</p>
@@ -288,7 +290,7 @@ export default function AusfahrtScanner() {
             </button>
           ) : (
             <div className="space-y-4">
-              <div id="qr-reader" className="w-full rounded-xl overflow-hidden bg-black" ref={scannerRef} />
+              <div id="qr-reader" className="w-full max-w-sm mx-auto rounded-xl overflow-hidden bg-black aspect-square" ref={scannerRef} />
               <button
                 onClick={stopScanner}
                 className="w-full bg-neutral-800 hover:bg-neutral-700 text-white border border-border font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
