@@ -55,7 +55,7 @@ export default function VeranstaltungBearbeitenModal({ veranstaltung, onClose, o
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-bold text-foreground text-lg">
             {veranstaltung ? 'Termin bearbeiten' : 'Neuer auswärtiger Termin'}
@@ -165,7 +165,7 @@ export default function VeranstaltungBearbeitenModal({ veranstaltung, onClose, o
             <input type="date" value={form.anmeldeschluss || ''} onChange={e => set('anmeldeschluss', e.target.value)}
               className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
           </div>
-          <div className="flex gap-6">
+          <div className="flex gap-4 sm:p-6">
             <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground">
               <input type="checkbox" checked={!!form.bus_erforderlich} onChange={e => set('bus_erforderlich', e.target.checked)} className="rounded" />
               Bus erforderlich

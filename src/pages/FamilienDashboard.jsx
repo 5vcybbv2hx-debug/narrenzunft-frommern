@@ -145,7 +145,7 @@ export default function FamilienDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center p-6 text-white">
+      <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center p-4 sm:p-6 text-white">
         <div className="w-10 h-10 border-[3px] border-border border-t-primary rounded-full animate-spin" />
         <p className="mt-4 text-sm font-medium tracking-wide font-oswald uppercase text-neutral-400">Familie wird geladen...</p>
       </div>

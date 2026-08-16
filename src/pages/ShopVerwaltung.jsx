@@ -327,10 +327,10 @@ function ShopVerwaltungContent({ user }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#080808] text-white p-4 sm:p-6 md:p-8">
+    <div className="min-h-screen bg-[#080808] text-white p-4 sm:p-4 sm:p-6 md:p-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="font-oswald uppercase tracking-wide text-3xl md:text-4xl text-white flex items-center gap-3"><Shirt className="w-8 h-8 text-primary" /> Shop-Verwaltung</h1>
+          <h1 className="font-oswald uppercase tracking-wide text-2xl sm:text-3xl md:text-4xl text-white flex items-center gap-3"><Shirt className="w-8 h-8 text-primary" /> Shop-Verwaltung</h1>
           <p className="text-gray-400 mt-1">Clubkleidung & Bestellungen verwalten</p>
         </div>
         {tab === 'artikel' && <button onClick={() => handleOpenArtikelModal(null)} className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition"><Plus className="w-5 h-5" /> Artikel hinzufügen</button>}
@@ -608,7 +608,7 @@ function ShopVerwaltungContent({ user }) {
       {/* ARTIKEL MODAL */}
       {showArtikelModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-card border border-border rounded-xl p-6 w-full max-w-lg my-8 relative shadow-2xl">
+          <div className="bg-card border border-border rounded-xl p-4 sm:p-6 w-full max-w-lg my-8 relative shadow-2xl">
             <button onClick={() => setShowArtikelModal(false)} className="absolute right-4 top-4 p-1 text-gray-400 hover:text-white transition"><X className="w-5 h-5" /></button>
             <h3 className="font-oswald uppercase tracking-wide text-xl mb-4 text-white">{editingArtikel ? 'Artikel bearbeiten' : 'Artikel hinzufügen'}</h3>
             <form onSubmit={handleSaveArtikel} className="space-y-4">

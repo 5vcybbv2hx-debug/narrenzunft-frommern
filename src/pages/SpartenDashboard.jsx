@@ -435,7 +435,7 @@ export default function SpartenDashboard() {
   }, [alleMitglieder, memberSearchTerm]);
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#080808] text-white flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-[#080808] text-white flex flex-col items-center justify-center p-4 sm:p-6">
         <div className="w-10 h-10 border-[3px] border-border border-t-primary rounded-full animate-spin" />
         <p className="mt-4 text-neutral-400">Lade Dashboard...</p>
       </div>
@@ -444,7 +444,7 @@ export default function SpartenDashboard() {
 
   if (error || !gruppe) {
     return (
-      <div className="min-h-screen bg-[#080808] text-white flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-screen bg-[#080808] text-white flex flex-col items-center justify-center p-4 sm:p-6 text-center">
         <AlertCircle className="w-16 h-16 text-primary mb-4" />
         <h1 className="text-2xl font-oswald uppercase tracking-wide mb-2">Fehler beim Laden</h1>
         <p className="text-neutral-400 mb-6 max-w-md">{error || 'Die Haesgruppe konnte nicht gefunden werden.'}</p>
@@ -480,7 +480,7 @@ export default function SpartenDashboard() {
             </button>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl md:text-3xl font-oswald uppercase tracking-wide text-white font-bold">
+                <h1 className="text-2xl md:text-2xl sm:text-3xl font-oswald uppercase tracking-wide text-white font-bold">
                   {gruppe.name}
                 </h1>
                 {gruppe.farbe && (
@@ -549,8 +549,8 @@ export default function SpartenDashboard() {
         {/* TAB 1: ÜBERSICHT */}
         {activeTab === 'uebersicht' && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-card border border-border rounded-xl p-6 md:col-span-2 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:p-6">
+              <div className="bg-card border border-border rounded-xl p-4 sm:p-6 md:col-span-2 space-y-4">
                 <h3 className="text-xl font-oswald uppercase tracking-wide text-white border-b border-neutral-800 pb-2">
                   Gruppen-Details
                 </h3>
@@ -581,7 +581,7 @@ export default function SpartenDashboard() {
                 )}
               </div>
 
-              <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+              <div className="bg-card border border-border rounded-xl p-4 sm:p-6 space-y-4">
                 <h3 className="text-xl font-oswald uppercase tracking-wide text-white border-b border-neutral-800 pb-2">
                   Verantwortliche
                 </h3>
@@ -608,7 +608,7 @@ export default function SpartenDashboard() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-card border border-border rounded-xl p-5">
                 <span className="text-neutral-500 text-xs block uppercase tracking-wider font-semibold mb-1">Mitglieder</span>
-                <span className="text-3xl font-bold text-white font-oswald">{stats.mitgliederCount}</span>
+                <span className="text-2xl sm:text-3xl font-bold text-white font-oswald">{stats.mitgliederCount}</span>
               </div>
               <div className="bg-card border border-border rounded-xl p-5">
                 <span className="text-neutral-500 text-xs block uppercase tracking-wider font-semibold mb-1">Nächster Termin</span>
@@ -621,7 +621,7 @@ export default function SpartenDashboard() {
               </div>
               <div className="bg-card border border-border rounded-xl p-5">
                 <span className="text-neutral-500 text-xs block uppercase tracking-wider font-semibold mb-1">Offene Auslagen</span>
-                <span className="text-3xl font-bold text-primary font-oswald">
+                <span className="text-2xl sm:text-3xl font-bold text-primary font-oswald">
                   {stats.offeneCount}
                 </span>
                 <span className="text-xs text-neutral-400 block mt-1">
@@ -966,7 +966,7 @@ export default function SpartenDashboard() {
 
         {/* TAB 5: NACHRICHT */}
         {activeTab === 'nachricht' && (
-          <div className="max-w-2xl mx-auto bg-card border border-border rounded-xl p-6 space-y-6">
+          <div className="max-w-2xl mx-auto bg-card border border-border rounded-xl p-4 sm:p-6 space-y-6">
             <h2 className="text-2xl font-oswald uppercase tracking-wide text-white border-b border-neutral-800 pb-2">
               Nachricht an die Gruppe
             </h2>
@@ -1026,7 +1026,7 @@ export default function SpartenDashboard() {
       {/* TERMIN MODAL */}
       {showTerminModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-card border border-border rounded-xl w-full max-w-lg p-6 relative">
+          <div className="bg-card border border-border rounded-xl w-full max-w-lg p-4 sm:p-6 relative">
             <button 
               onClick={() => setShowTerminModal(false)}
               className="absolute top-4 right-4 text-neutral-500 hover:text-white transition-colors"
@@ -1183,7 +1183,7 @@ export default function SpartenDashboard() {
       {/* AUSLAGE MODAL */}
       {showAuslageModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-card border border-border rounded-xl w-full max-w-lg p-6 relative">
+          <div className="bg-card border border-border rounded-xl w-full max-w-lg p-4 sm:p-6 relative">
             <button 
               onClick={() => setShowAuslageModal(false)}
               className="absolute top-4 right-4 text-neutral-500 hover:text-white transition-colors"
@@ -1340,7 +1340,7 @@ export default function SpartenDashboard() {
       {/* VERANTWORTLICHER MODAL */}
       {showVerantwortlicherModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-card border border-border rounded-xl w-full max-w-lg p-6 relative">
+          <div className="bg-card border border-border rounded-xl w-full max-w-lg p-4 sm:p-6 relative">
             <button 
               onClick={() => setShowVerantwortlicherModal(false)}
               className="absolute top-4 right-4 text-neutral-500 hover:text-white transition-colors"

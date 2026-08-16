@@ -408,7 +408,7 @@ export default function Umzuege() {
                   {getMeineAnmeldung(u.id)?.status === 'Anwesend' && <Check size={14} className="text-green-400" />}
                   {admin && (
                     <>
-                      <button onClick={() => openEdit(u)} className="p-1 rounded-lg text-muted-foreground hover:text-primary transition-colors">
+                      <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg text-muted-foreground hover:text-primary transition-colors touch-manipulation">
                         <Edit size={13} />
                       </button>
                       <button onClick={() => handleDelete(u.id)} className="p-1 rounded-lg text-muted-foreground hover:text-destructive transition-colors">

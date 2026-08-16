@@ -286,7 +286,7 @@ export default function Arbeitsdienste() {
                             {kannVerwalten && (
                               <button
                                 onClick={() => setEditDienst(d)}
-                                className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors shrink-0"
+                                className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors shrink-0"
                               >
                                 <Edit size={13} />
                               </button>

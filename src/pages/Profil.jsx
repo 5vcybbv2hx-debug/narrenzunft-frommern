@@ -134,9 +134,9 @@ export default function Profil() {
       )}
 
       {/* Avatar Section */}
-      <div className="bg-card border border-border rounded-xl p-6 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-card border border-border rounded-xl p-4 sm:p-6 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-3xl overflow-hidden shrink-0">
+          <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-2xl sm:text-3xl overflow-hidden shrink-0">
             {mitglied?.profilbild_url ? (
               <img src={mitglied.profilbild_url} alt="" className="w-full h-full object-cover" />
             ) : (
@@ -166,7 +166,7 @@ export default function Profil() {
         {mitglied && (
           <Link
             to={`/mitglieder/${mitglied.id}`}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-neutral-800 text-sm text-white hover:bg-neutral-700 border border-border transition-colors font-medium self-start sm:self-center"
+            className="flex items-center justify-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg bg-neutral-800 text-sm text-white hover:bg-neutral-700 border border-border transition-colors font-medium self-start sm:self-center"
           >
             <FileText size={15} /> Vollständige Akte
           </Link>
@@ -175,7 +175,7 @@ export default function Profil() {
 
       {/* Kein Profil verknüpft */}
       {!mitglied && (
-        <div className="bg-card border border-border rounded-xl p-6 text-center mb-4">
+        <div className="bg-card border border-border rounded-xl p-4 sm:p-6 text-center mb-4">
           <User size={36} className="text-muted-foreground/40 mx-auto mb-3" />
           <p className="text-white font-medium">Kein Mitgliedsprofil gefunden</p>
           <p className="text-sm text-muted-foreground mt-1">
@@ -189,7 +189,7 @@ export default function Profil() {
         <div className="flex gap-2 mb-6 border-b border-border pb-3 overflow-x-auto">
           <button
             onClick={() => setActiveTab('profil')}
-            className={`px-4 py-2 text-sm font-oswald uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap ${
+            className={`px-4 py-2.5 min-h-[44px] text-sm font-oswald uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap ${
               activeTab === 'profil'
                 ? 'bg-primary text-white'
                 : 'bg-neutral-800 text-muted-foreground hover:text-white'
@@ -199,7 +199,7 @@ export default function Profil() {
           </button>
           <button
             onClick={() => setActiveTab('aktivitaet')}
-            className={`px-4 py-2 text-sm font-oswald uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap ${
+            className={`px-4 py-2.5 min-h-[44px] text-sm font-oswald uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap ${
               activeTab === 'aktivitaet'
                 ? 'bg-primary text-white'
                 : 'bg-neutral-800 text-muted-foreground hover:text-white'
@@ -209,7 +209,7 @@ export default function Profil() {
           </button>
           <button
             onClick={() => setActiveTab('dienste')}
-            className={`px-4 py-2 text-sm font-oswald uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap ${
+            className={`px-4 py-2.5 min-h-[44px] text-sm font-oswald uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap ${
               activeTab === 'dienste'
                 ? 'bg-primary text-white'
                 : 'bg-neutral-800 text-muted-foreground hover:text-white'
@@ -257,44 +257,44 @@ export default function Profil() {
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">Telefon</label>
                   <input value={editForm.telefon} onChange={e => setEditForm(p => ({ ...p, telefon: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                    className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">E-Mail</label>
                   <input type="email" value={editForm.email} onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                    className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">Straße & Hausnummer</label>
                   <input value={editForm.strasse} onChange={e => setEditForm(p => ({ ...p, strasse: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                    className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
                     <label className="text-xs text-muted-foreground font-medium block mb-1">PLZ</label>
                     <input value={editForm.plz} onChange={e => setEditForm(p => ({ ...p, plz: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                      className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground font-medium block mb-1">Ort</label>
                     <input value={editForm.ort} onChange={e => setEditForm(p => ({ ...p, ort: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                      className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
                   </div>
                 </div>
                 <div className="border-t border-border pt-3">
                   <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1">
                     <AlertTriangle size={12} className="text-yellow-400" /> Notfallkontakt
                   </p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <label className="text-xs text-muted-foreground font-medium block mb-1">Name</label>
                       <input value={editForm.notfallkontakt_name} onChange={e => setEditForm(p => ({ ...p, notfallkontakt_name: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                        className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
                     </div>
                     <div>
                       <label className="text-xs text-muted-foreground font-medium block mb-1">Telefon</label>
                       <input value={editForm.notfallkontakt_telefon} onChange={e => setEditForm(p => ({ ...p, notfallkontakt_telefon: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                        className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
                     </div>
                   </div>
                 </div>
@@ -358,7 +358,7 @@ export default function Profil() {
           </div>
 
           {/* Statistiken */}
-          <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
               <Flag size={20} className="text-primary shrink-0" />
               <div>
@@ -382,7 +382,7 @@ export default function Profil() {
                 <Shirt size={16} className="text-primary" /> Mein Häs ({haes.length})
               </h3>
               {haes.map(h => (
-                <div key={h.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                <div key={h.id} className="flex items-center justify-between py-2.5 min-h-[44px] border-b border-border last:border-0">
                   <div>
                     <p className="text-sm font-oswald font-bold text-primary">#{h.haesnummer}</p>
                     <p className="text-xs text-muted-foreground">{h.bezeichnung || '–'}</p>
@@ -400,7 +400,7 @@ export default function Profil() {
                 <Award size={16} className="text-primary" /> Meine Ehrungen ({ehrungen.length})
               </h3>
               {ehrungen.map(e => (
-                <div key={e.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                <div key={e.id} className="flex items-center justify-between py-2.5 min-h-[44px] border-b border-border last:border-0">
                   <div>
                     <p className="text-sm text-white">{e.typ}{e.wert ? ` – ${e.wert}` : ''}</p>
                     {e.jahr && <p className="text-xs text-muted-foreground">Jahr {e.jahr}</p>}
