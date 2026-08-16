@@ -401,30 +401,7 @@ export default function VeranstaltungDetail() {
               </div>
               <Field label="Anmeldeschluss" field="anmeldeschluss" type="date" />
               <Field label="Max. Teilnehmer" field="max_teilnehmer" type="number" />
-              <div className="sm:col-span-2 space-y-3">
-                <div>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={veranstaltung.bus_erforderlich || false}
-                      onChange={e => setVeranstaltung(p => ({ ...p, bus_erforderlich: e.target.checked }))}
-                      className="rounded"
-                    />
-                    <span className="text-sm text-foreground">Bus erforderlich</span>
-                  </label>
-                </div>
-                <div>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={veranstaltung.anmeldung_aktiv || false}
-                      onChange={e => setVeranstaltung(p => ({ ...p, anmeldung_aktiv: e.target.checked }))}
-                      className="rounded"
-                    />
-                    <span className="text-sm text-foreground">Anmeldung aktiv</span>
-                  </label>
-                </div>
-              </div>
+
             </div>
           </div>
 

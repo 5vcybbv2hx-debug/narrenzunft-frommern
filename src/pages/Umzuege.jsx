@@ -573,16 +573,7 @@ export default function Umzuege() {
                 <input type="date" value={form.anmeldeschluss} onChange={e => setForm(p => ({ ...p, anmeldeschluss: e.target.value }))}
                   className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
               </div>
-              <div className="flex gap-6">
-                <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground">
-                  <input type="checkbox" checked={form.bus_erforderlich} onChange={e => setForm(p => ({ ...p, bus_erforderlich: e.target.checked }))} className="rounded" />
-                  Bus erforderlich
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground">
-                  <input type="checkbox" checked={form.anmeldung_aktiv} onChange={e => setForm(p => ({ ...p, anmeldung_aktiv: e.target.checked }))} className="rounded" />
-                  Anmeldung aktiv
-                </label>
-              </div>
+
 
               {/* Externer Verein */}
               <div className="border-t border-border pt-3 pb-3">
