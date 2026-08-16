@@ -34,6 +34,7 @@ export default function AusfahrtDetail() {
   const [fremdTransport, setFremdTransport] = useState('Bus');
   const [fremdAnzahlBegleitpersonen, setFremdAnzahlBegleitpersonen] = useState(0);
   const [fremdBegleitpersonen, setFremdBegleitpersonen] = useState([]);
+  const [kindAnmeldungen, setKindAnmeldungen] = useState({}); // { kindId: { transport, angemeldet } }
 
   useEffect(() => {
     fetchData();
@@ -161,6 +162,59 @@ export default function AusfahrtDetail() {
     } catch (err) {
       console.error('Error during registration:', err);
       alert('Registrierung fehlgeschlagen.');
+    }
+  };
+
+  const handleRegisterChild = async (kindId, transportType) => {
+    try {
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
+      // Check if child already has a registration
+      const existing = anmeldungen.find(a => a.mitglied_id === kindId && a.status !== 'Abgemeldet');
+      if (existing) {
+        alert('Dieses Kind ist bereits für diese Ausfahrt angemeldet.');
+        return;
+      }
+      await base44.entities.AusfahrtAnmeldung.create({
+        ausfahrt_id: id,
+        mitglied_id: kindId,
+        transport: transportType,
+        status: 'Angemeldet',
+        angemeldet_am: todayStr,
+        anzahl_begleitpersonen: 0,
+        begleitpersonen: [],
+        is_fremdangemeldet: false,
+        durch_admin_angemeldet: true,
+        durch_admin_name: `${currentMitglied?.vorname || ''} ${currentMitglied?.nachname || ''}`.trim() || 'Elternkonto'
+      });
+      fetchData();
+    } catch (err) {
+      console.error('Kind-Anmeldung fehlgeschlagen:', err);
+      alert('Anmeldung für Kind fehlgeschlagen.');
+    }
+  };
+
+  const handleDeregisterChild = async (kindId) => {
+    const childReg = anmeldungen.find(a => a.mitglied_id === kindId && a.status !== 'Abgemeldet');
+    if (!childReg) return;
+
+    const ausfahrtDate = ausfahrt?.datum ? parseISO(ausfahrt.datum) : new Date();
+    const diffDays = differenceInDays(ausfahrtDate, new Date());
+    if (diffDays < 3) {
+      alert('Abmeldung ist nur bis 3 Tage vor der Ausfahrt möglich.');
+      return;
+    }
+    if (!confirm('Möchtest du dieses Kind wirklich von der Ausfahrt abmelden?')) return;
+
+    try {
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
+      await base44.entities.AusfahrtAnmeldung.update(childReg.id, {
+        status: 'Abgemeldet',
+        abgemeldet_am: todayStr
+      });
+      fetchData();
+    } catch (err) {
+      console.error('Kind-Abmeldung fehlgeschlagen:', err);
+      alert('Abmeldung fehlgeschlagen.');
     }
   };
 
@@ -720,6 +774,58 @@ export default function AusfahrtDetail() {
                       </div>
                     </>
                   )}
+                </div>
+              )}
+
+              {/* Kinder separat anmelden (für Elternkonten) */}
+              {currentMitglied && familienmitglieder.filter(fm => fm.beziehung === 'Kind').length > 0 && (
+                <div className="mt-6 pt-6 border-t border-border">
+                  <h3 className="font-oswald uppercase tracking-wide text-sm text-white mb-3 flex items-center gap-2">
+                    <Users className="w-4 h-4 text-primary" /> Kinder separat anmelden
+                  </h3>
+                  <div className="space-y-3">
+                    {familienmitglieder.filter(fm => fm.beziehung === 'Kind').map(kind => {
+                      const kindReg = anmeldungen.find(a => a.mitglied_id === kind.id && a.status !== 'Abgemeldet');
+                      return (
+                        <div key={kind.id} className="bg-neutral-950 border border-border rounded-lg p-3">
+                          <div className="flex items-center justify-between gap-3 mb-2">
+                            <div>
+                              <p className="text-sm text-white font-medium">{kind.name}</p>
+                              <p className="text-xs text-gray-500">
+                                {kind.alter !== null ? `${kind.alter} Jahre` : 'Kind'}
+                                {kindReg && <span className="text-green-400 ml-2">· Angemeldet ({kindReg.transport})</span>}
+                              </p>
+                            </div>
+                          </div>
+                          {ausfahrt.status === 'Anmeldung offen' && (
+                            kindReg ? (
+                              <button
+                                onClick={() => handleDeregisterChild(kind.id)}
+                                className="w-full bg-transparent hover:bg-neutral-900 border border-red-500/50 hover:border-red-500 text-red-500 font-semibold py-2 px-4 rounded-lg transition-colors text-xs"
+                              >
+                                Kind abmelden
+                              </button>
+                            ) : (
+                              <div className="grid grid-cols-2 gap-2">
+                                <button
+                                  onClick={() => handleRegisterChild(kind.id, 'Bus')}
+                                  className="bg-primary hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg transition-colors text-xs flex items-center justify-center gap-1.5"
+                                >
+                                  <Bus className="w-3.5 h-3.5" /> Bus
+                                </button>
+                                <button
+                                  onClick={() => handleRegisterChild(kind.id, 'Privat')}
+                                  className="bg-neutral-800 hover:bg-neutral-700 text-white border border-border font-semibold py-2 px-3 rounded-lg transition-colors text-xs"
+                                >
+                                  Privat
+                                </button>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>

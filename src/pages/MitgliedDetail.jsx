@@ -96,6 +96,7 @@ function Field({ label, value, field, type = 'text', options, editing, mitglied,
 
 export default function MitgliedDetail() {
   const { id } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const isNew = id === 'neu';
@@ -120,6 +121,8 @@ export default function MitgliedDetail() {
   const [inviting, setInviting] = useState(false);
   const [inviteSent, setInviteSent] = useState(false);
   const [activeTab, setActiveTab] = useState('profil');
+  const [istElternkonto, setIstElternkonto] = useState(false);
+  const [istKindVonMir, setIstKindVonMir] = useState(false);
   const [showHaesModal, setShowHaesModal] = useState(false);
   const [allHaes, setAllHaes] = useState([]);
   const [haessuche, setHaessuche] = useState('');
@@ -170,11 +173,32 @@ export default function MitgliedDetail() {
       }
       setHaes(h || []);
       setEhrungen(e || []);
+
+      // Prüfe ob aktuelles Mitglied ein Kind des eingeloggten Nutzers ist
+      if (user?.role === 'elternkonto' && m[0]) {
+        try {
+          const verwandte = await base44.entities.Verwandtschaft.filter({ mitglied_id: user?.id });
+          // Alternative: check by current user's linked Mitglied
+          const meinMitglied = await base44.entities.Mitglied.filter({ user_id: user.id });
+          if (meinMitglied && meinMitglied.length > 0) {
+            const meineVerwandten = await base44.entities.Verwandtschaft.filter({ mitglied_id: meinMitglied[0].id });
+            const istKind = meineVerwandten.some(v => v.verwandter_id === m[0].id && v.beziehung === 'Kind');
+            setIstKindVonMir(istKind);
+            setIstElternkonto(true);
+          }
+        } catch (verr) {
+          console.error('Verwandtschaft-Check:', verr);
+        }
+      }
     } catch (e) {
       console.error('Mitglied laden:', e);
       setError('Mitglied konnte nicht geladen werden.');
     }
     setLoading(false);
+    // Auto-edit mode from FamilienDashboard link
+    if (location.search.includes('edit=1')) {
+      setEditing(true);
+    }
   };
 
   const handleInvite = async () => {
@@ -414,13 +438,13 @@ export default function MitgliedDetail() {
           </h1>
           {alter !== null && <p className="text-sm text-muted-foreground">{alter} Jahre alt</p>}
         </div>
-        {admin && !editing && (
+        {(admin || (istElternkonto && istKindVonMir)) && !editing && (
           <button onClick={() => setEditing(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-red-700 transition-colors">
             <Edit size={14} /> Bearbeiten
           </button>
         )}
-        {admin && editing && (
+        {(admin || (istElternkonto && istKindVonMir)) && editing && (
           <div className="flex gap-2">
             <button onClick={() => { setEditing(false); if (isNew) navigate(-1); }}
               className="p-2 rounded-lg bg-neutral-800 text-muted-foreground hover:text-white transition-colors">

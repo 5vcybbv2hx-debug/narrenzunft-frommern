@@ -5,7 +5,8 @@ import { useAuth } from '@/lib/AuthContext';
 import {
   Users, Heart, Baby, Calendar, Briefcase, Shirt, Bus,
   Plus, X, Search, ChevronRight, Phone, Mail, Trash2,
-  UserPlus, Check, AlertCircle, ArrowRight, Bus as BusIcon
+  UserPlus, Check, AlertCircle, ArrowRight, Bus as BusIcon,
+  Pencil
 } from 'lucide-react';
 import { differenceInYears } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -311,14 +312,29 @@ export default function FamilienDashboard() {
                         <p className="text-sm font-bold text-blue-400">{kindDienste.length}</p>
                         <p className="text-[9px] text-neutral-500">Dienste</p>
                       </div>
-                      <div className="bg-neutral-900/50 rounded-lg px-2 py-1.5 text-center">
+                      <Link to={`/mitglieder/${kind.id}`} className="bg-neutral-900/50 rounded-lg px-2 py-1.5 text-center hover:bg-neutral-800/70 transition-colors">
                         <p className="text-sm font-bold text-accent">{kindHaes.length}</p>
                         <p className="text-[9px] text-neutral-500">Häs</p>
-                      </div>
-                      <div className="bg-neutral-900/50 rounded-lg px-2 py-1.5 text-center">
+                      </Link>
+                      <Link to="/ausfahrten" className="bg-neutral-900/50 rounded-lg px-2 py-1.5 text-center hover:bg-neutral-800/70 transition-colors">
                         <p className="text-sm font-bold text-teal-400">{kindAusfahrten.length}</p>
                         <p className="text-[9px] text-neutral-500">Bus</p>
-                      </div>
+                      </Link>
+                    </div>
+                    {/* Aktions-Buttons */}
+                    <div className="flex gap-2 mt-3 pt-3 border-t border-border/50">
+                      <Link
+                        to={`/mitglieder/${kind.id}?edit=1`}
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5" /> Profil bearbeiten
+                      </Link>
+                      <Link
+                        to="/ausfahrten"
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors"
+                      >
+                        <Calendar className="w-3.5 h-3.5" /> An Ausfahrt
+                      </Link>
                     </div>
                   </div>
                 );
