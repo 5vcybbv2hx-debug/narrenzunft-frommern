@@ -46,7 +46,11 @@
     },
     "intervall_typ": {
       "type": "string",
-      "enum": ["woechentlich", "14taegig", "monatlich"],
+      "enum": [
+        "woechentlich",
+        "14taegig",
+        "monatlich"
+      ],
       "description": "Wiederholungsintervall (nur wenn wiederkehrend=true)"
     },
     "enddatum": {
@@ -59,5 +63,74 @@
     "haesgruppe_id",
     "titel",
     "datum"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "spartenleiter"
+          }
+        }
+      ]
+    },
+    "read": null,
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "spartenleiter"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "spartenleiter"
+          }
+        }
+      ]
+    }
+  }
 }

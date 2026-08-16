@@ -20,7 +20,7 @@
     },
     "beschreibung": {
       "type": "string",
-      "description": "Wofür wurde das Geld ausgegeben?"
+      "description": "Wof\u00fcr wurde das Geld ausgegeben?"
     },
     "datum": {
       "type": "string",
@@ -29,7 +29,10 @@
     },
     "typ": {
       "type": "string",
-      "enum": ["Einzelerstattung", "Umlage"],
+      "enum": [
+        "Einzelerstattung",
+        "Umlage"
+      ],
       "default": "Einzelerstattung",
       "description": "Einzelerstattung (Verein erstattet) oder Umlage (Mitglieder zahlen anteilig)"
     },
@@ -37,10 +40,23 @@
       "type": "array",
       "items": {
         "properties": {
-          "mitglied_id": {"type": "string"},
-          "mitglied_name": {"type": "string"},
-          "betrag": {"type": "number"},
-          "status": {"type": "string", "enum": ["Offen", "Bezahlt"], "default": "Offen"}
+          "mitglied_id": {
+            "type": "string"
+          },
+          "mitglied_name": {
+            "type": "string"
+          },
+          "betrag": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Offen",
+              "Bezahlt"
+            ],
+            "default": "Offen"
+          }
         },
         "type": "object"
       },
@@ -48,7 +64,11 @@
     },
     "status": {
       "type": "string",
-      "enum": ["Offen", "Erstattet", "Storniert"],
+      "enum": [
+        "Offen",
+        "Erstattet",
+        "Storniert"
+      ],
       "default": "Offen",
       "description": "Status der Erstattung (Haupt-Status)"
     },
@@ -67,5 +87,105 @@
     "betrag",
     "beschreibung",
     "datum"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "kassierer"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "spartenleiter"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "kassierer"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "spartenleiter"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "kassierer"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "spartenleiter"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    }
+  }
 }
