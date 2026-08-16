@@ -68,11 +68,9 @@ function buildPersonData(row) {
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
-  let user = null;
-  try { user = await base44.auth.me(); } catch(e) {}
-  if (user && user.role !== 'admin') {
-    return Response.json({ error: 'Nur Admins dürfen importieren' }, { status: 403 });
-  }
+  const user = await base44.auth.me();
+  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  if (user.role !== 'admin') return Response.json({ error: 'Nur Admins dürfen importieren' }, { status: 403 });
 
   const { csv_url, offset = 0, limit = 50, mode = 'all' } = await req.json();
   if (!csv_url) return Response.json({ error: 'csv_url fehlt' }, { status: 400 });
