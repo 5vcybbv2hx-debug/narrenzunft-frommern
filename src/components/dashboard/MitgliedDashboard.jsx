@@ -64,11 +64,13 @@ export default function MitgliedDashboard() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const me = await base44.auth.me();
-      const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
-      if (!myM[0]) { setLoading(false); return; }
+      // Sichere Backend-Function statt direktem Frontend-Query, da die
+      // Mitglied-Records beim Import von einem Admin-Account erstellt wurden
+      // und RLS sonst den eigenen Datensatz blockiert.
+      const profilRes = await base44.functions.invoke('getMeinProfilSicher', {});
+      if (!profilRes.data?.gefunden || !profilRes.data?.mitglied) { setLoading(false); return; }
 
-      const mitglied = myM[0];
+      const mitglied = profilRes.data.mitglied;
       setMyMitglied(mitglied);
 
       // Parallele Abfragen

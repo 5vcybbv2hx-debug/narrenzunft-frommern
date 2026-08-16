@@ -36,18 +36,15 @@ export default function Profil() {
     setLoading(true);
     setError(null);
     try {
-      const me = await base44.auth.me();
-      const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
-      if (myM && myM[0]) {
-        setMitglied(myM[0]);
-        const [h, e, t] = await Promise.all([
-          base44.entities.Haes.filter({ aktueller_besitzer_id: myM[0].id }),
-          base44.entities.Ehrung.filter({ mitglied_id: myM[0].id }),
-          base44.entities.Teilnahme.filter({ mitglied_id: myM[0].id }),
-        ]);
-        setHaes(h || []);
-        setEhrungen(e || []);
-        setTeilnahmen(t || []);
+      // Sichere Backend-Function statt direktem Frontend-Query, da die
+      // Mitglied-Records beim Import von einem Admin-Account erstellt wurden
+      // und RLS sonst den eigenen Datensatz blockiert.
+      const res = await base44.functions.invoke('getMeinProfilSicher', {});
+      if (res.data?.gefunden && res.data?.mitglied) {
+        setMitglied(res.data.mitglied);
+        setHaes(res.data.haes || []);
+        setEhrungen(res.data.ehrungen || []);
+        setTeilnahmen(res.data.teilnahmen || []);
       }
     } catch (e) {
       console.error('Profil laden:', e);
