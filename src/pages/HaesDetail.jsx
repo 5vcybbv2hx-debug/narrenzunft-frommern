@@ -32,6 +32,7 @@ export default function HaesDetail() {
   const [editData, setEditData] = useState({});
   const [showAddMitglied, setShowAddMitglied] = useState(false);
   const [newZuweisung, setNewZuweisung] = useState({ mitglied_id: '', von_datum: '', aktiv: true, notizen: '' });
+  const [alsAuchEigentuemer, setAlsAuchEigentuemer] = useState(false);
   const [saving, setSaving] = useState(false);
   const [eigentuemerSuche, setEigentuemerSuche] = useState('');
   const [zuweisung_suche, setZuweisungSuche] = useState('');
@@ -77,8 +78,9 @@ export default function HaesDetail() {
     setSaving(false);
   };
 
-  const handleAddMitglied = async (alsoSetEigentuemer = false) => {
+  const handleAddMitglied = async (alsoSetEigentuemerOverride = null) => {
     if (!newZuweisung.mitglied_id) return;
+    const alsoSetEigentuemer = alsoSetEigentuemerOverride !== null ? alsoSetEigentuemerOverride : alsAuchEigentuemer;
     setSaving(true);
     try {
       await base44.functions.invoke('weiseHaesZuSicher', {
@@ -89,12 +91,13 @@ export default function HaesDetail() {
         notiz: newZuweisung.notizen,
       });
 
-      // Privateigentümer separat setzen wenn gewünscht
+      // Privateigentümer setzen wenn gewünscht (immer verfügbare Option, unabhängig ob schon einer eingetragen ist)
       if (alsoSetEigentuemer) {
         await base44.entities.Haes.update(id, { privat_eigentuemer_id: newZuweisung.mitglied_id });
       }
 
       setNewZuweisung({ mitglied_id: '', von_datum: '', aktiv: true, notizen: '' });
+      setAlsAuchEigentuemer(false);
       setShowAddMitglied(false);
       setConfirmDialog(null);
       loadData();
@@ -108,14 +111,8 @@ export default function HaesDetail() {
   const onSelectMitgliedZuweisung = (mitgliedId) => {
     setNewZuweisung(p => ({ ...p, mitglied_id: mitgliedId }));
     setZuweisungSuche('');
-    // Automatik-Dialog: Falls Privateigentümer leer, fragen ob auch setzen
-    if (!editData.privat_eigentuemer_id) {
-      setConfirmDialog({
-        type: 'zuweisung_eigentuemer',
-        mitgliedId,
-        mitgliedName: getMitgliedName(mitgliedId)
-      });
-    }
+    // Checkbox "Auch als Eigentümer" per Default aktivieren wenn noch kein Eigentümer eingetragen ist
+    setAlsAuchEigentuemer(!editData.privat_eigentuemer_id && !haes.privat_eigentuemer_id);
   };
 
   const onSelectEigentuemer = (mitgliedId) => {
@@ -596,6 +593,24 @@ export default function HaesDetail() {
                   className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
                 />
               </div>
+              {newZuweisung.mitglied_id && (
+                <label className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-secondary border border-border cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={alsAuchEigentuemer}
+                    onChange={e => setAlsAuchEigentuemer(e.target.checked)}
+                    className="w-4 h-4 rounded accent-[#EA2525] shrink-0"
+                  />
+                  <span className="text-sm text-foreground">
+                    Auch als Eigentümer eintragen
+                    {haes.privat_eigentuemer_id && haes.privat_eigentuemer_id !== newZuweisung.mitglied_id && (
+                      <span className="block text-xs text-muted-foreground mt-0.5">
+                        Ersetzt aktuellen Eigentümer ({getMitgliedName(haes.privat_eigentuemer_id)})
+                      </span>
+                    )}
+                  </span>
+                </label>
+              )}
             </div>
             <div className="flex gap-2 mt-4">
               <button onClick={() => setShowAddMitglied(false)} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium">Abbrechen</button>
@@ -608,33 +623,6 @@ export default function HaesDetail() {
       )}
 
       {/* Confirm Dialogs */}
-      {confirmDialog?.type === 'zuweisung_eigentuemer' && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-sm">
-            <h3 className="font-bold text-foreground mb-2">Privateigentümer auch setzen?</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              {confirmDialog.mitgliedName} wird als Mitglied zugewiesen. Auch als Privateigentümer des Häs eintragen?
-            </p>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => { handleAddMitglied(false); }}
-                disabled={saving}
-                className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium disabled:opacity-50"
-              >
-                Nur zuweisen
-              </button>
-              <button 
-                onClick={() => { handleAddMitglied(true); }}
-                disabled={saving}
-                className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
-              >
-                Beides setzen
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {showHistorieImport && (
         <HaesHistorieImportModal
           onClose={() => setShowHistorieImport(false)}
