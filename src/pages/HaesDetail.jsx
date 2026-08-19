@@ -32,7 +32,6 @@ export default function HaesDetail() {
   const [editData, setEditData] = useState({});
   const [showAddMitglied, setShowAddMitglied] = useState(false);
   const [newZuweisung, setNewZuweisung] = useState({ mitglied_id: '', von_datum: '', aktiv: true, notizen: '' });
-  const [alsAuchEigentuemer, setAlsAuchEigentuemer] = useState(false);
   const [saving, setSaving] = useState(false);
   const [eigentuemerSuche, setEigentuemerSuche] = useState('');
   const [zuweisung_suche, setZuweisungSuche] = useState('');
@@ -78,9 +77,8 @@ export default function HaesDetail() {
     setSaving(false);
   };
 
-  const handleAddMitglied = async (alsoSetEigentuemerOverride = null) => {
+  const handleAddMitglied = async () => {
     if (!newZuweisung.mitglied_id) return;
-    const alsoSetEigentuemer = alsoSetEigentuemerOverride !== null ? alsoSetEigentuemerOverride : alsAuchEigentuemer;
     setSaving(true);
     try {
       await base44.functions.invoke('weiseHaesZuSicher', {
@@ -91,13 +89,10 @@ export default function HaesDetail() {
         notiz: newZuweisung.notizen,
       });
 
-      // Privateigentümer setzen wenn gewünscht (immer verfügbare Option, unabhängig ob schon einer eingetragen ist)
-      if (alsoSetEigentuemer) {
-        await base44.entities.Haes.update(id, { privat_eigentuemer_id: newZuweisung.mitglied_id });
-      }
+      // Eigentümer immer auf das zugewiesene Mitglied setzen
+      await base44.entities.Haes.update(id, { privat_eigentuemer_id: newZuweisung.mitglied_id });
 
       setNewZuweisung({ mitglied_id: '', von_datum: '', aktiv: true, notizen: '' });
-      setAlsAuchEigentuemer(false);
       setShowAddMitglied(false);
       setConfirmDialog(null);
       loadData();
@@ -111,8 +106,6 @@ export default function HaesDetail() {
   const onSelectMitgliedZuweisung = (mitgliedId) => {
     setNewZuweisung(p => ({ ...p, mitglied_id: mitgliedId }));
     setZuweisungSuche('');
-    // Checkbox "Auch als Eigentümer" per Default aktivieren wenn noch kein Eigentümer eingetragen ist
-    setAlsAuchEigentuemer(!editData.privat_eigentuemer_id && !haes.privat_eigentuemer_id);
   };
 
   const onSelectEigentuemer = (mitgliedId) => {
@@ -136,6 +129,10 @@ export default function HaesDetail() {
         mitglied_id: neueAktion === 'verliehen' ? historie.mitglied_id : undefined,
         aktion: neueAktion,
       });
+      // Bei Aktivierung auch Eigentümer auf dieses Mitglied setzen
+      if (neueAktion === 'verliehen' && historie.mitglied_id) {
+        await base44.entities.Haes.update(id, { privat_eigentuemer_id: historie.mitglied_id });
+      }
       loadData();
     } catch (e) {
       console.error('Status-Änderung fehlgeschlagen:', e);
@@ -593,24 +590,7 @@ export default function HaesDetail() {
                   className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
                 />
               </div>
-              {newZuweisung.mitglied_id && (
-                <label className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-secondary border border-border cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={alsAuchEigentuemer}
-                    onChange={e => setAlsAuchEigentuemer(e.target.checked)}
-                    className="w-4 h-4 rounded accent-[#EA2525] shrink-0"
-                  />
-                  <span className="text-sm text-foreground">
-                    Auch als Eigentümer eintragen
-                    {haes.privat_eigentuemer_id && haes.privat_eigentuemer_id !== newZuweisung.mitglied_id && (
-                      <span className="block text-xs text-muted-foreground mt-0.5">
-                        Ersetzt aktuellen Eigentümer ({getMitgliedName(haes.privat_eigentuemer_id)})
-                      </span>
-                    )}
-                  </span>
-                </label>
-              )}
+
             </div>
             <div className="flex gap-2 mt-4">
               <button onClick={() => setShowAddMitglied(false)} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium">Abbrechen</button>
