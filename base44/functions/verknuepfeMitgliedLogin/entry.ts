@@ -17,6 +17,13 @@ Deno.serve(async (req) => {
     if (!mitglied && user.email) {
       const byEmail = await base44.asServiceRole.entities.Mitglied.filter({ email: user.email });
       if (byEmail.length > 0) { mitglied = byEmail[0]; matchStrategy = 'email'; }
+      // Case-insensitive Fallback: Auth-Provider geben Emails oft lowercase zurück,
+      // aber in der DB können sie mit Großbuchstaben gespeichert sein (z.B. NZFrommern@gmx.de)
+      if (!mitglied) {
+        const allByEmailDomain = await base44.asServiceRole.entities.Mitglied.list({ limit: 500 });
+        const ciMatch = allByEmailDomain.find(m => m.email && m.email.toLowerCase() === user.email.toLowerCase());
+        if (ciMatch) { mitglied = ciMatch; matchStrategy = 'email_ci'; }
+      }
     }
 
     if (!mitglied && user.full_name) {

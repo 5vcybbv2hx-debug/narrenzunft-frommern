@@ -12,11 +12,41 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const myMitgliedResp = await base44.asServiceRole.entities.Mitglied.filter({ user_id: user.id });
-    const mitglied = myMitgliedResp[0];
+    // 1. Versuch: exakte user_id-Verknüpfung
+    let mitglied = null;
+    const byUserId = await base44.asServiceRole.entities.Mitglied.filter({ user_id: user.id });
+    if (byUserId.length > 0) { mitglied = byUserId[0]; }
+
+    // 2. Versuch: exakte Email-Übereinstimmung
+    if (!mitglied && user.email) {
+      const byEmail = await base44.asServiceRole.entities.Mitglied.filter({ email: user.email });
+      if (byEmail.length > 0) { mitglied = byEmail[0]; }
+    }
+
+    // 3. Versuch: case-insensitive Email (Auth-Provider → lowercase, DB → mixed case)
+    if (!mitglied && user.email) {
+      const all = await base44.asServiceRole.entities.Mitglied.list({ limit: 500 });
+      mitglied = all.find(m => m.email && m.email.toLowerCase() === user.email.toLowerCase());
+    }
+
+    // 4. Versuch: Namens-Match (eindeutig)
+    if (!mitglied && user.full_name) {
+      const parts = user.full_name.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        const byName = await base44.asServiceRole.entities.Mitglied.filter({ vorname: parts[0], nachname: parts[parts.length - 1] });
+        if (byName.length === 1) { mitglied = byName[0]; }
+      }
+    }
 
     if (!mitglied) {
       return Response.json({ gefunden: false, mitglied: null, haes: [], ehrungen: [], teilnahmen: [] });
+    }
+
+    // Auto-Verknüpfung: user_id speichern falls noch nicht vorhanden
+    if (!mitglied.user_id) {
+      try {
+        await base44.asServiceRole.entities.Mitglied.update(mitglied.id, { user_id: user.id });
+      } catch (e) { /* nicht fatal */ }
     }
 
     const [haes, ehrungen, teilnahmen] = await Promise.all([
