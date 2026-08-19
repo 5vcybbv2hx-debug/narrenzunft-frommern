@@ -67,12 +67,12 @@ export default function Mitglieder() {
         data = await base44.entities.Mitglied.filter({ user_id: me?.id });
       }
       setMitglieder(data);
-      // Haes-Daten laden und Map erstellen: aktueller_besitzer_id → haesnummer
+      // Haes-Daten laden und Map erstellen: aktueller_besitzer_id → haesnummer (nur aktive Häs)
       try {
         const allHaes = await base44.entities.Haes.list('haesnummer', 1000);
         const map = {};
         for (const h of allHaes) {
-          if (h.aktueller_besitzer_id && h.haesnummer) {
+          if (h.aktueller_besitzer_id && h.haesnummer && h.status === 'Aktiv') {
             map[h.aktueller_besitzer_id] = h.haesnummer;
           }
         }
