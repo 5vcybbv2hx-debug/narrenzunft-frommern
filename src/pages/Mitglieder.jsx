@@ -32,8 +32,9 @@ const ALLE_STATUS = [
 
 const SORT_OPTIONS = [
   { value: 'nachname',    label: 'Name A–Z' },
-  { value: 'eintritt',   label: 'Neuste zuerst' },
-  { value: 'alter',      label: 'Alter' },
+  { value: 'haesnummer',  label: 'Häsnummer' },
+  { value: 'eintritt',    label: 'Neuste zuerst' },
+  { value: 'alter',       label: 'Alter' },
 ];
 
 export default function Mitglieder() {
@@ -45,6 +46,7 @@ export default function Mitglieder() {
   const [sortBy, setSortBy] = useState('nachname');
   const [loading, setLoading] = useState(true);
   const [showAntragModal, setShowAntragModal] = useState(false);
+  const [haesMap, setHaesMap] = useState({}); // mitglied_id → haesnummer
   const isAdminUser = isAdmin(user);
   const kannListe = kannMitgliederlisteSehn(user);
 
@@ -65,6 +67,17 @@ export default function Mitglieder() {
         data = await base44.entities.Mitglied.filter({ user_id: me?.id });
       }
       setMitglieder(data);
+      // Haes-Daten laden und Map erstellen: aktueller_besitzer_id → haesnummer
+      try {
+        const allHaes = await base44.entities.Haes.list('haesnummer', 1000);
+        const map = {};
+        for (const h of allHaes) {
+          if (h.aktueller_besitzer_id && h.haesnummer) {
+            map[h.aktueller_besitzer_id] = h.haesnummer;
+          }
+        }
+        setHaesMap(map);
+      } catch (e) {}
     } catch (e) {}
     setLoading(false);
   };
@@ -110,12 +123,19 @@ export default function Mitglieder() {
       if (sortBy === 'alter') {
         return (a.geburtsdatum || '9999') > (b.geburtsdatum || '9999') ? 1 : -1;
       }
+      if (sortBy === 'haesnummer') {
+        const aNum = haesMap[a.id] ? parseInt(haesMap[a.id]) || 9999 : 9999;
+        const bNum = haesMap[b.id] ? parseInt(haesMap[b.id]) || 9999 : 9999;
+        if (aNum !== bNum) return aNum - bNum;
+        // Fallback: Nachname
+        return `${a.nachname}`.localeCompare(`${b.nachname}`, 'de');
+      }
       // nachname
       return `${a.nachname}${a.vorname}`.localeCompare(`${b.nachname}${b.vorname}`, 'de');
     });
 
     return result;
-  }, [mitglieder, search, statusFilter, zeigeArchiviert, sortBy]);
+  }, [mitglieder, search, statusFilter, zeigeArchiviert, sortBy, haesMap]);
 
   const getAlter = (geb) => geb ? differenceInYears(new Date(), new Date(geb)) : null;
 
@@ -312,6 +332,7 @@ export default function Mitglieder() {
           const alter = getAlter(m.geburtsdatum);
           const statusColor = STATUS_COLORS[m.mitgliedsstatus] || 'bg-gray-500/20 text-gray-400';
           const hatHaes = !!m.haesgruppe_id;
+          const haesNr = haesMap[m.id] || null;
           const eintrittsJahr = m.eintrittsdatum ? format(new Date(m.eintrittsdatum), 'yyyy') : null;
 
           return (
@@ -338,8 +359,11 @@ export default function Mitglieder() {
                   {alter !== null && (
                     <span className="text-xs text-muted-foreground">{alter} J.</span>
                   )}
-                  {hatHaes && (
-                    <Shirt size={12} className="text-primary/60 shrink-0" title="Hat ein Häs" />
+                  {haesNr && (
+                    <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-mono font-medium" title={`Häsnummer ${haesNr}`}>
+                      <Shirt size={10} className="shrink-0" />
+                      {haesNr}
+                    </span>
                   )}
                 </div>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
