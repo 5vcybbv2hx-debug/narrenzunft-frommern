@@ -1,3 +1,5 @@
+import DateSelect from '../ui/DateSelect';
+import TimeSelect from '../ui/TimeSelect';
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, Save, Trash2 } from 'lucide-react';
@@ -84,17 +86,17 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
           <div className="grid grid-cols-3 gap-2">
             <div className="col-span-3 sm:col-span-1">
               <label className="text-xs text-muted-foreground block mb-1">Datum *</label>
-              <input type="date" value={form.datum} onChange={e => set('datum', e.target.value)}
+              <DateSelect name="datum" value={form.datum} onChange={e => set('datum', e.target.value)}
                 className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
             </div>
             <div>
               <label className="text-xs text-muted-foreground block mb-1">Startzeit</label>
-              <input type="time" value={form.startzeit} onChange={e => set('startzeit', e.target.value)}
+              <TimeSelect name="startzeit" value={form.startzeit} onChange={e => set('startzeit', e.target.value)}
                 className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
             </div>
             <div>
               <label className="text-xs text-muted-foreground block mb-1">Endzeit</label>
-              <input type="time" value={form.endzeit} onChange={e => set('endzeit', e.target.value)}
+              <TimeSelect name="endzeit" value={form.endzeit} onChange={e => set('endzeit', e.target.value)}
                 className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
             </div>
           </div>
@@ -154,7 +156,7 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="text-xs text-muted-foreground block mb-1">Anmeldeschluss</label>
-                <input type="date" value={form.anmeldeschluss || ''} onChange={e => set('anmeldeschluss', e.target.value)}
+                <DateSelect name="anmeldeschluss" value={form.anmeldeschluss || ''} onChange={e => set('anmeldeschluss', e.target.value)}
                   className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
               </div>
               <div>

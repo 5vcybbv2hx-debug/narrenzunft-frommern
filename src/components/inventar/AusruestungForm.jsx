@@ -1,3 +1,4 @@
+import DateSelect from '../ui/DateSelect';
 import { useState } from 'react';
 import { X, Save, Trash2, Truck, AlertCircle } from 'lucide-react';
 
@@ -127,12 +128,12 @@ export default function AusruestungForm({ ausruestung, onSave, onDelete, onClose
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">TÜV / HU fällig</label>
-                  <input type="date" value={form.tuev_faellig || ''} onChange={e => set('tuev_faellig', e.target.value)}
+                  <DateSelect name="tuev_faellig" value={form.tuev_faellig || ''} onChange={e => set('tuev_faellig', e.target.value)}
                     className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">Versicherung gültig bis</label>
-                  <input type="date" value={form.versicherung_gueltig_bis || ''} onChange={e => set('versicherung_gueltig_bis', e.target.value)}
+                  <DateSelect name="versicherung_gueltig_bis" value={form.versicherung_gueltig_bis || ''} onChange={e => set('versicherung_gueltig_bis', e.target.value)}
                     className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
                 </div>
               </div>

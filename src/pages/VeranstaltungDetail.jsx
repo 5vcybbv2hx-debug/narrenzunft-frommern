@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import DateSelect from '../components/ui/DateSelect';
+import TimeSelect from '../components/ui/TimeSelect';
 import { useParams, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -196,6 +198,18 @@ export default function VeranstaltungDetail() {
             />
             <span className="text-sm text-foreground">{label}</span>
           </label>
+        ) : type === 'date' ? (
+          <DateSelect
+            value={veranstaltung[field] || ''}
+            onChange={e => setVeranstaltung(p => ({ ...p, [field]: e.target.value }))}
+            className="w-full"
+          />
+        ) : type === 'time' ? (
+          <TimeSelect
+            value={veranstaltung[field] || ''}
+            onChange={e => setVeranstaltung(p => ({ ...p, [field]: e.target.value }))}
+            className="w-full"
+          />
         ) : (
           <input
             type={type}

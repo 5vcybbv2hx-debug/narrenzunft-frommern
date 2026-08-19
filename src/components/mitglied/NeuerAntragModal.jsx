@@ -1,3 +1,4 @@
+import DateSelect from '../ui/DateSelect';
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, ChevronRight, ChevronLeft, CheckCircle2, UserPlus, Loader2 } from 'lucide-react';
@@ -258,6 +259,18 @@ export default function NeuerAntragModal({ onClose, onMitgliedAngelegt }) {
 }
 
 function Field({ label, value, onChange, type = 'text', placeholder, mono }) {
+  if (type === 'date') {
+    return (
+      <div>
+        <label className="text-xs text-muted-foreground font-medium block mb-1">{label}</label>
+        <DateSelect
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          className={`w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary ${mono ? 'font-mono' : ''}`}
+        />
+      </div>
+    );
+  }
   return (
     <div>
       <label className="text-xs text-muted-foreground font-medium block mb-1">{label}</label>

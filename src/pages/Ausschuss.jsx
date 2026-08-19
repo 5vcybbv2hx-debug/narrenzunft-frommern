@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import DateSelect from '../components/ui/DateSelect';
+import TimeSelect from '../components/ui/TimeSelect';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -470,7 +472,7 @@ function AufgabeModal({ aufgabe, mitglieder, termine, onClose, onSaved }) {
           </div>
           <div>
             <label className={labelCls}>Fällig am</label>
-            <input type="date" value={form.faellig_am || ''} onChange={e => set('faellig_am', e.target.value)} className={inputCls} />
+            <DateSelect value={form.faellig_am || ''} onChange={e => set('faellig_am', e.target.value)} className={inputCls} />
           </div>
           <div>
             <label className={labelCls}>Verantwortlich</label>
@@ -668,11 +670,11 @@ function SitzungModal({ onClose, onSaved }) {
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={labelCls}>Datum *</label>
-              <input type="date" value={form.datum} onChange={e => handleDatumChange(e.target.value)} className={inputCls} />
+              <DateSelect value={form.datum} onChange={e => handleDatumChange(e.target.value)} className={inputCls} />
             </div>
             <div>
               <label className={labelCls}>Uhrzeit</label>
-              <input type="time" value={form.startzeit} onChange={e => set('startzeit', e.target.value)} className={inputCls} />
+              <TimeSelect value={form.startzeit} onChange={e => set('startzeit', e.target.value)} className={inputCls} />
             </div>
           </div>
           <input type="text" placeholder="Ort (optional)" value={form.ort} onChange={e => set('ort', e.target.value)} className={inputCls} />
@@ -739,7 +741,7 @@ function BeschlussModal({ beschluss, termine, onClose, onSaved }) {
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={labelCls}>Datum *</label>
-              <input type="date" value={form.datum} onChange={e => set('datum', e.target.value)} className={inputCls} />
+              <DateSelect value={form.datum} onChange={e => set('datum', e.target.value)} className={inputCls} />
             </div>
             <div>
               <label className={labelCls}>Status</label>

@@ -8,6 +8,8 @@ import {
   Bookmark, Briefcase, Trash2
 } from 'lucide-react';
 import AdresseAutocomplete from '@/components/AdresseAutocomplete';
+import DateSelect from '../components/ui/DateSelect';
+import TimeSelect from '../components/ui/TimeSelect';
 
 const TYPEN = ['Intern', 'Fest', 'Arbeitsdienst', 'Umzug', 'Abendveranstaltung'];
 const STATUS_LIST = ['Geplant', 'Aktiv', 'Abgeschlossen', 'Abgesagt'];
@@ -239,12 +241,12 @@ export default function VeranstaltungNeu() {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-xs text-muted-foreground block mb-1">Datum *</label>
-            <input type="date" value={form.datum} onChange={e => setForm(p => ({ ...p, datum: e.target.value }))}
+            <DateSelect value={form.datum} onChange={e => setForm(p => ({ ...p, datum: e.target.value }))}
               className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
           </div>
           <div>
             <label className="text-xs text-muted-foreground block mb-1">Uhrzeit</label>
-            <input type="time" value={form.uhrzeit} onChange={e => setForm(p => ({ ...p, uhrzeit: e.target.value }))}
+            <TimeSelect value={form.uhrzeit} onChange={e => setForm(p => ({ ...p, uhrzeit: e.target.value }))}
               className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
           </div>
         </div>
@@ -264,7 +266,7 @@ export default function VeranstaltungNeu() {
 
         <div>
           <label className="text-xs text-muted-foreground block mb-1">Anmeldeschluss</label>
-          <input type="date" value={form.anmeldeschluss || ''} onChange={e => setForm(p => ({ ...p, anmeldeschluss: e.target.value }))}
+          <DateSelect value={form.anmeldeschluss || ''} onChange={e => setForm(p => ({ ...p, anmeldeschluss: e.target.value }))}
             className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
         </div>
 

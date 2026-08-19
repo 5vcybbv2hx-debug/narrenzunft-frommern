@@ -1,3 +1,4 @@
+import DateSelect from '../ui/DateSelect';
 import { useState } from 'react';
 import { X, Save, Trash2, Search, AlertTriangle } from 'lucide-react';
 
@@ -108,7 +109,7 @@ export default function TodoForm({ todo, mitglieder, onSave, onDelete, onClose }
           {/* Fällig */}
           <div>
             <label className={labelCls}>Fällig am</label>
-            <input type="date" value={form.faellig_am || ''} onChange={e => set('faellig_am', e.target.value)} className={inputCls} />
+            <DateSelect name="faellig_am" value={form.faellig_am || ''} onChange={e => set('faellig_am', e.target.value)} className={inputCls} />
           </div>
 
           {/* Verantwortliche – Pflichtfeld */}

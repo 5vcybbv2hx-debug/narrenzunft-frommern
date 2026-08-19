@@ -1,3 +1,4 @@
+import DateSelect from '../components/ui/DateSelect';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
@@ -562,11 +563,10 @@ export default function HaesDetail() {
               </div>
               <div>
                 <label className="text-xs text-muted-foreground font-medium block mb-1">Von Datum</label>
-                <input
-                  type="date"
+                <DateSelect
                   value={newZuweisung.von_datum}
                   onChange={e => setNewZuweisung(p => ({ ...p, von_datum: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+                  className="w-full"
                 />
               </div>
               <div>

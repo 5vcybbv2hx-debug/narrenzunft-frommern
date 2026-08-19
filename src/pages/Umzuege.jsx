@@ -1,3 +1,5 @@
+import DateSelect from '../components/ui/DateSelect';
+import TimeSelect from '../components/ui/TimeSelect';
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -515,12 +517,12 @@ export default function Umzuege() {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-xs text-muted-foreground block mb-1">Datum *</label>
-                  <input type="date" value={form.datum} onChange={e => setForm(p => ({ ...p, datum: e.target.value }))}
+                  <DateSelect value={form.datum} onChange={e => setForm(p => ({ ...p, datum: e.target.value }))}
                     className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground block mb-1">Uhrzeit</label>
-                  <input type="time" value={form.uhrzeit} onChange={e => setForm(p => ({ ...p, uhrzeit: e.target.value }))}
+                  <TimeSelect value={form.uhrzeit} onChange={e => setForm(p => ({ ...p, uhrzeit: e.target.value }))}
                     className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
                 </div>
               </div>
@@ -558,7 +560,6 @@ export default function Umzuege() {
                     <div>
                       <label className="text-xs text-muted-foreground font-medium block mb-1">Rückfahrtszeit vom Heimatpunkt</label>
                       <input
-                        type="time"
                         value={form.bus_rueckfahrtszeit}
                         onChange={e => setForm(p => ({ ...p, bus_rueckfahrtszeit: e.target.value }))}
                         placeholder="z.B. 18:00"
@@ -570,7 +571,7 @@ export default function Umzuege() {
               )}
               <div>
                 <label className="text-xs text-muted-foreground block mb-1">Anmeldeschluss</label>
-                <input type="date" value={form.anmeldeschluss} onChange={e => setForm(p => ({ ...p, anmeldeschluss: e.target.value }))}
+                <DateSelect value={form.anmeldeschluss} onChange={e => setForm(p => ({ ...p, anmeldeschluss: e.target.value }))}
                   className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
               </div>
 

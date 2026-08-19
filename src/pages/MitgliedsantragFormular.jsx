@@ -1,3 +1,4 @@
+import DateSelect from '../components/ui/DateSelect';
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { CheckCircle2, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
@@ -105,12 +106,12 @@ export default function MitgliedsantragFormular() {
               </div>
               <div>
                 <label className="text-xs text-muted-foreground font-medium block mb-1">Geburtsdatum</label>
-                <input type="date" value={form.geburtsdatum} onChange={e => set('geburtsdatum', e.target.value)}
+                <DateSelect value={form.geburtsdatum} onChange={e => set('geburtsdatum', e.target.value)}
                   className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground font-medium block mb-1">Eintrittsdatum (ab)</label>
-                <input type="date" value={form.eintrittsdatum} onChange={e => set('eintrittsdatum', e.target.value)}
+                <DateSelect value={form.eintrittsdatum} onChange={e => set('eintrittsdatum', e.target.value)}
                   className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
               </div>
             </>
@@ -203,7 +204,7 @@ export default function MitgliedsantragFormular() {
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground font-medium block mb-1">Datum</label>
-                    <input type="date" value={form.sepa_datum} onChange={e => set('sepa_datum', e.target.value)}
+                    <DateSelect value={form.sepa_datum} onChange={e => set('sepa_datum', e.target.value)}
                       className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
                   </div>
                 </div>

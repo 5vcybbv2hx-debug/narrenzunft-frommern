@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -424,6 +424,30 @@ export default function AusfahrtDetail() {
     );
   }
 
+  // Compute effective status — auto-transition if dates warrant it
+  const computeEffectiveStatus = (a) => {
+    if (!a) return 'Geplant';
+    if (a.status === 'Abgesagt' || a.status === 'Abgeschlossen') return a.status;
+    // Check if we're within the anmeldung window
+    if (a.anmeldung_start && a.anmeldung_ende) {
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const start = new Date(a.anmeldung_start); start.setHours(0, 0, 0, 0);
+      const end = new Date(a.anmeldung_ende); end.setHours(0, 0, 0, 0);
+      if (today >= start && today <= end) return 'Anmeldung offen';
+      if (today > end) return 'Anmeldung geschlossen';
+    }
+    return a.status || 'Geplant';
+  };
+
+  const effectiveStatus = computeEffectiveStatus(ausfahrt);
+
+  // Auto-update status in backend if it changed
+  React.useEffect(() => {
+    if (ausfahrt && effectiveStatus !== ausfahrt.status && (ausfahrt.status === 'Geplant' || effectiveStatus === 'Anmeldung offen' || ausfahrt.status === 'Anmeldung geschlossen')) {
+      base44.entities.Ausfahrt.update(ausfahrt.id, { status: effectiveStatus }).catch(() => {});
+    }
+  }, [ausfahrt, effectiveStatus]);
+
   // Active registrations calculations
   const activeRegistrations = anmeldungen.filter(a => a.status !== 'Abgemeldet');
   const busPassengersCount = activeRegistrations
@@ -528,7 +552,8 @@ export default function AusfahrtDetail() {
               )}
             </div>
             
-            {/* Bus Capacity Progress */}
+            {/* Bus Capacity Progress — only when bus is needed */}
+            {ausfahrt.bus_benoetigt !== false && (
             <div className="bg-[#121212] border border-border p-3 sm:p-4 rounded-xl w-full sm:w-auto sm:min-w-[240px]">
               <div className="flex justify-between text-sm mb-1.5 font-medium">
                 <span className="text-gray-400">Bus-Auslastung:</span>
@@ -541,6 +566,7 @@ export default function AusfahrtDetail() {
                 />
               </div>
             </div>
+            )}
           </div>
 
           {/* Admin Action Buttons */}
@@ -552,7 +578,7 @@ export default function AusfahrtDetail() {
               >
                 <Pencil size={14} /> Bearbeiten
               </button>
-              {ausfahrt.status !== 'Abgesagt' && (
+              {effectiveStatus !== 'Abgesagt' && (
                 <button
                   onClick={handleAbsagen}
                   className="inline-flex items-center gap-2 bg-yellow-900/30 hover:bg-yellow-900/50 text-yellow-400 border border-yellow-700/40 font-semibold px-4 py-2 rounded-lg text-sm transition-colors"
@@ -607,6 +633,7 @@ export default function AusfahrtDetail() {
                 Ablauf & Details
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {ausfahrt.bus_benoetigt !== false && (
                 <div>
                   <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Abfahrt</h3>
                   <p className="text-white font-medium flex items-center">
@@ -617,6 +644,7 @@ export default function AusfahrtDetail() {
                     {ausfahrt.abfahrt_ort || '---'}
                   </p>
                 </div>
+                )}
 
                 <div>
                   <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Veranstaltungsbeginn</h3>
@@ -626,6 +654,7 @@ export default function AusfahrtDetail() {
                   </p>
                 </div>
 
+                {ausfahrt.bus_benoetigt !== false && (
                 <div>
                   <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Rückfahrt</h3>
                   <p className="text-white font-medium flex items-center">
@@ -633,6 +662,7 @@ export default function AusfahrtDetail() {
                     {ausfahrt.rueckfahrt_zeit || '--- Uhr'}
                   </p>
                 </div>
+                )}
 
                 {ausfahrt.aufstellung && (
                   <div>
@@ -652,7 +682,7 @@ export default function AusfahrtDetail() {
                   </div>
                 )}
 
-                {ausfahrt.busparkplatz && (
+                {ausfahrt.busparkplatz && ausfahrt.bus_benoetigt !== false && (
                   <div>
                     <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Busparkplatz</h3>
                     <p className="text-white font-medium flex items-center">
@@ -751,7 +781,7 @@ export default function AusfahrtDetail() {
               ) : (
                 // Not registered yet
                 <div className="space-y-4">
-                  {ausfahrt.status !== 'Anmeldung offen' ? (
+                  {effectiveStatus !== 'Anmeldung offen' ? (
                     <div className="bg-neutral-900 border border-border rounded-xl p-4 text-center">
                       <p className="text-gray-400 text-sm font-medium">Die Anmeldung ist für diese Ausfahrt geschlossen.</p>
                     </div>

@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import DateSelect from '../components/ui/DateSelect';
+import TimeSelect from '../components/ui/TimeSelect';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -997,7 +999,7 @@ export default function MitgliedDetail() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Austrittsdatum</label>
-                <input type="date" value={austrittDatum} onChange={e => setAustrittDatum(e.target.value)} autoFocus
+                <DateSelect value={austrittDatum} onChange={e => setAustrittDatum(e.target.value)} required
                   className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
               </div>
               <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-900/50 border border-border">
@@ -1042,7 +1044,7 @@ export default function MitgliedDetail() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Todesdatum</label>
-                <input type="date" value={todesfallDatum} onChange={e => setTodesfallDatum(e.target.value)} autoFocus
+                <DateSelect value={todesfallDatum} onChange={e => setTodesfallDatum(e.target.value)} required
                   className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
               </div>
               <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-900/50 border border-border">

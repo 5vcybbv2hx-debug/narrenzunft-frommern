@@ -1,3 +1,4 @@
+import DateSelect from '../ui/DateSelect';
 import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Plus, X, Save, Trash2, FileText, Upload, Eye, EyeOff, Download, Edit } from 'lucide-react';
@@ -206,7 +207,7 @@ function ProtokollModal({ protokoll, termine, mitglieder, onClose, onSaved }) {
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-xs text-muted-foreground block mb-1">Datum *</label>
-              <input type="date" value={form.datum} onChange={e => set('datum', e.target.value)}
+              <DateSelect name="datum" value={form.datum} onChange={e => set('datum', e.target.value)}
                 className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
             </div>
             <div>

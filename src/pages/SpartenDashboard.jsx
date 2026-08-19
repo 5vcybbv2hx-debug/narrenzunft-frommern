@@ -1,3 +1,4 @@
+import DateSelect from '../components/ui/DateSelect';
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
@@ -1068,8 +1069,7 @@ export default function SpartenDashboard() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">Datum *</label>
-                  <input
-                    type="date"
+                  <DateSelect
                     required
                     value={terminForm.datum}
                     onChange={(e) => setTerminForm({ ...terminForm, datum: e.target.value })}
@@ -1150,8 +1150,7 @@ export default function SpartenDashboard() {
                     </div>
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1">Enddatum</label>
-                      <input
-                        type="date"
+                      <DateSelect
                         value={terminForm.enddatum}
                         onChange={(e) => setTerminForm({ ...terminForm, enddatum: e.target.value })}
                         className="w-full bg-[#080808] border border-neutral-800 text-white text-xs rounded-lg px-2 py-1.5"
@@ -1228,8 +1227,7 @@ export default function SpartenDashboard() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">Datum *</label>
-                  <input
-                    type="date"
+                  <DateSelect
                     required
                     value={auslageForm.datum}
                     onChange={(e) => setAuslageForm({ ...auslageForm, datum: e.target.value })}

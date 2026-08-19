@@ -1,3 +1,4 @@
+import TimeSelect from '../ui/TimeSelect';
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, Plus, Trash2, Save, LayoutTemplate, Edit, Bus, Clock, MapPin, Briefcase } from 'lucide-react';
@@ -196,7 +197,7 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
               </div>
               <div>
                 <label className="text-xs text-muted-foreground font-medium block mb-1">Uhrzeit</label>
-                <input type="time" value={form.uhrzeit} onChange={e => set('uhrzeit', e.target.value)}
+                <TimeSelect name="uhrzeit" value={form.uhrzeit} onChange={e => set('uhrzeit', e.target.value)}
                   className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
               </div>
             </div>
@@ -229,7 +230,7 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">Treffzeit</label>
-                  <input type="time" value={form.busparkplatz_treffzeit} onChange={e => set('busparkplatz_treffzeit', e.target.value)}
+                  <TimeSelect name="busparkplatz_treffzeit" value={form.busparkplatz_treffzeit} onChange={e => set('busparkplatz_treffzeit', e.target.value)}
                     className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
                 </div>
               </div>

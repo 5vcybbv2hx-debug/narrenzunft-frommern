@@ -1,3 +1,5 @@
+import TimeSelect from '../ui/TimeSelect';
+import DateSelect from '../ui/DateSelect';
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, Save, Trash2 } from 'lucide-react';
@@ -119,12 +121,12 @@ export default function VeranstaltungBearbeitenModal({ veranstaltung, onClose, o
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-xs text-muted-foreground block mb-1">Datum *</label>
-              <input type="date" value={form.datum || ''} onChange={e => set('datum', e.target.value)}
+              <DateSelect name="datum" value={form.datum || ''} onChange={e => set('datum', e.target.value)}
                 className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
             </div>
             <div>
               <label className="text-xs text-muted-foreground block mb-1">Uhrzeit</label>
-              <input type="time" value={form.uhrzeit || ''} onChange={e => set('uhrzeit', e.target.value)}
+              <TimeSelect name="uhrzeit" value={form.uhrzeit || ''} onChange={e => set('uhrzeit', e.target.value)}
                 className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
             </div>
           </div>
@@ -153,7 +155,7 @@ export default function VeranstaltungBearbeitenModal({ veranstaltung, onClose, o
               <p className="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-3">🚌 Bus-Rückfahrt</p>
               <div>
                 <label className="text-xs text-muted-foreground font-medium block mb-1">Rückfahrtszeit vom Heimatpunkt</label>
-                <input type="time" value={form.bus_rueckfahrtszeit || ''} onChange={e => set('bus_rueckfahrtszeit', e.target.value)}
+                <TimeSelect name="bus_rueckfahrtszeit" value={form.bus_rueckfahrtszeit || ''} onChange={e => set('bus_rueckfahrtszeit', e.target.value)}
                   className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
               </div>
             </div>
@@ -162,7 +164,7 @@ export default function VeranstaltungBearbeitenModal({ veranstaltung, onClose, o
           {/* Anmeldeschluss & Checkboxen */}
           <div>
             <label className="text-xs text-muted-foreground block mb-1">Anmeldeschluss</label>
-            <input type="date" value={form.anmeldeschluss || ''} onChange={e => set('anmeldeschluss', e.target.value)}
+            <DateSelect name="anmeldeschluss" value={form.anmeldeschluss || ''} onChange={e => set('anmeldeschluss', e.target.value)}
               className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
           </div>
           <div className="flex gap-4 sm:p-6">

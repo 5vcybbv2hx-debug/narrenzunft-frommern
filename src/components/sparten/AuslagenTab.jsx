@@ -1,3 +1,4 @@
+import DateSelect from '../ui/DateSelect';
 import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Plus, Trash2, Check, X, Euro, AlertCircle, Search } from 'lucide-react';
@@ -220,8 +221,8 @@ export default function AuslagenTab({ gruppeId, isAdmin }) {
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-xs text-muted-foreground font-medium block mb-1">Datum</label>
-              <input
-                type="date"
+              <DateSelect
+                name="datum"
                 value={form.datum}
                 onChange={e => setForm(p => ({ ...p, datum: e.target.value }))}
                 className="w-full px-3 py-2 rounded-lg bg-card border border-border text-xs text-foreground focus:outline-none focus:border-primary"

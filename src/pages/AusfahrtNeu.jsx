@@ -4,6 +4,8 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
 import { ArrowLeft, Save, X } from 'lucide-react';
+import DateSelect from '../components/ui/DateSelect';
+import TimeSelect from '../components/ui/TimeSelect';
 
 export default function AusfahrtNeu() {
   const { user } = useAuth();
@@ -21,6 +23,7 @@ export default function AusfahrtNeu() {
     typ: 'Umzug',
     datum: '',
     ort: '',
+    bus_benoetigt: true,
     abfahrt_zeit: '13:00',
     abfahrt_ort: 'Schulhof Frommern',
     veranstaltungsbeginn: '',
@@ -103,14 +106,15 @@ export default function AusfahrtNeu() {
         typ: formData.typ,
         datum: formData.datum,
         ort: formData.ort.trim(),
-        abfahrt_zeit: formData.abfahrt_zeit,
-        abfahrt_ort: formData.abfahrt_ort.trim(),
+        bus_benoetigt: formData.bus_benoetigt,
+        abfahrt_zeit: formData.bus_benoetigt ? formData.abfahrt_zeit : undefined,
+        abfahrt_ort: formData.bus_benoetigt ? formData.abfahrt_ort.trim() : undefined,
         veranstaltungsbeginn: formData.veranstaltungsbeginn || undefined,
-        rueckfahrt_zeit: formData.rueckfahrt_zeit || undefined,
+        rueckfahrt_zeit: formData.bus_benoetigt ? (formData.rueckfahrt_zeit || undefined) : undefined,
         aufstellung: formData.aufstellung.trim() || undefined,
         startnummer: formData.startnummer.trim() || undefined,
-        busparkplatz: formData.busparkplatz.trim() || undefined,
-        bus_kapazitaet: formData.bus_kapazitaet ? Number(formData.bus_kapazitaet) : undefined,
+        busparkplatz: formData.bus_benoetigt ? (formData.busparkplatz.trim() || undefined) : undefined,
+        bus_kapazitaet: formData.bus_benoetigt && formData.bus_kapazitaet ? Number(formData.bus_kapazitaet) : undefined,
         sparte_auftritt: formData.sparte_auftritt,
         sparte_id: formData.sparte_auftritt && formData.sparte_id ? formData.sparte_id : undefined,
         anmeldung_start: formData.anmeldung_start,
@@ -180,7 +184,7 @@ export default function AusfahrtNeu() {
               </div>
               <div>
                 <label className={labelClass}>Datum *</label>
-                <input type="date" name="datum" required value={formData.datum} onChange={handleChange} className={inputClass} />
+                <DateSelect name="datum" required value={formData.datum} onChange={handleChange} className={inputClass} />
               </div>
               <div>
                 <label className={labelClass}>Ort *</label>
@@ -192,33 +196,44 @@ export default function AusfahrtNeu() {
 
           {/* Zeiten */}
           <div>
-            <h2 className="text-base font-oswald font-semibold text-foreground border-b border-border pb-2 mb-4">Zeiten & Logistik</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              <div>
-                <label className={labelClass}>Abfahrt *</label>
-                <input type="time" name="abfahrt_zeit" value={formData.abfahrt_zeit} onChange={handleChange} className={inputClass} />
+            <div className="flex items-center justify-between border-b border-border pb-2 mb-4">
+              <h2 className="text-base font-oswald font-semibold text-foreground">Zeiten & Logistik</h2>
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input type="checkbox" name="bus_benoetigt" checked={formData.bus_benoetigt} onChange={handleChange}
+                  className="w-4 h-4 rounded accent-[#EA2525]" />
+                <span className="text-sm font-medium text-foreground">Bus benötigt</span>
+              </label>
+            </div>
+            {formData.bus_benoetigt && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
+                <div>
+                  <label className={labelClass}>Abfahrt</label>
+                  <TimeSelect name="abfahrt_zeit" value={formData.abfahrt_zeit} onChange={handleChange} className={inputClass} />
+                </div>
+                <div className="col-span-2 sm:col-span-2">
+                  <label className={labelClass}>Abfahrt Ort</label>
+                  <input type="text" name="abfahrt_ort" value={formData.abfahrt_ort} onChange={handleChange} className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Rückfahrt</label>
+                  <TimeSelect name="rueckfahrt_zeit" value={formData.rueckfahrt_zeit} onChange={handleChange} className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Bus-Kapazität</label>
+                  <input type="number" name="bus_kapazitaet" value={formData.bus_kapazitaet} onChange={handleChange}
+                    placeholder="50" min="1" className={inputClass} />
+                </div>
+                <div className="col-span-2 sm:col-span-1">
+                  <label className={labelClass}>Busparkplatz</label>
+                  <input type="text" name="busparkplatz" value={formData.busparkplatz} onChange={handleChange}
+                    placeholder="z.B. P3" className={inputClass} />
+                </div>
               </div>
-              <div className="col-span-2 sm:col-span-2">
-                <label className={labelClass}>Abfahrt Ort</label>
-                <input type="text" name="abfahrt_ort" value={formData.abfahrt_ort} onChange={handleChange} className={inputClass} />
-              </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelClass}>Veranst.-beginn</label>
-                <input type="time" name="veranstaltungsbeginn" value={formData.veranstaltungsbeginn} onChange={handleChange} className={inputClass} />
-              </div>
-              <div>
-                <label className={labelClass}>Rückfahrt</label>
-                <input type="time" name="rueckfahrt_zeit" value={formData.rueckfahrt_zeit} onChange={handleChange} className={inputClass} />
-              </div>
-              <div>
-                <label className={labelClass}>Bus-Kapazität</label>
-                <input type="number" name="bus_kapazitaet" value={formData.bus_kapazitaet} onChange={handleChange}
-                  placeholder="50" min="1" className={inputClass} />
-              </div>
-              <div className="col-span-2 sm:col-span-1">
-                <label className={labelClass}>Busparkplatz</label>
-                <input type="text" name="busparkplatz" value={formData.busparkplatz} onChange={handleChange}
-                  placeholder="z.B. P3" className={inputClass} />
+                <TimeSelect name="veranstaltungsbeginn" value={formData.veranstaltungsbeginn} onChange={handleChange} className={inputClass} />
               </div>
             </div>
           </div>
@@ -267,11 +282,11 @@ export default function AusfahrtNeu() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>Anmeldung Start *</label>
-                <input type="date" name="anmeldung_start" required value={formData.anmeldung_start} onChange={handleChange} className={inputClass} />
+                <DateSelect name="anmeldung_start" required value={formData.anmeldung_start} onChange={handleChange} className={inputClass} />
               </div>
               <div>
                 <label className={labelClass}>Anmeldung Ende *</label>
-                <input type="date" name="anmeldung_ende" required value={formData.anmeldung_ende} onChange={handleChange} className={inputClass} />
+                <DateSelect name="anmeldung_ende" required value={formData.anmeldung_ende} onChange={handleChange} className={inputClass} />
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-2">Das Ende wird automatisch auf 3 Tage vor dem Event gesetzt.</p>

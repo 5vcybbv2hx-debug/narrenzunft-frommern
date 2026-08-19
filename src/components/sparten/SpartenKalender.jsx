@@ -1,3 +1,5 @@
+import TimeSelect from '../ui/TimeSelect';
+import DateSelect from '../ui/DateSelect';
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Plus, X, Save, Trash2, Calendar, Clock, MapPin } from 'lucide-react';
@@ -139,12 +141,12 @@ export default function SpartenKalender({ gruppe, kannBearbeiten }) {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-xs text-muted-foreground block mb-1">Datum *</label>
-                  <input type="date" value={form.datum} onChange={e => setForm(p => ({ ...p, datum: e.target.value }))}
+                  <DateSelect name="datum" value={form.datum} onChange={e => setForm(p => ({ ...p, datum: e.target.value }))}
                     className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground block mb-1">Uhrzeit</label>
-                  <input type="time" value={form.uhrzeit} onChange={e => setForm(p => ({ ...p, uhrzeit: e.target.value }))}
+                  <TimeSelect name="uhrzeit" value={form.uhrzeit} onChange={e => setForm(p => ({ ...p, uhrzeit: e.target.value }))}
                     className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
                 </div>
               </div>
