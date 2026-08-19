@@ -397,6 +397,29 @@ export default function AusfahrtDetail() {
     }
   };
 
+  // Compute effective status — auto-transition if dates warrant it
+  const computeEffectiveStatus = (a) => {
+    if (!a) return 'Geplant';
+    if (a.status === 'Abgesagt' || a.status === 'Abgeschlossen') return a.status;
+    if (a.anmeldung_start && a.anmeldung_ende) {
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const start = new Date(a.anmeldung_start); start.setHours(0, 0, 0, 0);
+      const end = new Date(a.anmeldung_ende); end.setHours(0, 0, 0, 0);
+      if (today >= start && today <= end) return 'Anmeldung offen';
+      if (today > end) return 'Anmeldung geschlossen';
+    }
+    return a.status || 'Geplant';
+  };
+
+  const effectiveStatus = computeEffectiveStatus(ausfahrt);
+
+  // Auto-update status in backend if it changed
+  React.useEffect(() => {
+    if (ausfahrt && effectiveStatus !== ausfahrt.status && (ausfahrt.status === 'Geplant' || effectiveStatus === 'Anmeldung offen' || ausfahrt.status === 'Anmeldung geschlossen')) {
+      base44.entities.Ausfahrt.update(ausfahrt.id, { status: effectiveStatus }).catch(() => {});
+    }
+  }, [ausfahrt, effectiveStatus]);
+
   if (loading) {
     return (
       <div className="min-h-[60vh] flex flex-col justify-center items-center">
@@ -423,30 +446,6 @@ export default function AusfahrtDetail() {
       </div>
     );
   }
-
-  // Compute effective status — auto-transition if dates warrant it
-  const computeEffectiveStatus = (a) => {
-    if (!a) return 'Geplant';
-    if (a.status === 'Abgesagt' || a.status === 'Abgeschlossen') return a.status;
-    // Check if we're within the anmeldung window
-    if (a.anmeldung_start && a.anmeldung_ende) {
-      const today = new Date(); today.setHours(0, 0, 0, 0);
-      const start = new Date(a.anmeldung_start); start.setHours(0, 0, 0, 0);
-      const end = new Date(a.anmeldung_ende); end.setHours(0, 0, 0, 0);
-      if (today >= start && today <= end) return 'Anmeldung offen';
-      if (today > end) return 'Anmeldung geschlossen';
-    }
-    return a.status || 'Geplant';
-  };
-
-  const effectiveStatus = computeEffectiveStatus(ausfahrt);
-
-  // Auto-update status in backend if it changed
-  React.useEffect(() => {
-    if (ausfahrt && effectiveStatus !== ausfahrt.status && (ausfahrt.status === 'Geplant' || effectiveStatus === 'Anmeldung offen' || ausfahrt.status === 'Anmeldung geschlossen')) {
-      base44.entities.Ausfahrt.update(ausfahrt.id, { status: effectiveStatus }).catch(() => {});
-    }
-  }, [ausfahrt, effectiveStatus]);
 
   // Active registrations calculations
   const activeRegistrations = anmeldungen.filter(a => a.status !== 'Abgemeldet');

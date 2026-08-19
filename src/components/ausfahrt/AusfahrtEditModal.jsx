@@ -3,6 +3,7 @@ import DateSelect from '../ui/DateSelect';
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, Save } from 'lucide-react';
+import MobileSelect from '@/components/MobileSelect';
 
 export default function AusfahrtEditModal({ ausfahrt, sparten, onSave, onClose }) {
   const [formData, setFormData] = useState({
@@ -138,10 +139,11 @@ export default function AusfahrtEditModal({ ausfahrt, sparten, onSave, onClose }
               </div>
               <div>
                 <label className={labelClass}>Typ *</label>
-                <select name="typ" required value={formData.typ} onChange={handleChange} className={inputClass}>
-                  <option value="Umzug">Umzug</option>
-                  <option value="Veranstaltung">Veranstaltung</option>
-                </select>
+                <MobileSelect
+                  value={formData.typ}
+                  onChange={v => setFormData(prev => ({ ...prev, typ: v }))}
+                  options={[{ label: 'Umzug', value: 'Umzug' }, { label: 'Veranstaltung', value: 'Veranstaltung' }]}
+                />
               </div>
               <div>
                 <label className={labelClass}>Datum *</label>
@@ -153,13 +155,11 @@ export default function AusfahrtEditModal({ ausfahrt, sparten, onSave, onClose }
               </div>
               <div className="sm:col-span-2">
                 <label className={labelClass}>Status</label>
-                <select name="status" value={formData.status} onChange={handleChange} className={inputClass}>
-                  <option value="Geplant">Geplant</option>
-                  <option value="Anmeldung offen">Anmeldung offen</option>
-                  <option value="Anmeldung geschlossen">Anmeldung geschlossen</option>
-                  <option value="Abgeschlossen">Abgeschlossen</option>
-                  <option value="Abgesagt">Abgesagt</option>
-                </select>
+                <MobileSelect
+                  value={formData.status}
+                  onChange={v => setFormData(prev => ({ ...prev, status: v }))}
+                  options={['Geplant', 'Anmeldung offen', 'Anmeldung geschlossen', 'Abgeschlossen', 'Abgesagt']}
+                />
               </div>
             </div>
           </div>
@@ -226,10 +226,11 @@ export default function AusfahrtEditModal({ ausfahrt, sparten, onSave, onClose }
               </label>
               {formData.sparte_auftritt && (
                 <div className="mt-3">
-                  <select name="sparte_id" value={formData.sparte_id} onChange={handleChange} className={inputClass}>
-                    <option value="">— Sparte auswählen —</option>
-                    {sparten.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
+                  <MobileSelect
+                    value={formData.sparte_id}
+                    onChange={v => setFormData(prev => ({ ...prev, sparte_id: v }))}
+                    options={[{ label: '— Sparte auswählen —', value: '' }, ...sparten.map(s => ({ label: s.name, value: s.id }))]}
+                  />
                 </div>
               )}
             </div>

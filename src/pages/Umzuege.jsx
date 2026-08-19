@@ -1,6 +1,7 @@
 import DateSelect from '../components/ui/DateSelect';
 import TimeSelect from '../components/ui/TimeSelect';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
@@ -101,58 +102,56 @@ const EMPTY_FORM = {
 export default function Umzuege() {
   const { user } = useAuth();
   const admin = isAdmin(user);
-  const [umzuege, setUmzuege] = useState([]);
-  const [meineAnmeldungen, setMeineAnmeldungen] = useState([]);
-  const [myMitglied, setMyMitglied] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState(null); // null = neu, sonst Objekt
   const [form, setForm] = useState({ ...EMPTY_FORM, bus_rueckfahrtszeit: '' });
   const [saving, setSaving] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
   const [checkinVeranstaltung, setCheckinVeranstaltung] = useState(null);
-  const [alleMitglieder, setAlleMitglieder] = useState([]);
-  const [busverantwortlicheIds, setBusverantwortlicheIds] = useState([]);
   const [showBusverantwortliche, setShowBusverantwortliche] = useState(false);
   const [abschliessenVeranstaltung, setAbschliessenVeranstaltung] = useState(null);
-  const [externe_vereine, setExterneVereine] = useState([]);
   const today = new Date().toISOString().split('T')[0];
 
-  useEffect(() => { loadData(); }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
+  const queryClient = useQueryClient();
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['umzuege', admin],
+    queryFn: async () => {
       const me = await base44.auth.me();
-
-      // Basis-Daten für alle User
-      const [data, einstellungen, myMArr] = await Promise.all([
+      const [vData, einstellungen, myMArr] = await Promise.all([
         base44.entities.Veranstaltung.list('datum', 200),
         base44.entities.AppEinstellung.filter({ schluessel: 'busverantwortliche' }),
         me ? base44.entities.Mitglied.filter({ user_id: me.id }) : Promise.resolve([]),
       ]);
-
-      // Externe Vereine nur für Admins laden (wird nur im Bearbeitungsformular benötigt)
       const vereine = admin ? await base44.entities.ExternerVerein.list('name', 200) : [];
-
-      if (einstellungen[0]) setBusverantwortlicheIds(einstellungen[0].wert_ids || []);
-      const extern = data.filter(v => v.typ === 'Umzug' || v.typ === 'Abendveranstaltung');
-      setUmzuege(extern.sort((a, b) => a.datum.localeCompare(b.datum)));
-      setExterneVereine(vereine);
-
+      let anmeldungen = [];
       if (myMArr[0]) {
-        setMyMitglied(myMArr[0]);
-        const anmeldungen = await base44.entities.Teilnahme.filter({ mitglied_id: myMArr[0].id });
-        setMeineAnmeldungen(anmeldungen);
+        anmeldungen = await base44.entities.Teilnahme.filter({ mitglied_id: myMArr[0].id });
       }
-
-      // Mitgliederliste nur für Admins laden (wird für Verantwortlichen-Auswahl benötigt)
+      let mitgliederList = [];
       if (admin) {
-        const mitglieder = await base44.entities.Mitglied.list('nachname', 500);
-        setAlleMitglieder(mitglieder);
+        mitgliederList = await base44.entities.Mitglied.list('nachname', 500);
       }
-    } catch (e) {}
-    setLoading(false);
+      const extern = vData.filter(v => v.typ === 'Umzug' || v.typ === 'Abendveranstaltung')
+        .sort((a, b) => a.datum.localeCompare(b.datum));
+      return {
+        umzuege: extern,
+        busverantwortlicheIds: einstellungen[0]?.wert_ids || [],
+        externeVereine: vereine,
+        myMitglied: myMArr[0] || null,
+        meineAnmeldungen: anmeldungen,
+        alleMitglieder: mitgliederList,
+      };
+    },
+  });
+  const umzuege = data?.umzuege || [];
+  const busverantwortlicheIds = data?.busverantwortlicheIds || [];
+  const externeVereine = data?.externeVereine || [];
+  const myMitglied = data?.myMitglied || null;
+  const meineAnmeldungen = data?.meineAnmeldungen || [];
+  const alleMitglieder = data?.alleMitglieder || [];
+
+  const updateQueryData = (updater) => {
+    queryClient.setQueryData(['umzuege', admin], old => old ? updater(old) : old);
   };
 
   const openNew = () => {
@@ -196,7 +195,7 @@ export default function Umzuege() {
         await base44.entities.Veranstaltung.create(form);
       }
       setShowForm(false);
-      await loadData();
+      await refetch();
     } catch (e) {}
     setSaving(false);
   };
@@ -205,7 +204,7 @@ export default function Umzuege() {
     if (!window.confirm('Termin wirklich löschen?')) return;
     try {
       await base44.entities.Veranstaltung.delete(id);
-      setUmzuege(prev => prev.filter(u => u.id !== id));
+      updateQueryData(old => ({ ...old, umzuege: old.umzuege.filter(u => u.id !== id) }));
     } catch (e) {}
   };
 
@@ -218,18 +217,18 @@ export default function Umzuege() {
       const t = await base44.entities.Teilnahme.create({
         veranstaltung_id: veranstaltungId, mitglied_id: myMitglied.id, status: 'Angemeldet', bus
       });
-      setMeineAnmeldungen(prev => [...prev, t]);
+      updateQueryData(old => ({ ...old, meineAnmeldungen: [...old.meineAnmeldungen, t] }));
     } catch (e) {}
   };
 
   const handleAbsagen = async (teilnahme) => {
     try {
       await base44.entities.Teilnahme.update(teilnahme.id, { status: 'Abgesagt' });
-      setMeineAnmeldungen(prev => prev.map(a => a.id === teilnahme.id ? { ...a, status: 'Abgesagt' } : a));
+      updateQueryData(old => ({ ...old, meineAnmeldungen: old.meineAnmeldungen.map(a => a.id === teilnahme.id ? { ...a, status: 'Abgesagt' } : a) }));
     } catch (e) {}
   };
 
-  if (loading) return (
+  if (isLoading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="w-9 h-9 border-[3px] border-border border-t-primary rounded-full animate-spin" />
     </div>
@@ -439,7 +438,7 @@ export default function Umzuege() {
           mitglieder={alleMitglieder}
           onClose={(newIds) => {
             setShowBusverantwortliche(false);
-            if (newIds !== null) setBusverantwortlicheIds(newIds);
+            if (newIds !== null) updateQueryData(old => ({ ...old, busverantwortlicheIds: newIds }));
           }}
         />
       )}
@@ -587,7 +586,7 @@ export default function Umzuege() {
                   className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary mb-2"
                 >
                   <option value="">– Kein externer Verein –</option>
-                  {externe_vereine.map(v => <option key={v.id} value={v.id}>{v.name} ({v.stadt})</option>)}
+                  {externeVereine.map(v => <option key={v.id} value={v.id}>{v.name} ({v.stadt})</option>)}
                 </select>
                 <p className="text-xs text-muted-foreground">Oder <a href="/vereine" target="_blank" className="text-primary hover:underline">neuen Verein hinzufügen</a></p>
               </div>

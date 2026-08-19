@@ -28,9 +28,16 @@ export default function UmzugCheckinModal({ veranstaltung, onClose }) {
 
   const toggleAnwesenheit = async (teilnahme) => {
     const newStatus = teilnahme.status === 'Anwesend' ? 'Angemeldet' : 'Anwesend';
+    const prevStatus = teilnahme.status;
     setSaving(teilnahme.id);
-    await base44.entities.Teilnahme.update(teilnahme.id, { status: newStatus });
+    // Optimistisch: UI sofort aktualisieren für instantes Feedback
     setTeilnahmen(prev => prev.map(t => t.id === teilnahme.id ? { ...t, status: newStatus } : t));
+    try {
+      await base44.entities.Teilnahme.update(teilnahme.id, { status: newStatus });
+    } catch (e) {
+      // Rollback bei Fehler
+      setTeilnahmen(prev => prev.map(t => t.id === teilnahme.id ? { ...t, status: prevStatus } : t));
+    }
     setSaving(null);
   };
 

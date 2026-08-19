@@ -397,7 +397,7 @@ export default function Layout() {
             {BOTTOM_NAV.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.path);
-              const destination = tabHistory[item.path] || item.path;
+              const destination = active ? item.path : (tabHistory[item.path] || item.path);
               return (
                 <button key={item.path} onClick={() => navigate(destination)}
                   className={`flex flex-col items-center gap-0.5 px-2 py-2 rounded-lg transition-all min-w-[48px] ${

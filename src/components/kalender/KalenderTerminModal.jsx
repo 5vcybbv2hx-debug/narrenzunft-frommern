@@ -3,6 +3,7 @@ import TimeSelect from '../ui/TimeSelect';
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, Save, Trash2 } from 'lucide-react';
+import MobileSelect from '@/components/MobileSelect';
 
 const TERMINARTEN = ['Umzug','Abendveranstaltung','Arbeitsdienst','Ausschusssitzung','Vorstandssitzung','Jugendtermin','Gruppen-Termin','Intern','Sonstiges'];
 const SICHTBARKEITEN = [
@@ -110,20 +111,21 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
           {/* Sichtbarkeit */}
           <div>
             <label className="text-xs text-muted-foreground font-medium block mb-1">Sichtbarkeit</label>
-            <select value={form.sichtbarkeit} onChange={e => set('sichtbarkeit', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary">
-              {SICHTBARKEITEN.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-            </select>
+            <MobileSelect
+              value={form.sichtbarkeit}
+              onChange={v => set('sichtbarkeit', v)}
+              options={SICHTBARKEITEN}
+            />
           </div>
 
           {form.sichtbarkeit === 'haesgruppe' && (
             <div>
               <label className="text-xs text-muted-foreground font-medium block mb-1">Häsgruppe</label>
-              <select value={form.haesgruppe_id || ''} onChange={e => set('haesgruppe_id', e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary">
-                <option value="">Bitte wählen...</option>
-                {haesgruppen.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-              </select>
+              <MobileSelect
+                value={form.haesgruppe_id || ''}
+                onChange={v => set('haesgruppe_id', v)}
+                options={[{ label: 'Bitte wählen...', value: '' }, ...haesgruppen.map(g => ({ label: g.name, value: g.id }))]}
+              />
             </div>
           )}
 

@@ -2,6 +2,7 @@ import DateSelect from '../ui/DateSelect';
 import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, Save, Trash2, Search, AlertTriangle, Users, UserPlus, Plus, Globe, User, AlertCircle } from 'lucide-react';
+import MobileSelect from '@/components/MobileSelect';
 
 const STATUS_OPTIONEN = ['Reserviert', 'Ausgeliehen', 'Zurückgegeben', 'Abgesagt'];
 
@@ -138,11 +139,11 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
           {/* Gegenstand */}
           <div>
             <label className="text-xs text-muted-foreground font-medium block mb-1">Gegenstand *</label>
-            <select value={form.ausruestung_id} onChange={e => set('ausruestung_id', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary">
-              <option value="">– bitte wählen –</option>
-              {ausruestungen.map(a => <option key={a.id} value={a.id}>{a.name} ({a.kategorie})</option>)}
-            </select>
+            <MobileSelect
+              value={form.ausruestung_id}
+              onChange={v => set('ausruestung_id', v)}
+              options={[{ label: '– bitte wählen –', value: '' }, ...ausruestungen.map(a => ({ label: `${a.name} (${a.kategorie})`, value: a.id }))]}
+            />
           </div>
 
           {/* Ausleiher Typ Toggle */}
@@ -329,10 +330,11 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
 
           <div>
             <label className="text-xs text-muted-foreground font-medium block mb-1">Status</label>
-            <select value={form.status} onChange={e => set('status', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary">
-              {STATUS_OPTIONEN.map(s => <option key={s}>{s}</option>)}
-            </select>
+            <MobileSelect
+              value={form.status}
+              onChange={v => set('status', v)}
+              options={STATUS_OPTIONEN}
+            />
           </div>
 
           {form.status === 'Zurückgegeben' && (

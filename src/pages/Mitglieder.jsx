@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 import { Link } from 'react-router-dom';
@@ -39,48 +40,40 @@ const SORT_OPTIONS = [
 
 export default function Mitglieder() {
   const { user } = useAuth();
-  const [mitglieder, setMitglieder] = useState([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('Alle');
   const [zeigeArchiviert, setZeigeArchiviert] = useState(false);
   const [sortBy, setSortBy] = useState('nachname');
-  const [loading, setLoading] = useState(true);
   const [showAntragModal, setShowAntragModal] = useState(false);
-  const [haesMap, setHaesMap] = useState({}); // mitglied_id → haesnummer
   const isAdminUser = isAdmin(user);
   const kannListe = kannMitgliederlisteSehn(user);
 
-  const { pullDistance, refreshing, containerRef } = usePullToRefresh(useCallback(async () => {
-    await loadMitglieder();
-  }, []));
-
-  useEffect(() => { loadMitglieder(); }, []);
-
-  const loadMitglieder = async () => {
-    setLoading(true);
-    try {
-      let data;
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['mitglieder', kannListe],
+    queryFn: async () => {
+      let m;
       if (kannListe) {
-        data = await base44.entities.Mitglied.list('nachname', 2000);
+        m = await base44.entities.Mitglied.list('nachname', 2000);
       } else {
         const me = await base44.auth.me();
-        data = await base44.entities.Mitglied.filter({ user_id: me?.id });
+        m = await base44.entities.Mitglied.filter({ user_id: me?.id });
       }
-      setMitglieder(data);
-      // Haes-Daten laden und Map erstellen: aktueller_besitzer_id → haesnummer (nur aktive Häs)
-      try {
-        const allHaes = await base44.entities.Haes.list('haesnummer', 1000);
-        const map = {};
-        for (const h of allHaes) {
-          if (h.aktueller_besitzer_id && h.haesnummer && h.status === 'Aktiv') {
-            map[h.aktueller_besitzer_id] = h.haesnummer;
-          }
+      const allHaes = await base44.entities.Haes.list('haesnummer', 1000);
+      const map = {};
+      for (const h of allHaes) {
+        if (h.aktueller_besitzer_id && h.haesnummer && h.status === 'Aktiv') {
+          map[h.aktueller_besitzer_id] = h.haesnummer;
         }
-        setHaesMap(map);
-      } catch (e) {}
-    } catch (e) {}
-    setLoading(false);
-  };
+      }
+      return { mitglieder: m, haesMap: map };
+    },
+  });
+  const mitglieder = data?.mitglieder || [];
+  const haesMap = data?.haesMap || {};
+
+  const { pullDistance, refreshing, containerRef } = usePullToRefresh(useCallback(async () => {
+    await refetch();
+  }, [refetch]));
 
   // Status-Zähler
   const statusCounts = useMemo(() => {
@@ -183,7 +176,7 @@ export default function Mitglieder() {
     XLSX.writeFile(wb, `Mitgliederliste_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
-  if (loading) return (
+  if (isLoading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="flex flex-col items-center gap-3">
         <div className="w-9 h-9 border-[3px] border-border border-t-primary rounded-full animate-spin" />
@@ -252,7 +245,7 @@ export default function Mitglieder() {
       {showAntragModal && (
         <NeuerAntragModal
           onClose={() => setShowAntragModal(false)}
-          onMitgliedAngelegt={() => { loadMitglieder(); setShowAntragModal(false); }}
+          onMitgliedAngelegt={() => { refetch(); setShowAntragModal(false); }}
         />
       )}
 

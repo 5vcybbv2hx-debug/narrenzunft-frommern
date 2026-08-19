@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
@@ -85,119 +86,95 @@ const EHRUNG_STATUS_STYLE = {
 export default function Dashboard() {
   const { user } = useAuth();
 
-  const [stats, setStats] = useState({
-    mitglieder: 0, mitgliedAktiv: 0, mitgliedPassiv: 0, mitgliedJugend: 0,
-    veranstaltungen: 0, offeneEhrungen: 0, offeneBeitraege: 0, arbeitsdienste: 0,
-    haesGesamt: 0, haesFrei: 0, haesAktiv: 0, haesVerliehen: 0,
-  });
-  const [naechsteEvents, setNaechsteEvents] = useState([]);
-  const [offeneEhrungen, setOffeneEhrungen] = useState([]);
-  const [arbeitsdienste, setArbeitsdienste] = useState([]);
-  const [beitraegeStats, setBeitraegeStats] = useState({ offen: 0, ueberfaellig: 0, bezahlt: 0 });
-  const [neueMitglieder, setNeueMitglieder] = useState([]);
-  const [naechsteGeburtstage, setNaechsteGeburtstage] = useState([]);
-  const [loading, setLoading] = useState(true);
   const isAdminUser = isAdmin(user);
   const kannVerwalten = kannArbeitsdiensteVerwalten(user);
   const today = new Date().toISOString().split('T')[0];
 
-  const { pullDistance, refreshing, containerRef } = usePullToRefresh(useCallback(async () => {
-    await loadData();
-  }, []));
-
-  useEffect(() => { loadData(); }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
+  const { data: dashData, isLoading, refetch } = useQuery({
+    queryKey: ['dashboard'],
+    queryFn: async () => {
       const [dashResult, haesResult] = await Promise.all([
         base44.functions.invoke('getDashboardSicher', {}),
         isAdmin(user)
           ? base44.functions.invoke('getHaesSicher', { aktion: 'liste', limit: 500 }).catch(() => null)
           : Promise.resolve(null),
       ]);
+      return { dashResult, haesResult };
+    },
+  });
 
-      if (!dashResult.data.erfolg) { setLoading(false); return; }
+  const { stats, naechsteEvents, offeneEhrungen, arbeitsdienste, beitraegeStats, neueMitglieder, naechsteGeburtstage } = useMemo(() => {
+    const empty = {
+      stats: { mitglieder: 0, mitgliedAktiv: 0, mitgliedPassiv: 0, mitgliedJugend: 0, veranstaltungen: 0, offeneEhrungen: 0, offeneBeitraege: 0, arbeitsdienste: 0, haesGesamt: 0, haesFrei: 0, haesAktiv: 0, haesVerliehen: 0 },
+      naechsteEvents: [], offeneEhrungen: [], arbeitsdienste: [],
+      beitraegeStats: { offen: 0, ueberfaellig: 0, bezahlt: 0 },
+      neueMitglieder: [], naechsteGeburtstage: [],
+    };
+    if (!dashData || !dashData.dashResult.data.erfolg) return empty;
+    const { mitglieder, veranstaltungen, arbeitsdienste, ehrungen, beitraege } = dashData.dashResult.data;
+    const haesResult = dashData.haesResult;
+    const heute = new Date().toISOString().split('T')[0];
 
-      const { mitglieder, veranstaltungen, arbeitsdienste, ehrungen, beitraege } = dashResult.data;
-      const today = new Date().toISOString().split('T')[0];
+    const naechsteEvents = veranstaltungen.filter(e => e.datum >= heute).slice(0, 5);
+    const offeneEh = ehrungen.filter(e => !['Verliehen','Abgelehnt'].includes(e.status));
+    const offeneEhrungen = offeneEh.slice(0, 4);
+    const arbeitsdiensteD = arbeitsdienste.slice(0, 4);
+    const neueMitglieder = [...mitglieder].sort((a,b) => (b.eintrittsdatum||'') > (a.eintrittsdatum||'') ? 1 : -1).slice(0, 3);
 
-      // Veranstaltungen
-      setNaechsteEvents(veranstaltungen.filter(e => e.datum >= today).slice(0, 5));
+    const heute4B = new Date(); heute4B.setHours(0,0,0,0);
+    const in30Tagen = addDays(heute4B, 30);
+    const naechsteGeburtstage = mitglieder
+      .filter(m => m.geburtsdatum && !m.archiviert && m.mitgliedsstatus !== 'Verstorben')
+      .map(m => {
+        const geb = new Date(m.geburtsdatum);
+        const diesesJ = new Date(heute4B.getFullYear(), geb.getMonth(), geb.getDate());
+        const naechste = diesesJ < heute4B ? addDays(diesesJ, 365) : diesesJ;
+        return { ...m, _naechsteGeb: naechste, _alter: new Date().getFullYear() - geb.getFullYear() };
+      })
+      .filter(m => m._naechsteGeb <= in30Tagen)
+      .sort((a, b) => a._naechsteGeb - b._naechsteGeb)
+      .slice(0, 5);
 
-      // Ehrungen – nur offene (nicht Verliehen/Abgelehnt)
-      const offeneEh = ehrungen.filter(e => !['Verliehen','Abgelehnt'].includes(e.status));
-      setOffeneEhrungen(offeneEh.slice(0, 4));
+    const offenB = beitraege.filter(b => b.zahlungsstatus === 'Offen');
+    const uebB   = beitraege.filter(b => b.zahlungsstatus === 'Überfällig');
+    const bezB   = beitraege.filter(b => b.zahlungsstatus === 'Bezahlt');
+    const beitraegeStats = {
+      offen:       offenB.reduce((s,b) => s + (b.betrag||0), 0),
+      ueberfaellig:uebB.reduce((s,b) => s + (b.betrag||0), 0),
+      bezahlt:     bezB.reduce((s,b) => s + (b.betrag||0), 0),
+    };
 
-      // Arbeitsdienste
-      setArbeitsdienste(arbeitsdienste.slice(0, 4));
-
-      // Mitglieder
-      setNeueMitglieder([...mitglieder].sort((a,b) =>
-        (b.eintrittsdatum||'') > (a.eintrittsdatum||'') ? 1 : -1
-      ).slice(0, 3));
-
-      // Nächste Geburtstage (heute + nächste 30 Tage)
-      const heute4B = new Date();
-      heute4B.setHours(0,0,0,0);
-      const in30Tagen = addDays(heute4B, 30);
-      const geburtstage = mitglieder
-        .filter(m => m.geburtsdatum && !m.archiviert && m.mitgliedsstatus !== 'Verstorben')
-        .map(m => {
-          const geb = new Date(m.geburtsdatum);
-          const diesesJ = new Date(heute4B.getFullYear(), geb.getMonth(), geb.getDate());
-          let naechste = diesesJ < heute4B ? addDays(diesesJ, 365) : diesesJ;
-          // Schaltjahr-Edge-Case: 29. Feb → 28. Feb wenn nicht Schaltjahr
-          if (naechste.getMonth() === 2 && naechste.getDate() === 1 && geb.getMonth() === 1 && geb.getDate() === 28) {
-            // Edge case handled by date-fns
-          }
-          return { ...m, _naechsteGeb: naechste, _alter: new Date().getFullYear() - geb.getFullYear() };
-        })
-        .filter(m => m._naechsteGeb <= in30Tagen)
-        .sort((a, b) => a._naechsteGeb - b._naechsteGeb)
-        .slice(0, 5);
-      setNaechsteGeburtstage(geburtstage);
-
-      // Beiträge
-      const offenB = beitraege.filter(b => b.zahlungsstatus === 'Offen');
-      const uebB   = beitraege.filter(b => b.zahlungsstatus === 'Überfällig');
-      const bezB   = beitraege.filter(b => b.zahlungsstatus === 'Bezahlt');
-      setBeitraegeStats({
-        offen:       offenB.reduce((s,b) => s + (b.betrag||0), 0),
-        ueberfaellig:uebB.reduce((s,b) => s + (b.betrag||0), 0),
-        bezahlt:     bezB.reduce((s,b) => s + (b.betrag||0), 0),
-      });
-
-      // Häs-Stats aus Backend oder aus Dashboard-Daten
-      let haesGesamt = 0, haesFrei = 0, haesAktiv = 0, haesVerliehen = 0;
-      if (haesResult?.data?.haes) {
-        const hl = haesResult.data.haes;
-        haesGesamt   = hl.length;
-        haesFrei     = hl.filter(h => h.status === 'Frei').length;
-        haesAktiv    = hl.filter(h => h.status === 'Aktiv').length;
-        haesVerliehen= hl.filter(h => h.status === 'Verliehen').length;
-      }
-
-      setStats({
-        mitglieder:    mitglieder.length,
-        mitgliedAktiv: mitglieder.filter(m => m.mitgliedsstatus === 'Aktiv').length,
-        mitgliedPassiv:mitglieder.filter(m => m.mitgliedsstatus === 'Passiv').length,
-        mitgliedJugend:mitglieder.filter(m => ['Jugendliche 11-14','Jungaktive 15-17','Kinder 4-10','Kleinkind 0-3','Leihäs'].includes(m.mitgliedsstatus)).length,
-        veranstaltungen: veranstaltungen.filter(e => e.datum >= today).length,
-        offeneEhrungen:  offeneEh.length,
-        offeneBeitraege: offenB.length + uebB.length,
-        arbeitsdienste:  arbeitsdienste.length,
-        haesGesamt, haesFrei, haesAktiv, haesVerliehen,
-      });
-    } catch (e) {
-      console.error('[Dashboard]', e instanceof Error ? e.message : e);
+    let haesGesamt = 0, haesFrei = 0, haesAktiv = 0, haesVerliehen = 0;
+    if (haesResult?.data?.haes) {
+      const hl = haesResult.data.haes;
+      haesGesamt   = hl.length;
+      haesFrei     = hl.filter(h => h.status === 'Frei').length;
+      haesAktiv    = hl.filter(h => h.status === 'Aktiv').length;
+      haesVerliehen= hl.filter(h => h.status === 'Verliehen').length;
     }
-    setLoading(false);
-  };
+
+    const stats = {
+      mitglieder:    mitglieder.length,
+      mitgliedAktiv: mitglieder.filter(m => m.mitgliedsstatus === 'Aktiv').length,
+      mitgliedPassiv:mitglieder.filter(m => m.mitgliedsstatus === 'Passiv').length,
+      mitgliedJugend:mitglieder.filter(m => ['Jugendliche 11-14','Jungaktive 15-17','Kinder 4-10','Kleinkind 0-3','Leihäs'].includes(m.mitgliedsstatus)).length,
+      veranstaltungen: veranstaltungen.filter(e => e.datum >= heute).length,
+      offeneEhrungen:  offeneEh.length,
+      offeneBeitraege: offenB.length + uebB.length,
+      arbeitsdienste:  arbeitsdienste.length,
+      haesGesamt, haesFrei, haesAktiv, haesVerliehen,
+    };
+
+    return { stats, naechsteEvents, offeneEhrungen, arbeitsdienste: arbeitsdiensteD, beitraegeStats, neueMitglieder, naechsteGeburtstage };
+  }, [dashData]);
+
+  const { pullDistance, refreshing, containerRef } = usePullToRefresh(useCallback(async () => {
+    await refetch();
+  }, [refetch]));
 
   if (istNurMitglied(user)) return <MitgliedDashboard />;
 
-  if (loading) return (
+  if (isLoading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="flex flex-col items-center gap-3">
         <div className="w-9 h-9 border-[3px] border-border border-t-primary rounded-full animate-spin" />

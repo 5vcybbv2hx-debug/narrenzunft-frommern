@@ -100,7 +100,8 @@ export default function AusfahrtScanner() {
       setScanResults(prev => [newEntry, ...prev].slice(0, 30));
 
       if (result.erfolg) {
-        fetchData();
+        // Lokales Update statt vollständigem Neuladen – fühlt sich instant an
+        setAnmeldungen(prev => prev.map(a => a.id === decodedText ? { ...a, status: 'Eingecheckt', eingecheckt_am: new Date().toISOString(), eingecheckt_von: user?.full_name || '' } : a));
       }
     } catch (err) {
       console.error('Check-in API error:', err);
@@ -113,6 +114,40 @@ export default function AusfahrtScanner() {
       }, ...prev].slice(0, 30));
     }
   }, [lastScan, user, mitglieder]);
+
+  const handleManualCheckin = useCallback(async (reg) => {
+    const prevStatus = reg.status;
+    // Optimistisch sofort als eingecheckt markieren
+    setAnmeldungen(prev => prev.map(a => a.id === reg.id ? { ...a, status: 'Eingecheckt', eingecheckt_am: new Date().toISOString(), eingecheckt_von: user?.full_name || '' } : a));
+    setLastScan({ id: reg.id, timestamp: Date.now() });
+    try {
+      const response = await base44.functions.invoke('checkinAusfahrt', {
+        anmeldung_id: reg.id,
+        eingeloggter_name: user?.full_name || user?.email || 'Busverantwortlicher'
+      });
+      const result = response.data || response;
+      setScanResults(prev => [{
+        id: reg.id,
+        name: reg.is_fremdangemeldet ? (reg.fremdname || 'Fremdperson') : getMitgliedName(reg.mitglied_id),
+        erfolg: !!result.erfolg,
+        fehler: result.fehler,
+        timestamp: new Date().toLocaleTimeString('de-DE')
+      }, ...prev].slice(0, 30));
+      if (!result.erfolg) {
+        // Rollback bei Fehler
+        setAnmeldungen(prev => prev.map(a => a.id === reg.id ? { ...a, status: prevStatus } : a));
+      }
+    } catch (err) {
+      setAnmeldungen(prev => prev.map(a => a.id === reg.id ? { ...a, status: prevStatus } : a));
+      setScanResults(prev => [{
+        id: reg.id,
+        name: reg.is_fremdangemeldet ? (reg.fremdname || 'Fremdperson') : getMitgliedName(reg.mitglied_id),
+        erfolg: false,
+        fehler: 'Netzwerkfehler beim Check-in',
+        timestamp: new Date().toLocaleTimeString('de-DE')
+      }, ...prev].slice(0, 30));
+    }
+  }, [user, mitglieder]);
 
   const startScanner = async () => {
     try {
@@ -355,7 +390,7 @@ export default function AusfahrtScanner() {
                 return (
                   <button
                     key={reg.id}
-                    onClick={() => handleScanResult(reg.id)}
+                    onClick={() => handleManualCheckin(reg)}
                     disabled={isEingecheckt}
                     className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors text-left ${
                       isEingecheckt
