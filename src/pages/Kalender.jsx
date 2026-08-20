@@ -534,12 +534,15 @@ function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, onEditVeranstaltun
     <div className={`bg-card border border-border rounded-xl overflow-hidden ${compact ? '' : 'hover:border-primary/30 transition-colors'}`}>
       <div className="flex gap-3 p-4">
         {/* Datum */}
-        <div className="w-12 h-12 rounded-xl bg-primary/10 flex flex-col items-center justify-center shrink-0">
-          <span className="text-[9px] text-muted-foreground leading-none">
-            {format(parseISO(termin.datum), 'MMM', { locale: de })}
+        <div className="w-14 h-14 rounded-xl bg-primary/10 flex flex-col items-center justify-center shrink-0 py-1">
+          <span className="text-[9px] text-muted-foreground leading-none capitalize">
+            {format(parseISO(termin.datum), 'EEEEEE', { locale: de })}
           </span>
-          <span className="text-base font-bold text-primary leading-none">
+          <span className="text-base font-bold text-primary leading-none mt-0.5">
             {format(parseISO(termin.datum), 'd')}
+          </span>
+          <span className="text-[8px] text-muted-foreground leading-none mt-0.5">
+            {format(parseISO(termin.datum), 'MMM', { locale: de })}
           </span>
         </div>
 
