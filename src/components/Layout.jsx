@@ -128,7 +128,12 @@ export default function Layout() {
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifications, setNotifications] = useState(0);
+  const [mitglied, setMitglied] = useState(null);
   const admin = isAdmin(user);
+  const displayName = mitglied ? `${mitglied.vorname || ''} ${mitglied.nachname || ''}`.trim() : (user?.full_name || 'Benutzer');
+  const displayInitials = mitglied
+    ? (`${mitglied.vorname?.[0] || ''}${mitglied.nachname?.[0] || ''}`.toUpperCase() || getInitials(user?.full_name))
+    : getInitials(user?.full_name);
 
   const activeSection = getActiveSection(location.pathname);
   const [expandedSection, setExpandedSection] = useState(activeSection || 'aktiv');
@@ -150,7 +155,16 @@ export default function Layout() {
     setTabHistory(prev => ({ ...prev, [currentTabRoot.path]: location.pathname + location.search }));
   }
 
-  useEffect(() => { loadNotifications(); }, []);
+  useEffect(() => { loadCurrentMitglied(); }, []);
+  useEffect(() => { loadNotifications(); }, [mitglied]);
+
+  const loadCurrentMitglied = async () => {
+    try {
+      const me = await base44.auth.me();
+      const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
+      if (myM[0]) setMitglied(myM[0]);
+    } catch (e) {}
+  };
 
   const loadNotifications = async () => {
     try {
@@ -158,10 +172,8 @@ export default function Layout() {
       if (admin) {
         notifs = await base44.entities.Benachrichtigung.filter({ gelesen: false });
       } else {
-        const me = await base44.auth.me();
-        const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
-        notifs = myM[0]
-          ? await base44.entities.Benachrichtigung.filter({ mitglied_id: myM[0].id, gelesen: false })
+        notifs = mitglied
+          ? await base44.entities.Benachrichtigung.filter({ mitglied_id: mitglied.id, gelesen: false })
           : [];
       }
       setNotifications(notifs.length);
@@ -302,10 +314,10 @@ export default function Layout() {
           <Link to="/profil"
             className="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-sidebar-accent transition-colors">
             <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm shrink-0">
-              {getInitials(user?.full_name)}
+              {displayInitials}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-sidebar-foreground truncate">{user?.full_name || 'Benutzer'}</p>
+              <p className="text-sm font-semibold text-sidebar-foreground truncate">{displayName}</p>
               <p className="text-[11px] text-primary font-medium">{getRollenLabel(user?.role)}</p>
             </div>
           </Link>
@@ -383,7 +395,7 @@ export default function Layout() {
             </Link>
             <Link to="/profil"
               className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm hover:bg-red-700 transition-colors shadow-sm shadow-primary/30 shrink-0">
-              {getInitials(user?.full_name)}
+              {displayInitials}
             </Link>
           </div>
         </header>
