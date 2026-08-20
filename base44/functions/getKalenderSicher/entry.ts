@@ -40,14 +40,41 @@ Deno.serve(async (req) => {
       _status: v.status || 'Geplant',
     });
 
+    // Ausfahrten als normalisierte Termine umwandeln
+    const normalisiereAusfahrt = (a) => ({
+      id: `a_${a.id}`,
+      _ausfahrt_id: a.id,
+      _quelle: 'ausfahrt',
+      titel: a.titel,
+      datum: a.datum,
+      startzeit: a.veranstaltungsbeginn || a.abfahrt_zeit || null,
+      endzeit: a.rueckfahrt_zeit || null,
+      ort: a.ort || null,
+      terminart: a.typ === 'Umzug' ? 'Ausfahrt-Umzug' : 'Ausfahrt-Veranstaltung',
+      sichtbarkeit: 'alle',
+      beschreibung: a.notizen || null,
+      anmeldbar: true,
+      _bus: a.bus_benoetigt || false,
+      _busparkplatz_adresse: a.busparkplatz || null,
+      _busparkplatz_treffzeit: a.bus_benoetigt ? (a.abfahrt_zeit && a.abfahrt_ort ? `${a.abfahrt_zeit} ${a.abfahrt_ort}` : null) : null,
+      _abfahrt_ort: a.abfahrt_ort || null,
+      _abfahrt_zeit: a.abfahrt_zeit || null,
+      _anmeldung_start: a.anmeldung_start || null,
+      _anmeldung_ende: a.anmeldung_ende || null,
+      _status: a.status || 'Geplant',
+      _startnummer: a.startnummer || null,
+    });
+
     if (isAdminUser) {
-      const [kalenderTermine, veranstaltungen] = await Promise.all([
+      const [kalenderTermine, veranstaltungen, ausfahrten] = await Promise.all([
         base44.asServiceRole.entities.KalenderTermin.list('datum', 500),
         base44.asServiceRole.entities.Veranstaltung.list('datum', 300),
+        base44.asServiceRole.entities.Ausfahrt.list('datum', 300),
       ]);
 
       const veranstaltungTermine = veranstaltungen.map(normalisiereVeranstaltung);
-      const alleTermine = [...kalenderTermine, ...veranstaltungTermine]
+      const ausfahrtTermine = ausfahrten.map(normalisiereAusfahrt);
+      const alleTermine = [...kalenderTermine, ...veranstaltungTermine, ...ausfahrtTermine]
         .sort((a, b) => (a.datum || '').localeCompare(b.datum || ''));
 
       return Response.json({
@@ -57,13 +84,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Mitglied: sichtbare KalenderTermine + alle Veranstaltungen
+    // Mitglied: sichtbare KalenderTermine + alle Veranstaltungen + alle Ausfahrten
     const myMitgliedResp = await base44.asServiceRole.entities.Mitglied.filter({ user_id: user.id });
     const myMitglied = myMitgliedResp[0];
 
-    const [alleKalenderTermine, veranstaltungen] = await Promise.all([
+    const [alleKalenderTermine, veranstaltungen, ausfahrten] = await Promise.all([
       base44.asServiceRole.entities.KalenderTermin.list('datum', 500),
       base44.asServiceRole.entities.Veranstaltung.list('datum', 300),
+      base44.asServiceRole.entities.Ausfahrt.list('datum', 300),
     ]);
 
     let gefilterteKalenderTermine = [];
@@ -74,28 +102,22 @@ Deno.serve(async (req) => {
       });
       const myTerminIds = new Set(myAnmeldungen.map(a => a.termin_id));
 
-      const verwandtschaften = user.role === 'elternkonto'
-        ? await base44.asServiceRole.entities.Verwandtschaft.filter({ mitglied_id: myMitglied.id })
-        : [];
-      const kinderIds = new Set(verwandtschaften.map(v => v.verwandter_id));
-
       gefilterteKalenderTermine = alleKalenderTermine.filter(t => {
         if (t.sichtbarkeit === 'admin') return false;
         if (myTerminIds.has(t.id)) return true;
-        if (user.role === 'elternkonto' && t.eingeladene_ids?.some(id => kinderIds.has(id))) return true;
         return false;
       });
     }
 
-    // Alle Veranstaltungen (Umzüge, Abendveranstaltungen etc.) sind für alle sichtbar
     const veranstaltungTermine = veranstaltungen.map(normalisiereVeranstaltung);
+    const ausfahrtTermine = ausfahrten.map(normalisiereAusfahrt);
 
-    const alleTermine = [...gefilterteKalenderTermine, ...veranstaltungTermine]
+    const alleTermine = [...gefilterteKalenderTermine, ...veranstaltungTermine, ...ausfahrtTermine]
       .sort((a, b) => (a.datum || '').localeCompare(b.datum || ''));
 
     return Response.json({
       erfolg: true,
-      termine: alleTermine.slice(0, 300),
+      termine: alleTermine.slice(0, 500),
       kannBearbeiten: false,
     });
   } catch (error) {

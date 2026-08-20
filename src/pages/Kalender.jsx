@@ -17,6 +17,8 @@ import VeranstaltungsvorlagenModal from '@/components/veranstaltung/Veranstaltun
 const TERMINART_FARBEN = {
   'Umzug':             'bg-primary/20 text-primary border-primary/30',
   'Abendveranstaltung':'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  'Ausfahrt-Umzug':    'bg-orange-500/20 text-orange-400 border-orange-500/30',
+  'Ausfahrt-Veranstaltung':'bg-amber-500/20 text-amber-400 border-amber-500/30',
   'Arbeitsdienst':     'bg-blue-500/20 text-blue-400 border-blue-500/30',
   'Ausschusssitzung':  'bg-red-500/20 text-red-400 border-red-500/30',
   'Vorstandssitzung':  'bg-red-600/20 text-red-300 border-red-600/30',
@@ -29,6 +31,8 @@ const TERMINART_FARBEN = {
 const TERMINART_DOT = {
   'Umzug':             'bg-primary',
   'Abendveranstaltung':'bg-purple-400',
+  'Ausfahrt-Umzug':    'bg-orange-400',
+  'Ausfahrt-Veranstaltung':'bg-amber-400',
   'Arbeitsdienst':     'bg-blue-400',
   'Ausschusssitzung':  'bg-red-400',
   'Vorstandssitzung':  'bg-red-300',
@@ -48,7 +52,7 @@ const ROLLE_ERLAUBTE_SICHTBARKEIT = {
   admin:           ['alle', 'verantwortliche', 'ausschuss', 'admin', 'eingeladen', 'haesgruppe'],
 };
 
-const ALLE_TERMINARTEN = ['Umzug','Abendveranstaltung','Arbeitsdienst','Ausschusssitzung','Vorstandssitzung','Jugendtermin','Gruppen-Termin','Intern','Sonstiges'];
+const ALLE_TERMINARTEN = ['Umzug','Abendveranstaltung','Ausfahrt-Umzug','Ausfahrt-Veranstaltung','Arbeitsdienst','Ausschusssitzung','Vorstandssitzung','Jugendtermin','Gruppen-Termin','Intern','Sonstiges'];
 
 export default function Kalender() {
   const { user } = useAuth();
@@ -208,6 +212,14 @@ export default function Kalender() {
                     <div className="text-left">
                       <p className="font-medium">Eigene Veranstaltung</p>
                       <p className="text-xs text-muted-foreground">Intern, Fest, Arbeitsdienst…</p>
+                    </div>
+                  </button>
+                  <button onClick={() => { setShowNeuDropdown(false); navigate('/ausfahrten/neu'); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-secondary transition-colors border-b border-border">
+                    <Calendar size={15} className="text-orange-400 shrink-0" />
+                    <div className="text-left">
+                      <p className="font-medium">Ausfahrt</p>
+                      <p className="text-xs text-muted-foreground">Umzug / Veranstaltung mit Bus</p>
                     </div>
                   </button>
                   <button onClick={() => { setShowNeuDropdown(false); setShowVorlagen(true); }}
@@ -479,6 +491,7 @@ function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, onEditVeranstaltun
   const farbeClass = TERMINART_FARBEN[termin.terminart] || TERMINART_FARBEN['Sonstiges'];
   const isAngemeldet = anmeldung?.status === 'Angemeldet';
   const istVonVeranstaltung = termin._quelle === 'veranstaltung';
+  const istVonAusfahrt = termin._quelle === 'ausfahrt';
   const [detailsOffen, setDetailsOffen] = useState(false);
 
   const hatDetails = istVonVeranstaltung && (
@@ -509,6 +522,9 @@ function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, onEditVeranstaltun
             </span>
             {istVonVeranstaltung && (
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Veranstaltung</span>
+            )}
+            {istVonAusfahrt && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400">Ausfahrt</span>
             )}
             {isAngemeldet && (
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">✓ Angemeldet</span>
@@ -549,6 +565,15 @@ function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, onEditVeranstaltun
               to={`/veranstaltungen/${termin._veranstaltung_id}`}
               className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors text-xs"
               title="Zur Veranstaltung"
+            >
+              →
+            </Link>
+          )}
+          {istVonAusfahrt && (
+            <Link
+              to={`/ausfahrten/${termin._ausfahrt_id}`}
+              className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors text-xs"
+              title="Zur Ausfahrt"
             >
               →
             </Link>
@@ -638,10 +663,20 @@ function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, onEditVeranstaltun
       {termin.anmeldbar && istVonVeranstaltung && (
         <div className="px-4 pb-3">
           <Link
-            to={`/umzuege`}
+            to={`/veranstaltungen/${termin._veranstaltung_id}`}
             className="block w-full py-2.5 min-h-[44px] rounded-lg text-sm font-semibold text-center bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
           >
             Zur Anmeldung →
+          </Link>
+        </div>
+      )}
+      {termin.anmeldbar && istVonAusfahrt && (
+        <div className="px-4 pb-3">
+          <Link
+            to={`/ausfahrten/${termin._ausfahrt_id}`}
+            className="block w-full py-2.5 min-h-[44px] rounded-lg text-sm font-semibold text-center bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition-colors"
+          >
+            Zur Ausfahrt →
           </Link>
         </div>
       )}
