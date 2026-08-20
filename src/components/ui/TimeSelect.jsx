@@ -34,10 +34,10 @@ export default function TimeSelect({
     onChange({ target: { name, value: nextValue } });
   };
 
-  const selectClass = `bg-secondary border border-border rounded-lg px-2 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary min-h-[44px] ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`;
+  const selectClass = `bg-secondary rounded-lg px-2 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary min-h-[44px] flex-1 cursor-pointer ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`;
 
   return (
-    <div className={`flex items-center gap-1.5 ${className}`}>
+    <div className={`flex items-center gap-1.5 border border-border rounded-lg p-1.5 ${className}`}>
       <select
         value={hour}
         onChange={(e) => emit(e.target.value, minute)}
