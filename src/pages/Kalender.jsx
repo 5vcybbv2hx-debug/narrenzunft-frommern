@@ -8,7 +8,7 @@ import {
   MapPin, Download, Filter, X, Edit, LayoutTemplate, Bus
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth,
-  addMonths, subMonths, parseISO, isToday } from 'date-fns';
+  addMonths, subMonths, parseISO, isToday, startOfDay, isBefore, isAfter, differenceInDays } from 'date-fns';
 import { de } from 'date-fns/locale';
 import KalenderTerminModal from '@/components/kalender/KalenderTerminModal';
 import VeranstaltungBearbeitenModal from '@/components/kalender/VeranstaltungBearbeitenModal';
@@ -75,6 +75,8 @@ export default function Kalender() {
   const [showNeuDropdown, setShowNeuDropdown] = useState(false);
   const [zeigeVergangene, setZeigeVergangene] = useState(false);
   const [ausfahrten, setAusfahrten] = useState([]);
+  const [ausfahrtAnmeldungen, setAusfahrtAnmeldungen] = useState([]);
+  const [submittingAusfahrtId, setSubmittingAusfahrtId] = useState(null);
   const navigate = useNavigate();
 
   const userRolle = user?.role || 'mitglied';
@@ -126,6 +128,10 @@ export default function Kalender() {
         const anm = await base44.entities.KalenderAnmeldung.filter({ mitglied_id: myM.id });
         setAnmeldungen(anm);
       }
+
+      // Alle Ausfahrt-Anmeldungen laden (für Zähler + eigenen Status)
+      const ausfahrtAnm = await base44.entities.AusfahrtAnmeldung.filter({});
+      setAusfahrtAnmeldungen(ausfahrtAnm || []);
     } catch (e) {
       console.error('[Kalender]', e instanceof Error ? e.message : e);
     }
@@ -169,6 +175,73 @@ export default function Kalender() {
     }
     const anm = await base44.entities.KalenderAnmeldung.filter({ mitglied_id: myMitglied.id });
     setAnmeldungen(anm);
+  };
+
+  // === Ausfahrt-Anmeldung ===
+  const handleAusfahrtRegister = async (ausfahrtId) => {
+    if (!myMitglied) return;
+    setSubmittingAusfahrtId(ausfahrtId);
+    try {
+      await base44.entities.AusfahrtAnmeldung.create({
+        ausfahrt_id: ausfahrtId,
+        mitglied_id: myMitglied.id,
+        status: 'Angemeldet',
+        transport: 'Bus',
+      });
+      const updated = await base44.entities.AusfahrtAnmeldung.filter({});
+      setAusfahrtAnmeldungen(updated || []);
+    } catch (e) {
+      console.error('Anmeldung fehlgeschlagen:', e);
+      alert('Bei der Anmeldung ist ein Fehler aufgetreten.');
+    } finally {
+      setSubmittingAusfahrtId(null);
+    }
+  };
+
+  const handleAusfahrtUnregister = async (anmeldungId, ausfahrtId) => {
+    if (!window.confirm('Möchten Sie sich wirklich von dieser Ausfahrt abmelden?')) return;
+    setSubmittingAusfahrtId(ausfahrtId);
+    try {
+      await base44.entities.AusfahrtAnmeldung.delete(anmeldungId);
+      const updated = await base44.entities.AusfahrtAnmeldung.filter({});
+      setAusfahrtAnmeldungen(updated || []);
+    } catch (e) {
+      console.error('Abmeldung fehlgeschlagen:', e);
+      alert('Bei der Abmeldung ist ein Fehler aufgetreten.');
+    } finally {
+      setSubmittingAusfahrtId(null);
+    }
+  };
+
+  const getAusfahrtAnmeldeStatus = (ausfahrtId) => {
+    if (!myMitglied) return null;
+    return ausfahrtAnmeldungen.find(a => 
+      a.ausfahrt_id === ausfahrtId && a.mitglied_id === myMitglied.id &&
+      (a.status === 'Angemeldet' || a.status === 'Eingecheckt')
+    );
+  };
+
+  const getAusfahrtAnmeldeCount = (ausfahrtId) => {
+    return ausfahrtAnmeldungen.filter(a => 
+      a.ausfahrt_id === ausfahrtId && (a.status === 'Angemeldet' || a.status === 'Eingecheckt')
+    ).length;
+  };
+
+  const isAusfahrtRegistrationOpen = (termin) => {
+    const today = startOfDay(new Date());
+    const regStart = termin._anmeldung_start ? startOfDay(parseISO(termin._anmeldung_start)) : null;
+    const regEnd = termin._anmeldung_ende ? startOfDay(parseISO(termin._anmeldung_ende)) : null;
+    const status = termin._status;
+    return status === 'Anmeldung offen' &&
+      (!regStart || !isBefore(today, regStart)) &&
+      (!regEnd || !isAfter(today, regEnd));
+  };
+
+  const canUnregisterAusfahrt = (termin) => {
+    if (!termin.datum) return false;
+    const today = startOfDay(new Date());
+    const datum = startOfDay(parseISO(termin.datum));
+    return differenceInDays(datum, today) >= 3;
   };
 
   const handleDownloadFeed = async (feedTyp) => {
@@ -414,6 +487,16 @@ export default function Kalender() {
                   onAnmelden={() => handleAnmelden(t)}
                   onEdit={admin ? () => { setEditTermin(t); setShowModal(true); } : null}
                   onEditVeranstaltung={admin ? (v) => { setEditVeranstaltung(v); setShowVeranstaltungModal(true); } : null}
+                  ausfahrtAnmeldung={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeStatus(t._ausfahrt_id) : null}
+                  ausfahrtAnmeldeCount={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeCount(t._ausfahrt_id) : 0}
+                  isAusfahrtOpen={t._quelle === 'ausfahrt' ? isAusfahrtRegistrationOpen(t) : false}
+                  canUnregisterAusfahrt={t._quelle === 'ausfahrt' ? canUnregisterAusfahrt(t) : false}
+                  onAusfahrtRegister={t._quelle === 'ausfahrt' ? () => handleAusfahrtRegister(t._ausfahrt_id) : null}
+                  onAusfahrtUnregister={t._quelle === 'ausfahrt' ? () => {
+                    const anm = getAusfahrtAnmeldeStatus(t._ausfahrt_id);
+                    if (anm) handleAusfahrtUnregister(anm.id, t._ausfahrt_id);
+                  } : null}
+                  submittingAusfahrt={submittingAusfahrtId}
                   compact
                 />
               ))}
@@ -482,6 +565,16 @@ export default function Kalender() {
                   onAnmelden={() => handleAnmelden(t)}
                   onEdit={admin ? () => { setEditTermin(t); setShowModal(true); } : null}
                   onEditVeranstaltung={admin ? (v) => { setEditVeranstaltung(v); setShowVeranstaltungModal(true); } : null}
+                  ausfahrtAnmeldung={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeStatus(t._ausfahrt_id) : null}
+                  ausfahrtAnmeldeCount={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeCount(t._ausfahrt_id) : 0}
+                  isAusfahrtOpen={t._quelle === 'ausfahrt' ? isAusfahrtRegistrationOpen(t) : false}
+                  canUnregisterAusfahrt={t._quelle === 'ausfahrt' ? canUnregisterAusfahrt(t) : false}
+                  onAusfahrtRegister={t._quelle === 'ausfahrt' ? () => handleAusfahrtRegister(t._ausfahrt_id) : null}
+                  onAusfahrtUnregister={t._quelle === 'ausfahrt' ? () => {
+                    const anm = getAusfahrtAnmeldeStatus(t._ausfahrt_id);
+                    if (anm) handleAusfahrtUnregister(anm.id, t._ausfahrt_id);
+                  } : null}
+                  submittingAusfahrt={submittingAusfahrtId}
                 />
               ))
             )}
@@ -516,7 +609,7 @@ export default function Kalender() {
   );
 }
 
-function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, onEditVeranstaltung, compact = false }) {
+function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, onEditVeranstaltung, compact = false, ausfahrtAnmeldung, ausfahrtAnmeldeCount, isAusfahrtOpen, canUnregisterAusfahrt, onAusfahrtRegister, onAusfahrtUnregister, submittingAusfahrt }) {
   const farbeClass = TERMINART_FARBEN[termin.terminart] || TERMINART_FARBEN['Sonstiges'];
   const isAngemeldet = anmeldung?.status === 'Angemeldet';
   const istVonVeranstaltung = termin._quelle === 'veranstaltung';
@@ -702,13 +795,60 @@ function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, onEditVeranstaltun
           </Link>
         </div>
       )}
-      {termin.anmeldbar && istVonAusfahrt && (
-        <div className="px-4 pb-3">
+      {istVonAusfahrt && (
+        <div className="px-4 pb-3 space-y-2">
+          {/* Anmeldezähler */}
+          {ausfahrtAnmeldeCount !== undefined && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                {termin._bus ? <Bus size={11} /> : null}
+                {ausfahrtAnmeldeCount} angemeldet
+              </span>
+              {termin._bus && termin._startnummer && (
+                <span className="text-muted-foreground">· Startnr. {termin._startnummer}</span>
+              )}
+            </div>
+          )}
+          {/* Anmelde-Status */}
+          {ausfahrtAnmeldung && (
+            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">
+              ✓ {ausfahrtAnmeldung.status}
+            </span>
+          )}
+          {/* An-/Abmelde-Buttons */}
+          {onAusfahrtRegister && !ausfahrtAnmeldung && (
+            <button
+              onClick={onAusfahrtRegister}
+              disabled={!isAusfahrtOpen || submittingAusfahrt === termin._ausfahrt_id}
+              className={`w-full py-2.5 min-h-[44px] rounded-lg text-sm font-semibold transition-colors ${
+                isAusfahrtOpen
+                  ? 'bg-primary text-white hover:bg-primary/90'
+                  : 'bg-secondary text-muted-foreground border border-border cursor-not-allowed'
+              }`}
+            >
+              {submittingAusfahrt === termin._ausfahrt_id ? 'Anmeldung...' : isAusfahrtOpen ? 'Anmelden' : 'Anmeldung geschlossen'}
+            </button>
+          )}
+          {onAusfahrtUnregister && ausfahrtAnmeldung && (
+            <button
+              onClick={onAusfahrtUnregister}
+              disabled={!canUnregisterAusfahrt || submittingAusfahrt === termin._ausfahrt_id}
+              className={`w-full py-2.5 min-h-[44px] rounded-lg text-sm font-semibold border transition-colors ${
+                canUnregisterAusfahrt
+                  ? 'border-red-500/40 text-red-400 hover:bg-red-500/10'
+                  : 'border-border text-muted-foreground cursor-not-allowed'
+              }`}
+              title={!canUnregisterAusfahrt ? 'Abmeldung nur bis 3 Tage vor der Ausfahrt möglich' : ''}
+            >
+              {submittingAusfahrt === termin._ausfahrt_id ? 'Abmeldung...' : 'Abmelden'}
+            </button>
+          )}
+          {/* Link zur Detail-Seite */}
           <Link
             to={`/ausfahrten/${termin._ausfahrt_id}`}
-            className="block w-full py-2.5 min-h-[44px] rounded-lg text-sm font-semibold text-center bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition-colors"
+            className="block text-xs text-muted-foreground hover:text-primary text-center pt-1"
           >
-            Zur Ausfahrt →
+            Details ansehen →
           </Link>
         </div>
       )}
