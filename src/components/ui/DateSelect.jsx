@@ -2,7 +2,7 @@ import React from 'react';
 
 /**
  * Intuitives Datum-Eingabefeld als Ersatz für <input type="date">.
- * Drei Dropdowns (Tag / Monat / Jahr) statt fummeligem nativem Picker.
+ * Drei Dropdowns (Tag / Monat / Jahr) in beliebiger Reihenfolge wählbar.
  * API-kompatibel zu <input type="date" />: onChange({ target: { name, value } }).
  * value ist "YYYY-MM-DD" (ISO), Display ist DD.MM.YYYY (deutsch).
  */
@@ -26,25 +26,17 @@ export default function DateSelect({
   const months = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
   const monthNames = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
 
-  // Tage basierend auf gewähltem Monat/Jahr
-  const daysInMonth = (y, m) => {
-    if (!y || !m) return 31;
-    return new Date(parseInt(y), parseInt(m), 0).getDate();
-  };
-  const maxDay = daysInMonth(year, month);
-  const days = Array.from({ length: maxDay }, (_, i) => String(i + 1).padStart(2, '0'));
-
-  // Wenn gespeicherter Tag > maxDay (z.B. 31 in einem 30-Tage-Monat), trotzdem zeigen
-  if (day && !days.includes(day)) {
-    days.push(day);
-    days.sort();
-  }
+  // IMMER 1-31 Tage anzeigen — unabhängig von Monat/Jahr
+  const days = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
 
   const emit = (newY, newM, newD) => {
     let nextValue = '';
     if (newY !== '' || newM !== '' || newD !== '') {
       if (newY && newM && newD) {
-        nextValue = `${newY}-${newM}-${newD}`;
+        // Tag gültig für Monat/Jahr? Falls nicht, anpassen
+        const maxDay = new Date(parseInt(newY), parseInt(newM), 0).getDate();
+        const validDay = parseInt(newD) > maxDay ? String(maxDay).padStart(2, '0') : newD;
+        nextValue = `${newY}-${newM}-${validDay}`;
       } else if (newY && newM) {
         nextValue = `${newY}-${newM}`;
       } else if (newY) {
