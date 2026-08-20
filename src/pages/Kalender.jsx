@@ -5,7 +5,7 @@ import { isAdmin } from '@/lib/roles';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Calendar, List, ChevronLeft, ChevronRight, Plus, Clock,
-  MapPin, Download, Filter, X, Edit, LayoutTemplate
+  MapPin, Download, Filter, X, Edit, LayoutTemplate, Bus
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth,
   addMonths, subMonths, parseISO, isToday } from 'date-fns';
@@ -74,6 +74,7 @@ export default function Kalender() {
   const [showVorlagen, setShowVorlagen] = useState(false);
   const [showNeuDropdown, setShowNeuDropdown] = useState(false);
   const [zeigeVergangene, setZeigeVergangene] = useState(false);
+  const [ausfahrten, setAusfahrten] = useState([]);
   const navigate = useNavigate();
 
   const userRolle = user?.role || 'mitglied';
@@ -91,6 +92,31 @@ export default function Kalender() {
       }
       setTermine(result.data.termine);
 
+      // Ausfahrten zusätzlich laden und normalisieren
+      const ausfahrtData = await base44.entities.Ausfahrt.list('datum', 300);
+      const ausfahrtTermine = (ausfahrtData || []).map(a => ({
+        id: `a_${a.id}`,
+        _ausfahrt_id: a.id,
+        _quelle: 'ausfahrt',
+        titel: a.titel,
+        datum: a.datum,
+        startzeit: a.veranstaltungsbeginn || a.abfahrt_zeit || null,
+        endzeit: a.rueckfahrt_zeit || null,
+        ort: a.ort || null,
+        terminart: a.typ === 'Umzug' ? 'Ausfahrt-Umzug' : 'Ausfahrt-Veranstaltung',
+        sichtbarkeit: 'alle',
+        beschreibung: a.notizen || null,
+        anmeldbar: true,
+        _bus: a.bus_benoetigt || false,
+        _busparkplatz_adresse: a.busparkplatz || null,
+        _busparkplatz_treffzeit: a.bus_benoetigt ? (a.abfahrt_zeit && a.abfahrt_ort ? `${a.abfahrt_zeit} ${a.abfahrt_ort}` : null) : null,
+        _abfahrt_ort: a.abfahrt_ort || null,
+        _abfahrt_zeit: a.abfahrt_zeit || null,
+        _status: a.status || 'Geplant',
+        _startnummer: a.startnummer || null,
+      }));
+      setAusfahrten(ausfahrtTermine);
+
       const me = await base44.auth.me();
       const myMArr = await base44.entities.Mitglied.filter({ user_id: me?.id });
       const myM = myMArr[0] || null;
@@ -107,10 +133,13 @@ export default function Kalender() {
   };
 
   const gefilterteTermine = useMemo(() => {
-    let list = [...termine];
+    // Dedup: falls Backend schon Ausfahrten liefert, nicht doppelt reinmergen
+    const backendIds = new Set(termine.map(t => t.id));
+    const neueAusfahrten = ausfahrten.filter(a => !backendIds.has(a.id));
+    let list = [...termine, ...neueAusfahrten];
     if (filterArt !== 'alle') list = list.filter(t => t.terminart === filterArt);
-    return list.sort((a, b) => a.datum.localeCompare(b.datum));
-  }, [termine, filterArt]);
+    return list.sort((a, b) => (a.datum || '').localeCompare(b.datum || ''));
+  }, [termine, ausfahrten, filterArt]);
 
   const termineImMonat = useMemo(() => {
     const start = format(startOfMonth(monat), 'yyyy-MM-dd');
@@ -179,7 +208,7 @@ export default function Kalender() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-2xl font-oswald font-semibold text-foreground tracking-wide">Kalender</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{termine.length} Termine · {format(new Date(), 'MMMM yyyy', { locale: de })}</p>
+          <p className="text-sm text-muted-foreground mt-0.5">{gefilterteTermine.length} Termine · {format(new Date(), 'MMMM yyyy', { locale: de })}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
