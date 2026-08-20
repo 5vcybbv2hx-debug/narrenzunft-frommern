@@ -60,11 +60,16 @@ export default function Ausfahrten() {
     }
     setSubmittingId(ausfahrtId);
     try {
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
       await base44.entities.AusfahrtAnmeldung.create({
         ausfahrt_id: ausfahrtId,
         mitglied_id: mitglied.id,
         status: 'Angemeldet',
-        anmeldedatum: new Date().toISOString()
+        transport: 'Bus',
+        angemeldet_am: todayStr,
+        anzahl_begleitpersonen: 0,
+        begleitpersonen: [],
+        is_fremdangemeldet: false,
       });
       // Refresh local data state
       const updatedAnmeldungen = await base44.entities.AusfahrtAnmeldung.filter({});
@@ -84,7 +89,11 @@ export default function Ausfahrten() {
     }
     setSubmittingId(ausfahrtId);
     try {
-      await base44.entities.AusfahrtAnmeldung.delete(anmeldungId);
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
+      await base44.entities.AusfahrtAnmeldung.update(anmeldungId, {
+        status: 'Abgemeldet',
+        abgemeldet_am: todayStr,
+      });
       // Refresh local data state
       const updatedAnmeldungen = await base44.entities.AusfahrtAnmeldung.filter({});
       setAnmeldungen(updatedAnmeldungen || []);
@@ -103,13 +112,13 @@ export default function Ausfahrten() {
       
       // Calculate active registrations
       const activeAnmeldungen = anmeldungen.filter(
-        a => a.ausfahrt_id === ausfahrt.id && (a.status === 'Angemeldet' || a.status === 'Eingecheckt')
+        a => a.ausfahrt_id === ausfahrt.id && a.status !== 'Abgemeldet'
       );
       const registrationCount = activeAnmeldungen.length;
 
       // Find registration of current logged-in member
       const ownAnmeldung = mitglied 
-        ? anmeldungen.find(a => a.ausfahrt_id === ausfahrt.id && a.mitglied_id === mitglied.id)
+        ? anmeldungen.find(a => a.ausfahrt_id === ausfahrt.id && a.mitglied_id === mitglied.id && a.status !== 'Abgemeldet')
         : null;
 
       // Registration window validation

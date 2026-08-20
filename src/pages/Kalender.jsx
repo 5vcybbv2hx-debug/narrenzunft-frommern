@@ -182,11 +182,16 @@ export default function Kalender() {
     if (!myMitglied) return;
     setSubmittingAusfahrtId(ausfahrtId);
     try {
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
       await base44.entities.AusfahrtAnmeldung.create({
         ausfahrt_id: ausfahrtId,
         mitglied_id: myMitglied.id,
         status: 'Angemeldet',
         transport: 'Bus',
+        angemeldet_am: todayStr,
+        anzahl_begleitpersonen: 0,
+        begleitpersonen: [],
+        is_fremdangemeldet: false,
       });
       const updated = await base44.entities.AusfahrtAnmeldung.filter({});
       setAusfahrtAnmeldungen(updated || []);
@@ -202,7 +207,11 @@ export default function Kalender() {
     if (!window.confirm('Möchten Sie sich wirklich von dieser Ausfahrt abmelden?')) return;
     setSubmittingAusfahrtId(ausfahrtId);
     try {
-      await base44.entities.AusfahrtAnmeldung.delete(anmeldungId);
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
+      await base44.entities.AusfahrtAnmeldung.update(anmeldungId, {
+        status: 'Abgemeldet',
+        abgemeldet_am: todayStr,
+      });
       const updated = await base44.entities.AusfahrtAnmeldung.filter({});
       setAusfahrtAnmeldungen(updated || []);
     } catch (e) {
@@ -217,13 +226,13 @@ export default function Kalender() {
     if (!myMitglied) return null;
     return ausfahrtAnmeldungen.find(a => 
       a.ausfahrt_id === ausfahrtId && a.mitglied_id === myMitglied.id &&
-      (a.status === 'Angemeldet' || a.status === 'Eingecheckt')
+      a.status !== 'Abgemeldet'
     );
   };
 
   const getAusfahrtAnmeldeCount = (ausfahrtId) => {
     return ausfahrtAnmeldungen.filter(a => 
-      a.ausfahrt_id === ausfahrtId && (a.status === 'Angemeldet' || a.status === 'Eingecheckt')
+      a.ausfahrt_id === ausfahrtId && a.status !== 'Abgemeldet'
     ).length;
   };
 
