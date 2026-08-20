@@ -114,6 +114,14 @@ function getActiveSection(pathname) {
   return null;
 }
 
+function getInitials(fullName) {
+  if (!fullName) return 'U';
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'U';
+  if (parts.length === 1) return parts[0][0].toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -294,7 +302,7 @@ export default function Layout() {
           <Link to="/profil"
             className="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-sidebar-accent transition-colors">
             <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm shrink-0">
-              {user?.full_name?.[0]?.toUpperCase() || 'U'}
+              {getInitials(user?.full_name)}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-sidebar-foreground truncate">{user?.full_name || 'Benutzer'}</p>
@@ -356,11 +364,6 @@ export default function Layout() {
                 style={{ background: 'hsl(var(--background) / 0.9)', backdropFilter: 'blur(12px)', paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
           <div className="absolute bottom-0 left-0 right-0 h-px bg-primary/30" />
 
-          <button className="lg:hidden p-2.5 -ml-2 rounded-md text-muted-foreground hover:bg-neutral-800 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-            onClick={() => setSidebarOpen(true)}>
-            <Menu size={22} />
-          </button>
-
           <div className="hidden md:flex flex-1 max-w-sm">
             <SecureSearch />
           </div>
@@ -380,7 +383,7 @@ export default function Layout() {
             </Link>
             <Link to="/profil"
               className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm hover:bg-red-700 transition-colors shadow-sm shadow-primary/30 shrink-0">
-              {user?.full_name?.[0] || 'U'}
+              {getInitials(user?.full_name)}
             </Link>
           </div>
         </header>
