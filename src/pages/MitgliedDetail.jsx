@@ -427,7 +427,7 @@ export default function MitgliedDetail() {
   return (
     <div className="px-4 lg:px-6 py-6 max-w-3xl mx-auto">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-6 flex-wrap">
         <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-neutral-800 transition-colors text-muted-foreground hover:text-white">
           <ArrowLeft size={20} />
         </button>
@@ -679,7 +679,7 @@ export default function MitgliedDetail() {
               }} />
             </div>
             <Field label="Straße" field="strasse" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-2 gap-3">
               <Field label="PLZ" field="plz" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
               <Field label="Ort" field="ort" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
             </div>
@@ -757,12 +757,12 @@ export default function MitgliedDetail() {
             <p className="text-sm text-muted-foreground">Noch kein Häs zugewiesen</p>
           ) : (
             haes.map(h => (
-              <Link key={h.id} to={`/haes/${h.id}`} className="flex items-center justify-between py-2 border-b border-border last:border-0 hover:opacity-75 transition-opacity">
+              <Link key={h.id} to={`/haes/${h.id}`} className="flex items-center justify-between py-2 border-b border-border last:border-0 hover:opacity-75 transition-opacity gap-2">
                 <div>
                   <p className="text-sm font-medium text-white">Nr. {h.haesnummer}</p>
                   <p className="text-xs text-muted-foreground">{h.bezeichnung}</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <span className={`text-xs px-2 py-0.5 rounded-full ${HAES_STATUS_COLORS[h.status] || 'bg-neutral-800 text-muted-foreground'}`}>{h.status}</span>
                   <ChevronRight size={14} className="text-muted-foreground" />
                 </div>
@@ -779,7 +779,7 @@ export default function MitgliedDetail() {
           <p className="text-xs text-muted-foreground mb-4">Rolle jetzt festlegen – wird beim ersten Login automatisch übernommen.</p>
 
           {linkedUser && (
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-800/50 mb-4">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-800/50 mb-4 flex-wrap">
               <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0">
                 {linkedUser.full_name?.[0] || '?'}
               </div>
@@ -800,7 +800,7 @@ export default function MitgliedDetail() {
             </button>
           )}
 
-          <div className="grid grid-cols-2 gap-2 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
             {ROLE_TILES.map(rolle => {
               const Icon = rolle.icon;
               const currentRole = linkedUser ? (linkedUser.role || 'mitglied') : (mitglied.app_rolle || 'mitglied');

@@ -119,7 +119,7 @@ export default function Haes() {
           <p className="text-sm text-muted-foreground mt-0.5">{haes.length} Häs gesamt</p>
         </div>
         {isAdminUser && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 ml-auto">
 
             <button
               onClick={() => setShowNewGruppe(true)}
@@ -182,7 +182,7 @@ export default function Haes() {
                 <button
                   onClick={() => setSelectedGruppeToken(g)}
                   title="Kalender-Feed"
-                  className="absolute -right-1 -top-1 p-1 rounded-lg bg-primary text-white hover:bg-primary/90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                  className="absolute -right-1 -top-1 p-1 rounded-lg bg-primary text-white hover:bg-primary/90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity z-10"
                 >
                   <Calendar size={12} />
                 </button>
@@ -221,7 +221,7 @@ export default function Haes() {
               <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                 {h.haesgruppe_id && <span>{getGruppeName(h.haesgruppe_id)}</span>}
                 {h.aktueller_besitzer_id && (
-                  <span>· {getMitgliedName(h.aktueller_besitzer_id)}</span>
+                  <span className="truncate">· {getMitgliedName(h.aktueller_besitzer_id)}</span>
                 )}
               </div>
             </div>

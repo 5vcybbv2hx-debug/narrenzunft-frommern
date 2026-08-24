@@ -174,7 +174,7 @@ export default function HaesDetail() {
   return (
     <div className="px-4 lg:px-6 py-6 max-w-2xl mx-auto">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-6 flex-wrap">
         <button onClick={() => navigate('/haes')} className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground">
           <ArrowLeft size={20} />
         </button>
@@ -183,9 +183,9 @@ export default function HaesDetail() {
           <p className="text-sm text-muted-foreground">{haes.bezeichnung || 'Keine Bezeichnung'}</p>
         </div>
         {admin && !editing && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 ml-auto">
             <button onClick={() => setEditing(true)} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors">
-              <Edit size={14} /> Bearbeiten
+              <Edit size={14} /> <span className="hidden sm:inline">Bearbeiten</span>
             </button>
             <button onClick={handleDelete} className="p-2 rounded-lg text-destructive hover:bg-destructive/10 transition-colors">
               <Trash2 size={18} />
@@ -193,7 +193,7 @@ export default function HaesDetail() {
           </div>
         )}
         {editing && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 ml-auto">
             <button onClick={() => setEditing(false)} className="p-2 rounded-lg bg-secondary text-muted-foreground">
               <X size={18} />
             </button>
@@ -267,7 +267,7 @@ export default function HaesDetail() {
                 >
                   – Keine Gruppe
                 </button>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {gruppen.map(g => (
                     <button
                       key={g.id}
