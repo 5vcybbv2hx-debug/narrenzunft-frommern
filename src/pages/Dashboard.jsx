@@ -91,8 +91,11 @@ export default function Dashboard() {
   const today = new Date().toISOString().split('T')[0];
 
   const { data: dashData, isLoading, refetch } = useQuery({
-    queryKey: ['dashboard'],
+    queryKey: ['dashboard', user?.role],
     queryFn: async () => {
+      // Mitglieder brauchen keine Admin-Dashboard-Daten – der Fetch würde eine
+      // andere Datenstruktur zurückgeben, die das useMemo zum Absturz bringt.
+      if (istNurMitglied(user)) return null;
       const [dashResult, haesResult] = await Promise.all([
         base44.functions.invoke('getDashboardSicher', {}),
         isAdmin(user)
@@ -110,7 +113,7 @@ export default function Dashboard() {
       beitraegeStats: { offen: 0, ueberfaellig: 0, bezahlt: 0 },
       neueMitglieder: [], naechsteGeburtstage: [],
     };
-    if (!dashData || !dashData.dashResult.data.erfolg) return empty;
+    if (!dashData || !dashData.dashResult?.data?.erfolg || !dashData.dashResult.data.mitglieder) return empty;
     const { mitglieder, veranstaltungen, arbeitsdienste, ehrungen, beitraege } = dashData.dashResult.data;
     const haesResult = dashData.haesResult;
     const heute = new Date().toISOString().split('T')[0];
