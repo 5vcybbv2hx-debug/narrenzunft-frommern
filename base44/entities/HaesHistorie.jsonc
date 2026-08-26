@@ -26,8 +26,7 @@
     }
   },
   "required": [
-    "haes_id",
-    "mitglied_id"
+    "haes_id"
   ],
   "rls": {
     "create": {
