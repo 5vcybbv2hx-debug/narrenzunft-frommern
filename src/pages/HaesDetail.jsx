@@ -469,12 +469,16 @@ export default function HaesDetail() {
               {aktiveZuweisungen.map(h => (
                 <div key={h.id} className="flex items-center gap-3 bg-green-500/5 border border-green-500/20 rounded-xl px-3 py-3">
                   <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs shrink-0">
-                    {getMitgliedName(h.mitglied_id)[0]}
+                    {h.mitglied_id ? getMitgliedName(h.mitglied_id)[0] : '?'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <Link to={`/mitglieder/${h.mitglied_id}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                      {getMitgliedName(h.mitglied_id)}
-                    </Link>
+                    {h.mitglied_id ? (
+                      <Link to={`/mitglieder/${h.mitglied_id}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+                        {getMitgliedName(h.mitglied_id)}
+                      </Link>
+                    ) : (
+                      <p className="text-sm font-medium text-foreground">{h.notizen || 'Unbekannt'}</p>
+                    )}
                     <p className="text-xs text-muted-foreground">
                       seit {h.von_datum ? format(new Date(h.von_datum), 'dd.MM.yyyy', { locale: de }) : '–'}
                     </p>
@@ -511,14 +515,15 @@ export default function HaesDetail() {
               {inaktiveZuweisungen.map(h => (
                 <div key={h.id} className="flex items-center gap-3 bg-secondary/30 border border-border rounded-xl px-3 py-3">
                   <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground font-bold text-xs shrink-0">
-                    {getMitgliedName(h.mitglied_id)[0]}
+                    {h.mitglied_id ? getMitgliedName(h.mitglied_id)[0] : '?'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-muted-foreground">{getMitgliedName(h.mitglied_id)}</p>
+                    <p className="text-sm text-muted-foreground">{h.mitglied_id ? getMitgliedName(h.mitglied_id) : (h.notizen || 'Unbekannt')}</p>
                     <p className="text-xs text-muted-foreground">
                       {h.von_datum ? format(new Date(h.von_datum), 'dd.MM.yyyy', { locale: de }) : '?'}
                       {h.bis_datum ? ` – ${format(new Date(h.bis_datum), 'dd.MM.yyyy', { locale: de })}` : ''}
                     </p>
+                    {h.mitglied_id && h.notizen && <p className="text-xs text-muted-foreground mt-0.5">{h.notizen}</p>}
                   </div>
                   {admin && (
                     <div className="flex items-center gap-1 shrink-0">
