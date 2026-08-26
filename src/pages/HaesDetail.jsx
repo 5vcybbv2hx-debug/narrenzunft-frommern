@@ -67,6 +67,15 @@ export default function HaesDetail() {
     return m ? `${m.vorname} ${m.nachname}` : '–';
   };
 
+  const formatDateCompact = (dateStr) => {
+    if (!dateStr) return '?';
+    try {
+      return format(new Date(dateStr), 'MMM yyyy', { locale: de });
+    } catch {
+      return dateStr;
+    }
+  };
+
   const handleSaveHaes = async () => {
     setSaving(true);
     try {
@@ -383,6 +392,51 @@ export default function HaesDetail() {
           </div>
         )}
       </div>
+
+      {/* Häs-Historie Timeline */}
+      {admin && (
+        <div className="bg-card border border-border rounded-xl p-5 mb-4">
+          <h2 className="font-oswald font-semibold text-foreground text-lg tracking-wide mb-4">Häs-Historie</h2>
+          {historien.length === 0 ? (
+            <p className="text-muted-foreground text-sm text-center py-4">Keine Historie verfügbar</p>
+          ) : (
+            <div className="relative pl-4">
+              {/* Senkrechte Linie */}
+              <div className="absolute left-[5px] top-2 bottom-2 w-px bg-border" />
+              <div className="space-y-3">
+                {historien.map((entry, idx) => {
+                  const besitzerName = entry.mitglied_id
+                    ? getMitgliedName(entry.mitglied_id)
+                    : (entry.notizen || 'Unbekannt');
+                  const zeitraum = entry.bis_datum
+                    ? `${formatDateCompact(entry.von_datum)} – ${formatDateCompact(entry.bis_datum)}`
+                    : `seit ${formatDateCompact(entry.von_datum)}`;
+                  const showNotizen = entry.notizen && entry.mitglied_id && entry.notizen.trim();
+                  return (
+                    <div key={idx} className="flex items-start gap-3 relative">
+                      <div className={`w-3 h-3 rounded-full mt-1.5 shrink-0 z-10 border-2 border-card ${entry.aktiv ? 'bg-green-500' : 'bg-gray-500'}`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-foreground font-medium text-sm">{besitzerName}</p>
+                          {entry.aktiv ? (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium">Aktiv</span>
+                          ) : (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-400 font-medium">Historisch</span>
+                          )}
+                        </div>
+                        <p className="text-muted-foreground text-xs mt-0.5">{zeitraum}</p>
+                        {showNotizen && (
+                          <p className="text-muted-foreground text-xs mt-1 italic">{entry.notizen}</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Mitglieder-Zuweisungen */}
       <div className="bg-card border border-border rounded-xl p-5 mb-4">
