@@ -19,14 +19,17 @@ export default async function(req) {
 
     for (const entry of entries) {
       try {
-        await base44.asServiceRole.entities.HaesHistorie.create({
+        const record = {
           haes_id: entry.haes_id,
-          mitglied_id: entry.mitglied_id || null,
           von_datum: entry.von_datum,
           bis_datum: entry.bis_datum || null,
           aktiv: entry.aktiv || false,
           notizen: entry.notizen || ''
-        });
+        };
+        if (entry.mitglied_id) {
+          record.mitglied_id = entry.mitglied_id;
+        }
+        await base44.asServiceRole.entities.HaesHistorie.create(record);
         results.created++;
       } catch (err) {
         results.errors.push({ haes_id: entry.haes_id, error: err.message });
