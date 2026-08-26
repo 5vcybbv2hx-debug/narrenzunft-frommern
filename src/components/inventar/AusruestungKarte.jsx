@@ -24,8 +24,11 @@ function getTuevStatus(datum) {
   return { label: `TÜV bis ${datum}`, color: 'text-green-400 bg-green-900/20 border-green-700/30' };
 }
 
-export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, ausleiherName, isAdmin, onEdit, onAusleihen }) {
-  const frei = !aktuelleAusleihe;
+export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, ausleiherName, isAdmin, onEdit, onAusleihen, verfuegbar, bestand }) {
+  const hatBestand = bestand != null && bestand > 1;
+  const verfuegbarCount = verfuegbar != null ? verfuegbar : (!aktuelleAusleihe ? 1 : 0);
+  const bestandCount = bestand != null ? bestand : 1;
+  const frei = verfuegbarCount > 0;
   const istFahrzeug = FAHRZEUG_KATEGORIEN.includes(ausruestung.kategorie);
   const tuevStatus = getTuevStatus(ausruestung.tuev_faellig);
   const versStatus = getTuevStatus(ausruestung.versicherung_gueltig_bis);
@@ -58,10 +61,10 @@ export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, auslei
           </div>
 
           <div className="flex flex-wrap gap-2 mt-2">
-            {/* Status */}
-            <span className={`text-[10px] px-2.5 py-1 rounded-full font-semibold flex items-center gap-1 ${frei ? 'bg-green-900/20 text-green-400 border border-green-700/30' : 'bg-primary/20 text-primary'}`}>
+            {/* Bestands-Anzeige */}
+            <span className={`text-[10px] px-2.5 py-1 rounded-full font-semibold flex items-center gap-1 ${frei ? 'bg-green-900/20 text-green-400 border border-green-700/30' : 'bg-red-900/20 text-red-400 border border-red-700/30'}`}>
               {frei ? <Check size={11} /> : <Circle size={11} className="fill-current" />}
-              {frei ? 'Verfügbar' : 'Ausgeliehen'}
+              {hatBestand ? `${verfuegbarCount} von ${bestandCount} verfügbar` : (frei ? 'Verfügbar' : 'Ausgeliehen')}
             </span>
             <span className={`text-[10px] px-2 py-0.5 rounded-full ${ZUSTAND_FARBEN[ausruestung.zustand]}`}>
               {ausruestung.zustand}

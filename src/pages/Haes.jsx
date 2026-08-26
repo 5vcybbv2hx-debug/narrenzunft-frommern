@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { Shirt, Plus, Search, ChevronRight, Calendar } from 'lucide-react';
+import { Shirt, Plus, Search, ChevronRight, Calendar, Building } from 'lucide-react';
 import HaesGroupTokenModal from '@/components/haes/HaesGroupTokenModal';
 import { isAdmin } from '@/lib/roles';
 
@@ -19,9 +19,10 @@ export default function Haes() {
   const [haes, setHaes] = useState([]);
   const [gruppen, setGruppen] = useState([]);
   const [mitglieder, setMitglieder] = useState([]);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('Alle');
-  const [gruppeFilter, setGruppeFilter] = useState('Alle');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get('q') || '');
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'Alle');
+  const [gruppeFilter, setGruppeFilter] = useState(searchParams.get('gruppe') || 'Alle');
   const [loading, setLoading] = useState(true);
   const [showNewGruppe, setShowNewGruppe] = useState(false);
   const [showNewHaes, setShowNewHaes] = useState(false);
@@ -33,6 +34,15 @@ export default function Haes() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Filter-Persistenz via URL-Parameter
+  useEffect(() => {
+    const params = {};
+    if (statusFilter !== 'Alle') params.status = statusFilter;
+    if (gruppeFilter !== 'Alle') params.gruppe = gruppeFilter;
+    if (search) params.q = search;
+    setSearchParams(params, { replace: true });
+  }, [statusFilter, gruppeFilter, search]);
 
   const loadData = async () => {
     setLoading(true);
@@ -63,6 +73,9 @@ export default function Haes() {
     return g ? g.name : '–';
   };
 
+  const gruppeMap = {};
+  gruppen.forEach(g => { gruppeMap[g.id] = g; });
+
   const handleCreateGruppe = async () => {
     try {
       await base44.entities.Haesgruppe.create(newGruppe);
@@ -90,6 +103,10 @@ export default function Haes() {
         getMitgliedName(h.aktueller_besitzer_id).toLowerCase().includes(search.toLowerCase());
     }
     return true;
+  }).sort((a, b) => {
+    const aNum = parseInt(a.haesnummer) || 9999;
+    const bNum = parseInt(b.haesnummer) || 9999;
+    return aNum - bNum;
   });
 
   // Stats
@@ -208,14 +225,19 @@ export default function Haes() {
       {/* Häs Liste */}
       <div className="space-y-2">
         {filtered.map(h => (
-          <Link key={h.id} to={`/haes/${h.id}`} className="bg-card border border-border rounded-xl px-4 py-3 flex items-center gap-3 hover:border-primary/50 transition-all group">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <Shirt size={18} className="text-primary" />
+          <Link key={h.id} to={`/haes/${h.id}`} className="bg-card border border-border rounded-xl px-4 py-3 flex items-center gap-3 hover:border-primary/50 transition-all group" style={{ borderLeft: h.haesgruppe_id && gruppeMap[h.haesgruppe_id]?.farbe ? `3px solid ${gruppeMap[h.haesgruppe_id].farbe}` : undefined }}>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={h.haesgruppe_id && gruppeMap[h.haesgruppe_id]?.farbe ? { backgroundColor: gruppeMap[h.haesgruppe_id].farbe + '20' } : undefined}>
+              <Shirt size={18} style={{ color: h.haesgruppe_id && gruppeMap[h.haesgruppe_id]?.farbe ? gruppeMap[h.haesgruppe_id].farbe : undefined }} className={h.haesgruppe_id && gruppeMap[h.haesgruppe_id]?.farbe ? '' : 'text-primary'} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <p className="font-mono font-bold text-primary text-sm">#{h.haesnummer}</p>
                 <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[h.status]}`}>{h.status}</span>
+                {h.vereinseigentum && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-medium flex items-center gap-1">
+                    <Building size={10} /> Verein
+                  </span>
+                )}
               </div>
               <p className="text-sm text-foreground truncate">{h.bezeichnung || '–'}</p>
               <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">

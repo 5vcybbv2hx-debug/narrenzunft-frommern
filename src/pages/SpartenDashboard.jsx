@@ -1,6 +1,6 @@
 import DateSelect from '../components/ui/DateSelect';
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, isDeveloper } from '@/lib/roles';
@@ -586,12 +586,12 @@ export default function SpartenDashboard() {
                 <h3 className="text-xl font-oswald uppercase tracking-wide text-white border-b border-neutral-800 pb-2">
                   Verantwortliche
                 </h3>
-                {mitglieder.filter(m => gruppe.verantwortliche_ids?.includes(m.id)).length === 0 ? (
+                {alleMitglieder.filter(m => gruppe.verantwortliche_ids?.includes(m.id)).length === 0 ? (
                   <p className="text-sm text-neutral-500 italic">Keine Spartenleiter zugewiesen.</p>
                 ) : (
                   <div className="space-y-3">
-                    {mitglieder.filter(m => gruppe.verantwortliche_ids?.includes(m.id)).map(leader => (
-                      <div key={leader.id} className="flex items-center gap-3">
+                    {alleMitglieder.filter(m => gruppe.verantwortliche_ids?.includes(m.id)).map(leader => (
+                      <Link key={leader.id} to={`/mitglieder/${leader.id}`} className="flex items-center gap-3 hover:bg-neutral-800/30 rounded-lg p-1 -m-1 transition-colors">
                         <div className="w-10 h-10 rounded-full bg-neutral-800 flex items-center justify-center font-bold text-primary font-oswald">
                           {leader.vorname?.[0]}{leader.nachname?.[0]}
                         </div>
@@ -599,7 +599,7 @@ export default function SpartenDashboard() {
                           <div className="font-semibold text-white text-sm">{leader.vorname} {leader.nachname}</div>
                           <div className="text-xs text-neutral-400">Spartenleiter</div>
                         </div>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 )}
@@ -922,8 +922,17 @@ export default function SpartenDashboard() {
                 Keine Mitglieder in dieser Gruppe eingetragen.
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {mitglieder.map(m => {
+              (() => {
+                const STATUS_SEKTIONEN = [
+                  { titel: 'Aktiv',        status: ['Aktiv'] },
+                  { titel: 'Passiv',        status: ['Passiv', 'Passiv mit Häs', 'Leihäs'] },
+                  { titel: 'Kinder',        status: ['Kleinkind 0-3', 'Kinder 4-10'] },
+                  { titel: 'Jugendliche',   status: ['Jugendliche 11-14', 'Jungaktive 15-17'] },
+                  { titel: 'Ehrenmitglieder', status: ['Ehrenmitglied'] },
+                ];
+                const erfassteStatus = new Set(STATUS_SEKTIONEN.flatMap(s => s.status));
+                const sonstige = mitglieder.filter(m => !erfassteStatus.has(m.mitgliedsstatus) && m.mitgliedsstatus !== 'Verstorben');
+                const renderMitglied = (m) => {
                   const isSplat = gruppe.verantwortliche_ids?.includes(m.id);
                   return (
                     <div key={m.id} className="bg-card border border-border rounded-xl p-4 flex items-center justify-between hover:bg-neutral-800/30 transition-colors">
@@ -933,9 +942,9 @@ export default function SpartenDashboard() {
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-semibold text-white text-sm">
+                            <Link to={`/mitglieder/${m.id}`} className="font-semibold text-white text-sm hover:text-primary transition-colors">
                               {m.vorname} {m.nachname}
-                            </span>
+                            </Link>
                             {isSplat && (
                               <span className="text-[10px] bg-primary/15 border border-primary/40 text-primary px-1.5 py-0.5 rounded uppercase tracking-wider font-bold">
                                 Leiter
@@ -947,7 +956,6 @@ export default function SpartenDashboard() {
                           </span>
                         </div>
                       </div>
-
                       <div className="flex flex-col items-end text-right">
                         {m.mobiltelefon ? (
                           <span className="text-xs text-neutral-300 font-medium">{m.mobiltelefon}</span>
@@ -959,8 +967,36 @@ export default function SpartenDashboard() {
                       </div>
                     </div>
                   );
-                })}
-              </div>
+                };
+                return (
+                  <div className="space-y-6">
+                    {STATUS_SEKTIONEN.map(sektion => {
+                      const sm = mitglieder.filter(m => sektion.status.includes(m.mitgliedsstatus));
+                      if (sm.length === 0) return null;
+                      return (
+                        <div key={sektion.titel}>
+                          <h3 className="text-sm font-oswald uppercase tracking-wide text-neutral-400 mb-3">
+                            {sektion.titel} <span className="text-neutral-600">({sm.length})</span>
+                          </h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {sm.map(renderMitglied)}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {sonstige.length > 0 && (
+                      <div>
+                        <h3 className="text-sm font-oswald uppercase tracking-wide text-neutral-400 mb-3">
+                          Weitere <span className="text-neutral-600">({sonstige.length})</span>
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {sonstige.map(renderMitglied)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()
             )}
           </div>
         )}

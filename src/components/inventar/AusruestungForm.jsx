@@ -13,6 +13,7 @@ export default function AusruestungForm({ ausruestung, onSave, onDelete, onClose
     zustand: 'Gut', standort: '', notizen: '',
     kennzeichen: '', baujahr: '', tuev_faellig: '',
     versicherungsnummer: '', versicherung_gueltig_bis: '',
+    bestand: 1, verfuegbar_override: '',
     ...ausruestung,
   });
   const istFahrzeug = FAHRZEUG_KATEGORIEN.includes(form.kategorie);
@@ -26,7 +27,12 @@ export default function AusruestungForm({ ausruestung, onSave, onDelete, onClose
     setSaving(true);
     setError(null);
     try {
-      const data = { ...form, baujahr: form.baujahr !== '' ? Number(form.baujahr) : undefined };
+      const data = {
+        ...form,
+        baujahr: form.baujahr !== '' ? Number(form.baujahr) : undefined,
+        bestand: form.bestand ? Number(form.bestand) : 1,
+        verfuegbar_override: form.verfuegbar_override !== '' && form.verfuegbar_override != null ? Number(form.verfuegbar_override) : undefined,
+      };
       await onSave(data);
     } catch (err) {
       console.error(err);
@@ -91,6 +97,21 @@ export default function AusruestungForm({ ausruestung, onSave, onDelete, onClose
               <label className="text-xs text-muted-foreground font-medium block mb-1">Standort</label>
               <input value={form.standort || ''} onChange={e => set('standort', e.target.value)}
                 placeholder="z.B. Gerätehaus"
+                className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground font-medium block mb-1">Bestand (Stück)</label>
+              <input type="number" value={form.bestand ?? 1} onChange={e => set('bestand', e.target.value ? Number(e.target.value) : 1)}
+                placeholder="z.B. 8" min="1"
+                className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground font-medium block mb-1">Verfügbar (Override)</label>
+              <input type="number" value={form.verfuegbar_override ?? ''} onChange={e => set('verfuegbar_override', e.target.value ? Number(e.target.value) : '')}
+                placeholder="auto" min="0"
                 className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
             </div>
           </div>

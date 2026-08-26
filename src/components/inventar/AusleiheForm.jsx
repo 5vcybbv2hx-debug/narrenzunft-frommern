@@ -19,6 +19,7 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
     bis_datum: '',
     zweck: '',
     status: 'Reserviert',
+    anzahl: 1,
     schadensbericht: '',
     notizen: '',
     ...ausleihe,
@@ -294,6 +295,14 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
                 )}
               </div>
             )}
+          </div>
+
+          {/* Anzahl */}
+          <div>
+            <label className="text-xs text-muted-foreground font-medium block mb-1">Anzahl (Stück)</label>
+            <input type="number" value={form.anzahl ?? 1} onChange={e => set('anzahl', e.target.value ? Math.max(1, Number(e.target.value)) : 1)}
+              placeholder="1" min="1"
+              className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
           </div>
 
           {/* Zeitraum */}

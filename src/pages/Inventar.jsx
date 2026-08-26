@@ -72,6 +72,18 @@ export default function Inventar() {
       ['Reserviert', 'Ausgeliehen'].includes(al.status)
     );
 
+  // Verfügbare Stückzahl berechnen: verfuegbar_override oder (bestand - aktive Ausleihen)
+  const getVerfuegbar = (ausruestungId) => {
+    const a = ausruestungen.find(x => x.id === ausruestungId);
+    if (!a) return { verfuegbar: 0, bestand: 1 };
+    const bestand = a.bestand ?? 1;
+    if (a.verfuegbar_override != null && a.verfuegbar_override !== '') return { verfuegbar: a.verfuegbar_override, bestand };
+    const aktivAusgeliehen = ausleihen
+      .filter(al => al.ausruestung_id === ausruestungId && ['Reserviert', 'Ausgeliehen'].includes(al.status))
+      .reduce((sum, al) => sum + (al.anzahl || 1), 0);
+    return { verfuegbar: Math.max(0, bestand - aktivAusgeliehen), bestand };
+  };
+
   const getMitgliedName = (id) => {
     const m = mitglieder.find(m => m.id === id);
     return m ? `${m.vorname} ${m.nachname}` : '–';
@@ -246,18 +258,23 @@ export default function Inventar() {
               <p className="text-sm text-muted-foreground">Noch keine Gegenstände angelegt</p>
             </div>
           )}
-          {ausruestungen.map(a => (
+          {ausruestungen.map(a => {
+            const { verfuegbar, bestand } = getVerfuegbar(a.id);
+            return (
             <AusruestungKarte
               key={a.id}
               ausruestung={a}
               aktuelleAusleihe={getAktuelleAusleihe(a.id)}
+              verfuegbar={verfuegbar}
+              bestand={bestand}
               getMitgliedName={getMitgliedName}
               isAdmin={admin}
               onEdit={() => { setEditAusruestung(a); setShowAusruestungForm(true); }}
               onAusleihen={() => handleAusleiheStart(a)}
               ausleiherName={getAusleiherName(getAktuelleAusleihe(a.id) || {})}
             />
-          ))}
+            );
+          })}
         </div>
       )}
 

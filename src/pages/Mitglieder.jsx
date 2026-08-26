@@ -58,18 +58,26 @@ export default function Mitglieder() {
         const me = await base44.auth.me();
         m = await base44.entities.Mitglied.filter({ user_id: me?.id });
       }
-      const allHaes = await base44.entities.Haes.list('haesnummer', 1000);
+      const [allHaes, allGruppen] = await Promise.all([
+        base44.entities.Haes.list('haesnummer', 1000),
+        base44.entities.Haesgruppe.list('name', 200),
+      ]);
       const map = {};
       for (const h of allHaes) {
         if (h.aktueller_besitzer_id && h.haesnummer && h.status === 'Aktiv') {
           map[h.aktueller_besitzer_id] = h.haesnummer;
         }
       }
-      return { mitglieder: m, haesMap: map };
+      const gruppenMap = {};
+      for (const g of allGruppen) {
+        gruppenMap[g.id] = { name: g.name, farbe: g.farbe };
+      }
+      return { mitglieder: m, haesMap: map, gruppenMap };
     },
   });
   const mitglieder = data?.mitglieder || [];
   const haesMap = data?.haesMap || {};
+  const gruppenMap = data?.gruppenMap || {};
 
   const { pullDistance, refreshing, containerRef } = usePullToRefresh(useCallback(async () => {
     await refetch();
@@ -363,6 +371,18 @@ export default function Mitglieder() {
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor}`}>
                     {m.mitgliedsstatus}
                   </span>
+                  {(() => {
+                    const gids = m.haesgruppen_ids?.length ? m.haesgruppen_ids : (m.haesgruppe_id ? [m.haesgruppe_id] : []);
+                    return gids.slice(0, 2).map(gid => {
+                      const g = gruppenMap[gid];
+                      if (!g) return null;
+                      return (
+                        <span key={gid} className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: (g.farbe || '#888') + '20', color: g.farbe || '#888' }}>
+                          {g.name}
+                        </span>
+                      );
+                    });
+                  })()}
                   {m.ort && <span className="text-xs text-muted-foreground truncate max-w-[100px]">{m.ort}</span>}
                   {eintrittsJahr && (
                     <span className="text-xs text-muted-foreground">seit {eintrittsJahr}</span>

@@ -66,6 +66,15 @@
       "type": "string",
       "format": "date",
       "description": "Ablaufdatum der Versicherung"
+    },
+    "bestand": {
+      "type": "number",
+      "default": 1,
+      "description": "Gesamtanzahl vorhandener St\u00fccke (z.B. 8 Garnituren Bierb\u00e4nke)"
+    },
+    "verfuegbar_override": {
+      "type": "number",
+      "description": "Manuelle Korrektur der verf\u00fcgbaren St\u00fcckzahl (leer = automatische Berechnung)"
     }
   },
   "required": [

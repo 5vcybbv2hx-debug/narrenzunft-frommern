@@ -29,7 +29,7 @@ import Profil from './pages/Profil';
 import Benachrichtigungen from './pages/Benachrichtigungen';
 import Suche from './pages/Suche';
 import Mehr from './pages/Mehr';
-import VorstandDashboard from './pages/VorstandDashboard';
+
 import Datenqualitaet from './pages/Datenqualitaet';
 import Kalender from './pages/Kalender';
 import Ausschuss from './pages/Ausschuss';
@@ -125,7 +125,7 @@ const AuthenticatedApp = () => {
 
         {/* ── Nur Führung (Vorstand + Stv. + Spartenleiter + Admin) ── */}
         <Route path="/vorstand" element={
-          <Guard roles={ROLLEN_FUEHRUNG}><VorstandDashboard /></Guard>
+          <Guard roles={ROLLEN_FUEHRUNG}><Dashboard /></Guard>
         } />
         <Route path="/veranstaltungen/neu" element={
           <Guard roles={ROLLEN_FUEHRUNG}><VeranstaltungNeu /></Guard>

@@ -176,13 +176,10 @@ export default function Arbeitsdienste() {
             'Alle':         dienste.length,
             'Kommend':      dienste.filter(d => d.datum >= today).length,
             'Vergangen':    dienste.filter(d => d.datum < today).length,
-            'Offen':        dienste.filter(d => d.status === 'Offen').length,
-            'In Planung':   dienste.filter(d => d.status === 'In Planung').length,
-            'Abgeschlossen':dienste.filter(d => d.status === 'Abgeschlossen').length,
           };
           return (
             <div className="flex gap-2 overflow-x-auto pb-1 mb-4 scrollbar-hide">
-              {['Alle', 'Kommend', 'Vergangen', 'Offen', 'In Planung', 'Abgeschlossen'].map(f => (
+              {['Alle', 'Kommend', 'Vergangen'].map(f => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
@@ -256,9 +253,6 @@ export default function Arbeitsdienste() {
                                 {d.datum === today && (
                                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary text-white font-semibold">HEUTE</span>
                                 )}
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${STATUS_COLORS[d.status] || 'bg-gray-500/20 text-gray-400'}`}>
-                                  {d.status}
-                                </span>
                               </div>
                               <div className="flex flex-wrap gap-3 mt-1.5 text-[11px] text-muted-foreground">
                                 {d.uhrzeit && <span>{d.uhrzeit} Uhr</span>}

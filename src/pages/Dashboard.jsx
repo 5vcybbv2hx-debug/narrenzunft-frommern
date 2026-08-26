@@ -6,16 +6,18 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 import { useAuth } from '@/lib/AuthContext';
 import {
-  Calendar, Users, Award, CreditCard, Briefcase,
-  Shirt, ArrowRight, Star, ChevronRight, Shield,
-  CheckCircle, AlertCircle, Clock
+  Calendar, Users, Briefcase, Shirt, ArrowRight, ChevronRight,
+  Shield, CheckCircle, AlertCircle, Clock, MapPin, Baby,
+  Phone, MessageCircle, Bus,
 } from 'lucide-react';
-import { format, isAfter, isBefore, addDays } from 'date-fns';
+import { format, addDays, differenceInDays } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { isAdmin, kannArbeitsdiensteVerwalten, istNurMitglied } from '@/lib/roles';
+import { isAdmin, kannArbeitsdiensteVerwalten, istNurMitglied, getRollenLabel } from '@/lib/roles';
 import MitgliedDashboard from '@/components/dashboard/MitgliedDashboard';
+import StatuswechselWidget from '@/components/vorstand/StatuswechselWidget';
 
-// Tageszeit-basierte Begrüßung
+// ── Hilfsfunktionen ──────────────────────────────────────────────────────────
+
 function getBegruessung(name) {
   const h = new Date().getHours();
   const vorname = name?.split(' ')[0] || 'Narr';
@@ -23,6 +25,21 @@ function getBegruessung(name) {
   if (h < 18) return `Guten Tag, ${vorname} 🎭`;
   return `Guten Abend, ${vorname} 🌙`;
 }
+
+function formatPhoneForTel(phone) {
+  if (!phone) return null;
+  return phone.replace(/[^\d+]/g, '');
+}
+
+function formatPhoneForWhatsApp(phone) {
+  if (!phone) return null;
+  let cleaned = phone.replace(/[^\d]/g, '');
+  if (cleaned.startsWith('00')) cleaned = cleaned.substring(2);
+  if (cleaned.startsWith('0')) cleaned = '49' + cleaned.substring(1);
+  return cleaned;
+}
+
+// ── UI-Komponenten ───────────────────────────────────────────────────────────
 
 function StatCard({ icon: Icon, label, value, color = 'text-primary', sub, onClick }) {
   return (
@@ -43,18 +60,18 @@ function StatCard({ icon: Icon, label, value, color = 'text-primary', sub, onCli
   );
 }
 
-function SectionCard({ title, subtitle, icon: Icon, children, linkTo, linkLabel }) {
+function SectionCard({ title, subtitle, icon: Icon, children, linkTo, linkLabel, accent }) {
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-        <div>
-          <h3 className="font-semibold text-foreground text-sm">{title}</h3>
-          {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
+      <div className={`flex items-center justify-between px-5 py-3.5 border-b border-border ${accent ? 'bg-primary/5' : ''}`}>
+        <div className="flex items-center gap-2">
+          {Icon && <Icon size={16} className="text-primary" />}
+          <h3 className="font-oswald font-semibold text-foreground text-sm tracking-wide">{title}</h3>
         </div>
-        {Icon && <Icon size={18} className="text-muted-foreground" />}
+        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
       </div>
-      <div className="p-5">{children}</div>
-      {linkTo && (
+      <div className="p-4">{children}</div>
+      {linkTo && linkLabel && (
         <div className="px-5 pb-4">
           <Link
             to={linkTo}
@@ -69,62 +86,63 @@ function SectionCard({ title, subtitle, icon: Icon, children, linkTo, linkLabel 
 }
 
 const EVENT_TYP_STYLE = {
-  'Umzug':             'bg-primary/20 text-primary',
-  'Abendveranstaltung':'bg-purple-500/20 text-purple-400',
-  'Probe':             'bg-blue-500/20 text-blue-400',
-  'Ausflug':           'bg-teal-500/20 text-teal-400',
-  'Sitzung':           'bg-yellow-500/20 text-yellow-400',
+  'Umzug':              'bg-primary/20 text-primary',
+  'Abendveranstaltung': 'bg-purple-500/20 text-purple-400',
+  'Arbeitsdienst':      'bg-green-500/20 text-green-400',
+  'Probe':              'bg-blue-500/20 text-blue-400',
+  'Ausflug':            'bg-teal-500/20 text-teal-400',
+  'Sitzung':            'bg-yellow-500/20 text-yellow-400',
 };
 
-const EHRUNG_STATUS_STYLE = {
-  'Vorgeschlagen': 'bg-yellow-500/20 text-yellow-400',
-  'Genehmigt':     'bg-green-500/20 text-green-400',
-  'Verliehen':     'bg-blue-500/20 text-blue-400',
-  'Abgelehnt':     'bg-red-500/20 text-red-400',
-};
+// ── Hauptkomponente ──────────────────────────────────────────────────────────
 
 export default function Dashboard() {
   const { user } = useAuth();
-
   const isAdminUser = isAdmin(user);
   const kannVerwalten = kannArbeitsdiensteVerwalten(user);
   const today = new Date().toISOString().split('T')[0];
 
   const { data: dashData, isLoading, refetch } = useQuery({
-    queryKey: ['dashboard', user?.role],
+    queryKey: ['dashboard-merged', user?.role],
     queryFn: async () => {
-      // Mitglieder brauchen keine Admin-Dashboard-Daten – der Fetch würde eine
-      // andere Datenstruktur zurückgeben, die das useMemo zum Absturz bringt.
       if (istNurMitglied(user)) return null;
-      const [dashResult, haesResult] = await Promise.all([
+      const [dashResult, haesResult, zuweisungen, ausfahrten] = await Promise.all([
         base44.functions.invoke('getDashboardSicher', {}),
         isAdmin(user)
           ? base44.functions.invoke('getHaesSicher', { aktion: 'liste', limit: 500 }).catch(() => null)
           : Promise.resolve(null),
+        base44.entities.ArbeitsdienstZuweisung.list('-created_date', 500),
+        base44.entities.Ausfahrt.list('datum', 100),
       ]);
-      return { dashResult, haesResult };
+      return { dashResult, haesResult, zuweisungen, ausfahrten };
     },
   });
 
-  const { stats, naechsteEvents, offeneEhrungen, arbeitsdienste, beitraegeStats, neueMitglieder, naechsteGeburtstage } = useMemo(() => {
+  const { stats, naechsteTermine, naechsteGeburtstage, unterbesetzte, offeneDienste } = useMemo(() => {
     const empty = {
-      stats: { mitglieder: 0, mitgliedAktiv: 0, mitgliedPassiv: 0, mitgliedJugend: 0, veranstaltungen: 0, offeneEhrungen: 0, offeneBeitraege: 0, arbeitsdienste: 0, haesGesamt: 0, haesFrei: 0, haesAktiv: 0, haesVerliehen: 0 },
-      naechsteEvents: [], offeneEhrungen: [], arbeitsdienste: [],
-      beitraegeStats: { offen: 0, ueberfaellig: 0, bezahlt: 0 },
-      neueMitglieder: [], naechsteGeburtstage: [],
+      stats: { mitglieder: 0, kommendeEvents: 0, offeneDienste: 0, unterbesetzt: 0, haesGesamt: 0, haesAuslastung: 0 },
+      naechsteTermine: [], naechsteGeburtstage: [], unterbesetzte: [], offeneDienste: [],
     };
     if (!dashData || !dashData.dashResult?.data?.erfolg || !dashData.dashResult.data.mitglieder) return empty;
-    const { mitglieder, veranstaltungen, arbeitsdienste, ehrungen, beitraege } = dashData.dashResult.data;
+
+    const { mitglieder, veranstaltungen, arbeitsdienste } = dashData.dashResult.data;
     const haesResult = dashData.haesResult;
-    const heute = new Date().toISOString().split('T')[0];
+    const zuweisungen = dashData.zuweisungen || [];
+    const ausfahrten = dashData.ausfahrten || [];
 
-    const naechsteEvents = veranstaltungen.filter(e => e.datum >= heute).slice(0, 5);
-    const offeneEh = ehrungen.filter(e => !['Verliehen','Abgelehnt'].includes(e.status));
-    const offeneEhrungen = offeneEh.slice(0, 4);
-    const arbeitsdiensteD = arbeitsdienste.slice(0, 4);
-    const neueMitglieder = [...mitglieder].sort((a,b) => (b.eintrittsdatum||'') > (a.eintrittsdatum||'') ? 1 : -1).slice(0, 3);
+    // ── Anstehende Termine & Ausfahrten (gemischt) ──
+    const events = veranstaltungen
+      .filter(e => e.datum >= today)
+      .map(e => ({ id: e.id, titel: e.titel, datum: e.datum, ort: e.ort, typ: e.typ, isAusfahrt: false, link: `/veranstaltungen/${e.id}` }));
+    const fahrten = ausfahrten
+      .filter(a => a.datum >= today)
+      .map(a => ({ id: a.id, titel: a.titel, datum: a.datum, ort: a.ort, typ: a.typ, isAusfahrt: true, link: `/ausfahrten/${a.id}` }));
+    const naechsteTermine = [...events, ...fahrten]
+      .sort((a, b) => a.datum.localeCompare(b.datum))
+      .slice(0, 6);
 
-    const heute4B = new Date(); heute4B.setHours(0,0,0,0);
+    // ── Geburtstage ──
+    const heute4B = new Date(); heute4B.setHours(0, 0, 0, 0);
     const in30Tagen = addDays(heute4B, 30);
     const naechsteGeburtstage = mitglieder
       .filter(m => m.geburtsdatum && !m.archiviert && m.mitgliedsstatus !== 'Verstorben')
@@ -136,45 +154,51 @@ export default function Dashboard() {
       })
       .filter(m => m._naechsteGeb <= in30Tagen)
       .sort((a, b) => a._naechsteGeb - b._naechsteGeb)
-      .slice(0, 5);
+      .slice(0, 6);
 
-    const offenB = beitraege.filter(b => b.zahlungsstatus === 'Offen');
-    const uebB   = beitraege.filter(b => b.zahlungsstatus === 'Überfällig');
-    const bezB   = beitraege.filter(b => b.zahlungsstatus === 'Bezahlt');
-    const beitraegeStats = {
-      offen:       offenB.reduce((s,b) => s + (b.betrag||0), 0),
-      ueberfaellig:uebB.reduce((s,b) => s + (b.betrag||0), 0),
-      bezahlt:     bezB.reduce((s,b) => s + (b.betrag||0), 0),
+    // ── Arbeitsdienste ──
+    const getDienstStats = (dienstId) => {
+      const zuws = zuweisungen.filter(z => z.arbeitsdienst_id === dienstId);
+      const bestaetigt = zuws.filter(z => ['Bestätigt', 'Erledigt'].includes(z.status)).length;
+      return { total: zuws.length, bestaetigt };
     };
 
-    let haesGesamt = 0, haesFrei = 0, haesAktiv = 0, haesVerliehen = 0;
+    const offene = arbeitsdienste.filter(d => d.datum >= today && d.status !== 'Abgeschlossen');
+    const unterbesetzt = offene.filter(d => {
+      if (!d.benoetigte_personen) return false;
+      const { bestaetigt } = getDienstStats(d.id);
+      return bestaetigt < d.benoetigte_personen;
+    });
+
+    const offeneDienste = offene.slice(0, 5);
+    const unterbesetzte = unterbesetzt.slice(0, 4);
+
+    // ── Häs ──
+    let haesGesamt = 0, haesAktiv = 0, haesVerliehen = 0;
     if (haesResult?.data?.haes) {
       const hl = haesResult.data.haes;
-      haesGesamt   = hl.length;
-      haesFrei     = hl.filter(h => h.status === 'Frei').length;
-      haesAktiv    = hl.filter(h => h.status === 'Aktiv').length;
-      haesVerliehen= hl.filter(h => h.status === 'Verliehen').length;
+      haesGesamt = hl.length;
+      haesAktiv = hl.filter(h => h.status === 'Aktiv').length;
+      haesVerliehen = hl.filter(h => h.status === 'Verliehen').length;
     }
 
     const stats = {
-      mitglieder:    mitglieder.length,
-      mitgliedAktiv: mitglieder.filter(m => m.mitgliedsstatus === 'Aktiv').length,
-      mitgliedPassiv:mitglieder.filter(m => m.mitgliedsstatus === 'Passiv').length,
-      mitgliedJugend:mitglieder.filter(m => ['Jugendliche 11-14','Jungaktive 15-17','Kinder 4-10','Kleinkind 0-3','Leihäs'].includes(m.mitgliedsstatus)).length,
-      veranstaltungen: veranstaltungen.filter(e => e.datum >= heute).length,
-      offeneEhrungen:  offeneEh.length,
-      offeneBeitraege: offenB.length + uebB.length,
-      arbeitsdienste:  arbeitsdienste.length,
-      haesGesamt, haesFrei, haesAktiv, haesVerliehen,
+      mitglieder: mitglieder.filter(m => !m.archiviert).length,
+      kommendeEvents: events.length + fahrten.length,
+      offeneDienste: offene.length,
+      unterbesetzt: unterbesetzt.length,
+      haesGesamt,
+      haesAuslastung: haesGesamt > 0 ? Math.round(((haesAktiv + haesVerliehen) / haesGesamt) * 100) : 0,
     };
 
-    return { stats, naechsteEvents, offeneEhrungen, arbeitsdienste: arbeitsdiensteD, beitraegeStats, neueMitglieder, naechsteGeburtstage };
-  }, [dashData]);
+    return { stats, naechsteTermine, naechsteGeburtstage, unterbesetzte, offeneDienste };
+  }, [dashData, today]);
 
   const { pullDistance, refreshing, containerRef } = usePullToRefresh(useCallback(async () => {
     await refetch();
   }, [refetch]));
 
+  // ── Reguläre Mitglieder: nur persönliches Dashboard ──
   if (istNurMitglied(user)) return <MitgliedDashboard />;
 
   if (isLoading) return (
@@ -187,7 +211,7 @@ export default function Dashboard() {
   );
 
   return (
-    <div ref={containerRef} className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-7xl mx-auto">
+    <div ref={containerRef} className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-5xl mx-auto">
       <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
 
       {/* Header */}
@@ -196,69 +220,52 @@ export default function Dashboard() {
           {getBegruessung(user?.full_name)}
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
-          {format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}
+          {getRollenLabel(user?.role)} · {format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}
         </p>
-        {isAdminUser && (
-          <Link
-            to="/vorstand"
-            className="inline-flex items-center gap-2 mt-3 px-4 py-2.5 min-h-[44px] rounded-xl bg-primary/10 border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/20 transition-colors"
-          >
-            <Shield size={15} /> Führungs-Dashboard <ChevronRight size={14} />
-          </Link>
-        )}
-
-        {/* Schnellaktionen */}
-        {isAdminUser && (
-          <div className="flex flex-wrap gap-2 mt-3">
-            <Link to="/veranstaltungen/neu" className="flex items-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-xs font-medium text-foreground hover:border-primary/40 transition-colors">
-              <Calendar size={14} className="text-primary" /> Termin
-            </Link>
-            <Link to="/mitglieder/neu" className="flex items-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-xs font-medium text-foreground hover:border-primary/40 transition-colors">
-              <Users size={14} className="text-primary" /> Mitglied
-            </Link>
-            <Link to="/arbeitsdienste/neu" className="flex items-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-xs font-medium text-foreground hover:border-primary/40 transition-colors">
-              <Briefcase size={14} className="text-primary" /> Dienst
-            </Link>
-          </div>
-        )}
       </div>
 
-      {/* Stats Row */}
+      {/* Schnellaktions-Buttons */}
+      {isAdminUser && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          <Link to="/veranstaltungen/neu" className="flex items-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-xs font-medium text-foreground hover:border-primary/40 transition-colors">
+            <Calendar size={14} className="text-primary" /> Termin
+          </Link>
+          <Link to="/mitglieder" className="flex items-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-xs font-medium text-foreground hover:border-primary/40 transition-colors">
+            <Users size={14} className="text-primary" /> Mitglied
+          </Link>
+          <Link to="/arbeitsdienste/neu" className="flex items-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-xs font-medium text-foreground hover:border-primary/40 transition-colors">
+            <Briefcase size={14} className="text-primary" /> Dienst
+          </Link>
+          <Link to="/ausfahrten/neu" className="flex items-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-xs font-medium text-foreground hover:border-primary/40 transition-colors">
+            <Bus size={14} className="text-primary" /> Ausfahrt
+          </Link>
+        </div>
+      )}
+
+      {/* Stats Row (reduziert) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-6">
-        <StatCard
-          icon={Users} label="Mitglieder" value={stats.mitglieder}
-          sub={`${stats.mitgliedAktiv} aktiv · ${stats.mitgliedPassiv} passiv`}
-          onClick={() => window.location.href = '/mitglieder'}
-        />
-        <StatCard
-          icon={Calendar} label="Kommende Events" value={stats.veranstaltungen}
-          onClick={() => window.location.href = '/veranstaltungen'}
-        />
         {isAdminUser && (
-          <StatCard
-            icon={Award} label="Offene Ehrungen" value={stats.offeneEhrungen}
-            color="text-yellow-400"
-            onClick={() => window.location.href = '/ehrungen'}
-          />
+          <StatCard icon={Users} label="Mitglieder" value={stats.mitglieder} onClick={() => window.location.href = '/mitglieder'} />
         )}
-        {isAdminUser && (
-          <StatCard
-            icon={CreditCard} label="Offene Beiträge" value={stats.offeneBeitraege}
-            color="text-red-400"
-            onClick={() => window.location.href = '/beitraege'}
-          />
+        <StatCard icon={Calendar} label="Kommende Termine" value={stats.kommendeEvents} onClick={() => window.location.href = '/kalender'} />
+        {kannVerwalten && (
+          <StatCard icon={Briefcase} label="Offene Dienste" value={stats.offeneDienste} onClick={() => window.location.href = '/arbeitsdienste'} />
         )}
-        {!isAdminUser && (
+        {kannVerwalten && (
           <StatCard
-            icon={Briefcase} label="Arbeitsdienste" value={stats.arbeitsdienste}
-            color="text-primary"
+            icon={AlertCircle}
+            label="Unterbesetzt"
+            value={stats.unterbesetzt}
+            color={stats.unterbesetzt > 0 ? 'text-red-400' : 'text-green-400'}
             onClick={() => window.location.href = '/arbeitsdienste'}
           />
         )}
-        {!isAdminUser && (
+        {isAdminUser && stats.haesGesamt > 0 && (
           <StatCard
-            icon={Shirt} label="Häs gesamt" value={stats.haesGesamt}
-            color="text-primary"
+            icon={Shirt}
+            label="Häs Auslastung"
+            value={`${stats.haesAuslastung}%`}
+            sub={`${stats.haesGesamt} gesamt`}
             onClick={() => window.location.href = '/haes'}
           />
         )}
@@ -267,128 +274,54 @@ export default function Dashboard() {
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-        {/* Nächste Veranstaltungen */}
+        {/* Anstehende Termine & Ausfahrten */}
         <SectionCard
-          title="Nächste Veranstaltungen"
-          subtitle="Anstehende Termine"
+          title="Anstehende Termine & Ausfahrten"
           icon={Calendar}
-          linkTo="/veranstaltungen"
+          linkTo="/kalender"
           linkLabel="Alle ansehen"
         >
-          {naechsteEvents.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Keine Veranstaltungen geplant</p>
+          {naechsteTermine.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">Keine anstehenden Termine</p>
           ) : (
             <div className="space-y-3">
-              {naechsteEvents.map(event => (
-                <Link key={event.id} to={`/veranstaltungen/${event.id}`} className="flex items-center gap-3 group">
-                  <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex flex-col items-center justify-center ${event.datum === today ? 'bg-primary' : 'bg-primary/10'}`}>
-                    <span className={`text-[10px] font-medium leading-none uppercase ${event.datum === today ? 'text-white/80' : 'text-muted-foreground'}`}>
-                      {format(new Date(event.datum), 'MMM', { locale: de })}
-                    </span>
-                    <span className={`text-sm font-bold leading-none ${event.datum === today ? 'text-white' : 'text-primary'}`}>
-                      {format(new Date(event.datum), 'd')}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">{event.titel}</p>
-                    <p className="text-xs text-muted-foreground truncate">{event.ort || 'Kein Ort'}</p>
-                  </div>
-                  {event.datum === today ? (
-                    <span className="text-xs px-2 py-0.5 rounded-full shrink-0 bg-primary text-white font-semibold animate-pulse">HEUTE</span>
-                  ) : (
-                    <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${EVENT_TYP_STYLE[event.typ] || 'bg-secondary text-muted-foreground'}`}>
-                      {event.typ}
-                    </span>
-                  )}
-                </Link>
-              ))}
-            </div>
-          )}
-        </SectionCard>
-
-        {/* Offene Ehrungen */}
-        {isAdminUser && (
-          <SectionCard
-            title="Offene Ehrungen"
-            subtitle={`${stats.offeneEhrungen} ausstehend`}
-            icon={Award}
-            linkTo="/ehrungen"
-            linkLabel="Bearbeiten"
-          >
-            {offeneEhrungen.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">Keine offenen Ehrungen</p>
-            ) : (
-              <div className="space-y-2.5">
-                {offeneEhrungen.map(e => (
-                  <div key={e.id} className="flex items-center gap-3">
-                    <Star size={14} className="text-yellow-400 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground truncate">{e.typ}{e.wert ? ` – ${e.wert}` : ''}</p>
-                      {e.mitglied_name && <p className="text-xs text-muted-foreground truncate">{e.mitglied_name}</p>}
-                    </div>
-                    <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${EHRUNG_STATUS_STYLE[e.status] || 'bg-secondary text-muted-foreground'}`}>
-                      {e.status || 'Vorgeschlagen'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </SectionCard>
-        )}
-
-        {/* Arbeitsdienste */}
-        <SectionCard
-          title="Arbeitsdienste"
-          subtitle={stats.arbeitsdienste > 0 ? `${stats.arbeitsdienste} anstehend` : 'Keine offenen Dienste'}
-          icon={Briefcase}
-          linkTo="/arbeitsdienste"
-          linkLabel="Alle Dienste"
-        >
-          {arbeitsdienste.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Keine offenen Arbeitsdienste</p>
-          ) : (
-            <div className="space-y-3">
-              {arbeitsdienste.map(d => {
-                const pct = d.benoetigte_personen > 0
-                  ? Math.min(100, Math.round((d.eingeteilt / d.benoetigte_personen) * 100))
-                  : null;
-                const barColor = pct === null ? 'bg-secondary'
-                  : pct >= 100 ? 'bg-green-500'
-                  : pct >= 60  ? 'bg-yellow-500'
-                  : 'bg-primary';
-                const badgeStyle = pct !== null && pct < 100
-                  ? 'bg-primary/20 text-primary'
-                  : 'bg-green-500/20 text-green-400';
+              {naechsteTermine.map(event => {
+                const isToday = event.datum === today;
+                const isAusfahrt = event.isAusfahrt;
                 return (
-                  <div key={d.id} className="space-y-1.5">
-                    <div className="flex items-center gap-3">
-                      <span className="flex-shrink-0 text-xs text-muted-foreground w-14 tabular-nums">
-                        {format(new Date(d.datum), 'dd.MM.yy', { locale: de })}
+                  <Link key={`${isAusfahrt ? 'a' : 'v'}-${event.id}`} to={event.link} className="flex items-center gap-3 group">
+                    <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex flex-col items-center justify-center ${isToday ? 'bg-primary' : isAusfahrt ? 'bg-blue-500/10' : 'bg-primary/10'}`}>
+                      <span className={`text-[10px] font-medium leading-none uppercase ${isToday ? 'text-white/80' : 'text-muted-foreground'}`}>
+                        {format(new Date(event.datum), 'MMM', { locale: de })}
                       </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{d.titel}</p>
-                      </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${badgeStyle}`}>
-                        {d.eingeteilt}{d.benoetigte_personen ? `/${d.benoetigte_personen}` : ''}
+                      <span className={`text-sm font-bold leading-none ${isToday ? 'text-white' : isAusfahrt ? 'text-blue-400' : 'text-primary'}`}>
+                        {format(new Date(event.datum), 'd')}
                       </span>
                     </div>
-                    {pct !== null && (
-                      <div className="ml-14 h-1.5 bg-secondary rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
-                      </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">{event.titel}</p>
+                      <p className="text-xs text-muted-foreground truncate">{event.ort || 'Kein Ort'}</p>
+                    </div>
+                    {isToday ? (
+                      <span className="text-xs px-2 py-0.5 rounded-full shrink-0 bg-primary text-white font-semibold animate-pulse">HEUTE</span>
+                    ) : (
+                      <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1 ${isAusfahrt ? 'bg-blue-500/20 text-blue-400' : EVENT_TYP_STYLE[event.typ] || 'bg-secondary text-muted-foreground'}`}>
+                        {isAusfahrt && <Bus size={10} />}
+                        {isAusfahrt ? 'Ausfahrt' : event.typ}
+                      </span>
                     )}
-                  </div>
+                  </Link>
                 );
               })}
             </div>
           )}
         </SectionCard>
 
-        {/* Geburtstage */}
+        {/* Geburtstage mit Anruf- & WhatsApp-Buttons */}
         <SectionCard
           title="Nächste Geburtstage"
           subtitle="In den nächsten 30 Tagen"
-          icon={Star}
+          icon={Users}
         >
           {naechsteGeburtstage.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">Keine Geburtstage in nächster Zeit</p>
@@ -396,6 +329,9 @@ export default function Dashboard() {
             <div className="space-y-2.5">
               {naechsteGeburtstage.map(m => {
                 const istHeute = format(m._naechsteGeb, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+                const telefon = m.telefon || m.mobiltelefon;
+                const telUrl = telefon ? `tel:${formatPhoneForTel(telefon)}` : null;
+                const waUrl = telefon ? `https://wa.me/${formatPhoneForWhatsApp(telefon)}` : null;
                 return (
                   <div key={m.id} className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${istHeute ? 'bg-primary' : 'bg-primary/10'}`}>
@@ -405,6 +341,28 @@ export default function Dashboard() {
                       <p className="text-sm font-medium text-foreground truncate">{m.vorname} {m.nachname}</p>
                       <p className="text-xs text-muted-foreground">wird {m._alter + 1} Jahre</p>
                     </div>
+                    {/* Telefon-Button */}
+                    {telUrl && (
+                      <a
+                        href={telUrl}
+                        className="p-2 rounded-lg bg-secondary text-foreground hover:bg-primary/10 hover:text-primary transition-colors shrink-0"
+                        title="Anrufen"
+                      >
+                        <Phone size={14} />
+                      </a>
+                    )}
+                    {/* WhatsApp-Button */}
+                    {waUrl && (
+                      <a
+                        href={waUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 rounded-lg bg-green-500/15 text-green-400 hover:bg-green-500/25 transition-colors shrink-0"
+                        title="WhatsApp gratulieren"
+                      >
+                        <MessageCircle size={14} />
+                      </a>
+                    )}
                     <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${istHeute ? 'bg-primary text-white font-semibold' : 'bg-secondary text-muted-foreground'}`}>
                       {istHeute ? 'HEUTE' : format(m._naechsteGeb, 'dd.MM.', { locale: de })}
                     </span>
@@ -415,129 +373,93 @@ export default function Dashboard() {
           )}
         </SectionCard>
 
-        {/* Beiträge */}
-        {isAdminUser && (
-          <SectionCard
-            title="Beiträge"
-            subtitle="Zahlungsübersicht"
-            icon={CreditCard}
-            linkTo="/beitraege"
-            linkLabel="Rechnungen prüfen"
-          >
-            <div className="space-y-3">
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-3">
-                  <p className="text-[10px] text-muted-foreground">Bezahlt</p>
-                  <p className="text-sm sm:text-base font-oswald font-semibold text-green-400">{beitraegeStats.bezahlt.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
-                </div>
-                <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3">
-                  <p className="text-[10px] text-muted-foreground">Offen</p>
-                  <p className="text-sm sm:text-base font-oswald font-semibold text-yellow-400">{beitraegeStats.offen.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
-                </div>
-                <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3">
-                  <p className="text-[10px] text-muted-foreground">Überfällig</p>
-                  <p className="text-sm sm:text-base font-oswald font-semibold text-red-400">{beitraegeStats.ueberfaellig.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
-                </div>
+        {/* Unterbesetzte Dienste – Dringend */}
+        {kannVerwalten && (
+          <SectionCard title="Dringlich: Unterbesetzte Dienste" icon={AlertCircle} linkTo="/arbeitsdienste" accent>
+            {unterbesetzte.length === 0 ? (
+              <div className="flex items-center gap-2 py-3">
+                <CheckCircle size={18} className="text-green-400" />
+                <p className="text-sm text-green-400 font-medium">Alle Dienste sind ausreichend besetzt</p>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-3">
+                {unterbesetzte.map(d => {
+                  const zuws = (dashData?.zuweisungen || []).filter(z => z.arbeitsdienst_id === d.id);
+                  const bestaetigt = zuws.filter(z => ['Bestätigt', 'Erledigt'].includes(z.status)).length;
+                  const fehlend = (d.benoetigte_personen || 0) - bestaetigt;
+                  return (
+                    <div key={d.id} className="bg-red-500/5 border border-red-500/20 rounded-lg p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-foreground truncate">{d.titel}</p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                            <Clock size={10} />
+                            <span>{format(new Date(d.datum), 'dd.MM.yyyy', { locale: de })}{d.uhrzeit ? ` · ${d.uhrzeit}` : ''}</span>
+                            {d.ort && <span className="flex items-center gap-0.5"><MapPin size={10} />{d.ort}</span>}
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="text-xs font-oswald font-bold text-red-400">{fehlend} fehlen</span>
+                          <p className="text-xs text-muted-foreground">{bestaetigt}/{d.benoetigte_personen}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <Link
+                  to="/arbeitsdienste"
+                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors mt-1"
+                >
+                  Dienste verwalten <ArrowRight size={14} />
+                </Link>
+              </div>
+            )}
           </SectionCard>
         )}
 
-        {/* Mitglieder */}
-        <SectionCard
-          title="Mitglieder"
-          subtitle="Neueste Zugänge"
-          icon={Users}
-          linkTo="/mitglieder"
-          linkLabel="Alle Mitglieder"
-        >
-          {/* Aufschlüsselung */}
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-2.5 text-center">
-              <p className="text-lg font-oswald font-semibold text-green-400">{stats.mitgliedAktiv}</p>
-              <p className="text-[10px] text-muted-foreground">Aktiv</p>
-            </div>
-            <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-2.5 text-center">
-              <p className="text-lg font-oswald font-semibold text-yellow-400">{stats.mitgliedPassiv}</p>
-              <p className="text-[10px] text-muted-foreground">Passiv</p>
-            </div>
-            <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 p-2.5 text-center">
-              <p className="text-lg font-oswald font-semibold text-blue-400">{stats.mitgliedJugend}</p>
-              <p className="text-[10px] text-muted-foreground">Jugend</p>
-            </div>
-          </div>
-          {/* Neueste Mitglieder */}
-          <div className="space-y-2.5">
-            {neueMitglieder.map(m => (
-              <Link key={m.id} to={`/mitglieder/${m.id}`} className="flex items-center gap-3 group">
-                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs shrink-0">
-                  {m.vorname?.[0]}{m.nachname?.[0]}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors truncate">
-                    {m.vorname} {m.nachname}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{m.mitgliedsstatus}</p>
-                </div>
-                <span className="text-xs text-muted-foreground tabular-nums">
-                  {m.eintrittsdatum ? format(new Date(m.eintrittsdatum), 'dd.MM.yy') : '–'}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </SectionCard>
+        {/* Offene Arbeitsdienste */}
+        {kannVerwalten && (
+          <SectionCard title="Offene Arbeitsdienste" icon={Briefcase} linkTo="/arbeitsdienste">
+            {offeneDienste.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Keine offenen Arbeitsdienste</p>
+            ) : (
+              <div className="space-y-2">
+                {offeneDienste.map(d => {
+                  const zuws = (dashData?.zuweisungen || []).filter(z => z.arbeitsdienst_id === d.id);
+                  const eingeteilt = zuws.filter(z => z.status !== 'Abgesagt').length;
+                  const pct = d.benoetigte_personen > 0 ? Math.min(100, Math.round((eingeteilt / d.benoetigte_personen) * 100)) : null;
+                  const barColor = pct === null ? 'bg-secondary' : pct >= 100 ? 'bg-green-500' : pct >= 60 ? 'bg-yellow-500' : 'bg-primary';
+                  return (
+                    <div key={d.id} className="space-y-1.5">
+                      <div className="flex items-center gap-3">
+                        <span className="flex-shrink-0 text-xs text-muted-foreground w-14 tabular-nums">
+                          {format(new Date(d.datum), 'dd.MM.yy', { locale: de })}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{d.titel}</p>
+                        </div>
+                        <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${pct !== null && pct < 100 ? 'bg-primary/20 text-primary' : 'bg-green-500/20 text-green-400'}`}>
+                          {eingeteilt}{d.benoetigte_personen ? `/${d.benoetigte_personen}` : ''}
+                        </span>
+                      </div>
+                      {pct !== null && (
+                        <div className="ml-14 h-1.5 bg-secondary rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </SectionCard>
+        )}
 
-        {/* Häs — nur für Admins */}
+        {/* Altersbedingte Statuswechsel */}
         {isAdminUser && (
-        <SectionCard
-          title="Häs & Masken"
-          subtitle="Kostümübersicht"
-          icon={Shirt}
-          linkTo="/haes"
-          linkLabel="Bestand verwalten"
-        >
-          {stats.haesGesamt === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Häs-Daten werden geladen…</p>
-          ) : (
-            <div className="space-y-3">
-              {/* Gesamt */}
-              <div className="flex items-center justify-between py-1">
-                <span className="text-sm text-muted-foreground">Gesamt</span>
-                <span className="font-oswald font-semibold text-foreground text-lg">{stats.haesGesamt}</span>
-              </div>
-              {/* Aufschlüsselung */}
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-2.5 text-center">
-                  <p className="text-lg font-oswald font-semibold text-green-400">{stats.haesAktiv}</p>
-                  <p className="text-[10px] text-muted-foreground">Aktiv</p>
-                </div>
-                <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-2.5 text-center">
-                  <p className="text-lg font-oswald font-semibold text-yellow-400">{stats.haesFrei}</p>
-                  <p className="text-[10px] text-muted-foreground">Frei</p>
-                </div>
-                <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 p-2.5 text-center">
-                  <p className="text-lg font-oswald font-semibold text-blue-400">{stats.haesVerliehen}</p>
-                  <p className="text-[10px] text-muted-foreground">Verliehen</p>
-                </div>
-              </div>
-              {/* Fortschrittsbalken Auslastung */}
-              {stats.haesGesamt > 0 && (
-                <div>
-                  <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
-                    <span>Auslastung</span>
-                    <span>{Math.round(((stats.haesAktiv + stats.haesVerliehen) / stats.haesGesamt) * 100)}%</span>
-                  </div>
-                  <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary rounded-full transition-all"
-                      style={{ width: `${Math.round(((stats.haesAktiv + stats.haesVerliehen) / stats.haesGesamt) * 100)}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </SectionCard>
+          <SectionCard title="Altersbedingte Statuswechsel" icon={Baby} linkTo="/mitglieder">
+            <StatuswechselWidget />
+          </SectionCard>
         )}
 
       </div>

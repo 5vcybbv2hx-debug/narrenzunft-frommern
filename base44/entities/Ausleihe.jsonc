@@ -49,6 +49,11 @@
       ],
       "default": "Reserviert"
     },
+    "anzahl": {
+      "type": "number",
+      "default": 1,
+      "description": "Anzahl der ausgeliehenen St\u00fccke"
+    },
     "schadensbericht": {
       "type": "string",
       "description": "Sch\u00e4den bei R\u00fcckgabe"

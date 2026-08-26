@@ -32,7 +32,6 @@ const NAV_SECTIONS = [
     icon: ClipboardList,
     roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter', 'admin'],
     items: [
-      { path: '/vorstand',       label: 'Führungs-Dashboard', icon: ClipboardList, roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'] },
       { path: '/mitglieder',     label: 'Mitglieder',         icon: Users,         roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter', 'admin'] },
       { path: '/beitraege',      label: 'Beiträge',           icon: CreditCard,    roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'] },
       { path: '/ehrungen',       label: 'Ehrungen',           icon: Award,         roles: ['vorstand', 'stellv_vorstand', 'admin'] },

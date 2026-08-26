@@ -1,64 +1,49 @@
-import { useState } from 'react';
-import { base44 } from '@/api/base44Client';
-import { ChevronDown, ChevronUp, Edit, Trash2, Plus, UserMinus, Search, Users, Calendar, Euro, Shirt, Music, Footprints, Users2, UserCircle } from 'lucide-react';
+import { Edit, Trash2, UserCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import SpartenKalender from './SpartenKalender';
-import AuslagenTab from './AuslagenTab';
 
 const TYP_META = {
-  'Häsgruppe':  { icon: Shirt,     farbe: '#EA2525' },
-  'Tanzgruppe': { icon: Footprints, farbe: '#F59E0B' },
-  'Musikgruppe': { icon: Music,     farbe: '#8B5CF6' },
-  'Sonstige':   { icon: Users2,    farbe: '#6B7280' },
+  'Häsgruppe':   { icon: '👕', farbe: '#EA2525' },
+  'Tanzgruppe':  { icon: '💃', farbe: '#F59E0B' },
+  'Musikgruppe': { icon: '🎵', farbe: '#8B5CF6' },
+  'Sonstige':    { icon: '👥', farbe: '#6B7280' },
 };
 
-export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten, onEdit, onDelete, onMitgliederChanged }) {
-  const [expanded, setExpanded] = useState(false);
-  const [activeTab, setActiveTab] = useState('mitglieder');
-  const [showAddSearch, setShowAddSearch] = useState(false);
-  const [suche, setSuche] = useState('');
+const STATUS_GRUPPEN = [
+  { label: 'Aktiv',   status: ['Aktiv'],                              color: 'text-green-400' },
+  { label: 'Passiv',  status: ['Passiv', 'Passiv mit Häs', 'Leihäs'], color: 'text-yellow-400' },
+  { label: 'Kinder',  status: ['Kleinkind 0-3', 'Kinder 4-10'],       color: 'text-pink-400' },
+  { label: 'Jugend',  status: ['Jugendliche 11-14', 'Jungaktive 15-17'], color: 'text-blue-400' },
+  { label: 'Ehren',   status: ['Ehrenmitglied'],                      color: 'text-purple-400' },
+];
 
-  // Mitglieder dieser Gruppe: haesgruppen_ids enthält die Gruppen-ID (mit Legacy-Fallback auf haesgruppe_id)
+export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten, onEdit, onDelete }) {
+  // Mitglieder dieser Gruppe
   const mitglieder = alleMitglieder.filter(m =>
     (m.haesgruppen_ids || []).includes(gruppe.id) || m.haesgruppe_id === gruppe.id
   );
 
-  // Für die Suche: Mitglieder die noch NICHT in dieser Gruppe sind
-  const verfuegbar = alleMitglieder.filter(m =>
-    !(m.haesgruppen_ids || []).includes(gruppe.id) &&
-    m.haesgruppe_id !== gruppe.id &&
-    `${m.vorname} ${m.nachname}`.toLowerCase().includes(suche.toLowerCase()) &&
-    suche.length >= 1
-  );
+  // Verantwortliche (verantwortliche_ids mit Legacy-Fallback auf verantwortlicher_id)
+  const verantwIds = gruppe.verantwortliche_ids?.length
+    ? gruppe.verantwortliche_ids
+    : (gruppe.verantwortlicher_id ? [gruppe.verantwortlicher_id] : []);
+  const verantw = verantwIds.map(id => alleMitglieder.find(m => m.id === id)).filter(Boolean);
 
-  const handleAdd = async (mitglied) => {
-    const aktuelle = mitglied.haesgruppen_ids || (mitglied.haesgruppe_id ? [mitglied.haesgruppe_id] : []);
-    await base44.entities.Mitglied.update(mitglied.id, { haesgruppen_ids: [...aktuelle, gruppe.id] });
-    setSuche('');
-    setShowAddSearch(false);
-    onMitgliederChanged();
-  };
-
-  const handleRemove = async (mitglied) => {
-    const aktuelle = mitglied.haesgruppen_ids || (mitglied.haesgruppe_id ? [mitglied.haesgruppe_id] : []);
-    await base44.entities.Mitglied.update(mitglied.id, { haesgruppen_ids: aktuelle.filter(id => id !== gruppe.id) });
-    onMitgliederChanged();
-  };
+  // Status-Aufschlüsselung
+  const statusBreakdown = STATUS_GRUPPEN.map(g => ({
+    ...g,
+    count: mitglieder.filter(m => g.status.includes(m.mitgliedsstatus)).length,
+  })).filter(g => g.count > 0);
 
   const typKey = gruppe.typ || 'Häsgruppe';
   const typMeta = TYP_META[typKey] || TYP_META['Sonstige'];
   const farbe = gruppe.farbe || typMeta.farbe;
-  const TypIcon = typMeta.icon;
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden" style={{ borderLeft: `3px solid ${farbe}` }}>
       {/* Header */}
-      <div
-        className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-secondary/30 transition-colors"
-        onClick={() => setExpanded(!expanded)}
-      >
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: farbe + '20', border: `1.5px solid ${farbe}50` }}>
-          <TypIcon size={18} style={{ color: farbe }} />
+      <div className="flex items-center gap-3 px-4 py-3">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-lg" style={{ backgroundColor: farbe + '20', border: `1.5px solid ${farbe}50` }}>
+          {typMeta.icon}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
@@ -68,167 +53,41 @@ export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten
             </span>
             {!gruppe.aktiv && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-400">Inaktiv</span>}
           </div>
-          {(() => {
-            const ids = gruppe.verantwortliche_ids?.length ? gruppe.verantwortliche_ids : (gruppe.verantwortlicher_id ? [gruppe.verantwortlicher_id] : []);
-            const verantw = ids.map(id => alleMitglieder.find(m => m.id === id)).filter(Boolean);
-            return verantw.length > 0 ? (
-              <div className="flex flex-wrap gap-1 mt-0.5">
-                {verantw.map(v => (
-                  <Link key={v.id} to={`/mitglieder/${v.id}`} onClick={e => e.stopPropagation()}
-                    className="text-xs text-primary font-semibold hover:underline inline-flex items-center gap-1">
-                    <UserCircle size={11} className="inline" /> {v.vorname} {v.nachname}
-                  </Link>
-                ))}
-              </div>
-            ) : null;
-          })()}
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {mitglieder.length} Mitglied{mitglieder.length !== 1 ? 'er' : ''}
-            {gruppe.beschreibung && ` · ${gruppe.beschreibung}`}
-          </p>
-        </div>
-        {isAdmin && (
-          <div className="flex gap-1 shrink-0" onClick={e => e.stopPropagation()}>
-            <button onClick={onEdit} className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
-              <Edit size={15} />
-            </button>
-            <button onClick={onDelete} className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
-              <Trash2 size={15} />
-            </button>
-          </div>
-        )}
-        <button className="p-1 text-muted-foreground shrink-0">
-          {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </button>
-      </div>
 
-      {/* Body */}
-      {expanded && (
-        <div className="border-t border-border bg-secondary/10">
-          {/* Tabs */}
-          <div className="flex gap-1 p-2 bg-secondary/50">
-            <button
-              onClick={() => setActiveTab('mitglieder')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'mitglieder' ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground hover:bg-primary/10'}`}
-            >
-              <Users size={12} /> Mitglieder ({mitglieder.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('kalender')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'kalender' ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground hover:bg-primary/10'}`}
-            >
-              <Calendar size={12} /> Termine
-            </button>
-            <button
-              onClick={() => setActiveTab('auslagen')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'auslagen' ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground hover:bg-primary/10'}`}
-            >
-              <Euro size={12} /> Auslagen
-            </button>
-            </div>
-
-          {activeTab === 'kalender' && (
-            <div className="p-4">
-              <SpartenKalender gruppe={gruppe} kannBearbeiten={isAdmin || kannBearbeiten} />
-            </div>
-          )}
-
-          {activeTab === 'auslagen' && (
-            <div className="p-4">
-              <AuslagenTab gruppeId={gruppe.id} isAdmin={isAdmin} />
-            </div>
-          )}
-
-          {activeTab === 'mitglieder' && <div className="p-4 space-y-3">
-          {(() => {
-            const ids = gruppe.verantwortliche_ids?.length ? gruppe.verantwortliche_ids : (gruppe.verantwortlicher_id ? [gruppe.verantwortlicher_id] : []);
-            const verantw = ids.map(id => alleMitglieder.find(m => m.id === id)).filter(Boolean);
-            return verantw.map(v => (
-              <Link key={v.id} to={`/mitglieder/${v.id}`} onClick={e => e.stopPropagation()}
-                className="flex items-center gap-3 bg-primary/10 border border-primary/20 rounded-lg px-3 py-2.5 hover:bg-primary/15 transition-colors">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 text-white" style={{ backgroundColor: farbe }}>
-                  {v.vorname?.[0]}{v.nachname?.[0]}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-primary">{v.vorname} {v.nachname}</p>
-                  <p className="text-xs text-muted-foreground">Verantwortlicher / Spartenleiter</p>
-                </div>
-              </Link>
-            ));
-          })()}
-          {mitglieder.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-2">Noch keine Mitglieder zugeordnet</p>
-          ) : (
-            <div className="space-y-1.5">
-              {mitglieder.map(m => (
-                <div key={m.id} className="flex items-center gap-3 bg-card border border-border rounded-lg px-3 py-2">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 text-white"
-                    style={{ backgroundColor: farbe }}>
-                    {m.vorname?.[0]}{m.nachname?.[0]}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <Link to={`/mitglieder/${m.id}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                      {m.vorname} {m.nachname}
-                    </Link>
-                    <p className="text-xs text-muted-foreground">{m.mitgliedsstatus}</p>
-                  </div>
-                  {isAdmin && (
-                    <button onClick={() => handleRemove(m)} className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0" title="Aus Gruppe entfernen">
-                      <UserMinus size={14} />
-                    </button>
-                  )}
-                </div>
+          {/* Verantwortliche */}
+          {verantw.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-0.5">
+              {verantw.map(v => (
+                <Link key={v.id} to={`/mitglieder/${v.id}`}
+                  className="text-xs text-primary font-semibold hover:underline inline-flex items-center gap-1">
+                  <UserCircle size={11} className="inline" /> {v.vorname} {v.nachname}
+                </Link>
               ))}
             </div>
           )}
 
-          {isAdmin && (
-            <div>
-              {!showAddSearch ? (
-                <button onClick={() => setShowAddSearch(true)}
-                  className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 font-medium transition-colors">
-                  <Plus size={13} /> Mitglied hinzufügen
-                </button>
-              ) : (
-                <div className="space-y-2">
-                  <div className="relative">
-                    <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input
-                      type="text"
-                      placeholder="Name suchen..."
-                      value={suche}
-                      onChange={e => setSuche(e.target.value)}
-                      autoFocus
-                      className="w-full pl-8 pr-3 py-2 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
-                    />
-                  </div>
-                  {verfuegbar.length > 0 && (
-                    <div className="bg-card border border-border rounded-lg max-h-44 overflow-y-auto">
-                      {verfuegbar.slice(0, 10).map(m => (
-                        <button key={m.id} onClick={() => handleAdd(m)}
-                          className="w-full flex items-center gap-3 px-3 py-2 hover:bg-secondary transition-colors text-left border-b border-border last:border-0">
-                          <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[10px] font-bold shrink-0">
-                            {m.vorname?.[0]}{m.nachname?.[0]}
-                          </div>
-                          <div>
-                            <p className="text-sm text-foreground">{m.vorname} {m.nachname}</p>
-                            <p className="text-xs text-muted-foreground">{m.mitgliedsstatus}</p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  <button onClick={() => { setShowAddSearch(false); setSuche(''); }}
-                    className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                    Abbrechen
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-          </div>}
+          {/* Status-Aufschlüsselung */}
+          <div className="flex flex-wrap gap-1 mt-1">
+            {statusBreakdown.map(g => (
+              <span key={g.label} className={`text-[10px] px-1.5 py-0.5 rounded-full bg-secondary ${g.color}`}>
+                {g.count} {g.label}
+              </span>
+            ))}
+          </div>
         </div>
-      )}
+
+        {/* Admin Buttons */}
+        {isAdmin && (
+          <div className="flex gap-1 shrink-0">
+            <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
+              <Edit size={15} />
+            </button>
+            <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+              <Trash2 size={15} />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
