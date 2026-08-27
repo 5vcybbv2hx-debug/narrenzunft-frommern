@@ -10,6 +10,7 @@ import ArbeitsdienstEditModal from '@/components/arbeitsdienst/ArbeitsdienstEdit
 import VeranstaltungsvorlagenModal from '@/components/veranstaltung/VeranstaltungsvorlagenModal';
 import ArbeitsdienstKalender from '@/components/arbeitsdienst/ArbeitsdienstKalender';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { toast } from 'sonner';
 import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 const STATUS_COLORS = {
@@ -76,7 +77,10 @@ export default function Arbeitsdienste() {
     try {
       await base44.entities.ArbeitsdienstZuweisung.update(zuweisung.id, { status: newStatus });
       setZuweisungen(prev => prev.map(z => z.id === zuweisung.id ? { ...z, status: newStatus } : z));
-    } catch (e) {}
+    } catch (e) {
+      console.error('Status ändern:', e);
+      toast.error('Status konnte nicht geändert werden');
+    }
   };
 
   const filtered = dienste
@@ -109,6 +113,15 @@ export default function Arbeitsdienste() {
     const bDate = bEvent?.datum || grouped[b][0]?.datum || '9999-12-31';
     return aDate.localeCompare(bDate);
   });
+
+  if (!loading && dienste.length === 0 && !result) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-4">
+      <p className="text-sm text-muted-foreground">Arbeitsdienste konnten nicht geladen werden</p>
+      <button onClick={() => loadData()} className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
+        Erneut versuchen
+      </button>
+    </div>
+  );
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">

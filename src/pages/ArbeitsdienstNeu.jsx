@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Save, Search, X, Users, LayoutTemplate, ChevronDown } from 'lucide-react';
 import AdresseAutocomplete from '@/components/AdresseAutocomplete';
+import { toast } from 'sonner';
 
 export default function ArbeitsdienstNeu() {
   const navigate = useNavigate();
@@ -23,11 +24,11 @@ export default function ArbeitsdienstNeu() {
   const [showVorlagenDropdown, setShowVorlagenDropdown] = useState(false);
 
   useEffect(() => {
-    base44.entities.Mitglied.list('nachname', 1000).then(setAlleMitglieder).catch(() => {});
+    base44.entities.Mitglied.list('nachname', 1000).then(setAlleMitglieder).catch((e) => { console.error('Mitglieder laden:', e); toast.error('Mitglieder konnten nicht geladen werden'); });
     base44.entities.Veranstaltungsvorlage.list('name', 100).then(v => {
       // Nur Vorlagen mit Arbeitsdienst-Vorlagen
       setVorlagen(v.filter(x => (x.arbeitsdienst_vorlagen || []).length > 0));
-    }).catch(() => {});
+    }).catch((e) => { console.error('Vorlagen laden:', e); });
   }, []);
 
   const handleSave = async () => {
@@ -55,8 +56,12 @@ export default function ArbeitsdienstNeu() {
         });
       }));
 
+      toast.success('Arbeitsdienst erstellt');
       navigate('/arbeitsdienste');
-    } catch (e) {}
+    } catch (e) {
+      console.error('Speichern:', e);
+      toast.error('Arbeitsdienst konnte nicht erstellt werden');
+    }
     setSaving(false);
   };
 
@@ -279,7 +284,7 @@ export default function ArbeitsdienstNeu() {
         <button
           onClick={handleSave}
           disabled={saving || !form.titel || !form.datum}
-          className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+          className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
         >
           <Save size={14} /> {saving ? 'Speichern...' : 'Erstellen'}
         </button>
