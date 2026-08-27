@@ -102,7 +102,7 @@ export default function Berechtigungen() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
         <Lock size={40} className="text-muted-foreground mb-3" />
-        <h2 className="text-xl font-bold font-oswald uppercase tracking-wide text-white mb-2">Kein Zugriff</h2>
+        <h2 className="text-xl font-bold font-oswald uppercase tracking-wide text-foreground mb-2">Kein Zugriff</h2>
         <p className="text-sm text-muted-foreground">Nur für Administratoren.</p>
       </div>
     );
@@ -119,7 +119,7 @@ export default function Berechtigungen() {
     <div className="px-4 lg:px-6 py-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold font-oswald uppercase tracking-wide text-white flex items-center gap-2">
+          <h1 className="text-2xl font-bold font-oswald uppercase tracking-wide text-foreground flex items-center gap-2">
             <Shield size={22} className="text-primary" /> Berechtigungen
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">Rollen & Zusatz-Berechtigungen aller Mitglieder</p>
@@ -146,7 +146,7 @@ export default function Berechtigungen() {
               <div key={r.value} className="flex items-center gap-2 text-xs">
                 <Icon size={14} className="text-primary shrink-0" />
                 <div>
-                  <p className="text-white font-medium">{r.label}</p>
+                  <p className="text-foreground font-medium">{r.label}</p>
                   <p className="text-muted-foreground">{r.desc}</p>
                 </div>
               </div>
@@ -161,7 +161,7 @@ export default function Berechtigungen() {
               return (
                 <div key={z.value} className="flex items-center gap-1.5 text-xs">
                   <Icon size={14} className="text-primary shrink-0" />
-                  <span className="text-white font-medium">{z.label}</span>
+                  <span className="text-foreground font-medium">{z.label}</span>
                   <span className="text-muted-foreground">– {z.desc}</span>
                 </div>
               );
@@ -178,7 +178,7 @@ export default function Berechtigungen() {
           placeholder="Mitglied suchen..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-neutral-900 border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+          className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
         />
       </div>
 
@@ -222,7 +222,7 @@ function MitgliedBerechtigung({ mitglied, linkedUser, aktuelleRolle, zusatz, isS
       {/* Header – immer sichtbar */}
       <button
         onClick={() => setExpanded(p => !p)}
-        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-800/30 transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-secondary/30 transition-colors"
       >
         <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-primary font-bold text-sm shrink-0 overflow-hidden">
           {mitglied.profilbild_url
@@ -231,7 +231,7 @@ function MitgliedBerechtigung({ mitglied, linkedUser, aktuelleRolle, zusatz, isS
           }
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-white truncate">{mitglied.vorname} {mitglied.nachname}</p>
+          <p className="text-sm font-semibold text-foreground truncate">{mitglied.vorname} {mitglied.nachname}</p>
           <div className="flex items-center gap-2 flex-wrap mt-0.5">
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 border border-primary/30 text-primary font-medium flex items-center gap-1">
               <RolleIcon size={10} /> {rolleOption?.label || aktuelleRolle}
@@ -240,7 +240,7 @@ function MitgliedBerechtigung({ mitglied, linkedUser, aktuelleRolle, zusatz, isS
               const z = ZUSATZ_BERECHTIGUNGEN.find(z => z.value === b);
               const ZIcon = z?.Icon;
               return z ? (
-                <span key={b} className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-800 text-muted-foreground flex items-center gap-1">
+                <span key={b} className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground flex items-center gap-1">
                   {ZIcon && <ZIcon size={10} />} {z.label}
                 </span>
               ) : null;
@@ -277,12 +277,12 @@ function MitgliedBerechtigung({ mitglied, linkedUser, aktuelleRolle, zusatz, isS
                     className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-left transition-all disabled:opacity-50 ${
                       aktiv
                         ? 'bg-primary/10 border-primary/30'
-                        : 'bg-neutral-800/40 border-border hover:border-primary/30'
+                        : 'bg-secondary/40 border-border hover:border-primary/30'
                     }`}
                   >
                     <Icon size={16} className={`shrink-0 ${aktiv ? 'text-primary' : 'text-muted-foreground'}`} />
                     <div className="min-w-0">
-                      <p className={`text-xs font-semibold truncate ${aktiv ? 'text-primary' : 'text-white'}`}>{r.label}</p>
+                      <p className={`text-xs font-semibold truncate ${aktiv ? 'text-primary' : 'text-foreground'}`}>{r.label}</p>
                       <p className="text-[10px] text-muted-foreground truncate">{r.desc}</p>
                     </div>
                   </button>
@@ -299,7 +299,7 @@ function MitgliedBerechtigung({ mitglied, linkedUser, aktuelleRolle, zusatz, isS
                 const Icon = z.Icon;
                 const aktiv = zusatz.includes(z.value);
                 return (
-                  <label key={z.value} className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-neutral-800/40 transition-colors">
+                  <label key={z.value} className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-secondary/40 transition-colors">
                     <input
                       type="checkbox"
                       checked={aktiv}
@@ -309,7 +309,7 @@ function MitgliedBerechtigung({ mitglied, linkedUser, aktuelleRolle, zusatz, isS
                     />
                     <Icon size={16} className="text-primary shrink-0" />
                     <div>
-                      <p className="text-sm font-medium text-white">{z.label}</p>
+                      <p className="text-sm font-medium text-foreground">{z.label}</p>
                       <p className="text-xs text-muted-foreground">{z.desc}</p>
                     </div>
                     {aktiv && (

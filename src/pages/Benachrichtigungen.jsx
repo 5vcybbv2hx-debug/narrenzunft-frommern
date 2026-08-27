@@ -5,6 +5,7 @@ import { isAdmin } from '@/lib/roles';
 import { Bell, Check, Info, Award, Briefcase, Calendar, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 const TYP_ICONS = {
   'Info': Info,
@@ -42,8 +43,7 @@ export default function Benachrichtigungen() {
         data = await base44.entities.Benachrichtigung.list('-created_date', 100);
       } else {
         // Mitglieder sehen nur ihre eigenen
-        const me = await base44.auth.me();
-        const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
+        const myM = await base44.entities.Mitglied.filter({ user_id: user?.id });
         if (myM[0]) {
           data = await base44.entities.Benachrichtigung.filter({ mitglied_id: myM[0].id });
           data = data.sort((a, b) => new Date(b.created_date) - new Date(a.created_date)).slice(0, 100);
@@ -52,7 +52,10 @@ export default function Benachrichtigungen() {
         }
       }
       setNotifs(data);
-    } catch (e) {}
+    } catch (e) {
+      console.error('Benachrichtigungen laden:', e);
+      toast.error('Benachrichtigungen konnten nicht geladen werden');
+    }
     setLoading(false);
   };
 
@@ -60,7 +63,10 @@ export default function Benachrichtigungen() {
     try {
       await base44.entities.Benachrichtigung.update(id, { gelesen: true });
       setNotifs(prev => prev.map(n => n.id === id ? { ...n, gelesen: true } : n));
-    } catch (e) {}
+    } catch (e) {
+      console.error('Als gelesen markieren:', e);
+      toast.error('Fehler beim Aktualisieren');
+    }
   };
 
   const markAllRead = async () => {
@@ -68,7 +74,11 @@ export default function Benachrichtigungen() {
       const unread = notifs.filter(n => !n.gelesen);
       await Promise.all(unread.map(n => base44.entities.Benachrichtigung.update(n.id, { gelesen: true })));
       setNotifs(prev => prev.map(n => ({ ...n, gelesen: true })));
-    } catch (e) {}
+      toast.success('Alle als gelesen markiert');
+    } catch (e) {
+      console.error('Alle markieren:', e);
+      toast.error('Fehler beim Aktualisieren');
+    }
   };
 
   const unreadCount = notifs.filter(n => !n.gelesen).length;

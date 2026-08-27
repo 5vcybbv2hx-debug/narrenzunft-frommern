@@ -4,6 +4,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { Mail, Plus, X } from 'lucide-react';
 import NachrichtForm from '@/components/nachricht/NachrichtForm';
 import NachrichtenInbox from '@/components/nachricht/NachrichtenInbox';
+import { toast } from 'sonner';
 
 export default function Nachrichten() {
   const { user } = useAuth();
@@ -18,12 +19,14 @@ export default function Nachrichten() {
   const loadMitglied = async () => {
     setLoading(true);
     try {
-      const me = await base44.auth.me();
-      if (me?.email) {
-        const mitglieder = await base44.entities.Mitglied.filter({ email: me.email });
+      if (user?.email) {
+        const mitglieder = await base44.entities.Mitglied.filter({ email: user.email });
         if (mitglieder.length > 0) setMitglied(mitglieder[0]);
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('Mitglied laden:', e);
+      toast.error('Daten konnten nicht geladen werden');
+    }
     setLoading(false);
   };
 
@@ -54,7 +57,7 @@ export default function Nachrichten() {
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
         >
           <Plus size={16} /> Neue Nachricht
         </button>

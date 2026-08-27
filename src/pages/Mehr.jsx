@@ -88,7 +88,7 @@ export default function Mehr() {
             {getRollenLabel(user?.role)}
           </span>
         </div>
-        <Link to="/profil" className="p-2 rounded-lg bg-neutral-800 text-muted-foreground hover:text-white transition-colors">
+        <Link to="/profil" className="p-2 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors">
           <ChevronRight size={18} />
         </Link>
       </div>
@@ -118,7 +118,7 @@ export default function Mehr() {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center gap-3 px-4 py-3.5 hover:bg-neutral-800/50 transition-colors ${
+                    className={`flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/50 transition-colors ${
                       idx < visibleItems.length - 1 ? 'border-b border-border' : ''
                     }`}
                   >
@@ -126,7 +126,7 @@ export default function Mehr() {
                       <Icon size={18} className="text-[#EA2525]" />
                     </div>
                     <span className="flex-1 text-sm font-medium text-white">{item.label}</span>
-                    <ChevronRight size={16} className="text-muted-foreground hover:text-white" />
+                    <ChevronRight size={16} className="text-muted-foreground hover:text-foreground" />
                   </Link>
                 );
               })}
