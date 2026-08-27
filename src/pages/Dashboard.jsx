@@ -119,10 +119,11 @@ export default function Dashboard() {
     },
   });
 
-  const { stats, naechsteTermine, naechsteGeburtstage, unterbesetzte, offeneDienste, verfuegbareHaes, statusVerteilung, gruppenVerteilung } = useMemo(() => {
+  const { stats, naechsteTermine, naechsteGeburtstage, unterbesetzte, offeneDienste, verfuegbareHaes, statusVerteilung, gruppenVerteilung, anzeigename } = useMemo(() => {
     const empty = {
       stats: { mitglieder: 0, kommendeEvents: 0, offeneDienste: 0, unterbesetzt: 0, haesGesamt: 0, haesVerfuegbar: 0 },
       naechsteTermine: [], naechsteGeburtstage: [], unterbesetzte: [], offeneDienste: [], verfuegbareHaes: [], statusVerteilung: [], gruppenVerteilung: [],
+      anzeigename: user?.full_name || '',
     };
     if (!dashData || !dashData.dashResult?.data?.erfolg || !dashData.dashResult.data.mitglieder) return empty;
 
@@ -243,8 +244,14 @@ export default function Dashboard() {
       haesVerfuegbar: verfuegbareHaes.length,
     };
 
-    return { stats, naechsteTermine, naechsteGeburtstage, unterbesetzte, offeneDienste, verfuegbareHaes, statusVerteilung, gruppenVerteilung };
-  }, [dashData, today]);
+    // ── Eigener Anzeigename (aus Mitgliedsdatensatz statt Login-Account) ──
+    const myMitgliedRec = mitglieder.find(m => m.user_id === user?.id);
+    const anzeigename = myMitgliedRec
+      ? `${myMitgliedRec.vorname || ''} ${myMitgliedRec.nachname || ''}`.trim()
+      : (user?.full_name || '');
+
+    return { stats, naechsteTermine, naechsteGeburtstage, unterbesetzte, offeneDienste, verfuegbareHaes, statusVerteilung, gruppenVerteilung, anzeigename };
+  }, [dashData, today, user]);
 
   const { pullDistance, refreshing, containerRef } = usePullToRefresh(useCallback(async () => {
     await refetch();
@@ -269,7 +276,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-oswald font-semibold text-foreground tracking-wide">
-          {getBegruessung(user?.full_name)}
+          {getBegruessung(anzeigename || user?.full_name)}
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
           {getRollenLabel(user?.role)} · {format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}
