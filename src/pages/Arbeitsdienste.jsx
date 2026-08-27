@@ -35,6 +35,7 @@ export default function Arbeitsdienste() {
   const [veranstaltungen, setVeranstaltungen] = useState([]);
   const [myMitglied, setMyMitglied] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [filter, setFilter] = useState('Kommend');
   const [editDienst, setEditDienst] = useState(null);
   const [expandedEvents, setExpandedEvents] = useState({});
@@ -47,9 +48,11 @@ export default function Arbeitsdienste() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const result = await base44.functions.invoke('getArbeitsdiensteSicher', {});
       if (!result.data.erfolg) {
+        setLoadError(true);
         setLoading(false);
         return;
       }
@@ -64,6 +67,7 @@ export default function Arbeitsdienste() {
       }
     } catch (e) {
       console.error('[Arbeitsdienste]', e instanceof Error ? e.message : e);
+      setLoadError(true);
     }
     setLoading(false);
   }, [user]);
@@ -114,7 +118,7 @@ export default function Arbeitsdienste() {
     return aDate.localeCompare(bDate);
   });
 
-  if (!loading && dienste.length === 0) return (
+  if (!loading && loadError) return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-4">
       <p className="text-sm text-muted-foreground">Arbeitsdienste konnten nicht geladen werden</p>
       <button onClick={() => loadData()} className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">

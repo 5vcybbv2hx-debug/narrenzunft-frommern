@@ -47,7 +47,7 @@ export default function Veranstaltungen() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [data] = await Promise.all([
+      const [data, myMArr] = await Promise.all([
         base44.entities.Veranstaltung.list('datum', 500),
         base44.entities.Mitglied.filter({ user_id: user?.id }),
       ]);
@@ -55,7 +55,7 @@ export default function Veranstaltungen() {
 
       // Eigene Teilnahmen laden für Anmeldestatus-Anzeige
       if (user?.id) {
-        const myM = data[1] || [];
+        const myM = myMArr || [];
         if (myM[0]) {
           setMyMitgliedId(myM[0].id);
           const teilnahmen = await base44.entities.Teilnahme.filter({ mitglied_id: myM[0].id });

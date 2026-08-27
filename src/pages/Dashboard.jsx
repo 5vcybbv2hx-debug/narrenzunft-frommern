@@ -7,8 +7,8 @@ import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 import { useAuth } from '@/lib/AuthContext';
 import {
   Calendar, Users, Briefcase, Shirt, ArrowRight, ChevronRight,
-  Shield, CheckCircle, AlertCircle, Clock, Baby,
-  Phone, MessageCircle, Bus, MapPin,
+  Shield, CheckCircle, AlertCircle, Clock, Baby, MapPin,
+  Phone, MessageCircle, Bus,
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { de } from 'date-fns/locale';

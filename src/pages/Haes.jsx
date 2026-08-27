@@ -28,6 +28,7 @@ export default function Haes() {
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'Alle');
   const [gruppeFilter, setGruppeFilter] = useState(searchParams.get('gruppe') || 'Alle');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [showNewGruppe, setShowNewGruppe] = useState(false);
   const [showNewHaes, setShowNewHaes] = useState(false);
   const [newGruppe, setNewGruppe] = useState({ name: '', beschreibung: '' });
@@ -50,9 +51,11 @@ export default function Haes() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const result = await base44.functions.invoke('getHaesSicher', {});
       if (!result.data.erfolg) {
+        setLoadError(true);
         setLoading(false);
         return;
       }
@@ -61,6 +64,7 @@ export default function Haes() {
       setMitglieder(result.data.mitglieder || []);
     } catch (e) {
       console.error('[Haes]', e instanceof Error ? e.message : e);
+      setLoadError(true);
     }
     setLoading(false);
   }, []);
@@ -132,7 +136,7 @@ export default function Haes() {
     stillgelegt: haes.filter(h => h.status === 'Stillgelegt').length,
   };
 
-  if (!loading && haes.length === 0 && !haes) return (
+  if (!loading && loadError) return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-4">
       <p className="text-sm text-muted-foreground">Häs konnten nicht geladen werden</p>
       <button onClick={() => loadData()} className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
