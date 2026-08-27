@@ -46,6 +46,7 @@ export default defineConfig({
     dedupe: ['react', 'react-dom', 'react-router-dom'],
   },
   optimizeDeps: {
+    force: true,
     // List all deps EXCEPT react/jsx-dev-runtime and react/jsx-runtime.
     // Those two must NOT be pre-bundled separately — doing so creates a
     // second copy of React's internals (ReactCurrentDispatcher), causing
