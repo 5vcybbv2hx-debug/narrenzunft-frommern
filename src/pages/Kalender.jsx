@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Calendar, List, ChevronLeft, ChevronRight, Plus, Clock,
   MapPin, Download, Filter, X, Edit, LayoutTemplate, Bus
@@ -13,6 +13,7 @@ import { de } from 'date-fns/locale';
 import KalenderTerminModal from '@/components/kalender/KalenderTerminModal';
 import VeranstaltungBearbeitenModal from '@/components/kalender/VeranstaltungBearbeitenModal';
 import VeranstaltungsvorlagenModal from '@/components/veranstaltung/VeranstaltungsvorlagenModal';
+import { toast } from 'sonner';
 
 const TERMINART_FARBEN = {
   'Umzug':             'bg-primary/20 text-primary border-primary/30',
@@ -57,16 +58,17 @@ const ALLE_TERMINARTEN = ['Umzug','Abendveranstaltung','Ausfahrt-Umzug','Ausfahr
 export default function Kalender() {
   const { user } = useAuth();
   const admin = isAdmin(user);
-  const [ansicht, setAnsicht] = useState('liste'); // 'monat' | 'liste'
+  const [ansicht, setAnsicht] = useState(searchParams.get('ansicht') || 'liste'); // 'monat' | 'liste'
   const [monat, setMonat] = useState(new Date());
   const [termine, setTermine] = useState([]);
   const [myMitglied, setMyMitglied] = useState(null);
   const [anmeldungen, setAnmeldungen] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedTermin, setSelectedTermin] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [editTermin, setEditTermin] = useState(null);
-  const [filterArt, setFilterArt] = useState('alle');
+  const [filterArt, setFilterArt] = useState(searchParams.get('filter') || 'alle');
   const [showFilter, setShowFilter] = useState(false);
   const [downloadingFeed, setDownloadingFeed] = useState(false);
   const [showVeranstaltungModal, setShowVeranstaltungModal] = useState(false);
@@ -74,10 +76,12 @@ export default function Kalender() {
   const [showVorlagen, setShowVorlagen] = useState(false);
   const [showNeuDropdown, setShowNeuDropdown] = useState(false);
   const [zeigeVergangene, setZeigeVergangene] = useState(false);
+  const [listLimit, setListLimit] = useState(30);
   const [ausfahrten, setAusfahrten] = useState([]);
   const [ausfahrtAnmeldungen, setAusfahrtAnmeldungen] = useState([]);
   const [submittingAusfahrtId, setSubmittingAusfahrtId] = useState(null);
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const userRolle = user?.role || 'mitglied';
   const erlaubteSichtbarkeiten = ROLLE_ERLAUBTE_SICHTBARKEIT[userRolle] || ['alle'];
@@ -94,8 +98,11 @@ export default function Kalender() {
       }
       setTermine(result.data.termine);
 
-      // Ausfahrten zusätzlich laden und normalisieren
-      const ausfahrtData = await base44.entities.Ausfahrt.list('datum', 300);
+      // Parallel: Ausfahrten + eigenes Mitglied laden
+      const [ausfahrtData, myMArr] = await Promise.all([
+        base44.entities.Ausfahrt.list('datum', 300),
+        base44.entities.Mitglied.filter({ user_id: user?.id })
+      ]);
       const ausfahrtTermine = (ausfahrtData || []).map(a => ({
         id: `a_${a.id}`,
         _ausfahrt_id: a.id,
@@ -119,8 +126,6 @@ export default function Kalender() {
       }));
       setAusfahrten(ausfahrtTermine);
 
-      const me = await base44.auth.me();
-      const myMArr = await base44.entities.Mitglied.filter({ user_id: me?.id });
       const myM = myMArr[0] || null;
       setMyMitglied(myM);
 
@@ -129,11 +134,20 @@ export default function Kalender() {
         setAnmeldungen(anm);
       }
 
-      // Alle Ausfahrt-Anmeldungen laden (für Zähler + eigenen Status)
-      const ausfahrtAnm = await base44.entities.AusfahrtAnmeldung.filter({});
+      // Eigene Ausfahrt-Anmeldungen laden (für eigenen Status)
+      let ausfahrtAnm = [];
+      if (myM) {
+        ausfahrtAnm = await base44.entities.AusfahrtAnmeldung.filter({ mitglied_id: myM.id });
+      }
       setAusfahrtAnmeldungen(ausfahrtAnm || []);
+      // Für Admins: alle Anmeldungen laden (für Zähler)
+      if (admin) {
+        const allAnm = await base44.entities.AusfahrtAnmeldung.filter({});
+        setAusfahrtAnmeldungen(allAnm || []);
+      }
     } catch (e) {
       console.error('[Kalender]', e instanceof Error ? e.message : e);
+      setError(e instanceof Error ? e.message : 'Unbekannter Fehler');
     }
     setLoading(false);
   };
@@ -152,11 +166,6 @@ export default function Kalender() {
     const end = format(endOfMonth(monat), 'yyyy-MM-dd');
     return gefilterteTermine.filter(t => t.datum >= start && t.datum <= end);
   }, [gefilterteTermine, monat]);
-
-  const kommende = useMemo(() => {
-    const today = format(new Date(), 'yyyy-MM-dd');
-    return gefilterteTermine.filter(t => t.datum >= today).slice(0, 20);
-  }, [gefilterteTermine]);
 
   const getTermineForDay = (day) => {
     const key = format(day, 'yyyy-MM-dd');
@@ -197,7 +206,7 @@ export default function Kalender() {
       setAusfahrtAnmeldungen(updated || []);
     } catch (e) {
       console.error('Anmeldung fehlgeschlagen:', e);
-      alert('Bei der Anmeldung ist ein Fehler aufgetreten.');
+      toast.error('Bei der Anmeldung ist ein Fehler aufgetreten.');
     } finally {
       setSubmittingAusfahrtId(null);
     }
@@ -216,7 +225,7 @@ export default function Kalender() {
       setAusfahrtAnmeldungen(updated || []);
     } catch (e) {
       console.error('Abmeldung fehlgeschlagen:', e);
-      alert('Bei der Abmeldung ist ein Fehler aufgetreten.');
+      toast.error('Bei der Abmeldung ist ein Fehler aufgetreten.');
     } finally {
       setSubmittingAusfahrtId(null);
     }
@@ -275,6 +284,16 @@ export default function Kalender() {
 
   const tage = eachDayOfInterval({ start: startOfMonth(monat), end: endOfMonth(monat) });
 
+  if (error) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+      <AlertCircle size={32} className="text-red-400" />
+      <p className="text-sm text-muted-foreground">Kalender konnte nicht geladen werden</p>
+      <button onClick={() => { setError(null); loadData(); }} className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
+        Erneut versuchen
+      </button>
+    </div>
+  );
+
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="flex flex-col items-center gap-3">
@@ -294,6 +313,14 @@ export default function Kalender() {
         </div>
         <div className="flex items-center gap-2">
           <button
+            onClick={() => handleDownloadFeed('mitglieder')}
+            disabled={downloadingFeed}
+            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+            title="Kalender als ICS herunterladen"
+          >
+            <Download size={18} />
+          </button>
+          <button
             onClick={() => setShowFilter(!showFilter)}
             className={`relative p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors ${showFilter || filterArt !== 'alle' ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
           >
@@ -303,7 +330,7 @@ export default function Kalender() {
             <div className="relative">
               <button
                 onClick={() => setShowNeuDropdown(v => !v)}
-                className="flex items-center gap-2 px-3 py-2.5 min-h-[44px] rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+                className="flex items-center gap-2 px-3 py-2.5 min-h-[44px] rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
               >
                 <Plus size={16} /> <span className="hidden sm:inline">Neu</span> <ChevronRight size={12} className={`transition-transform ${showNeuDropdown ? 'rotate-90' : ''}`} />
               </button>
@@ -354,70 +381,43 @@ export default function Kalender() {
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-semibold text-foreground">Nach Terminart filtern</p>
             {filterArt !== 'alle' && (
-              <button onClick={() => setFilterArt('alle')} className="text-xs text-primary flex items-center gap-1">
+              <button onClick={() => { setFilterArt('alle'); setSearchParams(prev => { prev.delete('filter'); return prev; }); }} className="text-xs text-primary flex items-center gap-1">
                 <X size={12} /> Zurücksetzen
               </button>
             )}
           </div>
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => setFilterArt('alle')}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${filterArt === 'alle' ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'}`}
+              onClick={() => { setFilterArt('alle'); setSearchParams(prev => { prev.delete('filter'); return prev; }); }}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${filterArt === 'alle' ? 'bg-primary text-white border-primary' : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'}`}
             >
               Alle
             </button>
             {ALLE_TERMINARTEN.map(art => (
               <button
                 key={art}
-                onClick={() => setFilterArt(art)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${filterArt === art ? 'bg-primary text-primary-foreground border-primary' : `${TERMINART_FARBEN[art]} border`}`}
+                onClick={() => { setFilterArt(art); setSearchParams({ filter: art }); }}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${filterArt === art ? 'bg-primary text-white border-primary' : `${TERMINART_FARBEN[art]} border`}`}
               >
                 {art}
               </button>
             ))}
           </div>
 
-          {/* ICS Downloads */}
-          <div className="border-t border-border mt-4 pt-4">
-            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">📅 Kalender abonnieren (ICS)</p>
-            <div className="flex flex-wrap gap-2">
-              <button onClick={() => handleDownloadFeed('mitglieder')} disabled={downloadingFeed}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-xs text-foreground hover:bg-border transition-colors">
-                <Download size={12} /> Mitglieder
-              </button>
-              {['spartenleiter','kassierer','stellv_vorstand','vorstand','admin'].includes(userRolle) && (
-                <button onClick={() => handleDownloadFeed('verantwortliche')} disabled={downloadingFeed}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-xs text-foreground hover:bg-border transition-colors">
-                  <Download size={12} /> Verantwortliche
-                </button>
-              )}
-              {['stellv_vorstand','vorstand','admin'].includes(userRolle) && (
-                <button onClick={() => handleDownloadFeed('ausschuss')} disabled={downloadingFeed}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-xs text-foreground hover:bg-border transition-colors">
-                  <Download size={12} /> Ausschuss
-                </button>
-              )}
-              {['vorstand','admin'].includes(userRolle) && (
-                <button onClick={() => handleDownloadFeed('vorstand')} disabled={downloadingFeed}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-xs text-foreground hover:bg-border transition-colors">
-                  <Download size={12} /> Vorstand
-                </button>
-              )}
-            </div>
-          </div>
+
         </div>
       )}
 
       {/* Ansicht-Toggle */}
       <div className="flex gap-1.5 mb-4">
         <button
-          onClick={() => setAnsicht('liste')}
+          onClick={() => { setAnsicht('liste'); setSearchParams({ ansicht: 'liste' }); }}
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-all ${ansicht === 'liste' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
         >
           <List size={15} /> Liste
         </button>
         <button
-          onClick={() => setAnsicht('monat')}
+          onClick={() => { setAnsicht('monat'); setSearchParams({ ansicht: 'monat' }); }}
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-all ${ansicht === 'monat' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
         >
           <Calendar size={15} /> Monat
@@ -463,7 +463,7 @@ export default function Kalender() {
                   onClick={() => dayTermine.length > 0 && setSelectedTermin({ day, termine: dayTermine })}
                   className={`h-14 border-b border-r border-border/50 p-1 text-left relative transition-colors ${heute ? 'bg-primary/10' : 'hover:bg-secondary/50'} ${!gleichesMonat ? 'opacity-30' : ''}`}
                 >
-                  <span className={`text-xs font-medium block text-center w-6 h-6 rounded-full flex items-center justify-center mx-auto mb-1 ${heute ? 'bg-primary text-primary-foreground' : 'text-foreground'}`}>
+                  <span className={`text-xs font-medium block text-center w-6 h-6 rounded-full flex items-center justify-center mx-auto mb-1 ${heute ? 'bg-primary text-white' : 'text-foreground'}`}>
                     {format(day, 'd')}
                   </span>
                   <div className="flex flex-wrap gap-0.5 justify-center">
@@ -566,7 +566,7 @@ export default function Kalender() {
                 )}
               </div>
             ) : (
-              listeAnzeigen.slice(0, 30).map(t => (
+              listeAnzeigen.slice(0, listLimit).map(t => (
                 <TerminKarte
                   key={t.id}
                   termin={t}
@@ -586,6 +586,14 @@ export default function Kalender() {
                   submittingAusfahrt={submittingAusfahrtId}
                 />
               ))
+            )}
+            {listeAnzeigen.length > listLimit && (
+              <button
+                onClick={() => setListLimit(l => l + 30)}
+                className="w-full py-3 rounded-lg bg-secondary text-sm text-foreground hover:bg-border transition-colors"
+              >
+                Mehr laden ({listeAnzeigen.length - listLimit} weitere)
+              </button>
             )}
           </div>
         );
@@ -787,7 +795,7 @@ function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, onEditVeranstaltun
             className={`w-full py-2.5 min-h-[44px] rounded-lg text-sm font-semibold transition-colors ${
               isAngemeldet
                 ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
-                : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                : 'bg-primary text-white hover:bg-primary/90'
             }`}
           >
             {isAngemeldet ? 'Absagen' : 'Anmelden'}
