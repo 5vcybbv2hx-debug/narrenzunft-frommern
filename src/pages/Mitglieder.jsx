@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannMitgliederlisteSehn } from '@/lib/roles';
@@ -40,8 +40,9 @@ const SORT_OPTIONS = [
 
 export default function Mitglieder() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('Alle');
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'Alle');
   const [zeigeArchiviert, setZeigeArchiviert] = useState(false);
   const [sortBy, setSortBy] = useState('nachname');
   const [showAntragModal, setShowAntragModal] = useState(false);

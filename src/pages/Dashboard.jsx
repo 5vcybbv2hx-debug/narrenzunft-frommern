@@ -221,7 +221,7 @@ export default function Dashboard() {
       ids.forEach(id => {
         const name = gruppeMapVert[id]?.name;
         if (!name) return;
-        if (!gruppenData[name]) gruppenData[name] = { name, aktiv: 0, passiv: 0 };
+        if (!gruppenData[name]) gruppenData[name] = { name, id, aktiv: 0, passiv: 0 };
         if (isAktiv) gruppenData[name].aktiv++;
         else gruppenData[name].passiv++;
       });

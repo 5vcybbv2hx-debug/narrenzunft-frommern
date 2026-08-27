@@ -2,38 +2,45 @@ import { Link } from 'react-router-dom';
 import { Users, ArrowRight } from 'lucide-react';
 
 const STATUS_COLORS = {
-  'Aktiv': 'bg-green-500/15 text-green-400',
-  'Passiv': 'bg-gray-500/15 text-gray-400',
-  'Passiv mit Häs': 'bg-blue-500/15 text-blue-400',
-  'Leihäs': 'bg-teal-500/15 text-teal-400',
-  'Jugendliche 11-14': 'bg-yellow-500/15 text-yellow-400',
-  'Jungaktive 15-17': 'bg-orange-500/15 text-orange-400',
-  'Kinder 4-10': 'bg-purple-500/15 text-purple-400',
-  'Kleinkind 0-3': 'bg-pink-500/15 text-pink-400',
-  'Ehrenmitglied': 'bg-amber-500/15 text-amber-400',
-  'Verstorben': 'bg-neutral-700/40 text-neutral-400',
+  'Aktiv': 'bg-green-500/15 text-green-400 hover:bg-green-500/25',
+  'Passiv': 'bg-gray-500/15 text-gray-400 hover:bg-gray-500/25',
+  'Passiv mit Häs': 'bg-blue-500/15 text-blue-400 hover:bg-blue-500/25',
+  'Leihäs': 'bg-teal-500/15 text-teal-400 hover:bg-teal-500/25',
+  'Jugendliche 11-14': 'bg-yellow-500/15 text-yellow-400 hover:bg-yellow-500/25',
+  'Jungaktive 15-17': 'bg-orange-500/15 text-orange-400 hover:bg-orange-500/25',
+  'Kinder 4-10': 'bg-purple-500/15 text-purple-400 hover:bg-purple-500/25',
+  'Kleinkind 0-3': 'bg-pink-500/15 text-pink-400 hover:bg-pink-500/25',
+  'Ehrenmitglied': 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/25',
+  'Verstorben': 'bg-neutral-700/40 text-neutral-400 hover:bg-neutral-700/60',
 };
 
 export default function MitgliederVerteilung({ total, statusVerteilung, gruppenVerteilung }) {
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
+      <Link to="/mitglieder" className="flex items-center justify-between px-5 py-3.5 border-b border-border hover:bg-secondary/40 transition-colors group">
         <div className="flex items-center gap-2">
           <Users size={16} className="text-primary" />
           <h3 className="font-oswald font-semibold text-foreground text-sm tracking-wide">Mitglieder</h3>
         </div>
-        <p className="text-xs text-muted-foreground">{total} gesamt</p>
-      </div>
+        <div className="flex items-center gap-1.5">
+          <p className="text-xs text-muted-foreground">{total} gesamt</p>
+          <ArrowRight size={12} className="text-muted-foreground group-hover:text-primary transition-colors" />
+        </div>
+      </Link>
       <div className="p-4 space-y-4">
         {/* Status-Verteilung */}
         <div>
           <p className="text-[11px] text-muted-foreground mb-2 font-medium uppercase tracking-wide">Status</p>
           <div className="flex flex-wrap gap-1.5">
             {statusVerteilung.map(s => (
-              <span key={s.status} className={`text-xs px-2 py-1 rounded-full font-medium ${STATUS_COLORS[s.status] || 'bg-secondary text-muted-foreground'}`}>
+              <Link
+                key={s.status}
+                to={`/mitglieder?status=${encodeURIComponent(s.status)}`}
+                className={`text-xs px-2 py-1 rounded-full font-medium transition-colors ${STATUS_COLORS[s.status] || 'bg-secondary text-muted-foreground hover:bg-secondary/70'}`}
+              >
                 {s.status}: <strong className="font-bold">{s.count}</strong>
-              </span>
+              </Link>
             ))}
           </div>
         </div>
@@ -46,9 +53,13 @@ export default function MitgliederVerteilung({ total, statusVerteilung, gruppenV
                 const gesamt = g.aktiv + g.passiv;
                 const aktivPct = gesamt > 0 ? (g.aktiv / gesamt) * 100 : 0;
                 return (
-                  <div key={g.name} className="space-y-1">
+                  <Link
+                    key={g.id}
+                    to={`/sparte/${g.id}`}
+                    className="block space-y-1 p-1.5 -m-1.5 rounded-lg hover:bg-secondary/40 transition-colors group"
+                  >
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-foreground truncate flex-1 min-w-0">{g.name}</span>
+                      <span className="text-sm text-foreground truncate flex-1 min-w-0 group-hover:text-primary transition-colors">{g.name}</span>
                       <span className="text-xs text-muted-foreground shrink-0 tabular-nums">
                         <strong className="text-green-400">{g.aktiv}</strong> aktiv · <strong className="text-gray-400">{g.passiv}</strong> passiv
                       </span>
@@ -57,7 +68,7 @@ export default function MitgliederVerteilung({ total, statusVerteilung, gruppenV
                       <div className="h-full bg-green-500" style={{ width: `${aktivPct}%` }} />
                       <div className="h-full bg-gray-500" style={{ width: `${100 - aktivPct}%` }} />
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>
