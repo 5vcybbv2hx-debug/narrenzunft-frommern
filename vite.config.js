@@ -29,6 +29,7 @@ function serveServiceWorker() {
 }
 
 // https://vite.dev/config/
+// trigger-restart-1
 export default defineConfig({
   logLevel: 'error',
   plugins: [
