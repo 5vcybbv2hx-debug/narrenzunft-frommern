@@ -6,9 +6,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="manifest" href="/manifest.json" />
     <title>Base44 APP</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      // Fix: "dispatcher.useState is null" — caused by the browser accumulating
+      // Vite dep chunks from multiple re-optimization passes (different ?v= hashes),
+      // which creates duplicate React instances. This script detects the error and
+      // forces a cache-busting reload so the browser loads only the current chunks.
+      (function () {
+        // Clear any cached Vite chunks from the Cache API
+        if (window.caches) {
+          caches.keys().then(function (names) {
+            names.forEach(function (name) { caches.delete(name); });
+          });
+        }
+        // Register a service worker that bypasses the CDN cache for Vite chunks.
+        // The CDN sends Cache-Control: max-age=31536000,immutable for /node_modules/.vite/deps/*
+        // which causes the browser to cache chunks from multiple optimization passes,
+        // creating duplicate React instances ("dispatcher.useState is null").
+        // Only register in the preview/dev environment, not in production.
+        if (navigator.serviceWorker && window.location.hostname.indexOf('preview-sandbox') !== -1) {
+          navigator.serviceWorker.register('/sw.js').catch(function () {});
+        }
+        // Proactive: force one cache-busting reload to clear stale Vite dep chunks.
+        // The browser accumulates chunks from multiple optimization passes (different
+        // ?v= hashes), creating duplicate React instances. A fresh page load ensures
+        // the @vite/client uses the current module map and only loads current chunks.
+        var PROACTIVE_KEY = 'vite-proactive-reload';
+        if (!sessionStorage.getItem(PROACTIVE_KEY)) {
+          sessionStorage.setItem(PROACTIVE_KEY, '1');
+          if (window.location.search.indexOf('fresh') === -1) {
+            window.location.replace(window.location.pathname + '?fresh=' + Date.now());
+            return;
+          }
+        } else {
+          sessionStorage.removeItem(PROACTIVE_KEY);
+        }
+        // Reactive: if the error still occurs after the proactive reload, catch it
+        // and force one more reload (only once per session to avoid loops).
+        var RELOAD_KEY = 'vite-cache-bust';
+        window.addEventListener('error', function (e) {
+          var msg = (e.error && e.error.message) || e.message || '';
+          if (msg.indexOf('useState') !== -1 || msg.indexOf('dispatcher') !== -1) {
+            if (!sessionStorage.getItem(RELOAD_KEY)) {
+              sessionStorage.setItem(RELOAD_KEY, '1');
+              var u = window.location.pathname;
+              if (window.location.search.indexOf('fresh') === -1) {
+                u += '?fresh=' + Date.now();
+              }
+              window.location.replace(u);
+            }
+          }
+        }, true);
+      })();
+    </script>
   </body>
 </html>
