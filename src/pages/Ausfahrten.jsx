@@ -1,14 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
 import { Bus, Plus, MapPin, Clock, Calendar, Users, ChevronRight, Search } from 'lucide-react';
 import { format, differenceInDays, parseISO, startOfDay, isBefore, isAfter } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 export default function Ausfahrten() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [ausfahrten, setAusfahrten] = useState([]);
   const [anmeldungen, setAnmeldungen] = useState([]);
@@ -16,8 +18,9 @@ export default function Ausfahrten() {
   
   // Search and Filter states
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeFilter, setActiveFilter] = useState('Kommend'); // 'Alle', 'Umzug', 'Veranstaltung', 'Kommend', 'Vergangen'
+  const [activeFilter, setActiveFilter] = useState(searchParams.get('filter') || 'Kommend'); // 'Alle', 'Umzug', 'Veranstaltung', 'Kommend', 'Vergangen'
   const [submittingId, setSubmittingId] = useState(null);
+  const [error, setError] = useState(null);
 
   const today = useMemo(() => startOfDay(new Date()), []);
 
@@ -38,11 +41,19 @@ export default function Ausfahrten() {
       const ausfahrtenResponse = await base44.entities.Ausfahrt.filter({}, 'datum');
       setAusfahrten(ausfahrtenResponse || []);
 
-      // 3. Fetch all registrations (Anmeldungen) to count and check own status
-      const anmeldungenResponse = await base44.entities.AusfahrtAnmeldung.filter({});
+      // 3. Fetch registrations - all for admins (counts), only own for members
+      let anmeldungenResponse;
+      if (isAdmin(user)) {
+        anmeldungenResponse = await base44.entities.AusfahrtAnmeldung.filter({});
+      } else if (currentMitglied) {
+        anmeldungenResponse = await base44.entities.AusfahrtAnmeldung.filter({ mitglied_id: currentMitglied.id });
+      } else {
+        anmeldungenResponse = [];
+      }
       setAnmeldungen(anmeldungenResponse || []);
-    } catch (error) {
-      console.error('Fehler beim Laden der Ausfahrtendaten:', error);
+    } catch (err) {
+      console.error('Fehler beim Laden der Ausfahrtendaten:', err);
+      setError('Ausfahrten konnten nicht geladen werden');
     } finally {
       setLoading(false);
     }
@@ -55,7 +66,7 @@ export default function Ausfahrten() {
   // Handle registration (Anmeldung)
   const handleRegister = async (ausfahrtId) => {
     if (!mitglied) {
-      alert('Sie müssen als Mitglied registriert sein, um sich für eine Ausfahrt anzumelden.');
+      toast.error('Sie müssen als Mitglied registriert sein, um sich für eine Ausfahrt anzumelden.');
       return;
     }
     setSubmittingId(ausfahrtId);
@@ -76,7 +87,7 @@ export default function Ausfahrten() {
       setAnmeldungen(updatedAnmeldungen || []);
     } catch (error) {
       console.error('Fehler bei der Anmeldung:', error);
-      alert('Bei der Anmeldung ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.');
+      toast.error('Bei der Anmeldung ist ein Fehler aufgetreten.');
     } finally {
       setSubmittingId(null);
     }
@@ -84,7 +95,7 @@ export default function Ausfahrten() {
 
   // Handle cancellation (Abmeldung)
   const handleUnregister = async (anmeldungId, ausfahrtId) => {
-    if (!window.confirm('Möchten Sie sich wirklich von dieser Ausfahrt abmelden?')) {
+    if (!confirm('Möchten Sie sich wirklich von dieser Ausfahrt abmelden?')) {
       return;
     }
     setSubmittingId(ausfahrtId);
@@ -99,7 +110,7 @@ export default function Ausfahrten() {
       setAnmeldungen(updatedAnmeldungen || []);
     } catch (error) {
       console.error('Fehler bei der Abmeldung:', error);
-      alert('Bei der Abmeldung ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.');
+      toast.error('Bei der Abmeldung ist ein Fehler aufgetreten.');
     } finally {
       setSubmittingId(null);
     }
@@ -181,7 +192,7 @@ export default function Ausfahrten() {
   // Return loading spinner
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] text-gray-400 py-12">
+      <div className="flex flex-col items-center justify-center min-h-[50vh] text-muted-foreground py-12">
         <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mb-4"></div>
         <p className="text-sm">Ausfahrten werden geladen…</p>
       </div>
@@ -196,7 +207,7 @@ export default function Ausfahrten() {
           <h1 className="text-3xl font-oswald font-semibold tracking-wide text-white uppercase">
             Unsere Ausfahrten
           </h1>
-          <p className="text-gray-400 text-sm mt-1">
+          <p className="text-muted-foreground text-sm mt-1">
             Plane und verwalte deine Busausfahrten zu den nächsten Fasnetsveranstaltungen.
           </p>
         </div>
@@ -215,13 +226,13 @@ export default function Ausfahrten() {
       {/* Sticky Search & Filters bar */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md pt-3 pb-4 border-b border-border mb-6">
         <div className="relative mb-4">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
           <input
             type="text"
             placeholder="Ausfahrten nach Titel oder Ort suchen..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-card border border-border rounded-xl pl-11 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-sm"
+            className="w-full bg-card border border-border rounded-xl pl-11 pr-4 py-3 text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-sm"
           />
         </div>
 
@@ -236,16 +247,16 @@ export default function Ausfahrten() {
           ].map((chip) => (
             <button
               key={chip.id}
-              onClick={() => setActiveFilter(chip.id)}
+              onClick={() => { setActiveFilter(chip.id); setSearchParams({ filter: chip.id }); }}
               className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors border ${
                 activeFilter === chip.id
                   ? 'bg-primary border-primary text-white'
-                  : 'bg-card border-border text-gray-400 hover:text-white hover:border-gray-600'
+                  : 'bg-card border-border text-muted-foreground hover:text-white hover:border-gray-600'
               }`}
             >
               <span>{chip.label}</span>
               <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-                activeFilter === chip.id ? 'bg-black/20 text-white' : 'bg-white/10 text-gray-400'
+                activeFilter === chip.id ? 'bg-black/20 text-white' : 'bg-white/10 text-muted-foreground'
               }`}>
                 {chip.count}
               </span>
@@ -261,7 +272,7 @@ export default function Ausfahrten() {
             <Bus className="w-10 h-10 text-primary" />
           </div>
           <h3 className="text-lg font-medium text-white mb-1">Keine Ausfahrten gefunden</h3>
-          <p className="text-gray-400 text-sm max-w-sm">
+          <p className="text-muted-foreground text-sm max-w-sm">
             Es konnten keine Ausfahrten für die aktuellen Filterkriterien oder Suchbegriffe gefunden werden.
           </p>
         </div>
@@ -274,7 +285,7 @@ export default function Ausfahrten() {
               ? 'bg-primary/20 text-primary border-primary/30'
               : 'bg-blue-500/20 text-blue-400 border-blue-500/30';
 
-            let statusBadgeStyle = 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+            let statusBadgeStyle = 'bg-gray-500/20 text-muted-foreground border-gray-500/30';
             if (ausfahrt.status === 'Anmeldung offen') {
               statusBadgeStyle = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
             } else if (ausfahrt.status === 'Anmeldung geschlossen') {
@@ -288,7 +299,7 @@ export default function Ausfahrten() {
             return (
               <div 
                 key={ausfahrt.id}
-                className="bg-card border border-border rounded-xl hover:border-gray-700 transition-all duration-300 overflow-hidden flex flex-col justify-between min-w-0 w-full"
+                className="bg-card border border-border rounded-xl hover:border-border transition-all duration-300 overflow-hidden flex flex-col justify-between min-w-0 w-full"
               >
                 <div className="p-4 sm:p-5 md:p-6 min-w-0">
                   {/* Top badges and actions */}
@@ -305,13 +316,13 @@ export default function Ausfahrten() {
                     {/* Own Registration Status Badges */}
                     {mitglied && ausfahrt.ownAnmeldung && (
                       <div className="text-xs">
-                        <span className="text-gray-400 mr-1.5">Dein Status:</span>
+                        <span className="text-muted-foreground mr-1.5">Dein Status:</span>
                         <span className={`font-semibold px-2 py-0.5 rounded-md ${
                           ausfahrt.ownAnmeldung.status === 'Angemeldet' 
                             ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                             : ausfahrt.ownAnmeldung.status === 'Eingecheckt'
                             ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                            : 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
+                            : 'bg-gray-500/10 text-muted-foreground border border-gray-500/20'
                         }`}>
                           {ausfahrt.ownAnmeldung.status}
                         </span>
@@ -327,9 +338,9 @@ export default function Ausfahrten() {
                   </h3>
 
                   {/* Metadata fields */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-gray-300 mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-muted-foreground mb-6">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
+                      <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
                       <span className="min-w-0">
                         {ausfahrt.datum 
                           ? format(parseISO(ausfahrt.datum), 'eeee, dd. MMMM yyyy', { locale: de })
@@ -339,19 +350,19 @@ export default function Ausfahrten() {
                     </div>
 
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
+                      <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
                       <span className="truncate min-w-0">{ausfahrt.ort || 'Keine Ortsangabe'}</span>
                     </div>
 
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <Clock className="w-4 h-4 text-gray-400 shrink-0" />
+                      <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
                       <span>
                         Abfahrt: <strong className="text-white">{ausfahrt.abfahrt_zeit || '--:--'} Uhr</strong>
                       </span>
                     </div>
 
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <Clock className="w-4 h-4 text-gray-400 shrink-0" />
+                      <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
                       <span>
                         Beginn: <strong className="text-white">{ausfahrt.veranstaltungsbeginn || '--:--'} Uhr</strong>
                       </span>
@@ -359,19 +370,19 @@ export default function Ausfahrten() {
                   </div>
 
                   {/* Registrations counter progress / status */}
-                  <div className="flex items-center gap-2 bg-[#0d0d0d] px-4 py-2.5 rounded-lg border border-border w-fit mb-2">
+                  <div className="flex items-center gap-2 bg-secondary px-4 py-2.5 rounded-lg border border-border w-fit mb-2">
                     <Users className="w-4 h-4 text-primary shrink-0" />
-                    <span className="text-xs text-gray-300 font-medium">
+                    <span className="text-xs text-muted-foreground font-medium">
                       Anmeldungen: <strong className="text-white">{ausfahrt.registrationCount}</strong>
                     </span>
                   </div>
                 </div>
 
                 {/* Card action footer */}
-                <div className="bg-[#0c0c0c] border-t border-border px-4 py-3 sm:px-5 md:px-6 flex flex-wrap items-center justify-between gap-3 min-w-0">
+                <div className="bg-secondary border-t border-border px-4 py-3 sm:px-5 md:px-6 flex flex-wrap items-center justify-between gap-3 min-w-0">
                   <Link 
                     to={`/ausfahrten/${ausfahrt.id}`}
-                    className="inline-flex items-center gap-1.5 text-sm text-gray-300 hover:text-white hover:underline font-medium"
+                    className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-white hover:underline font-medium"
                   >
                     Details ansehen
                     <ChevronRight className="w-4 h-4" />
@@ -388,7 +399,7 @@ export default function Ausfahrten() {
                           className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 text-white ${
                             ausfahrt.isRegistrationOpen
                               ? 'bg-primary hover:bg-primary/95 hover:scale-[1.01] active:scale-[0.99] cursor-pointer'
-                              : 'bg-gray-800 text-gray-500 border border-gray-700/50 cursor-not-allowed'
+                              : 'bg-secondary text-muted-foreground/70 border border-border cursor-not-allowed'
                           }`}
                         >
                           {submittingId === ausfahrt.id ? (
@@ -410,7 +421,7 @@ export default function Ausfahrten() {
                           className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all border shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 ${
                             ausfahrt.canUnregister
                               ? 'bg-transparent border-red-500/40 text-red-400 hover:bg-red-500/10 cursor-pointer'
-                              : 'bg-transparent border-gray-800 text-gray-600 cursor-not-allowed'
+                              : 'bg-transparent border-gray-800 text-muted-foreground/50 cursor-not-allowed'
                           }`}
                           title={!ausfahrt.canUnregister ? 'Abmeldung nur bis 3 Tage vor der Ausfahrt möglich' : ''}
                         >
@@ -426,11 +437,11 @@ export default function Ausfahrten() {
                       )}
                     </div>
                   ) : user ? (
-                    <p className="text-xs text-yellow-500 italic max-w-[200px] text-right">
+                    <p className="text-xs text-yellow-400 italic max-w-[200px] text-right">
                       Kein verknüpftes Mitgliedskonto gefunden. Bitte Administrator kontaktieren.
                     </p>
                   ) : (
-                    <p className="text-xs text-gray-500 italic">
+                    <p className="text-xs text-muted-foreground/70 italic">
                       Bitte anmelden, um an Ausfahrten teilzunehmen.
                     </p>
                   )}

@@ -7,6 +7,7 @@ import { Bus, MapPin, Clock, Calendar, Users, ChevronRight, ArrowLeft, UserPlus,
 import AusfahrtEditModal from '@/components/ausfahrt/AusfahrtEditModal';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 export default function AusfahrtDetail() {
   const { id } = useParams();
@@ -44,19 +45,36 @@ export default function AusfahrtDetail() {
     setLoading(true);
     try {
       // Load Ausfahrt, Anmeldungen, and Mitglieder in parallel
-      const [ausfahrtRes, anmeldungenRes, mitgliederRes, spartenRes] = await Promise.all([
+      const [ausfahrtRes, anmeldungenRes, spartenRes] = await Promise.all([
         base44.entities.Ausfahrt.get(id),
         base44.entities.AusfahrtAnmeldung.filter({ ausfahrt_id: id }),
-        base44.entities.Mitglied.list('-nachname', 500),
         base44.entities.Haesgruppe.list('name', 200)
       ]);
 
-      // Verwandtschaft des aktuellen Mitglieds laden
+      // Find current member first
+      let currentMitgliedData = null;
+      if (user?.id) {
+        const mitgliedRes = await base44.entities.Mitglied.filter({ user_id: user.id });
+        currentMitgliedData = mitgliedRes[0] || null;
+      }
+
+      // Load all mitglieder only for admins (needed for check-in, names, etc.)
+      let mitgliederRes = [];
+      if (isAdmin(user)) {
+        mitgliederRes = await base44.entities.Mitglied.list('-nachname', 500);
+      } else if (currentMitgliedData) {
+        // For non-admins: only load self + family members
+        mitgliederRes = [currentMitgliedData];
+      }
+
+      // Verwandtschaft: only for current member
       let verwandt = [];
-      try {
-        verwandt = await base44.entities.Verwandtschaft.list('mitglied_id', 500);
-      } catch (e) {
-        console.error('Verwandtschaft laden:', e);
+      if (currentMitgliedData) {
+        try {
+          verwandt = await base44.entities.Verwandtschaft.filter({ mitglied_id: currentMitgliedData.id });
+        } catch (e) {
+          console.error('Verwandtschaft laden:', e);
+        }
       }
 
       if (!ausfahrtRes) {
@@ -131,7 +149,7 @@ export default function AusfahrtDetail() {
 
   const handleRegister = async (transportType) => {
     if (!currentMitglied) {
-      alert('Kein verknüpftes Mitgliedsprofil gefunden. Registrierung nicht möglich.');
+      toast.error('Kein verknüpftes Mitgliedsprofil gefunden.');
       return;
     }
 
@@ -173,10 +191,11 @@ export default function AusfahrtDetail() {
       }
 
       setAusgewaehlteFamilienmitglieder([]);
+      toast.success('Anmeldung erfolgreich');
       fetchData();
     } catch (err) {
       console.error('Error during registration:', err);
-      alert('Registrierung fehlgeschlagen.');
+      toast.error('Registrierung fehlgeschlagen.');
     }
   };
 
@@ -186,7 +205,7 @@ export default function AusfahrtDetail() {
       // Check if child already has a registration
       const existing = anmeldungen.find(a => a.mitglied_id === kindId && a.status !== 'Abgemeldet');
       if (existing) {
-        alert('Dieses Kind ist bereits für diese Ausfahrt angemeldet.');
+        toast.warning('Dieses Kind ist bereits angemeldet.');
         return;
       }
       await base44.entities.AusfahrtAnmeldung.create({
@@ -201,10 +220,11 @@ export default function AusfahrtDetail() {
         durch_admin_angemeldet: true,
         durch_admin_name: `${currentMitglied?.vorname || ''} ${currentMitglied?.nachname || ''}`.trim() || 'Elternkonto'
       });
+      toast.success('Kind angemeldet');
       fetchData();
     } catch (err) {
       console.error('Kind-Anmeldung fehlgeschlagen:', err);
-      alert('Anmeldung für Kind fehlgeschlagen.');
+      toast.error('Anmeldung für Kind fehlgeschlagen.');
     }
   };
 
@@ -215,10 +235,10 @@ export default function AusfahrtDetail() {
     const ausfahrtDate = ausfahrt?.datum ? parseISO(ausfahrt.datum) : new Date();
     const diffDays = differenceInDays(ausfahrtDate, new Date());
     if (diffDays < 3) {
-      alert('Abmeldung ist nur bis 3 Tage vor der Ausfahrt möglich.');
+      toast.error('Abmeldung nur bis 3 Tage vor der Ausfahrt möglich.');
       return;
     }
-    if (!confirm('Möchtest du dieses Kind wirklich von der Ausfahrt abmelden?')) return;
+    if (!confirm('Kind wirklich von der Ausfahrt abmelden?')) return;
 
     try {
       const todayStr = format(new Date(), 'yyyy-MM-dd');
@@ -226,10 +246,11 @@ export default function AusfahrtDetail() {
         status: 'Abgemeldet',
         abgemeldet_am: todayStr
       });
+      toast.success('Kind abgemeldet');
       fetchData();
     } catch (err) {
       console.error('Kind-Abmeldung fehlgeschlagen:', err);
-      alert('Abmeldung fehlgeschlagen.');
+      toast.error('Abmeldung fehlgeschlagen.');
     }
   };
 
@@ -240,11 +261,11 @@ export default function AusfahrtDetail() {
     const diffDays = differenceInDays(ausfahrtDate, new Date());
 
     if (diffDays < 3) {
-      alert('Abmeldung ist nur bis 3 Tage vor der Ausfahrt möglich.');
+      toast.error('Abmeldung nur bis 3 Tage vor der Ausfahrt möglich.');
       return;
     }
 
-    if (!confirm('Möchtest du dich wirklich von dieser Ausfahrt abmelden?')) {
+    if (!confirm('Wirklich von dieser Ausfahrt abmelden?')) {
       return;
     }
 
@@ -254,17 +275,18 @@ export default function AusfahrtDetail() {
           status: 'Abgemeldet',
           abgemeldet_am: todayStr
         });
+      toast.success('Abmeldung erfolgreich');
       fetchData();
     } catch (err) {
       console.error('Error during deregistration:', err);
-      alert('Abmeldung fehlgeschlagen.');
+      toast.error('Abmeldung fehlgeschlagen.');
     }
   };
 
   const handleFremdanmeldung = async (e) => {
     e.preventDefault();
     if (!fremdName.trim()) {
-      alert('Bitte geben Sie einen Namen ein.');
+      toast.error('Bitte geben Sie einen Namen ein.');
       return;
     }
 
@@ -295,10 +317,11 @@ export default function AusfahrtDetail() {
       setFremdAnzahlBegleitpersonen(0);
       setFremdBegleitpersonen([]);
       setShowFremdForm(false);
+      toast.success('Fremdanmeldung erfolgreich');
       fetchData();
     } catch (err) {
       console.error('Error during Fremdanmeldung:', err);
-      alert('Fremdanmeldung fehlgeschlagen.');
+      toast.error('Fremdanmeldung fehlgeschlagen.');
     }
   };
 
@@ -310,10 +333,11 @@ export default function AusfahrtDetail() {
           eingecheckt_am: nowIso,
           eingecheckt_von: user?.full_name || user?.email || 'Admin'
         });
+      toast.success('Check-in erfolgreich');
       fetchData();
     } catch (err) {
       console.error('Error during check-in:', err);
-      alert('Check-in fehlgeschlagen.');
+      toast.error('Check-in fehlgeschlagen.');
     }
   };
 
@@ -335,7 +359,7 @@ export default function AusfahrtDetail() {
       fetchData();
     } catch (err) {
       console.error('Error during Begleitperson check-in:', err);
-      alert('Check-in fehlgeschlagen.');
+      toast.error('Check-in fehlgeschlagen.');
     }
   };
 
@@ -368,7 +392,7 @@ export default function AusfahrtDetail() {
       await base44.entities.Ausfahrt.update(id, { status: 'Abgesagt' });
       fetchData();
     } catch (err) {
-      alert('Absagen fehlgeschlagen: ' + (err?.message || 'Unbekannter Fehler'));
+      toast.error('Absagen fehlgeschlagen: ' + (err?.message || 'Unbekannt'));
     }
   };
 
@@ -378,7 +402,7 @@ export default function AusfahrtDetail() {
       setShowBusVwModal(false);
       fetchData();
     } catch (err) {
-      alert('Speichern fehlgeschlagen: ' + (err?.message || 'Unbekannter Fehler'));
+      toast.error('Speichern fehlgeschlagen: ' + (err?.message || 'Unbekannt'));
     }
   };
 
@@ -392,7 +416,7 @@ export default function AusfahrtDetail() {
       await base44.entities.Ausfahrt.delete(id);
       navigate('/ausfahrten');
     } catch (err) {
-      alert('Löschen fehlgeschlagen: ' + (err?.message || 'Unbekannter Fehler'));
+      toast.error('Löschen fehlgeschlagen: ' + (err?.message || 'Unbekannt'));
       setShowDeleteConfirm(false);
     }
   };

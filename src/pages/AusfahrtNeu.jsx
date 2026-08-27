@@ -6,6 +6,7 @@ import { isAdmin } from '@/lib/roles';
 import { ArrowLeft, Save, X } from 'lucide-react';
 import DateSelect from '../components/ui/DateSelect';
 import TimeSelect from '../components/ui/TimeSelect';
+import { toast } from 'sonner';
 
 export default function AusfahrtNeu() {
   const { user } = useAuth();
@@ -88,6 +89,7 @@ export default function AusfahrtNeu() {
 
     if (!formData.titel.trim() || !formData.typ || !formData.datum || !formData.ort.trim()) {
       setError('Bitte fülle alle Pflichtfelder aus (Titel, Typ, Datum, Ort).');
+      toast.error('Bitte fülle alle Pflichtfelder aus');
       return;
     }
 
@@ -131,6 +133,7 @@ export default function AusfahrtNeu() {
       // Zeige die echte Fehlermeldung
       const msg = err?.response?.data?.message || err?.message || 'Unbekannter Fehler';
       setError(`Speichern fehlgeschlagen: ${msg}`);
+      toast.error(`Speichern fehlgeschlagen: ${msg}`);
     } finally {
       setSubmitting(false);
     }
