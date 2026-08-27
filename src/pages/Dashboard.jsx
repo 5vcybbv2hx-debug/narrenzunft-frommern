@@ -118,10 +118,10 @@ export default function Dashboard() {
     },
   });
 
-  const { stats, naechsteTermine, naechsteGeburtstage, unterbesetzte, offeneDienste } = useMemo(() => {
+  const { stats, naechsteTermine, naechsteGeburtstage, unterbesetzte, offeneDienste, verfuegbareHaes } = useMemo(() => {
     const empty = {
-      stats: { mitglieder: 0, kommendeEvents: 0, offeneDienste: 0, unterbesetzt: 0, haesGesamt: 0, haesAuslastung: 0 },
-      naechsteTermine: [], naechsteGeburtstage: [], unterbesetzte: [], offeneDienste: [],
+      stats: { mitglieder: 0, kommendeEvents: 0, offeneDienste: 0, unterbesetzt: 0, haesGesamt: 0, haesVerfuegbar: 0 },
+      naechsteTermine: [], naechsteGeburtstage: [], unterbesetzte: [], offeneDienste: [], verfuegbareHaes: [],
     };
     if (!dashData || !dashData.dashResult?.data?.erfolg || !dashData.dashResult.data.mitglieder) return empty;
 
@@ -174,12 +174,29 @@ export default function Dashboard() {
     const unterbesetzte = unterbesetzt.slice(0, 4);
 
     // ── Häs ──
-    let haesGesamt = 0, haesAktiv = 0, haesVerliehen = 0;
+    let haesGesamt = 0;
+    let verfuegbareHaes = [];
     if (haesResult?.data?.haes) {
       const hl = haesResult.data.haes;
+      const gl = haesResult.data.gruppen || [];
       haesGesamt = hl.length;
-      haesAktiv = hl.filter(h => h.status === 'Aktiv').length;
-      haesVerliehen = hl.filter(h => h.status === 'Verliehen').length;
+      // Amtshäs-Gruppen identifizieren (Name enthält "Amt")
+      const amtshaesGruppeIds = new Set(
+        gl.filter(g => (g.name || '').toLowerCase().includes('amt')).map(g => g.id)
+      );
+      const gruppeMap = {};
+      gl.forEach(g => { gruppeMap[g.id] = g; });
+      // Verfügbar: nicht zugeordnet ODER Vereinsbesitz, außer Amtshäs und Stillgelegt
+      verfuegbareHaes = hl
+        .filter(h =>
+          !amtshaesGruppeIds.has(h.haesgruppe_id) &&
+          h.status !== 'Stillgelegt' &&
+          (!h.aktueller_besitzer_id || h.vereinseigentum === true)
+        )
+        .map(h => ({
+          ...h,
+          gruppe_name: gruppeMap[h.haesgruppe_id]?.name || '–',
+        }));
     }
 
     const stats = {
@@ -188,10 +205,10 @@ export default function Dashboard() {
       offeneDienste: offene.length,
       unterbesetzt: unterbesetzt.length,
       haesGesamt,
-      haesAuslastung: haesGesamt > 0 ? Math.round(((haesAktiv + haesVerliehen) / haesGesamt) * 100) : 0,
+      haesVerfuegbar: verfuegbareHaes.length,
     };
 
-    return { stats, naechsteTermine, naechsteGeburtstage, unterbesetzte, offeneDienste };
+    return { stats, naechsteTermine, naechsteGeburtstage, unterbesetzte, offeneDienste, verfuegbareHaes };
   }, [dashData, today]);
 
   const { pullDistance, refreshing, containerRef } = usePullToRefresh(useCallback(async () => {
@@ -263,9 +280,10 @@ export default function Dashboard() {
         {isAdminUser && stats.haesGesamt > 0 && (
           <StatCard
             icon={Shirt}
-            label="Häs Auslastung"
-            value={`${stats.haesAuslastung}%`}
-            sub={`${stats.haesGesamt} gesamt`}
+            label="Häs verfügbar"
+            value={stats.haesVerfuegbar}
+            sub="Nicht zugeordnet / Vereinsbesitz"
+            color={stats.haesVerfuegbar > 0 ? 'text-yellow-400' : 'text-green-400'}
             onClick={() => window.location.href = '/haes'}
           />
         )}
@@ -452,6 +470,52 @@ export default function Dashboard() {
                 })}
               </div>
             )}
+          </SectionCard>
+        )}
+
+        {/* Verfügbare Häs — detailliert & klickbar */}
+        {isAdminUser && verfuegbareHaes.length > 0 && (
+          <SectionCard
+            title="Verfügbare Häs"
+            subtitle="Nicht zugeordnet oder Vereinsbesitz (ohne Amtshäs)"
+            icon={Shirt}
+            linkTo="/haes"
+            linkLabel="Alle Häs ansehen"
+          >
+            <div className="space-y-2">
+              {verfuegbareHaes.slice(0, 8).map(h => {
+                const isVereinsbesitz = h.vereinseigentum === true;
+                const isZugeordnet = !!h.aktueller_besitzer_id;
+                return (
+                  <Link
+                    key={h.id}
+                    to={`/haes/${h.id}`}
+                    className="flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-secondary/50 transition-colors group"
+                  >
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${isVereinsbesitz ? 'bg-blue-500/10' : 'bg-yellow-500/10'}`}>
+                      <Shirt size={16} className={isVereinsbesitz ? 'text-blue-400' : 'text-yellow-400'} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                        {h.haesnummer || h.bezeichnung || 'Ohne Bezeichnung'}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {h.bezeichnung && h.haesnummer ? `${h.bezeichnung} · ` : ''}{h.gruppe_name}
+                      </p>
+                    </div>
+                    <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${isVereinsbesitz ? 'bg-blue-500/15 text-blue-400' : 'bg-yellow-500/15 text-yellow-400'}`}>
+                      {isVereinsbesitz ? 'Verein' : isZugeordnet ? 'Zugeordnet' : 'Frei'}
+                    </span>
+                    <ChevronRight size={14} className="text-muted-foreground/50 group-hover:text-primary shrink-0" />
+                  </Link>
+                );
+              })}
+              {verfuegbareHaes.length > 8 && (
+                <Link to="/haes" className="block text-center text-xs text-primary hover:text-primary/80 pt-1">
+                  +{verfuegbareHaes.length - 8} weitere ansehen
+                </Link>
+              )}
+            </div>
           </SectionCard>
         )}
 
