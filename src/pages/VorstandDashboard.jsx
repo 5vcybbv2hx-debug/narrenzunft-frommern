@@ -74,7 +74,9 @@ export default function VorstandDashboard() {
       // Offene Arbeitsdienste in der Zukunft
       const offen = ad.filter(d => d.datum >= today && d.status !== 'Abgeschlossen');
       setOffeneDienste(offen.slice(0, 6));
-    } catch (e) {}
+    } catch (e) {
+      console.error('VorstandDashboard laden:', e);
+    }
     setLoading(false);
   };
 
@@ -236,7 +238,7 @@ export default function VorstandDashboard() {
               })}
               <Link
                 to="/arbeitsdienste"
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors mt-1"
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors mt-1"
               >
                 Dienste verwalten <ArrowRight size={14} />
               </Link>

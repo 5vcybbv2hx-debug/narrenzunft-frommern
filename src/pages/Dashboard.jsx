@@ -111,7 +111,7 @@ export default function Dashboard() {
       const [dashResult, haesResult, zuweisungen, ausfahrten] = await Promise.all([
         base44.functions.invoke('getDashboardSicher', {}),
         isAdmin(user)
-          ? base44.functions.invoke('getHaesSicher', { aktion: 'liste', limit: 500 }).catch(() => null)
+          ? base44.functions.invoke('getHaesSicher', { aktion: 'liste', limit: 500 }).catch((e) => { console.error('Häs-Daten:', e); return null; })
           : Promise.resolve(null),
         base44.entities.ArbeitsdienstZuweisung.list('-created_date', 500),
         base44.entities.Ausfahrt.list('datum', 100),
