@@ -249,23 +249,23 @@ export default function Ehrungen() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={loadData} className="p-2 rounded-lg bg-neutral-800 text-muted-foreground hover:text-white transition-colors" title="Neu berechnen">
+          <button onClick={loadData} className="p-2 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors" title="Neu berechnen">
             <RefreshCw size={16} />
           </button>
           {kannVerwalten && (
             <div className="relative">
               <button onClick={() => setShowExport(v => !v)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-800 text-sm text-white hover:bg-neutral-700 transition-colors">
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary text-sm text-white hover:bg-border transition-colors">
                 <Download size={14} /> Export
               </button>
               {showExport && (
                 <>
                   <div className="fixed inset-0 z-20" onClick={() => setShowExport(false)} />
                   <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-lg z-30 w-48 overflow-hidden">
-                    <button onClick={() => { exportFaellig(); setShowExport(false); }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-neutral-800 transition-colors">Fällige (CSV)</button>
-                    <button onClick={() => { exportBaldFaellig(); setShowExport(false); }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-neutral-800 transition-colors">Bald fällige (CSV)</button>
-                    <button onClick={() => { exportGeplant(); setShowExport(false); }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-neutral-800 transition-colors">Geplante (CSV)</button>
-                    <button onClick={() => { exportVerliehen(); setShowExport(false); }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-neutral-800 transition-colors">Verliehene (CSV)</button>
+                    <button onClick={() => { exportFaellig(); setShowExport(false); }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-secondary transition-colors">Fällige (CSV)</button>
+                    <button onClick={() => { exportBaldFaellig(); setShowExport(false); }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-secondary transition-colors">Bald fällige (CSV)</button>
+                    <button onClick={() => { exportGeplant(); setShowExport(false); }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-secondary transition-colors">Geplante (CSV)</button>
+                    <button onClick={() => { exportVerliehen(); setShowExport(false); }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-secondary transition-colors">Verliehene (CSV)</button>
                   </div>
                 </>
               )}
@@ -318,11 +318,11 @@ export default function Ehrungen() {
           return (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeTab === tab.id ? 'bg-primary text-white shadow-sm' : 'bg-neutral-800 text-muted-foreground hover:text-white hover:bg-neutral-700'
+                activeTab === tab.id ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-border'
               }`}>
               {tab.label}
               {count > 0 && (
-                <span className={`text-[10px] font-bold px-1 rounded-full ${activeTab === tab.id ? 'bg-white/20' : 'bg-neutral-700 text-muted-foreground'}`}>{count}</span>
+                <span className={`text-[10px] font-bold px-1 rounded-full ${activeTab === tab.id ? 'bg-white/20' : 'bg-border text-muted-foreground'}`}>{count}</span>
               )}
             </button>
           );
