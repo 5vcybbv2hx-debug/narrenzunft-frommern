@@ -35,6 +35,7 @@ export default function Veranstaltungen() {
   const [veranstaltungen, setVeranstaltungen] = useState([]);
   const [filter, setFilter] = useState('Kommend');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showVorlagen, setShowVorlagen] = useState(false);
   const [myMitgliedId, setMyMitgliedId] = useState(null);
   const [meineTeilnahmen, setMeineTeilnahmen] = useState([]);
@@ -46,22 +47,25 @@ export default function Veranstaltungen() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [data, me] = await Promise.all([
+      const [data] = await Promise.all([
         base44.entities.Veranstaltung.list('datum', 500),
-        base44.auth.me(),
+        base44.entities.Mitglied.filter({ user_id: user?.id }),
       ]);
       setVeranstaltungen(data);
 
       // Eigene Teilnahmen laden für Anmeldestatus-Anzeige
-      if (me?.id) {
-        const myM = await base44.entities.Mitglied.filter({ user_id: me.id });
+      if (user?.id) {
+        const myM = data[1] || [];
         if (myM[0]) {
           setMyMitgliedId(myM[0].id);
           const teilnahmen = await base44.entities.Teilnahme.filter({ mitglied_id: myM[0].id });
           setMeineTeilnahmen(teilnahmen);
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('[Veranstaltungen]', e);
+      setError(e instanceof Error ? e.message : 'Fehler beim Laden');
+    }
     setLoading(false);
   }, []);
 
@@ -108,6 +112,15 @@ export default function Veranstaltungen() {
 
   const getMeineTeilnahme = (veranstaltungId) =>
     meineTeilnahmen.find(t => t.veranstaltung_id === veranstaltungId);
+
+  if (error) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+      <p className="text-sm text-muted-foreground">Veranstaltungen konnten nicht geladen werden</p>
+      <button onClick={() => { setError(null); loadData(); }} className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
+        Erneut versuchen
+      </button>
+    </div>
+  );
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">

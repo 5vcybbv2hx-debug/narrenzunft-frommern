@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import DateSelect from '../components/ui/DateSelect';
 import TimeSelect from '../components/ui/TimeSelect';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { kannCheckinDurchfuehren, isAdmin as checkAdmin } from '@/lib/roles';
@@ -15,6 +15,7 @@ import AdresseAutocomplete from '@/components/AdresseAutocomplete';
 import { VeranstaltungsDetailsForm, VeranstaltungsDetailsView } from '@/components/veranstaltung/VeranstaltungsDetails';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 const TYPEN = ['Umzug', 'Abendveranstaltung', 'Intern', 'Arbeitsdienst', 'Fest'];
 const STATUS_LIST = ['Geplant', 'Aktiv', 'Abgeschlossen', 'Abgesagt'];
@@ -22,6 +23,7 @@ const STATUS_LIST = ['Geplant', 'Aktiv', 'Abgeschlossen', 'Abgesagt'];
 export default function VeranstaltungDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const isNew = id === 'neu';
   const isAdmin = checkAdmin(user);
@@ -40,7 +42,7 @@ export default function VeranstaltungDetail() {
   const [meineTeilnahme, setMeineTeilnahme] = useState(null);
   const [searchMember, setSearchMember] = useState('');
   const [myMitglied, setMyMitglied] = useState(null);
-  const [activeTab, setActiveTab] = useState('info');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'info');
   const [busFilter, setBusFilter] = useState('alle');
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState(null);
@@ -49,7 +51,7 @@ export default function VeranstaltungDetail() {
 
   useEffect(() => {
     if (!isNew) loadData();
-    loadMitglieder();
+    if (kannCheckin) loadMitglieder();
   }, [id]);
 
   const loadData = async () => {
@@ -63,14 +65,15 @@ export default function VeranstaltungDetail() {
       setTeilnahmen(t);
 
       // Find my Mitglied
-      const me = await base44.auth.me();
-      const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
+      const myM = await base44.entities.Mitglied.filter({ user_id: user?.id });
       if (myM[0]) {
         setMyMitglied(myM[0]);
         const mine = t.find(t => t.mitglied_id === myM[0].id);
         setMeineTeilnahme(mine || null);
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('Laden fehlgeschlagen:', e);
+    }
     setLoading(false);
   };
 
@@ -78,7 +81,9 @@ export default function VeranstaltungDetail() {
     try {
       const data = await base44.entities.Mitglied.list('nachname', 500);
       setMitglieder(data);
-    } catch (e) {}
+    } catch (e) {
+      console.error('Mitglieder laden fehlgeschlagen:', e);
+    }
   };
 
   const handleSave = async () => {
@@ -91,16 +96,22 @@ export default function VeranstaltungDetail() {
         await base44.entities.Veranstaltung.update(veranstaltung.id, veranstaltung);
         setEditing(false);
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('Speichern fehlgeschlagen:', e);
+      toast.error('Speichern fehlgeschlagen: ' + (e instanceof Error ? e.message : e));
+    }
     setSaving(false);
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Veranstaltung wirklich löschen? Alle Teilnahmen und Arbeitsdienste bleiben erhalten.')) return;
+    if (!confirm('Veranstaltung wirklich löschen? Alle Teilnahmen und Arbeitsdienste bleiben erhalten.')) return;
     try {
       await base44.entities.Veranstaltung.delete(veranstaltung.id);
       navigate('/veranstaltungen');
-    } catch (e) {}
+    } catch (e) {
+      console.error('Anmeldung fehlgeschlagen:', e);
+      toast.error('Anmeldung fehlgeschlagen');
+    }
   };
 
   const handleAnmelden = async (bus = false) => {
@@ -114,7 +125,10 @@ export default function VeranstaltungDetail() {
       });
       setMeineTeilnahme(t);
       loadData();
-    } catch (e) {}
+    } catch (e) {
+      console.error('Absage fehlgeschlagen:', e);
+      toast.error('Absage fehlgeschlagen');
+    }
   };
 
   const handleAbsagen = async () => {
@@ -253,7 +267,7 @@ export default function VeranstaltungDetail() {
           )}
         </div>
         {isAdmin && !editing && !isNew && (
-          <button onClick={() => setEditing(true)} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
+          <button onClick={() => setEditing(true)} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90">
             <Edit size={14} /> Bearbeiten
           </button>
         )}
@@ -262,7 +276,7 @@ export default function VeranstaltungDetail() {
             <button onClick={() => { setEditing(false); if (isNew) navigate(-1); }} className="p-2 rounded-lg bg-secondary text-muted-foreground">
               <X size={18} />
             </button>
-            <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50">
+            <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-white text-sm font-medium disabled:opacity-50">
               <Save size={14} /> {saving ? '...' : 'Speichern'}
             </button>
           </div>
@@ -471,7 +485,7 @@ export default function VeranstaltungDetail() {
                   <div className="flex gap-2">
                     <button
                       onClick={handleCopyBusLink}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
                     >
                       <Copy size={14} />
                       {tokenCopied ? '✓ Kopiert!' : 'Link kopieren'}
@@ -491,7 +505,7 @@ export default function VeranstaltungDetail() {
                 <button
                   onClick={handleGenerateToken}
                   disabled={generatingToken}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
                   <Bus size={14} />
                   {generatingToken ? 'Wird erstellt...' : 'Busfahrer-Link erstellen'}
@@ -535,7 +549,7 @@ export default function VeranstaltungDetail() {
               <button
                 onClick={handleSendInfobrief}
                 disabled={sending || angemeldete.length === 0}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
                 <Send size={14} />
                 {sending ? 'Wird gesendet...' : `Infobrief an ${angemeldete.length} Mitglieder senden`}
@@ -605,7 +619,7 @@ export default function VeranstaltungDetail() {
               { id: 'unbestaetigt', label: 'Nicht bestätigt' },
             ].map(f => (
               <button key={f.id} onClick={() => setBusFilter(f.id)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${busFilter === f.id ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground'}`}>
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${busFilter === f.id ? 'bg-primary text-white' : 'bg-card border border-border text-muted-foreground'}`}>
                 {f.label}
               </button>
             ))}

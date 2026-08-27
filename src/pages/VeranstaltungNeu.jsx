@@ -10,6 +10,7 @@ import {
 import AdresseAutocomplete from '@/components/AdresseAutocomplete';
 import DateSelect from '../components/ui/DateSelect';
 import TimeSelect from '../components/ui/TimeSelect';
+import { toast } from 'sonner';
 
 const TYPEN = ['Intern', 'Fest', 'Arbeitsdienst', 'Umzug', 'Abendveranstaltung'];
 const STATUS_LIST = ['Geplant', 'Aktiv', 'Abgeschlossen', 'Abgesagt'];
@@ -82,7 +83,10 @@ export default function VeranstaltungNeu() {
       setVorlagen(updated);
       setShowSaveVorlage(false);
       setVorlagenName('');
-    } catch (e) {}
+    } catch (e) {
+      console.error('Vorlage speichern fehlgeschlagen:', e);
+      toast.error('Vorlage konnte nicht gespeichert werden');
+    }
     setSavingVorlage(false);
   };
 
@@ -105,7 +109,10 @@ export default function VeranstaltungNeu() {
   };
 
   const handleSave = async () => {
-    if (!form.titel || !form.datum) return;
+    if (!form.titel || !form.datum) {
+      toast.error('Bitte Titel und Datum angeben');
+      return;
+    }
     setSaving(true);
     try {
       const veranstaltung = await base44.entities.Veranstaltung.create(form);
@@ -126,7 +133,10 @@ export default function VeranstaltungNeu() {
         );
       }
       navigate(`/veranstaltungen/${veranstaltung.id}`);
-    } catch (e) {}
+    } catch (e) {
+      console.error('Erstellen fehlgeschlagen:', e);
+      toast.error('Erstellen fehlgeschlagen: ' + (e instanceof Error ? e.message : e));
+    }
     setSaving(false);
   };
 
@@ -352,7 +362,7 @@ export default function VeranstaltungNeu() {
         <button
           onClick={handleSave}
           disabled={saving || !form.titel || !form.datum}
-          className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+          className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
         >
           <Save size={14} /> {saving ? 'Erstellen...' : 'Veranstaltung erstellen'}
         </button>
@@ -377,7 +387,7 @@ export default function VeranstaltungNeu() {
               <button
                 onClick={handleSaveVorlage}
                 disabled={savingVorlage || !vorlagenName.trim()}
-                className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50"
               >
                 {savingVorlage ? 'Speichern...' : 'Speichern'}
               </button>
