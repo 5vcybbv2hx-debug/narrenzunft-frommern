@@ -92,10 +92,18 @@ export function berechneMitgliedsEhrungen(mitglied, verlieheneEhrungen = []) {
 
   if (jahre !== null && !fehler) {
     for (const stufe of MITGLIEDSJAHRE_STUFEN) {
-      if (jahre >= stufe) {
+      if (jahre > stufe) {
+        // Fällig: EIN Jahr nach Erreichen der Stufe (Ehrung an der HV im Folgejahr)
         letzteStufe = stufe;
         if (!verlieheneStuden.includes(stufe) && !geplanteStuden.includes(stufe)) {
           faelligeStufen.push(stufe);
+        }
+      } else if (jahre === stufe) {
+        // Stufe in diesem Jahr erreicht — Ehrung bei nächster HV (nächsts Jahr)
+        letzteStufe = stufe;
+        if (!naechsteStufe) {
+          naechsteStufe = stufe;
+          jahreZurNaechsten = 0;
         }
       } else {
         if (!naechsteStufe) {
@@ -335,10 +343,11 @@ export function findeDataProbleme(mitglieder, teilnahmen, veranstaltungen, ehrun
  * Prüft ob eine Mitgliedsehrung bald fällig ist (max. 2 Jahre).
  */
 export function isMitgliedsEhrungBaldFaellig(ehrungsStatus) {
+  // Includes jahreZurNaechsten === 0 (Stufe erreicht, Ehrung bei nächster HV)
   return (
     ehrungsStatus.jahreZurNaechsten !== null &&
     ehrungsStatus.jahreZurNaechsten <= 2 &&
-    ehrungsStatus.jahreZurNaechsten > 0
+    ehrungsStatus.jahreZurNaechsten >= 0
   );
 }
 

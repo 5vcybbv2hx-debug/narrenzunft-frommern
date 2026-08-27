@@ -364,7 +364,11 @@ export default function Ehrungen() {
                     <p className="font-semibold text-white">{item.mitglied.vorname} {item.mitglied.nachname}</p>
                     <p className="text-sm text-muted-foreground mt-0.5">
                       <EhrungsBadge typ={item.typ} wert={item.naechsteStufe} />
-                      <span className="ml-2 text-xs">Noch <span className="text-primary font-bold">{item.fehlend}</span> fehlend · Aktuell: {item.stand}</span>
+                      <span className="ml-2 text-xs">{
+                        item.fehlend === '0 Jahr(e)' || item.fehlend === '0 Umzüge'
+                          ? <><span className="text-primary font-bold">Erreicht</span> — Ehrung bei nächster HV · Aktuell: {item.stand}</>
+                          : <>Noch <span className="text-primary font-bold">{item.fehlend}</span> fehlend · Aktuell: {item.stand}</>
+                      }</span>
                     </p>
                   </div>
                 </div>
