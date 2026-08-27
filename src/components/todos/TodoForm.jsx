@@ -3,13 +3,13 @@ import { useState } from 'react';
 import { X, Save, Trash2, Search, AlertTriangle } from 'lucide-react';
 
 const PRIORITAET_FARBEN = {
-  'Niedrig':  'bg-neutral-700 text-neutral-300',
+  'Niedrig':  'bg-border text-muted-foreground',
   'Mittel':   'bg-blue-900/30 text-blue-400 border border-blue-700/30',
   'Hoch':     'bg-primary/15 text-primary',
   'Dringend': 'bg-red-900/20 text-red-400 border border-red-700/30',
 };
 
-const inputCls = "w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors";
+const inputCls = "w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-colors";
 const labelCls = "text-xs text-muted-foreground font-medium block mb-1";
 
 export default function TodoForm({ todo, mitglieder, onSave, onDelete, onClose }) {
@@ -144,7 +144,7 @@ export default function TodoForm({ todo, mitglieder, onSave, onDelete, onClose }
               <div className="mt-1 bg-popover border border-border rounded-xl overflow-hidden">
                 {suchErgebnisse.map(m => (
                   <button key={m.id} onClick={() => addVerantwortlicher(m.id)}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-neutral-800 transition-colors border-b border-border last:border-0">
+                    className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-secondary transition-colors border-b border-border last:border-0">
                     <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[10px] font-bold shrink-0">
                       {m.vorname?.[0]}{m.nachname?.[0]}
                     </div>
@@ -179,7 +179,7 @@ export default function TodoForm({ todo, mitglieder, onSave, onDelete, onClose }
               <Trash2 size={16} />
             </button>
           )}
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-neutral-800 text-muted-foreground text-sm hover:text-white transition-colors">Abbrechen</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm hover:text-foreground transition-colors">Abbrechen</button>
           <button onClick={handleSave} disabled={saving || !form.titel || form.verantwortliche_ids.length === 0}
             className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2 hover:bg-red-700 transition-colors">
             <Save size={14} /> {saving ? '…' : 'Speichern'}

@@ -21,12 +21,12 @@ export default function VeranstaltungBearbeitenModal({ veranstaltung, onClose, o
   const istAuswaertig = ['Umzug', 'Abendveranstaltung'].includes(veranstaltung?.typ ?? form.typ);
 
   useEffect(() => {
-    base44.entities.ExternerVerein.list('name', 200).then(setExterneVereine).catch(() => {});
+    base44.entities.ExternerVerein.list('name', 200).then(setExterneVereine).catch((e) => { console.error('Load error:', e); });
     if (veranstaltung?.id) {
       // Echte Daten nachladen (der normalisierte Termin hat evtl. nicht alle Felder)
       base44.entities.Veranstaltung.get(veranstaltung.id)
         .then(res => { if (res) setForm({ ...res }); })
-        .catch(() => setForm({ ...veranstaltung }));
+        .catch((e) => { console.error('Veranstaltung laden:', e); setForm({ ...veranstaltung }); });
     } else {
       setForm({ ...EMPTY_AUSWAERTIG });
     }
@@ -44,13 +44,13 @@ export default function VeranstaltungBearbeitenModal({ veranstaltung, onClose, o
         await base44.entities.Veranstaltung.create(form);
       }
       onSaved();
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setSaving(false);
   };
 
   const handleDelete = async () => {
     if (!veranstaltung?.id) return;
-    if (!window.confirm('Termin wirklich löschen?')) return;
+    if (!confirm('Termin wirklich löschen?')) return;
     await base44.entities.Veranstaltung.delete(veranstaltung.id);
     onSaved();
   };
@@ -192,7 +192,7 @@ export default function VeranstaltungBearbeitenModal({ veranstaltung, onClose, o
         <div className="flex gap-2 mt-5">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium">Abbrechen</button>
           <button onClick={handleSave} disabled={saving || !form.titel || !form.datum}
-            className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
+            className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
             <Save size={14} /> {saving ? 'Speichern...' : veranstaltung ? 'Aktualisieren' : 'Erstellen'}
           </button>
         </div>

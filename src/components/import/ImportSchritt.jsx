@@ -114,7 +114,7 @@ export default function ImportSchritt({ schritt }) {
   };
 
   const handleExecute = async () => {
-    if (!window.confirm(`Schritt "${schritt.titel}" wirklich ausführen? Dies ändert Daten in der Datenbank.`)) return;
+    if (!confirm(`Schritt "${schritt.titel}" wirklich ausführen? Dies ändert Daten in der Datenbank.`)) return;
 
     setLoading(true);
     setError(null);
@@ -213,7 +213,7 @@ export default function ImportSchritt({ schritt }) {
             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 ${
               status === 'done'
                 ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
-                : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                : 'bg-primary text-white hover:bg-primary/90'
             }`}
           >
             {loading && status === 'running' ? <Loader2 size={13} className="animate-spin" /> :

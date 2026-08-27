@@ -55,7 +55,7 @@ export default function HaesImportModal({ onClose }) {
             <button
               onClick={handleImport}
               disabled={importing || !fileUrl}
-              className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
             >
               <Upload size={14} />
               {importing ? 'Importiere...' : 'Importieren'}

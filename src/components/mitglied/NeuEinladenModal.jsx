@@ -52,7 +52,7 @@ export default function NeuEinladenModal({ mitglied, onClose, onSuccess }) {
           <h3 className="font-bold text-white text-lg flex items-center gap-2">
             <Send size={18} className="text-primary" /> Mitglied neu einladen
           </h3>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-white transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
             <X size={16} />
           </button>
         </div>
@@ -82,7 +82,7 @@ export default function NeuEinladenModal({ mitglied, onClose, onSuccess }) {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   autoFocus
-                  className="w-full pl-9 pr-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors"
+                  className="w-full pl-9 pr-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-colors"
                 />
               </div>
               {emailChanged && (
@@ -101,7 +101,7 @@ export default function NeuEinladenModal({ mitglied, onClose, onSuccess }) {
             <div className="flex gap-2 pt-1">
               <button
                 onClick={onClose}
-                className="flex-1 py-2.5 rounded-lg bg-neutral-800 text-muted-foreground text-sm font-medium hover:text-white transition-colors"
+                className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium hover:text-foreground transition-colors"
               >
                 Abbrechen
               </button>

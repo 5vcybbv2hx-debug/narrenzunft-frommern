@@ -44,7 +44,7 @@ export default function DokumenteTab({ veranstaltung, isAdmin, veranstaltungsNam
     try {
       const docs = await base44.entities.VeranstaltungsDokument.filter({ veranstaltung_id: veranstaltung.id });
       setDokumente(docs.sort((a, b) => new Date(b.created_date) - new Date(a.created_date)));
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setLoading(false);
   };
 
@@ -52,7 +52,7 @@ export default function DokumenteTab({ veranstaltung, isAdmin, veranstaltungsNam
     try {
       const v = await base44.entities.DokumentVorlage.list('titel', 100);
       setVorlagen(v);
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
   };
 
   const handleVorlageAnwenden = async (vorlage) => {
@@ -66,7 +66,7 @@ export default function DokumenteTab({ veranstaltung, isAdmin, veranstaltungsNam
       });
       loadDokumente();
       setShowVorlagenModal(false);
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setSaving(false);
   };
 
@@ -96,12 +96,12 @@ export default function DokumenteTab({ veranstaltung, isAdmin, veranstaltungsNam
       }
       setShowForm(false);
       loadDokumente();
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setSaving(false);
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Dokument löschen?')) return;
+    if (!confirm('Dokument löschen?')) return;
     await base44.entities.VeranstaltungsDokument.delete(id);
     loadDokumente();
   };
@@ -121,7 +121,7 @@ export default function DokumenteTab({ veranstaltung, isAdmin, veranstaltungsNam
         datei_name: file.name,
       });
       loadDokumente();
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setUploading(false);
     e.target.value = '';
   };
@@ -171,7 +171,7 @@ export default function DokumenteTab({ veranstaltung, isAdmin, veranstaltungsNam
         }
       });
       setAiErgebnis(result);
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setAiLoading(false);
   };
 
@@ -202,7 +202,7 @@ export default function DokumenteTab({ veranstaltung, isAdmin, veranstaltungsNam
               </label>
               <button
                 onClick={openNew}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
               >
                 <Plus size={14} /> Neu
               </button>
@@ -344,7 +344,7 @@ export default function DokumenteTab({ veranstaltung, isAdmin, veranstaltungsNam
                 <div className="flex flex-wrap gap-1.5">
                   {TYPEN.map(t => (
                     <button key={t} type="button" onClick={() => setForm(p => ({ ...p, typ: t }))}
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${form.typ === t ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'}`}>
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${form.typ === t ? 'bg-primary text-white border-primary' : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'}`}>
                       {t}
                     </button>
                   ))}
@@ -364,7 +364,7 @@ export default function DokumenteTab({ veranstaltung, isAdmin, veranstaltungsNam
             <div className="flex gap-2 mt-4">
               <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm">Abbrechen</button>
               <button onClick={handleSave} disabled={saving || !form.titel}
-                className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
+                className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
                 <Save size={14} /> {saving ? '...' : 'Speichern'}
               </button>
             </div>

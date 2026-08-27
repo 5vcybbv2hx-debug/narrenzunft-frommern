@@ -44,7 +44,7 @@ export default function Buskosten({ isAdmin }) {
       setBuskostenbeitraege(b);
       setTeilnahmen(t);
       setMitglieder(m);
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setLoading(false);
   };
 
@@ -99,7 +99,7 @@ export default function Buskosten({ isAdmin }) {
       const created = await base44.entities.Buskostenbeitrag.bulkCreate(neue);
       setBuskostenbeitraege(prev => [...prev, ...created]);
       setShowAddModal(null);
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setSaving(false);
   };
 
@@ -314,7 +314,7 @@ export default function Buskosten({ isAdmin }) {
               <button
                 onClick={() => handleErstelleBeitraege(showAddModal)}
                 disabled={saving}
-                className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50"
               >
                 {saving ? 'Erstelle...' : 'Beiträge erstellen'}
               </button>

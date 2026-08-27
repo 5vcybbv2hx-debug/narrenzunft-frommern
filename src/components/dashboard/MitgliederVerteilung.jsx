@@ -11,7 +11,7 @@ const STATUS_COLORS = {
   'Kinder 4-10': 'bg-purple-500/15 text-purple-400 hover:bg-purple-500/25',
   'Kleinkind 0-3': 'bg-pink-500/15 text-pink-400 hover:bg-pink-500/25',
   'Ehrenmitglied': 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/25',
-  'Verstorben': 'bg-neutral-700/40 text-neutral-400 hover:bg-neutral-700/60',
+  'Verstorben': 'bg-border/40 text-muted-foreground hover:bg-border/60',
 };
 
 export default function MitgliederVerteilung({ total, statusVerteilung, gruppenVerteilung }) {

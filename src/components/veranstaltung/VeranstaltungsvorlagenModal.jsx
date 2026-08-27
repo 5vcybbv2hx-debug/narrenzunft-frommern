@@ -88,7 +88,7 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Vorlage löschen?')) return;
+    if (!confirm('Vorlage löschen?')) return;
     await base44.entities.Veranstaltungsvorlage.delete(id);
     setVorlagen(prev => prev.filter(v => v.id !== id));
   };
@@ -109,7 +109,7 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
           <div className="flex items-center gap-2">
             {ansicht === 'liste' && (
               <button onClick={openNeu}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors">
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors">
                 <Plus size={13} /> Neue Vorlage
               </button>
             )}
@@ -183,7 +183,7 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
               <div className="flex flex-wrap gap-1.5">
                 {TYP_OPTIONEN.map(t => (
                   <button key={t} type="button" onClick={() => set('typ', t)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${form.typ === t ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'}`}>
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${form.typ === t ? 'bg-primary text-white border-primary' : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'}`}>
                     {t}
                   </button>
                 ))}
@@ -286,7 +286,7 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
             <div className="flex gap-2 pt-1">
               <button onClick={() => setAnsicht('liste')} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm">Zurück</button>
               <button onClick={handleSave} disabled={saving || !form.name}
-                className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
+                className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
                 <Save size={14} /> {saving ? '...' : 'Speichern'}
               </button>
             </div>

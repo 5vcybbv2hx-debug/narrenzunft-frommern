@@ -32,7 +32,7 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
   const [konfliktWarnung, setKonfliktWarnung] = useState(null); // { name, schicht }
 
   useEffect(() => {
-    base44.entities.Veranstaltungsvorlage.list('name', 100).then(setVorlagen).catch(() => {});
+    base44.entities.Veranstaltungsvorlage.list('name', 100).then(setVorlagen).catch((e) => { console.error('Load error:', e); });
     // Alle Dienste und Zuweisungen am selben Datum laden
     if (dienst.datum) {
       base44.entities.Arbeitsdienst.filter({ datum: dienst.datum }).then(d => {
@@ -41,9 +41,9 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
         if (andereIds.length > 0) {
           Promise.all(andereIds.map(id => base44.entities.ArbeitsdienstZuweisung.filter({ arbeitsdienst_id: id })))
             .then(results => setAlleZuweisungen(results.flat()))
-            .catch(() => {});
+            .catch((e) => { console.error('Load error:', e); });
         }
-      }).catch(() => {});
+      }).catch((e) => { console.error('Load error:', e); });
     }
   }, [dienst.datum, dienst.uhrzeit, dienst.id]);
 
@@ -103,7 +103,7 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
         status: 'Offen',
       });
       setZuweisungen(prev => [...prev, neu]);
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setAdding(false);
     setDraggedId(null);
   };
@@ -117,7 +117,7 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
       try {
         await base44.entities.ArbeitsdienstZuweisung.delete(zuweisung.id);
         setZuweisungen(prev => prev.filter(z => z.id !== zuweisung.id));
-      } catch (e) {}
+      } catch (e) { console.error('Error:', e); }
     }
     setDraggedId(null);
   };
@@ -144,7 +144,7 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Arbeitsdienst wirklich löschen?')) return;
+    if (!confirm('Arbeitsdienst wirklich löschen?')) return;
     await base44.entities.Arbeitsdienst.delete(dienst.id);
     onSaved();
   };
@@ -380,7 +380,7 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
           </button>
           <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium">Abbrechen</button>
           <button onClick={handleSave} disabled={saving}
-            className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
+            className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
             <Save size={14} /> {saving ? '...' : 'Speichern'}
           </button>
         </div>

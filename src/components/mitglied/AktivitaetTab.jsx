@@ -24,7 +24,7 @@ export default function AktivitaetTab({ mitgliedId }) {
         const v = await Promise.all(veranstaltungIds.map(id => base44.entities.Veranstaltung.filter({ id })));
         setVeranstaltungen(v.flat());
       }
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setLoading(false);
   };
 

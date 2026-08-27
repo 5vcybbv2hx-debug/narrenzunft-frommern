@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Upload, FileText, Download, Trash2, X, CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 /**
  * Tab im Mitgliedsprofil für den ausgefüllten Mitgliedsantrag (PDF-Upload)
@@ -26,7 +27,7 @@ export default function AntragTab({ mitglied, isAdmin }) {
     try {
       const antraege = await base44.entities.Mitgliedsantrag.filter({ mitglied_id: mitglied.id });
       if (antraege.length > 0) setDigitalerAntrag(antraege[0]);
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setLoadingAntrag(false);
   };
 
@@ -46,13 +47,13 @@ export default function AntragTab({ mitglied, isAdmin }) {
       });
       setSaving(false);
     } catch (err) {
-      alert('Upload fehlgeschlagen: ' + err.message);
+      toast.error('Upload fehlgeschlagen: ' + err.message);
     }
     setUploading(false);
   };
 
   const handleRemovePdf = async () => {
-    if (!window.confirm('PDF-Antrag entfernen?')) return;
+    if (!confirm('PDF-Antrag entfernen?')) return;
     setSaving(true);
     await base44.entities.Mitglied.update(mitglied.id, {
       antrag_pdf_url: null,

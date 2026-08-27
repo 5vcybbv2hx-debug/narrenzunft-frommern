@@ -20,7 +20,7 @@ export default function UmzugAbschliessenModal({ veranstaltung, onClose, onAbges
           busAnwesend: teilnahmen.filter(t => t.bus_anwesend === true).length,
         });
       })
-      .catch(() => {});
+      .catch((e) => { console.error('Load error:', e); });
   }, [veranstaltung.id]);
 
   const handleAbschliessen = async () => {
@@ -109,7 +109,7 @@ export default function UmzugAbschliessenModal({ veranstaltung, onClose, onAbges
               <button
                 onClick={handleAbschliessen}
                 disabled={loading}
-                className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {loading ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle size={15} />}
                 {loading ? 'Wird abgeschlossen...' : 'Abschließen'}
@@ -174,7 +174,7 @@ export default function UmzugAbschliessenModal({ veranstaltung, onClose, onAbges
               </div>
             )}
 
-            <button onClick={onClose} className="mt-2 w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold">
+            <button onClick={onClose} className="mt-2 w-full py-2.5 rounded-xl bg-primary text-white text-sm font-semibold">
               Schließen
             </button>
           </div>

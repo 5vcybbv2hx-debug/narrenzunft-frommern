@@ -20,7 +20,7 @@ export default function HaesGroupTokenModal({ gruppe, onClose }) {
         regenerate: false
       });
       setToken(res.data);
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setLoading(false);
   };
 
@@ -32,7 +32,7 @@ export default function HaesGroupTokenModal({ gruppe, onClose }) {
         regenerate: true
       });
       setToken(res.data);
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setRegenerating(false);
   };
 

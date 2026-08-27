@@ -144,7 +144,7 @@ export default function NeuerAntragModal({ onClose, onMitgliedAngelegt }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {SPARTEN.map(s => (
                     <button key={s} type="button" onClick={() => set('sparte', s)}
-                      className={`py-3 rounded-xl text-sm font-semibold border transition-all ${form.sparte === s ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary text-muted-foreground border-border hover:border-primary/50'}`}>
+                      className={`py-3 rounded-xl text-sm font-semibold border transition-all ${form.sparte === s ? 'bg-primary text-white border-primary' : 'bg-secondary text-muted-foreground border-border hover:border-primary/50'}`}>
                       {s}
                     </button>
                   ))}
@@ -209,7 +209,7 @@ export default function NeuerAntragModal({ onClose, onMitgliedAngelegt }) {
         {/* Footer Navigation */}
         <div className="px-4 sm:px-6 pb-6 flex gap-2">
           {done ? (
-            <button onClick={onClose} className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold">
+            <button onClick={onClose} className="flex-1 py-3 rounded-xl bg-primary text-white text-sm font-semibold">
               Schließen
             </button>
           ) : (
@@ -225,7 +225,7 @@ export default function NeuerAntragModal({ onClose, onMitgliedAngelegt }) {
                 <button
                   onClick={() => setStep(s => s + 1)}
                   disabled={!canNext}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50"
                 >
                   Weiter <ChevronRight size={15} />
                 </button>
@@ -243,7 +243,7 @@ export default function NeuerAntragModal({ onClose, onMitgliedAngelegt }) {
                   <button
                     onClick={handleMitgliedAnlegen}
                     disabled={submitting || !form.vorname || !form.nachname}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50"
                   >
                     {submitting ? <Loader2 size={15} className="animate-spin" /> : <UserPlus size={15} />}
                     Mitglied anlegen

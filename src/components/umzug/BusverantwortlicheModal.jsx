@@ -124,7 +124,7 @@ export default function BusverantwortlicheModal({ mitglieder, onClose }) {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full py-2.5 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
           >
             <Save size={14} /> {saving ? 'Speichern...' : 'Speichern'}
           </button>

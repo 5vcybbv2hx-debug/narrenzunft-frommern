@@ -24,7 +24,7 @@ export default function ArbeitsdiensteMitgliedTab({ mitgliedId }) {
         const d = await Promise.all(dienstIds.map(id => base44.entities.Arbeitsdienst.filter({ id })));
         setDienste(d.flat());
       }
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setLoading(false);
   };
 

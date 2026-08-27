@@ -115,9 +115,9 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-neutral-800 border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="bg-secondary border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-oswald uppercase tracking-wide font-bold text-white">
+          <h3 className="font-oswald uppercase tracking-wide font-bold text-foreground">
             {isNew ? 'Ausleihe eintragen' : 'Ausleihe bearbeiten'}
           </h3>
           <button onClick={onClose} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-white">
@@ -150,18 +150,18 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
           {/* Ausleiher Typ Toggle */}
           <div>
             <label className="text-xs text-muted-foreground font-medium block mb-1">Ausleiher *</label>
-            <div className="flex gap-1 bg-neutral-900 rounded-lg p-1 mb-3">
+            <div className="flex gap-1 bg-secondary rounded-lg p-1 mb-3">
               <button
                 type="button"
                 onClick={() => set('ausleiher_typ', 'mitglied')}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-sm font-medium transition-all ${form.ausleiher_typ === 'mitglied' ? 'bg-neutral-800 text-white shadow-sm' : 'text-muted-foreground hover:text-white'}`}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-sm font-medium transition-all ${form.ausleiher_typ === 'mitglied' ? 'bg-secondary text-foreground shadow-sm' : 'text-muted-foreground hover:text-white'}`}
               >
                 <Users size={14} /> Mitglied
               </button>
               <button
                 type="button"
                 onClick={() => set('ausleiher_typ', 'extern')}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-sm font-medium transition-all ${form.ausleiher_typ === 'extern' ? 'bg-neutral-800 text-white shadow-sm' : 'text-muted-foreground hover:text-white'}`}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-sm font-medium transition-all ${form.ausleiher_typ === 'extern' ? 'bg-secondary text-foreground shadow-sm' : 'text-muted-foreground hover:text-white'}`}
               >
                 <UserPlus size={14} /> Externe Person
               </button>
@@ -184,16 +184,16 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
                   <div className="relative">
                     <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <input type="text" placeholder="Mitglied suchen..." value={suche} onChange={e => setSuche(e.target.value)}
-                      className="w-full pl-8 pr-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
+                      className="w-full pl-8 pr-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
                     {suchErgebnisse.length > 0 && (
-                      <div className="mt-1 bg-neutral-900 border border-border rounded-xl overflow-hidden">
+                      <div className="mt-1 bg-secondary border border-border rounded-xl overflow-hidden">
                         {suchErgebnisse.map(m => (
                           <button key={m.id} onClick={() => { set('ausleiher_mitglied_id', m.id); setSuche(''); }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-neutral-800 border-b border-border last:border-0">
+                            className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-secondary border-b border-border last:border-0">
                             <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[10px] font-bold shrink-0">
                               {m.vorname?.[0]}{m.nachname?.[0]}
                             </div>
-                            <span className="text-white">{m.vorname} {m.nachname}</span>
+                            <span className="text-foreground">{m.vorname} {m.nachname}</span>
                           </button>
                         ))}
                       </div>
@@ -212,7 +212,7 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
                       {externPerson.name?.[0]}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-white font-medium">{externPerson.name}</p>
+                      <p className="text-sm text-foreground font-medium">{externPerson.name}</p>
                       {externPerson.organisation && <p className="text-xs text-muted-foreground">{externPerson.organisation}</p>}
                     </div>
                     <button onClick={() => set('ausleiher_extern_id', '')} className="text-muted-foreground hover:text-red-400">
@@ -228,18 +228,18 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
                       value={externSuche}
                       onChange={e => { setExternSuche(e.target.value); setExternDropdownOffen(true); }}
                       onFocus={() => setExternDropdownOffen(true)}
-                      className="w-full pl-8 pr-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary"
+                      className="w-full pl-8 pr-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
                     />
                     {externDropdownOffen && (
-                      <div className="absolute z-30 left-0 right-0 top-full mt-1 bg-neutral-900 border border-border rounded-xl shadow-xl overflow-hidden">
+                      <div className="absolute z-30 left-0 right-0 top-full mt-1 bg-secondary border border-border rounded-xl shadow-xl overflow-hidden">
                         {externSuchErgebnisse.map(p => (
                           <button key={p.id} onClick={() => { set('ausleiher_extern_id', p.id); setExternDropdownOffen(false); setExternSuche(''); }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-neutral-800 border-b border-border last:border-0">
+                            className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-secondary border-b border-border last:border-0">
                             <div className="w-6 h-6 rounded-full bg-blue-900/20 flex items-center justify-center text-blue-400 text-[10px] font-bold shrink-0">
                               {p.name?.[0]}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm text-white">{p.name}</p>
+                              <p className="text-sm text-foreground">{p.name}</p>
                               {p.organisation && <p className="text-xs text-muted-foreground">{p.organisation}</p>}
                             </div>
                           </button>
@@ -260,32 +260,32 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
 
                 {/* Neue externe Person anlegen */}
                 {showNeuExtern && (
-                  <div className="mt-3 p-3 bg-neutral-800/50 border border-border rounded-xl space-y-2">
-                    <p className="text-xs font-semibold text-white">Neue externe Person</p>
+                  <div className="mt-3 p-3 bg-secondary/50 border border-border rounded-xl space-y-2">
+                    <p className="text-xs font-semibold text-foreground">Neue externe Person</p>
                     <input
                       type="text" placeholder="Name *" value={neuExtern.name}
                       onChange={e => setNeuExtern(p => ({ ...p, name: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary"
+                      className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
                     />
                     <input
                       type="text" placeholder="Organisation / Verein" value={neuExtern.organisation}
                       onChange={e => setNeuExtern(p => ({ ...p, organisation: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary"
+                      className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
                     />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <input
                         type="text" placeholder="Telefon" value={neuExtern.telefon}
                         onChange={e => setNeuExtern(p => ({ ...p, telefon: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary"
+                        className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
                       />
                       <input
                         type="email" placeholder="E-Mail" value={neuExtern.email}
                         onChange={e => setNeuExtern(p => ({ ...p, email: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary"
+                        className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
                       />
                     </div>
                     <div className="flex gap-2">
-                      <button onClick={() => setShowNeuExtern(false)} className="flex-1 py-2 rounded-lg bg-neutral-900 border border-border text-xs text-muted-foreground">Abbrechen</button>
+                      <button onClick={() => setShowNeuExtern(false)} className="flex-1 py-2 rounded-lg bg-secondary border border-border text-xs text-muted-foreground">Abbrechen</button>
                       <button onClick={handleCreateExtern} disabled={savingExtern || !neuExtern.name}
                         className="flex-1 py-2 rounded-lg bg-primary text-white text-xs font-semibold disabled:opacity-50">
                         {savingExtern ? '...' : 'Anlegen & auswählen'}
@@ -302,7 +302,7 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
             <label className="text-xs text-muted-foreground font-medium block mb-1">Anzahl (Stück)</label>
             <input type="number" value={form.anzahl ?? 1} onChange={e => set('anzahl', e.target.value ? Math.max(1, Number(e.target.value)) : 1)}
               placeholder="1" min="1"
-              className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
+              className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
           </div>
 
           {/* Zeitraum */}
@@ -310,12 +310,12 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
             <div>
               <label className="text-xs text-muted-foreground font-medium block mb-1">Von *</label>
               <DateSelect name="von_datum" value={form.von_datum} onChange={e => set('von_datum', e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
             </div>
             <div>
               <label className="text-xs text-muted-foreground font-medium block mb-1">Bis *</label>
               <DateSelect name="bis_datum" value={form.bis_datum} onChange={e => set('bis_datum', e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
             </div>
           </div>
 
@@ -334,7 +334,7 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
             <label className="text-xs text-muted-foreground font-medium block mb-1">Zweck / Veranstaltung</label>
             <input value={form.zweck || ''} onChange={e => set('zweck', e.target.value)}
               placeholder="z.B. Dorffest"
-              className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
+              className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
           </div>
 
           <div>
@@ -351,14 +351,14 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
               <label className="text-xs text-muted-foreground font-medium block mb-1">Schadensbericht (optional)</label>
               <textarea value={form.schadensbericht || ''} onChange={e => set('schadensbericht', e.target.value)} rows={2}
                 placeholder="Schäden oder Besonderheiten bei Rückgabe..."
-                className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary resize-none" />
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary resize-none" />
             </div>
           )}
 
           <div>
             <label className="text-xs text-muted-foreground font-medium block mb-1">Notizen</label>
             <textarea value={form.notizen || ''} onChange={e => set('notizen', e.target.value)} rows={2}
-              className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary resize-none" />
+              className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary resize-none" />
           </div>
         </div>
 
@@ -380,7 +380,7 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
               </button>
               <button
                 onClick={() => setShowConfirmDelete(false)}
-                className="px-2.5 py-1.5 rounded bg-neutral-900 text-muted-foreground hover:text-white transition-colors"
+                className="px-2.5 py-1.5 rounded bg-secondary text-muted-foreground hover:text-foreground transition-colors"
               >
                 Abbrechen
               </button>
@@ -395,7 +395,7 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
               <Trash2 size={16} />
             </button>
           )}
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-neutral-900 text-muted-foreground text-sm hover:text-white">Abbrechen</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm hover:text-foreground">Abbrechen</button>
           <button onClick={handleSave} disabled={saving || !canSave}
             className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2 hover:bg-red-700 transition-colors">
             <Save size={14} /> {saving ? '...' : 'Speichern'}

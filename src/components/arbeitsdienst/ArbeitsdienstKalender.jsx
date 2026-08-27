@@ -72,7 +72,7 @@ export default function ArbeitsdienstKalender({ dienste, zuweisungen, onDienstCl
               className={`min-h-[60px] border-b border-r border-border/50 p-1 ${isWeekend ? 'bg-secondary/10' : ''}`}
             >
               <div className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full mb-1 ${
-                isToday ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
+                isToday ? 'bg-primary text-white' : 'text-muted-foreground'
               }`}>
                 {format(day, 'd')}
               </div>

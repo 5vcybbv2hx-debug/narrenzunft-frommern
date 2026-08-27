@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, Upload, FileText, CheckCircle2, AlertTriangle, Download } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function HaesHistorieImportModal({ onClose, onImported }) {
   const [phase, setPhase] = useState('upload'); // upload | vorschau | ergebnis
@@ -48,7 +49,7 @@ export default function HaesHistorieImportModal({ onClose, onImported }) {
       setRows(Array.isArray(data) ? data : []);
       setPhase('vorschau');
     } catch (err) {
-      alert('Fehler beim Lesen der Datei: ' + err.message);
+      toast.error('Fehler beim Lesen der Datei: ' + err.message);
     }
     setUploading(false);
   };
@@ -61,7 +62,7 @@ export default function HaesHistorieImportModal({ onClose, onImported }) {
       setPhase('ergebnis');
       if (res.data?.erfolg > 0) onImported?.();
     } catch (err) {
-      alert('Fehler beim Import: ' + err.message);
+      toast.error('Fehler beim Import: ' + err.message);
     }
     setImporting(false);
   };
@@ -149,7 +150,7 @@ export default function HaesHistorieImportModal({ onClose, onImported }) {
               <button
                 onClick={handleImport}
                 disabled={importing || rows.length === 0}
-                className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50"
               >
                 {importing ? 'Importiere...' : `${rows.length} Einträge importieren`}
               </button>
@@ -187,7 +188,7 @@ export default function HaesHistorieImportModal({ onClose, onImported }) {
               </div>
             )}
 
-            <button onClick={onClose} className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold">
+            <button onClick={onClose} className="w-full py-2.5 rounded-lg bg-primary text-white text-sm font-semibold">
               Schließen
             </button>
           </div>

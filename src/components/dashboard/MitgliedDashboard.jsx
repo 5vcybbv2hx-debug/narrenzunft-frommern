@@ -27,7 +27,7 @@ function Card({ title, icon: Icon, children, linkTo, linkLabel, accent }) {
         <div className="px-4 pb-4">
           <Link
             to={linkTo}
-            className="flex items-center justify-center gap-2 w-full py-3 min-h-[44px] rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+            className="flex items-center justify-center gap-2 w-full py-3 min-h-[44px] rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
           >
             {linkLabel} <ChevronRight size={14} />
           </Link>
@@ -151,7 +151,7 @@ export default function MitgliedDashboard() {
       // Ungelesene Benachrichtigungen
       setUngeleseneNotifs(notifs.filter(n => !n.gelesen).slice(0, 5));
 
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setLoading(false);
   };
 

@@ -43,7 +43,7 @@ export default function ArbeitsdienstTab({ veranstaltung, isAdmin }) {
         );
         setZuweisungen(allZuweisungen.flat());
       }
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setLoading(false);
   };
 
@@ -70,16 +70,16 @@ export default function ArbeitsdienstTab({ veranstaltung, isAdmin }) {
       setForm(EMPTY_DIENST);
       setShowForm(false);
       await loadDienste();
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setSaving(false);
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Arbeitsdienst wirklich löschen?')) return;
+    if (!confirm('Arbeitsdienst wirklich löschen?')) return;
     try {
       await base44.entities.Arbeitsdienst.delete(id);
       setDienste(prev => prev.filter(d => d.id !== id));
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
   };
 
   if (loading) return (
@@ -96,7 +96,7 @@ export default function ArbeitsdienstTab({ veranstaltung, isAdmin }) {
         {isAdmin && (
           <button
             onClick={() => { setShowForm(true); setForm({ ...EMPTY_DIENST, datum: veranstaltung.datum || '' }); }}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
           >
             <Plus size={14} /> Hinzufügen
           </button>
@@ -161,7 +161,7 @@ export default function ArbeitsdienstTab({ veranstaltung, isAdmin }) {
             <button
               onClick={handleCreate}
               disabled={saving || !form.titel || !form.datum}
-              className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+              className="flex-1 py-2 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50"
             >
               {saving ? 'Speichern...' : 'Erstellen'}
             </button>

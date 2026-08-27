@@ -31,7 +31,7 @@ export default function ProtokollTab({ termine, mitglieder }) {
     try {
       const p = await base44.entities.Protokoll.list('-datum', 100);
       setProtokolle(p);
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setLoading(false);
   };
 
@@ -46,7 +46,7 @@ export default function ProtokollTab({ termine, mitglieder }) {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Protokoll wirklich löschen?')) return;
+    if (!confirm('Protokoll wirklich löschen?')) return;
     await base44.entities.Protokoll.delete(id);
     setProtokolle(prev => prev.filter(p => p.id !== id));
   };
@@ -67,7 +67,7 @@ export default function ProtokollTab({ termine, mitglieder }) {
       <div className="flex justify-end mb-4">
         <button
           onClick={() => { setEditProtokoll(null); setShowModal(true); }}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
         >
           <Plus size={15} /> Protokoll
         </button>
@@ -165,7 +165,7 @@ function ProtokollModal({ protokoll, termine, mitglieder, onClose, onSaved }) {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       set('datei_url', file_url);
       set('datei_name', file.name);
-    } catch (err) {}
+    } catch (err) { console.error('Error:', err); }
     setUploading(false);
   };
 
@@ -179,12 +179,12 @@ function ProtokollModal({ protokoll, termine, mitglieder, onClose, onSaved }) {
       if (isNew) await base44.entities.Protokoll.create(data);
       else await base44.entities.Protokoll.update(protokoll.id, data);
       onSaved();
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setSaving(false);
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Protokoll löschen?')) return;
+    if (!confirm('Protokoll löschen?')) return;
     await base44.entities.Protokoll.delete(protokoll.id);
     onSaved();
   };
@@ -302,7 +302,7 @@ function ProtokollModal({ protokoll, termine, mitglieder, onClose, onSaved }) {
           )}
           <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm">Abbrechen</button>
           <button onClick={handleSave} disabled={saving || !form.titel || !form.datum}
-            className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
+            className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
             <Save size={14} /> {saving ? '...' : 'Speichern'}
           </button>
         </div>

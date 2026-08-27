@@ -159,10 +159,9 @@ export default function Layout() {
 
   const loadCurrentMitglied = async () => {
     try {
-      const me = await base44.auth.me();
-      const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
+            const myM = await base44.entities.Mitglied.filter({ user_id: user?.id });
       if (myM[0]) setMitglied(myM[0]);
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
   };
 
   const loadNotifications = async () => {
@@ -176,7 +175,7 @@ export default function Layout() {
           : [];
       }
       setNotifications(notifs.length);
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
   };
 
   const handleLogout = () => base44.auth.logout('/');
@@ -297,7 +296,7 @@ export default function Layout() {
           <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
           <Link to="/" className="flex items-center gap-3 pl-2">
             <div className="w-11 h-11 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-primary/30 shrink-0">
-              <span className="text-white text-xl">🎭</span>
+              <span className="text-foreground text-xl">🎭</span>
             </div>
             <div className="min-w-0">
               <p className="font-oswald font-semibold text-sidebar-foreground text-base leading-tight tracking-wide uppercase">Narrenzunft</p>
@@ -345,7 +344,7 @@ export default function Layout() {
                 </div>
               </div>
               <button onClick={() => setSidebarOpen(false)}
-                className="p-3 rounded-md text-muted-foreground hover:text-white hover:bg-sidebar-accent transition-colors">
+                className="p-3 rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors">
                 <X size={18} />
               </button>
             </div>
@@ -381,12 +380,12 @@ export default function Layout() {
 
           <div className="flex md:hidden flex-1 items-center gap-2">
             <div className="w-1 h-5 bg-primary/10 border border-primary/30 rounded-full" />
-            <span className="font-oswald font-semibold text-white text-base uppercase tracking-wide">Narrenzunft</span>
+            <span className="font-oswald font-semibold text-foreground text-base uppercase tracking-wide">Narrenzunft</span>
           </div>
 
           <div className="flex items-center gap-1.5 ml-auto">
             <Link to="/benachrichtigungen"
-              className="relative p-2.5 rounded-md text-muted-foreground hover:bg-neutral-800 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0">
+              className="relative p-2.5 rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0">
               <Bell size={20} />
               {notifications > 0 && (
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary/10 border border-primary/30 rounded-full shadow-sm shadow-primary/50" />

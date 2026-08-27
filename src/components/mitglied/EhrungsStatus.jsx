@@ -43,7 +43,7 @@ export default function EhrungsStatus({ mitglied }) {
       setTeilnahmen(t);
       setVeranstaltungen(v);
       setEhrungen(e);
-    } catch (err) {}
+    } catch (err) { console.error('Error:', err); }
     setLoading(false);
   };
 

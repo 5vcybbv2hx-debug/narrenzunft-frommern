@@ -45,9 +45,9 @@ export default function AusruestungForm({ ausruestung, onSave, onDelete, onClose
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-neutral-800 border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="bg-secondary border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-oswald uppercase tracking-wide font-bold text-white">
+          <h3 className="font-oswald uppercase tracking-wide font-bold text-foreground">
             {isNew ? 'Neuer Gegenstand' : 'Gegenstand bearbeiten'}
           </h3>
           <button onClick={onClose} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-white">
@@ -71,7 +71,7 @@ export default function AusruestungForm({ ausruestung, onSave, onDelete, onClose
             <label className="text-xs text-muted-foreground font-medium block mb-1">Name *</label>
             <input value={form.name} onChange={e => set('name', e.target.value)}
               placeholder="z.B. Partyanhänger"
-              className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
+              className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
           </div>
 
           <div>
@@ -79,7 +79,7 @@ export default function AusruestungForm({ ausruestung, onSave, onDelete, onClose
             <div className="flex flex-wrap gap-1.5">
               {KATEGORIEN.map(k => (
                 <button key={k} type="button" onClick={() => set('kategorie', k)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${form.kategorie === k ? 'bg-primary text-white border-primary' : 'bg-neutral-900 text-muted-foreground border-border hover:border-primary/40'}`}>
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${form.kategorie === k ? 'bg-primary text-white border-primary' : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'}`}>
                   {k}
                 </button>
               ))}
@@ -96,7 +96,7 @@ export default function AusruestungForm({ ausruestung, onSave, onDelete, onClose
               <label className="text-xs text-muted-foreground font-medium block mb-1">Standort</label>
               <input value={form.standort || ''} onChange={e => set('standort', e.target.value)}
                 placeholder="z.B. Gerätehaus"
-                className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
             </div>
           </div>
 
@@ -105,26 +105,26 @@ export default function AusruestungForm({ ausruestung, onSave, onDelete, onClose
               <label className="text-xs text-muted-foreground font-medium block mb-1">Bestand (Stück)</label>
               <input type="number" value={form.bestand ?? 1} onChange={e => set('bestand', e.target.value ? Number(e.target.value) : 1)}
                 placeholder="z.B. 8" min="1"
-                className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
             </div>
             <div>
               <label className="text-xs text-muted-foreground font-medium block mb-1">Verfügbar (Override)</label>
               <input type="number" value={form.verfuegbar_override ?? ''} onChange={e => set('verfuegbar_override', e.target.value ? Number(e.target.value) : '')}
                 placeholder="auto" min="0"
-                className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
             </div>
           </div>
 
           <div>
             <label className="text-xs text-muted-foreground font-medium block mb-1">Beschreibung</label>
             <textarea value={form.beschreibung || ''} onChange={e => set('beschreibung', e.target.value)} rows={2}
-              className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary resize-none" />
+              className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary resize-none" />
           </div>
 
           <div>
             <label className="text-xs text-muted-foreground font-medium block mb-1">Notizen</label>
             <textarea value={form.notizen || ''} onChange={e => set('notizen', e.target.value)} rows={2}
-              className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary resize-none" />
+              className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary resize-none" />
           </div>
 
           {/* Fahrzeug-spezifische Felder */}
@@ -138,30 +138,30 @@ export default function AusruestungForm({ ausruestung, onSave, onDelete, onClose
                   <label className="text-xs text-muted-foreground font-medium block mb-1">Kennzeichen</label>
                   <input value={form.kennzeichen || ''} onChange={e => set('kennzeichen', e.target.value)}
                     placeholder="z.B. VS-ZF 123"
-                    className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
+                    className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">Baujahr</label>
                   <input type="number" value={form.baujahr || ''} onChange={e => set('baujahr', e.target.value ? Number(e.target.value) : '')}
                     placeholder="z.B. 2015" min="1900" max="2099"
-                    className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
+                    className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">TÜV / HU fällig</label>
                   <DateSelect name="tuev_faellig" value={form.tuev_faellig || ''} onChange={e => set('tuev_faellig', e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
+                    className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">Versicherung gültig bis</label>
                   <DateSelect name="versicherung_gueltig_bis" value={form.versicherung_gueltig_bis || ''} onChange={e => set('versicherung_gueltig_bis', e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
+                    className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
                 </div>
               </div>
               <div>
                 <label className="text-xs text-muted-foreground font-medium block mb-1">Versicherungsnummer</label>
                 <input value={form.versicherungsnummer || ''} onChange={e => set('versicherungsnummer', e.target.value)}
                   placeholder="Police-Nr."
-                  className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
+                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
               </div>
             </div>
           )}
@@ -185,7 +185,7 @@ export default function AusruestungForm({ ausruestung, onSave, onDelete, onClose
               </button>
               <button
                 onClick={() => setShowConfirmDelete(false)}
-                className="px-2.5 py-1.5 rounded bg-neutral-900 text-muted-foreground hover:text-white transition-colors"
+                className="px-2.5 py-1.5 rounded bg-secondary text-muted-foreground hover:text-foreground transition-colors"
               >
                 Abbrechen
               </button>
@@ -200,7 +200,7 @@ export default function AusruestungForm({ ausruestung, onSave, onDelete, onClose
               <Trash2 size={16} />
             </button>
           )}
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-neutral-900 text-muted-foreground text-sm hover:text-white">Abbrechen</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm hover:text-foreground">Abbrechen</button>
           <button onClick={handleSave} disabled={saving || !form.name}
             className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2 hover:bg-red-700 transition-colors">
             <Save size={14} /> {saving ? '...' : 'Speichern'}

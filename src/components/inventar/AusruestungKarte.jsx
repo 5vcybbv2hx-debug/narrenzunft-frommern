@@ -39,7 +39,7 @@ export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, auslei
     <div className={`bg-card border rounded-xl p-4 transition-all ${frei ? 'border-border' : 'border-primary/30'}`}>
       <div className="flex items-start gap-3">
         {/* Icon */}
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${frei ? 'bg-neutral-800' : 'bg-primary/10'}`}>
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${frei ? 'bg-secondary' : 'bg-primary/10'}`}>
           {ausruestung.bild_url ? (
             <img src={ausruestung.bild_url} alt="" className="w-full h-full object-cover rounded-xl" />
           ) : (
@@ -50,7 +50,7 @@ export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, auslei
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-sm font-semibold text-white">{ausruestung.name}</p>
+              <p className="text-sm font-semibold text-foreground">{ausruestung.name}</p>
               <p className="text-xs text-muted-foreground">{ausruestung.kategorie}</p>
             </div>
             {isAdmin && (
@@ -74,7 +74,7 @@ export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, auslei
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ausruestung.standort)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-800 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors flex items-center gap-1"
+                className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors flex items-center gap-1"
               >
                 <MapPin size={11} /> {ausruestung.standort}
               </a>

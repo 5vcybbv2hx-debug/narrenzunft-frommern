@@ -28,7 +28,7 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
   const [haesgruppen, setHaesgruppen] = useState([]);
 
   useEffect(() => {
-    base44.entities.Haesgruppe.list('name', 100).then(setHaesgruppen).catch(() => {});
+    base44.entities.Haesgruppe.list('name', 100).then(setHaesgruppen).catch((e) => { console.error('Load error:', e); });
   }, []);
 
   const set = (field, value) => setForm(p => ({ ...p, [field]: value }));
@@ -43,12 +43,12 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
         await base44.entities.KalenderTermin.update(termin.id, form);
       }
       onSaved();
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setSaving(false);
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Termin wirklich löschen?')) return;
+    if (!confirm('Termin wirklich löschen?')) return;
     await base44.entities.KalenderTermin.delete(termin.id);
     onSaved();
   };
@@ -76,7 +76,7 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
             <div className="flex flex-wrap gap-1.5">
               {TERMINARTEN.map(art => (
                 <button key={art} type="button" onClick={() => set('terminart', art)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${form.terminart === art ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'}`}>
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${form.terminart === art ? 'bg-primary text-white border-primary' : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'}`}>
                   {art}
                 </button>
               ))}
@@ -178,7 +178,7 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
           )}
           <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium">Abbrechen</button>
           <button onClick={handleSave} disabled={saving || !form.titel || !form.datum}
-            className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
+            className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
             <Save size={14} /> {saving ? '...' : isNew ? 'Erstellen' : 'Speichern'}
           </button>
         </div>

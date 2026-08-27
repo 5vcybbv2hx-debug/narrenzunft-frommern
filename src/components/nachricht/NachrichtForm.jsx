@@ -121,7 +121,7 @@ export default function NachrichtForm({ absenderId, onSent, onClose }) {
         <button
           onClick={handleSend}
           disabled={sending || !form.empfaenger_mitglied_id || !form.betreff || !form.inhalt}
-          className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+          className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
           {sending ? 'Wird gesendet...' : 'Senden'}

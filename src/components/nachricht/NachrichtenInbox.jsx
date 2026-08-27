@@ -28,7 +28,7 @@ export default function NachrichtenInbox({ empfaengerId }) {
         );
         setMitglieder(absender.flat());
       }
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setLoading(false);
   };
 
@@ -49,7 +49,7 @@ export default function NachrichtenInbox({ empfaengerId }) {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Nachricht löschen?')) return;
+    if (!confirm('Nachricht löschen?')) return;
     await base44.entities.Nachricht.delete(id);
     setNachrichten(prev => prev.filter(n => n.id !== id));
   };

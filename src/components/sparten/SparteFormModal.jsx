@@ -238,7 +238,7 @@ export default function SparteFormModal({ gruppe, onClose, onSaved }) {
         <div className="flex gap-2 mt-5">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium">Abbrechen</button>
           <button onClick={handleSave} disabled={saving || !form.name}
-            className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
+            className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
             <Save size={14} /> {saving ? 'Speichern...' : 'Speichern'}
           </button>
         </div>

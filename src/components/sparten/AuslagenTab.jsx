@@ -56,7 +56,7 @@ export default function AuslagenTab({ gruppeId, isAdmin }) {
         const m = await Promise.all(mitgliedIds.map(id => base44.entities.Mitglied.filter({ id })));
         setMitglieder(m.flat());
       }
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setLoading(false);
   };
 
@@ -77,7 +77,7 @@ export default function AuslagenTab({ gruppeId, isAdmin }) {
       setForm(EMPTY_AUSLAGE);
       setShowForm(false);
       await loadData();
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setSaving(false);
   };
 
@@ -91,7 +91,7 @@ export default function AuslagenTab({ gruppeId, isAdmin }) {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Auslage löschen?')) return;
+    if (!confirm('Auslage löschen?')) return;
     await base44.entities.SpartenAuslage.delete(id);
     setAuslagen(prev => prev.filter(a => a.id !== id));
   };
@@ -120,7 +120,7 @@ export default function AuslagenTab({ gruppeId, isAdmin }) {
         {isAdmin && (
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
           >
             <Plus size={14} /> Auslage
           </button>
@@ -245,7 +245,7 @@ export default function AuslagenTab({ gruppeId, isAdmin }) {
             <button
               onClick={handleCreate}
               disabled={saving || !form.mitglied_id || !form.betrag}
-              className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-50"
+              className="flex-1 py-2 rounded-lg bg-primary text-white text-xs font-semibold disabled:opacity-50"
             >
               {saving ? '...' : 'Erstellen'}
             </button>

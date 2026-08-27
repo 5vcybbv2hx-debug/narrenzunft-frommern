@@ -62,7 +62,7 @@ export default function SpartenKalender({ gruppe, kannBearbeiten }) {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Termin löschen?')) return;
+    if (!confirm('Termin löschen?')) return;
     await base44.entities.SpartenTermin.delete(id);
     setTermine(prev => prev.filter(t => t.id !== id));
   };
@@ -78,7 +78,7 @@ export default function SpartenKalender({ gruppe, kannBearbeiten }) {
         <div className="flex justify-end">
           <button
             onClick={openNew}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
           >
             <Plus size={14} /> Termin hinzufügen
           </button>
@@ -173,7 +173,7 @@ export default function SpartenKalender({ gruppe, kannBearbeiten }) {
               )}
               <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium">Abbrechen</button>
               <button onClick={handleSave} disabled={saving || !form.titel || !form.datum}
-                className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
+                className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
                 <Save size={14} /> {saving ? '...' : 'Speichern'}
               </button>
             </div>

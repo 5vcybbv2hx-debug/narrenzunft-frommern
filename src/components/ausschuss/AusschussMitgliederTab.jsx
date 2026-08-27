@@ -67,7 +67,7 @@ export default function AusschussMitgliederTab({ mitglieder, isAdmin }) {
   };
 
   const handleRemove = async (amId) => {
-    if (!window.confirm('Mitglied aus dem Ausschuss entfernen?')) return;
+    if (!confirm('Mitglied aus dem Ausschuss entfernen?')) return;
     await base44.entities.AusschussMitglied.delete(amId);
     setAusschussMitglieder(prev => prev.filter(a => a.id !== amId));
   };
@@ -84,7 +84,7 @@ export default function AusschussMitgliederTab({ mitglieder, isAdmin }) {
         <p className="text-sm text-muted-foreground">{ausschussMitglieder.length} Ausschussmitglieder</p>
         {isAdmin && (
           <button onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
             <Plus size={15} /> Mitglied hinzufügen
           </button>
         )}
@@ -122,7 +122,7 @@ export default function AusschussMitgliederTab({ mitglieder, isAdmin }) {
             <div className="flex flex-wrap gap-1.5">
               {ROLLEN.map(r => (
                 <button key={r} onClick={() => setForm(p => ({ ...p, rolle: r }))}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${form.rolle === r ? 'bg-primary text-primary-foreground border-primary' : 'bg-card text-muted-foreground border-border hover:border-primary/40'}`}>
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${form.rolle === r ? 'bg-primary text-white border-primary' : 'bg-card text-muted-foreground border-border hover:border-primary/40'}`}>
                   {r}
                 </button>
               ))}
@@ -133,7 +133,7 @@ export default function AusschussMitgliederTab({ mitglieder, isAdmin }) {
             <button onClick={() => { setShowForm(false); setSuche(''); }}
               className="flex-1 py-2 rounded-lg bg-card text-muted-foreground text-sm border border-border">Abbrechen</button>
             <button onClick={handleAdd} disabled={saving || !form.mitglied_id}
-              className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">
+              className="flex-1 py-2 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50">
               {saving ? '...' : 'Hinzufügen'}
             </button>
           </div>

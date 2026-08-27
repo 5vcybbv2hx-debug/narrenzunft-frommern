@@ -25,7 +25,7 @@ export default function BeitraegeEinstellungen({ onClose, onSaved }) {
         setSaetze({ ...DEFAULT_SAETZE, ...res[0].wert_json });
         setEinstellung(res[0]);
       }
-    }).catch(() => {});
+    }).catch((e) => { console.error('Load error:', e); });
   }, []);
 
   const handleSave = async () => {
@@ -37,7 +37,7 @@ export default function BeitraegeEinstellungen({ onClose, onSaved }) {
         await base44.entities.AppEinstellung.create({ schluessel: 'beitraege_saetze', wert_json: saetze });
       }
       onSaved(saetze);
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setSaving(false);
   };
 
@@ -83,7 +83,7 @@ export default function BeitraegeEinstellungen({ onClose, onSaved }) {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
           >
             <Save size={14} /> {saving ? 'Speichern...' : 'Speichern'}
           </button>

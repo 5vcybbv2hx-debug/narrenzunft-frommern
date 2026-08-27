@@ -67,7 +67,7 @@ export default function FamilieTab({ mitglied, isAdmin }) {
         setAlleMitglieder(m.flat());
       }
       // Für Admin-Suche: vollständige Liste wird lazy via searchMitgliedSicher geladen (Suchfeld)
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setLoading(false);
   };
 
@@ -84,16 +84,16 @@ export default function FamilieTab({ mitglied, isAdmin }) {
       setForm({ verwandter_id: '', beziehung: 'Elternteil', notizen: '' });
       setShowForm(false);
       await loadData();
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setSaving(false);
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Beziehung wirklich entfernen?')) return;
+    if (!confirm('Beziehung wirklich entfernen?')) return;
     try {
       await base44.entities.Verwandtschaft.delete(id);
       setVerwandtschaften(prev => prev.filter(v => v.id !== id));
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
   };
 
   const getMitglied = (id) => alleMitglieder.find(m => m.id === id);
@@ -329,7 +329,7 @@ export default function FamilieTab({ mitglied, isAdmin }) {
                 <button
                   onClick={handleAdd}
                   disabled={saving || !form.verwandter_id}
-                  className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+                  className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50"
                 >
                   {saving ? 'Speichern...' : 'Hinzufügen'}
                 </button>
