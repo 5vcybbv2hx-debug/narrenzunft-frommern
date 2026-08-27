@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import MobileSelect from '@/components/MobileSelect';
 
 const ANWESENHEIT_FARBEN = {
   'Anwesend':      'bg-green-500/20 text-green-400',
@@ -297,11 +298,9 @@ function TopsTab({ terminId, tops, setTops, mitglieder, isAdmin }) {
             className="w-full px-3 py-2 rounded-lg bg-card border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
           <textarea placeholder="Beschreibung (optional)" value={form.beschreibung} onChange={e => setForm(p => ({ ...p, beschreibung: e.target.value }))}
             rows={2} className="w-full px-3 py-2 rounded-lg bg-card border border-border text-sm text-foreground focus:outline-none focus:border-primary resize-none" />
-          <select value={form.verantwortlicher_id} onChange={e => setForm(p => ({ ...p, verantwortlicher_id: e.target.value }))}
-            className="w-full px-3 py-2 rounded-lg bg-card border border-border text-sm text-foreground focus:outline-none focus:border-primary">
-            <option value="">Verantwortlich (optional)</option>
-            {mitglieder.map(m => <option key={m.id} value={m.id}>{m.vorname} {m.nachname}</option>)}
-          </select>
+          <MobileSelect value={form.verantwortlicher_id} onChange={v => setForm(p => ({ ...p, verantwortlicher_id: v }))}
+            placeholder="Verantwortlich (optional)"
+            options={[{ label: 'Verantwortlich (optional)', value: '' }, ...mitglieder.map(m => ({ label: `${m.vorname} ${m.nachname}`, value: m.id }))]} />
           <div className="flex gap-2">
             <button onClick={() => setShowForm(false)} className="flex-1 py-2 rounded-lg bg-card text-muted-foreground text-sm border border-border">Abbrechen</button>
             <button onClick={handleCreate} disabled={saving || !form.titel}

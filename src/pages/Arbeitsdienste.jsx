@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -9,6 +9,8 @@ import { de } from 'date-fns/locale';
 import ArbeitsdienstEditModal from '@/components/arbeitsdienst/ArbeitsdienstEditModal';
 import VeranstaltungsvorlagenModal from '@/components/veranstaltung/VeranstaltungsvorlagenModal';
 import ArbeitsdienstKalender from '@/components/arbeitsdienst/ArbeitsdienstKalender';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 const STATUS_COLORS = {
   'Offen': 'bg-yellow-500/20 text-yellow-400',
@@ -42,7 +44,7 @@ export default function Arbeitsdienste() {
 
   useEffect(() => { loadData(); }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const result = await base44.functions.invoke('getArbeitsdiensteSicher', {});
@@ -63,7 +65,9 @@ export default function Arbeitsdienste() {
       console.error('[Arbeitsdienste]', e instanceof Error ? e.message : e);
     }
     setLoading(false);
-  };
+  }, [user]);
+
+  const { pullDistance, refreshing, containerRef } = usePullToRefresh(loadData);
 
   const getZuweisungen = (dienstId) => zuweisungen.filter(z => z.arbeitsdienst_id === dienstId);
   const meineZuweisung = (dienstId) => myMitglied ? zuweisungen.find(z => z.arbeitsdienst_id === dienstId && z.mitglied_id === myMitglied.id) : null;
@@ -116,7 +120,8 @@ export default function Arbeitsdienste() {
   );
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto">
+    <div ref={containerRef} className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto">
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-oswald font-semibold text-foreground tracking-wide">Arbeitsdienste</h1>

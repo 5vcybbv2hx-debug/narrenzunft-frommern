@@ -13,6 +13,7 @@ import UmzugAbschliessenModal from '@/components/umzug/UmzugAbschliessenModal';
 import BusverantwortlicheModal from '@/components/umzug/BusverantwortlicheModal';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import MobileSelect from '@/components/MobileSelect';
 
 function VerantwortlicheAuswahl({ mitglieder, selected, onChange, haeufige }) {
   const [suche, setSuche] = useState('');
@@ -580,14 +581,13 @@ export default function Umzuege() {
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block mb-2">
                   🤝 Einladung von Verein
                 </label>
-                <select
+                <MobileSelect
                   value={form.externer_verein_id || ''}
-                  onChange={e => setForm(p => ({ ...p, externer_verein_id: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary mb-2"
-                >
-                  <option value="">– Kein externer Verein –</option>
-                  {externeVereine.map(v => <option key={v.id} value={v.id}>{v.name} ({v.stadt})</option>)}
-                </select>
+                  onChange={v => setForm(p => ({ ...p, externer_verein_id: v }))}
+                  placeholder="– Kein externer Verein –"
+                  options={[{ label: '– Kein externer Verein –', value: '' }, ...externeVereine.map(v => ({ label: `${v.name} (${v.stadt})`, value: v.id }))]}
+                  className="mb-2"
+                />
                 <p className="text-xs text-muted-foreground">Oder <a href="/vereine" target="_blank" className="text-primary hover:underline">neuen Verein hinzufügen</a></p>
               </div>
 

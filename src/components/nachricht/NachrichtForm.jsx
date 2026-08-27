@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Send, Loader2, Check, X } from 'lucide-react';
+import MobileSelect from '@/components/MobileSelect';
 
 export default function NachrichtForm({ absenderId, onSent, onClose }) {
   const [empfaenger, setEmpfaenger] = useState([]);
@@ -75,18 +76,12 @@ export default function NachrichtForm({ absenderId, onSent, onClose }) {
 
       <div>
         <label className="text-xs text-muted-foreground font-medium block mb-1">An (Vorstand/Funktionär) *</label>
-        <select
+        <MobileSelect
           value={form.empfaenger_mitglied_id}
-          onChange={e => setForm(p => ({ ...p, empfaenger_mitglied_id: e.target.value }))}
-          className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
-        >
-          <option value="">– Auswählen –</option>
-          {empfaenger.map(e => (
-            <option key={e.id} value={e.id}>
-              {e.vorname} {e.nachname} ({e.app_rolle})
-            </option>
-          ))}
-        </select>
+          onChange={v => setForm(p => ({ ...p, empfaenger_mitglied_id: v }))}
+          placeholder="– Auswählen –"
+          options={[{ label: '– Auswählen –', value: '' }, ...empfaenger.map(e => ({ label: `${e.vorname} ${e.nachname} (${e.app_rolle})`, value: e.id }))]}
+        />
         {ausgewaehlt && (
           <p className="text-xs text-muted-foreground mt-1.5">
             ✉️ Benachrichtigung wird an {ausgewaehlt.email} versendet

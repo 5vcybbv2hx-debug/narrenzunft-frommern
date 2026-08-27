@@ -3,6 +3,7 @@ import DateSelect from '../ui/DateSelect';
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, Save, Trash2, Search, Bookmark, GripVertical, AlertTriangle } from 'lucide-react';
+import MobileSelect from '../MobileSelect';
 
 const ZUWEISUNG_STATUS = ['Offen', 'Bestätigt', 'Erledigt', 'Abgesagt', 'Nicht erledigt'];
 
@@ -210,10 +211,8 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
               </div>
               <div>
                 <label className="text-xs text-muted-foreground font-medium block mb-1">Status</label>
-                <select value={form.status || 'Offen'} onChange={e => set('status', e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary">
-                  {['Offen', 'In Planung', 'Abgeschlossen'].map(s => <option key={s}>{s}</option>)}
-                </select>
+                <MobileSelect value={form.status || 'Offen'} onChange={v => set('status', v)}
+                  options={['Offen', 'In Planung', 'Abgeschlossen']} />
               </div>
             </div>
             <div>
@@ -229,11 +228,11 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
                   <Bookmark size={12} /> In Vorlage übertragen
                 </p>
                 <div className="flex gap-2">
-                  <select value={selectedVorlage} onChange={e => setSelectedVorlage(e.target.value)}
-                    className="flex-1 px-2 py-1.5 rounded-lg bg-secondary border border-border text-xs text-foreground focus:outline-none focus:border-primary">
-                    <option value="">Vorlage wählen...</option>
-                    {vorlagen.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-                  </select>
+                  <div className="flex-1">
+                    <MobileSelect value={selectedVorlage} onChange={setSelectedVorlage}
+                      placeholder="Vorlage wählen..."
+                      options={[{ label: 'Vorlage wählen...', value: '' }, ...vorlagen.map(v => ({ label: v.name, value: v.id }))]} />
+                  </div>
                   <button onClick={handleUebertrageInVorlage} disabled={!selectedVorlage || vorlageSaving}
                     className="px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors disabled:opacity-50 shrink-0">
                     {vorlageSaved ? '✓' : vorlageSaving ? '...' : 'OK'}
@@ -345,14 +344,11 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
                             {z.status}
                           </span>
                         </div>
-                        <select
-                          value={z.status}
-                          onChange={e => handleZuweisungStatus(z, e.target.value)}
-                          className="text-[10px] px-1.5 py-1 rounded-lg bg-secondary border border-border text-foreground focus:outline-none focus:border-primary shrink-0"
-                          onDragStart={e => e.stopPropagation()}
-                        >
-                          {ZUWEISUNG_STATUS.map(s => <option key={s}>{s}</option>)}
-                        </select>
+                        <div className="shrink-0 w-24" onDragStart={e => e.stopPropagation()}>
+                          <MobileSelect value={z.status} onChange={v => handleZuweisungStatus(z, v)}
+                            options={ZUWEISUNG_STATUS}
+                            className="!min-h-0 !py-1 !px-1.5 !text-[10px]" />
+                        </div>
                         <button onClick={() => handleRemove(z.id)} className="p-1 rounded text-muted-foreground hover:text-destructive transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 shrink-0">
                           <X size={12} />
                         </button>

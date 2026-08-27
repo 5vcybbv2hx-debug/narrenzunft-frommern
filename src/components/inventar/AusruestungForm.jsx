@@ -1,6 +1,7 @@
 import DateSelect from '../ui/DateSelect';
 import { useState } from 'react';
 import { X, Save, Trash2, Truck, AlertCircle } from 'lucide-react';
+import MobileSelect from '../MobileSelect';
 
 const KATEGORIEN = ['Anhänger', 'Kühlanhänger', 'Bar', 'Zelt', 'Technik', 'Sonstiges'];
 const ZUSTAENDE = ['Sehr gut', 'Gut', 'Ausreichend', 'Defekt'];
@@ -88,10 +89,8 @@ export default function AusruestungForm({ ausruestung, onSave, onDelete, onClose
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-muted-foreground font-medium block mb-1">Zustand</label>
-              <select value={form.zustand} onChange={e => set('zustand', e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary">
-                {ZUSTAENDE.map(z => <option key={z}>{z}</option>)}
-              </select>
+              <MobileSelect value={form.zustand} onChange={v => set('zustand', v)}
+                options={ZUSTAENDE} />
             </div>
             <div>
               <label className="text-xs text-muted-foreground font-medium block mb-1">Standort</label>

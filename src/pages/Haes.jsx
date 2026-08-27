@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 // Builder-Test
 import { Link, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { Shirt, Plus, Search, ChevronRight, Calendar, Building, User } from 'lucide-react';
 import HaesGroupTokenModal from '@/components/haes/HaesGroupTokenModal';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 import { isAdmin } from '@/lib/roles';
 
 const STATUS_COLORS = {
@@ -45,7 +47,7 @@ export default function Haes() {
     setSearchParams(params, { replace: true });
   }, [statusFilter, gruppeFilter, search]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const result = await base44.functions.invoke('getHaesSicher', {});
@@ -60,7 +62,9 @@ export default function Haes() {
       console.error('[Haes]', e instanceof Error ? e.message : e);
     }
     setLoading(false);
-  };
+  }, []);
+
+  const { pullDistance, refreshing, containerRef } = usePullToRefresh(loadData);
 
   const getMitgliedName = (id, h) => {
     if (h?.besitzer_name) return h.besitzer_name;
@@ -129,7 +133,8 @@ export default function Haes() {
   );
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto overflow-x-hidden">
+    <div ref={containerRef} className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto overflow-x-hidden">
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-oswald font-semibold text-foreground tracking-wide">Häs & Masken</h1>

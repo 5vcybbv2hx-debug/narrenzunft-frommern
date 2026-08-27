@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -7,6 +7,8 @@ import { isAdmin } from '@/lib/roles';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import VeranstaltungsvorlagenModal from '@/components/veranstaltung/VeranstaltungsvorlagenModal';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 const TYP_COLORS = {
   'Umzug':             'bg-primary/20 text-primary',
@@ -41,7 +43,7 @@ export default function Veranstaltungen() {
 
   useEffect(() => { loadData(); }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [data, me] = await Promise.all([
@@ -61,7 +63,9 @@ export default function Veranstaltungen() {
       }
     } catch (e) {}
     setLoading(false);
-  };
+  }, []);
+
+  const { pullDistance, refreshing, containerRef } = usePullToRefresh(loadData);
 
   // Zähler pro Filter
   const filterCounts = useMemo(() => {
@@ -115,7 +119,8 @@ export default function Veranstaltungen() {
   );
 
   return (
-    <div className="px-4 lg:px-6 py-6 max-w-4xl mx-auto">
+    <div ref={containerRef} className="px-4 lg:px-6 py-6 max-w-4xl mx-auto">
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
