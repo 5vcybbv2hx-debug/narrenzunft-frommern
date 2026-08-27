@@ -19,6 +19,7 @@ import { de } from 'date-fns/locale';
 const TABS = [
   { id: 'faellig', label: 'Fällig', icon: AlertTriangle },
   { id: 'bald', label: 'Bald fällig', icon: Clock },
+  { id: 'geplant', label: 'Geplant', icon: Clock },
   { id: 'verliehen', label: 'Verliehen', icon: CheckCircle2 },
   { id: 'probleme', label: 'Datenprobleme', icon: AlertTriangle },
 ];
@@ -118,6 +119,10 @@ export default function Ehrungen() {
     return ehrungen.filter(e => e.status === 'Verliehen').sort((a, b) => (b.datum || '').localeCompare(a.datum || ''));
   }, [ehrungen]);
 
+  const geplanteEhrungen = useMemo(() => {
+    return ehrungen.filter(e => e.status === 'Geplant').sort((a, b) => (b.created_date || '').localeCompare(a.created_date || ''));
+  }, [ehrungen]);
+
   const dataProbleme = useMemo(() => {
     return findeDataProbleme(mitglieder, teilnahmen, veranstaltungen, ehrungen);
   }, [mitglieder, teilnahmen, veranstaltungen, ehrungen]);
@@ -155,6 +160,23 @@ export default function Ehrungen() {
     setSaving(null);
   };
 
+  const handleEhrungStatusAendern = async (ehrungId, neuerStatus) => {
+    setSaving(`geplant-${ehrungId}`);
+    try {
+      const update = { status: neuerStatus };
+      if (neuerStatus === 'Verliehen') {
+        update.datum = new Date().toISOString().split('T')[0];
+        update.verliehen_von = user?.full_name;
+      }
+      await base44.entities.Ehrung.update(ehrungId, update);
+      await loadData();
+    } catch (e) {
+      console.error('Ehrung-Status ändern:', e);
+      setError('Ehrung-Status konnte nicht aktualisiert werden.');
+    }
+    setSaving(null);
+  };
+
   const exportFaellig = () => {
     const daten = faelligeEhrungen.map(e => ({ Name: `${e.mitglied.vorname} ${e.mitglied.nachname}`, Typ: e.typ, Stufe: e.stufe, AktuellerStand: e.stand }));
     exportiereAlsCSV(daten, 'faellige_ehrungen.csv');
@@ -163,6 +185,11 @@ export default function Ehrungen() {
   const exportBaldFaellig = () => {
     const daten = baldFaellige.map(e => ({ Name: `${e.mitglied.vorname} ${e.mitglied.nachname}`, Typ: e.typ, NaechsteStufe: e.naechsteStufe, AktuellerStand: e.stand, FehlendeEinheiten: e.fehlend }));
     exportiereAlsCSV(daten, 'bald_faellige_ehrungen.csv');
+  };
+
+  const exportGeplant = () => {
+    const daten = geplanteEhrungen.map(e => ({ Name: getMitgliedName(e.mitglied_id), Typ: e.typ, Stufe: e.wert, GeplantFuer: e.datum || '', Notiz: e.beschreibung || '' }));
+    exportiereAlsCSV(daten, 'geplante_ehrungen.csv');
   };
 
   const exportVerliehen = () => {
@@ -194,7 +221,7 @@ export default function Ehrungen() {
         <div>
           <h1 className="text-2xl font-bold font-oswald uppercase tracking-wide text-white">Ehrungen</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {faelligeEhrungen.length} fällig · {verlieheneEhrungen.length} verliehen
+            {faelligeEhrungen.length} fällig · {geplanteEhrungen.length} geplant · {verlieheneEhrungen.length} verliehen
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -213,6 +240,7 @@ export default function Ehrungen() {
                   <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-lg z-30 w-48 overflow-hidden">
                     <button onClick={() => { exportFaellig(); setShowExport(false); }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-neutral-800 transition-colors">Fällige (CSV)</button>
                     <button onClick={() => { exportBaldFaellig(); setShowExport(false); }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-neutral-800 transition-colors">Bald fällige (CSV)</button>
+                    <button onClick={() => { exportGeplant(); setShowExport(false); }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-neutral-800 transition-colors">Geplante (CSV)</button>
                     <button onClick={() => { exportVerliehen(); setShowExport(false); }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-neutral-800 transition-colors">Verliehene (CSV)</button>
                   </div>
                 </>
@@ -256,6 +284,7 @@ export default function Ehrungen() {
           let count = 0;
           if (tab.id === 'faellig') count = faelligeEhrungen.length;
           if (tab.id === 'bald') count = baldFaellige.length;
+          if (tab.id === 'geplant') count = geplanteEhrungen.length;
           if (tab.id === 'verliehen') count = verlieheneEhrungen.length;
           if (tab.id === 'probleme') count = dataProbleme.length;
           return (
@@ -341,6 +370,50 @@ export default function Ehrungen() {
                 </div>
               </div>
             ))
+          )}
+        </div>
+      )}
+
+      {/* Tab: Geplant */}
+      {activeTab === 'geplant' && (
+        <div className="space-y-3">
+          {geplanteEhrungen.length === 0 ? (
+            <div className="text-center py-12">
+              <Clock size={36} className="text-muted-foreground/40 mx-auto mb-3" />
+              <p className="text-white font-medium">Keine geplanten Ehrungen</p>
+              <p className="text-sm text-muted-foreground mt-1">Ehrungen, die als "Geplant" markiert wurden, erscheinen hier</p>
+            </div>
+          ) : (
+            geplanteEhrungen.map(e => {
+              const key = `geplant-${e.id}`;
+              const isSaving = saving === key;
+              return (
+                <div key={e.id} className="bg-card border border-blue-700/30 rounded-xl p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-semibold text-white">{getMitgliedName(e.mitglied_id)}</p>
+                        <EhrungsBadge typ={e.typ} wert={e.wert} />
+                      </div>
+                      {e.datum && <p className="text-sm text-muted-foreground mt-1">Geplant für: <span className="text-white font-medium">{format(new Date(e.datum), 'dd.MM.yyyy', { locale: de })}</span></p>}
+                      {e.beschreibung && <p className="text-xs text-muted-foreground mt-1">{e.beschreibung}</p>}
+                    </div>
+                  </div>
+                  {kannVerwalten && (
+                    <div className="flex gap-2 mt-3">
+                      <button disabled={isSaving} onClick={() => handleEhrungStatusAendern(e.id, 'Verliehen')}
+                        className="flex-1 py-2 rounded-lg bg-green-900/20 text-green-400 hover:bg-green-900/30 transition-colors text-sm font-medium disabled:opacity-50">
+                        Verliehen
+                      </button>
+                      <button disabled={isSaving} onClick={() => handleEhrungStatusAendern(e.id, 'Vorgeschlagen')}
+                        className="flex-1 py-2 rounded-lg bg-yellow-900/20 text-yellow-400 hover:bg-yellow-900/30 transition-colors text-sm font-medium disabled:opacity-50">
+                        Zurückstellen
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
       )}
