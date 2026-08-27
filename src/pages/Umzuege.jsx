@@ -121,7 +121,7 @@ export default function Umzuege() {
       const [vData, einstellungen, myMArr] = await Promise.all([
         base44.entities.Veranstaltung.list('datum', 200),
         base44.entities.AppEinstellung.filter({ schluessel: 'busverantwortliche' }),
-        me ? base44.entities.Mitglied.filter({ user_id: me.id }) : Promise.resolve([]),
+        user ? base44.entities.Mitglied.filter({ user_id: user.id }) : Promise.resolve([]),
       ]);
       const vereine = admin ? await base44.entities.ExternerVerein.list('name', 200) : [];
       let anmeldungen = [];

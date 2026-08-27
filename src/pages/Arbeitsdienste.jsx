@@ -114,7 +114,7 @@ export default function Arbeitsdienste() {
     return aDate.localeCompare(bDate);
   });
 
-  if (!loading && dienste.length === 0 && !result) return (
+  if (!loading && dienste.length === 0) return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-4">
       <p className="text-sm text-muted-foreground">Arbeitsdienste konnten nicht geladen werden</p>
       <button onClick={() => loadData()} className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">

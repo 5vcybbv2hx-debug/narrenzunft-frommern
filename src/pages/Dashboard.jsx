@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/AuthContext';
 import {
   Calendar, Users, Briefcase, Shirt, ArrowRight, ChevronRight,
   Shield, CheckCircle, AlertCircle, Clock, Baby,
-  Phone, MessageCircle, Bus,
+  Phone, MessageCircle, Bus, MapPin,
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -576,7 +576,6 @@ export default function Dashboard() {
                   </Link>
                 );
               })}
-              )}
               {verfuegbareHaes.length > 8 && (
                 <Link to="/haes" className="block text-center text-xs text-primary hover:text-primary/80 pt-1">
                   +{verfuegbareHaes.length - 8} weitere ansehen

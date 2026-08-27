@@ -5,7 +5,7 @@ import { isAdmin } from '@/lib/roles';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Calendar, List, ChevronLeft, ChevronRight, Plus, Clock,
-  MapPin, Download, Filter, X, Edit, LayoutTemplate, Bus
+  MapPin, Download, Filter, X, Edit, LayoutTemplate, Bus, AlertCircle
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth,
   addMonths, subMonths, parseISO, isToday, startOfDay, isBefore, isAfter, differenceInDays } from 'date-fns';
@@ -58,6 +58,8 @@ const ALLE_TERMINARTEN = ['Umzug','Abendveranstaltung','Ausfahrt-Umzug','Ausfahr
 export default function Kalender() {
   const { user } = useAuth();
   const admin = isAdmin(user);
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [ansicht, setAnsicht] = useState(searchParams.get('ansicht') || 'liste'); // 'monat' | 'liste'
   const [monat, setMonat] = useState(new Date());
   const [termine, setTermine] = useState([]);
@@ -80,8 +82,6 @@ export default function Kalender() {
   const [ausfahrten, setAusfahrten] = useState([]);
   const [ausfahrtAnmeldungen, setAusfahrtAnmeldungen] = useState([]);
   const [submittingAusfahrtId, setSubmittingAusfahrtId] = useState(null);
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
 
   const userRolle = user?.role || 'mitglied';
   const erlaubteSichtbarkeiten = ROLLE_ERLAUBTE_SICHTBARKEIT[userRolle] || ['alle'];
