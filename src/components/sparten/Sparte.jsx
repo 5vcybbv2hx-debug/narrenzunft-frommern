@@ -46,7 +46,7 @@ export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten
           {typMeta.icon}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-oswald font-semibold text-foreground tracking-wide">{gruppe.name}</h3>
             <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: farbe + '20', color: farbe }}>
               {gruppe.typ || 'Häsgruppe'}
