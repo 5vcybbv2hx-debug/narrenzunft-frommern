@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { Shirt, Plus, Search, ChevronRight, Calendar, Building } from 'lucide-react';
+import { Shirt, Plus, Search, ChevronRight, Calendar, Building, User } from 'lucide-react';
 import HaesGroupTokenModal from '@/components/haes/HaesGroupTokenModal';
 import { isAdmin } from '@/lib/roles';
 
@@ -240,10 +240,13 @@ export default function Haes() {
                 )}
               </div>
               <p className="text-sm text-foreground truncate">{h.bezeichnung || '–'}</p>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                {h.haesgruppe_id && <span>{getGruppeName(h.haesgruppe_id)}</span>}
+              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
+                {h.haesgruppe_id && <span className="truncate">{getGruppeName(h.haesgruppe_id)}</span>}
                 {h.aktueller_besitzer_id && (
-                  <span className="truncate">· {h.besitzer_name || '–'}</span>
+                  <span className="flex items-center gap-1 truncate min-w-0">
+                    <User size={11} className="shrink-0 text-primary/70" />
+                    <span className="truncate">{h.besitzer_name || '–'}</span>
+                  </span>
                 )}
               </div>
             </div>
