@@ -54,9 +54,7 @@ export default function Haes() {
       }
       setHaes(result.data.haes);
       setGruppen(result.data.gruppen);
-      if (isAdminUser) {
-        setMitglieder(result.data.mitglieder);
-      }
+      setMitglieder(result.data.mitglieder || []);
     } catch (e) {
       console.error('[Haes]', e instanceof Error ? e.message : e);
     }

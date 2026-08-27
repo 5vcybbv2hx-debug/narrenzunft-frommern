@@ -76,9 +76,9 @@ export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten
           </div>
         </div>
 
-        {/* Admin Buttons */}
+        {/* Admin Buttons — auf Mobile versteckt, da die ganze Karte klickbar ist */}
         {isAdmin && (
-          <div className="flex gap-1 shrink-0">
+          <div className="hidden sm:flex gap-1 shrink-0">
             <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="p-2.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
               <Edit size={15} />
             </button>
