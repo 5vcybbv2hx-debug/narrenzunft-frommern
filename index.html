@@ -14,40 +14,36 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
-      // Fix: "dispatcher.useState is null" — caused by the browser accumulating
-      // Vite dep chunks from multiple re-optimization passes (different ?v= hashes),
-      // which creates duplicate React instances. This script detects the error and
-      // forces a cache-busting reload so the browser loads only the current chunks.
+      // Dev/Preview only: fix "dispatcher.useState is null" caused by duplicate React
+      // instances from stale Vite dep chunks. In production, vite.config.js uses
+      // resolve.dedupe and optimizeDeps.force which prevents this at the root.
+      // This entire block must NOT run in production — it causes unwanted reloads
+      // and cache deletion that break the production app experience.
       (function () {
-        // Clear any cached Vite chunks from the Cache API
+        var isDev = (
+          window.location.hostname.indexOf('preview') !== -1 ||
+          window.location.hostname.indexOf('sandbox') !== -1 ||
+          window.location.hostname === 'localhost' ||
+          window.location.hostname === '127.0.0.1' ||
+          window.location.pathname.indexOf('/editor/preview') !== -1 ||
+          window.location.search.indexOf('preview') !== -1
+        );
+        if (!isDev) return;
+
+        // Clear cached Vite chunks from the Cache API (dev only)
         if (window.caches) {
           caches.keys().then(function (names) {
             names.forEach(function (name) { caches.delete(name); });
           });
         }
-        // Register a service worker that bypasses the CDN cache for Vite chunks.
-        // The CDN sends Cache-Control: max-age=31536000,immutable for /node_modules/.vite/deps/*
-        // which causes the browser to cache chunks from multiple optimization passes,
-        // creating duplicate React instances ("dispatcher.useState is null").
-        // Only register in the preview/dev environment, not in production.
-        // Use /src/sw.js (served by Vite with correct MIME type) instead of /sw.js
-        // (which the Vite SPA fallback serves as text/html, breaking registration).
-        if (navigator.serviceWorker && (
-          window.location.hostname.indexOf('preview') !== -1 ||
-          window.location.hostname.indexOf('sandbox') !== -1 ||
-          window.location.hostname === 'localhost' ||
-          window.location.hostname === '127.0.0.1'
-        )) {
-          // Unregister any old SWs first (e.g. from /sw.js that failed or stale)
+        // Register service worker to bypass CDN cache for Vite chunks (dev only)
+        if (navigator.serviceWorker) {
           navigator.serviceWorker.getRegistrations().then(function (regs) {
             regs.forEach(function (r) { r.unregister(); });
           });
           navigator.serviceWorker.register('/src/sw.js').catch(function () {});
         }
-        // Proactive: force one cache-busting reload to clear stale Vite dep chunks.
-        // The browser accumulates chunks from multiple optimization passes (different
-        // ?v= hashes), creating duplicate React instances. A fresh page load ensures
-        // the @vite/client uses the current module map and only loads current chunks.
+        // Proactive: force one cache-busting reload (dev only)
         var PROACTIVE_KEY = 'vite-proactive-reload';
         if (!sessionStorage.getItem(PROACTIVE_KEY)) {
           sessionStorage.setItem(PROACTIVE_KEY, '1');
@@ -58,8 +54,7 @@
         } else {
           sessionStorage.removeItem(PROACTIVE_KEY);
         }
-        // Reactive: if the error still occurs after the proactive reload, catch it
-        // and force one more reload (only once per session to avoid loops).
+        // Reactive: if React error still occurs, force one more reload (dev only)
         var RELOAD_KEY = 'vite-cache-bust';
         window.addEventListener('error', function (e) {
           var msg = (e.error && e.error.message) || e.message || '';
