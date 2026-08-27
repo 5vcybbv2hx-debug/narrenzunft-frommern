@@ -780,7 +780,7 @@ function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, onEditVeranstaltun
         </div>
       )}
 
-      {termin.anmeldbar && !istVonVeranstaltung && onAnmelden && (
+      {termin.anmeldbar && !istVonVeranstaltung && !istVonAusfahrt && onAnmelden && (
         <div className="px-4 pb-3">
           <button
             onClick={onAnmelden}
