@@ -340,24 +340,24 @@ export function findeDataProbleme(mitglieder, teilnahmen, veranstaltungen, ehrun
 // ── Bald fällige Ehrungen ─────────────────────────────────────────────────────
 
 /**
- * Prüft ob eine Mitgliedsehrung bald fällig ist (max. 2 Jahre).
+ * Prüft ob eine Mitgliedsehrung bald fällig ist (erreicht oder max. 1 Jahr fehlend).
  */
 export function isMitgliedsEhrungBaldFaellig(ehrungsStatus) {
   // Includes jahreZurNaechsten === 0 (Stufe erreicht, Ehrung bei nächster HV)
   return (
     ehrungsStatus.jahreZurNaechsten !== null &&
-    ehrungsStatus.jahreZurNaechsten <= 2 &&
+    ehrungsStatus.jahreZurNaechsten <= 1 &&
     ehrungsStatus.jahreZurNaechsten >= 0
   );
 }
 
 /**
- * Prüft ob eine Umzugsehrung bald fällig ist (max. 5 Umzüge).
+ * Prüft ob eine Umzugsehrung bald fällig ist (erreicht oder max. 1 Umzug fehlend).
  */
 export function isUmzugsEhrungBaldFaellig(umzugsStatus) {
   return (
     umzugsStatus.fehlendeBisNaechste !== null &&
-    umzugsStatus.fehlendeBisNaechste <= 5 &&
+    umzugsStatus.fehlendeBisNaechste <= 1 &&
     umzugsStatus.fehlendeBisNaechste > 0
   );
 }

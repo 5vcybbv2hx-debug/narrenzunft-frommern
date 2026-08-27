@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { kannEhrungenVerwalten } from '@/lib/roles';
@@ -276,22 +277,26 @@ export default function Ehrungen() {
 
       {/* Kennzahlen */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <div className={`bg-card border rounded-xl p-4 ${faelligeEhrungen.length > 0 ? 'border-yellow-700/30' : 'border-border'}`}>
+        <button onClick={() => setActiveTab('faellig')}
+          className={`bg-card border rounded-xl p-4 text-left transition-all hover:border-yellow-600/50 ${faelligeEhrungen.length > 0 ? 'border-yellow-700/30' : 'border-border'}`}>
           <p className="text-xs text-muted-foreground">Fällig</p>
           <p className={`text-2xl font-oswald font-semibold mt-1 ${faelligeEhrungen.length > 0 ? 'text-yellow-400' : 'text-white'}`}>{faelligeEhrungen.length}</p>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-4">
+        </button>
+        <button onClick={() => setActiveTab('bald')}
+          className="bg-card border border-border rounded-xl p-4 text-left transition-all hover:border-primary/40">
           <p className="text-xs text-muted-foreground">Bald fällig</p>
           <p className="text-2xl font-oswald font-semibold text-white mt-1">{baldFaellige.length}</p>
-        </div>
-        <div className="bg-card border border-green-700/30 rounded-xl p-4">
+        </button>
+        <button onClick={() => setActiveTab('verliehen')}
+          className="bg-card border border-green-700/30 rounded-xl p-4 text-left transition-all hover:border-green-600/50">
           <p className="text-xs text-muted-foreground">Verliehen</p>
           <p className="text-2xl font-oswald font-semibold text-green-400 mt-1">{verlieheneEhrungen.length}</p>
-        </div>
-        <div className={`bg-card border rounded-xl p-4 ${dataProbleme.length > 0 ? 'border-red-700/30' : 'border-border'}`}>
+        </button>
+        <button onClick={() => setActiveTab('probleme')}
+          className={`bg-card border rounded-xl p-4 text-left transition-all hover:border-red-600/50 ${dataProbleme.length > 0 ? 'border-red-700/30' : 'border-border'}`}>
           <p className="text-xs text-muted-foreground">Datenprobleme</p>
           <p className={`text-2xl font-oswald font-semibold mt-1 ${dataProbleme.length > 0 ? 'text-red-400' : 'text-green-400'}`}>{dataProbleme.length}</p>
-        </div>
+        </button>
       </div>
 
       {/* Tabs */}
@@ -335,7 +340,7 @@ export default function Ehrungen() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-semibold text-white">{item.mitglied.vorname} {item.mitglied.nachname}</p>
+                        <Link to={`/mitglieder/${item.mitglied.id}`} className="font-semibold text-white hover:text-primary transition-colors">{item.mitglied.vorname} {item.mitglied.nachname}</Link>
                         <EhrungsBadge typ={item.typ} wert={item.stufe} />
                       </div>
                       <p className="text-sm text-muted-foreground mt-1">Aktuell: <span className="text-white font-medium">{item.stand}</span></p>
@@ -377,7 +382,7 @@ export default function Ehrungen() {
                     <TrendingUp size={18} className="text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-white">{item.mitglied.vorname} {item.mitglied.nachname}</p>
+                    <Link to={`/mitglieder/${item.mitglied.id}`} className="font-semibold text-white hover:text-primary transition-colors">{item.mitglied.vorname} {item.mitglied.nachname}</Link>
                     <p className="text-sm text-muted-foreground mt-0.5">
                       <EhrungsBadge typ={item.typ} wert={item.naechsteStufe} />
                       <span className="ml-2 text-xs">{
@@ -412,7 +417,7 @@ export default function Ehrungen() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-semibold text-white">{getMitgliedName(e.mitglied_id)}</p>
+                        {e.mitglied_id ? <Link to={`/mitglieder/${e.mitglied_id}`} className="font-semibold text-white hover:text-primary transition-colors">{getMitgliedName(e.mitglied_id)}</Link> : <p className="font-semibold text-white">{getMitgliedName(e.mitglied_id)}</p>}
                         <EhrungsBadge typ={e.typ} wert={e.wert} />
                       </div>
                       {e.datum && <p className="text-sm text-muted-foreground mt-1">Geplant für: <span className="text-white font-medium">{format(new Date(e.datum), 'dd.MM.yyyy', { locale: de })}</span></p>}
@@ -457,7 +462,7 @@ export default function Ehrungen() {
                     <Award size={18} className="text-green-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-white">{getMitgliedName(e.mitglied_id)}</p>
+                    {e.mitglied_id ? <Link to={`/mitglieder/${e.mitglied_id}`} className="font-semibold text-white hover:text-primary transition-colors">{getMitgliedName(e.mitglied_id)}</Link> : <p className="font-semibold text-white">{getMitgliedName(e.mitglied_id)}</p>}
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       <EhrungsBadge typ={e.typ} wert={e.wert} />
                       {e.datum && <span className="text-xs text-muted-foreground">{format(new Date(e.datum), 'dd.MM.yyyy', { locale: de })}</span>}
