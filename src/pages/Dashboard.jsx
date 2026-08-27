@@ -1,16 +1,16 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 import { useAuth } from '@/lib/AuthContext';
 import {
   Calendar, Users, Briefcase, Shirt, ArrowRight, ChevronRight,
-  Shield, CheckCircle, AlertCircle, Clock, MapPin, Baby,
+  Shield, CheckCircle, AlertCircle, Clock, Baby,
   Phone, MessageCircle, Bus,
 } from 'lucide-react';
-import { format, addDays, differenceInDays } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { isAdmin, kannArbeitsdiensteVerwalten, istNurMitglied, getRollenLabel } from '@/lib/roles';
 import MitgliedDashboard from '@/components/dashboard/MitgliedDashboard';
@@ -99,14 +99,15 @@ const EVENT_TYP_STYLE = {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isAdminUser = isAdmin(user);
   const kannVerwalten = kannArbeitsdiensteVerwalten(user);
   const today = new Date().toISOString().split('T')[0];
 
-  const { data: dashData, isLoading, refetch } = useQuery({
+  const { data: dashData, isLoading, isError, refetch } = useQuery({
     queryKey: ['dashboard-merged', user?.role],
+    enabled: !istNurMitglied(user),
     queryFn: async () => {
-      if (istNurMitglied(user)) return null;
       const [dashResult, haesResult, zuweisungen, ausfahrten] = await Promise.all([
         base44.functions.invoke('getDashboardSicher', {}),
         isAdmin(user)
@@ -151,7 +152,9 @@ export default function Dashboard() {
       .map(m => {
         const geb = new Date(m.geburtsdatum);
         const diesesJ = new Date(heute4B.getFullYear(), geb.getMonth(), geb.getDate());
-        const naechste = diesesJ < heute4B ? addDays(diesesJ, 365) : diesesJ;
+        const naechste = diesesJ < heute4B
+          ? new Date(heute4B.getFullYear() + 1, geb.getMonth(), geb.getDate())
+          : diesesJ;
         return { ...m, _naechsteGeb: naechste, _alter: new Date().getFullYear() - geb.getFullYear() };
       })
       .filter(m => m._naechsteGeb <= in30Tagen)
@@ -260,6 +263,16 @@ export default function Dashboard() {
   // ── Reguläre Mitglieder: nur persönliches Dashboard ──
   if (istNurMitglied(user)) return <MitgliedDashboard />;
 
+  if (isError) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+      <AlertCircle size={32} className="text-red-400" />
+      <p className="text-sm text-muted-foreground">Dashboard konnte nicht geladen werden</p>
+      <button onClick={() => refetch()} className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
+        Erneut versuchen
+      </button>
+    </div>
+  );
+
   if (isLoading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="flex flex-col items-center gap-3">
@@ -303,9 +316,9 @@ export default function Dashboard() {
 
       {/* Stats Row (reduziert) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-6">
-        <StatCard icon={Calendar} label="Kommende Termine" value={stats.kommendeEvents} onClick={() => window.location.href = '/kalender'} />
+        <StatCard icon={Calendar} label="Kommende Termine" value={stats.kommendeEvents} onClick={() => navigate('/kalender')} />
         {kannVerwalten && (
-          <StatCard icon={Briefcase} label="Offene Dienste" value={stats.offeneDienste} onClick={() => window.location.href = '/arbeitsdienste'} />
+          <StatCard icon={Briefcase} label="Offene Dienste" value={stats.offeneDienste} onClick={() => navigate('/arbeitsdienste')} />
         )}
         {kannVerwalten && (
           <StatCard
@@ -313,7 +326,7 @@ export default function Dashboard() {
             label="Unterbesetzt"
             value={stats.unterbesetzt}
             color={stats.unterbesetzt > 0 ? 'text-red-400' : 'text-green-400'}
-            onClick={() => window.location.href = '/arbeitsdienste'}
+            onClick={() => navigate('/arbeitsdienste')}
           />
         )}
         {isAdminUser && stats.haesGesamt > 0 && (
@@ -323,7 +336,7 @@ export default function Dashboard() {
             value={stats.haesVerfuegbar}
             sub="Nicht zugeordnet / Vereinsbesitz"
             color={stats.haesVerfuegbar > 0 ? 'text-yellow-400' : 'text-green-400'}
-            onClick={() => window.location.href = '/haes'}
+            onClick={() => navigate('/haes')}
           />
         )}
       </div>
@@ -522,7 +535,7 @@ export default function Dashboard() {
         )}
 
         {/* Verfügbare Häs — detailliert & klickbar */}
-        {isAdminUser && verfuegbareHaes.length > 0 && (
+        {isAdminUser && stats.haesGesamt > 0 && (
           <SectionCard
             title="Verfügbare Häs"
             subtitle="Nicht zugeordnet oder Vereinsbesitz (ohne Amtshäs)"
@@ -531,7 +544,12 @@ export default function Dashboard() {
             linkLabel="Alle Häs ansehen"
           >
             <div className="space-y-2">
-              {verfuegbareHaes.slice(0, 8).map(h => {
+              {verfuegbareHaes.length === 0 ? (
+                <div className="flex items-center gap-2 py-3">
+                  <CheckCircle size={18} className="text-green-400" />
+                  <p className="text-sm text-green-400 font-medium">Alle Häs sind zugeordnet</p>
+                </div>
+              ) : verfuegbareHaes.slice(0, 8).map(h => {
                 const isVereinsbesitz = h.vereinseigentum === true;
                 const isZugeordnet = !!h.aktueller_besitzer_id;
                 return (
@@ -558,6 +576,7 @@ export default function Dashboard() {
                   </Link>
                 );
               })}
+              )}
               {verfuegbareHaes.length > 8 && (
                 <Link to="/haes" className="block text-center text-xs text-primary hover:text-primary/80 pt-1">
                   +{verfuegbareHaes.length - 8} weitere ansehen
