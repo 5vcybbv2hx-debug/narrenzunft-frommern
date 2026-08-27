@@ -99,7 +99,7 @@ export default function Haes() {
     if (search) {
       return h.haesnummer?.includes(search) ||
         h.bezeichnung?.toLowerCase().includes(search.toLowerCase()) ||
-        (h.besitzer_name || getMitgliedName(h.aktueller_besitzer_id, h)).toLowerCase().includes(search.toLowerCase());
+        (h.besitzer_name || '').toLowerCase().includes(search.toLowerCase());
     }
     return true;
   }).sort((a, b) => {
@@ -242,7 +242,7 @@ export default function Haes() {
               <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                 {h.haesgruppe_id && <span>{getGruppeName(h.haesgruppe_id)}</span>}
                 {h.aktueller_besitzer_id && (
-                  <span className="truncate">· {h.besitzer_name || getMitgliedName(h.aktueller_besitzer_id, h)}</span>
+                  <span className="truncate">· {h.besitzer_name || '–'}</span>
                 )}
               </div>
             </div>
