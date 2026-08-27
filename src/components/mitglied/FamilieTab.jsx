@@ -197,7 +197,7 @@ export default function FamilieTab({ mitglied, isAdmin }) {
                         </a>
                       )}
                       {m.email && (
-                        <a href={`mailto:${m.email}`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors">
+                        <a href={`mailto:${m.email}`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors truncate min-w-0">
                           <Mail size={11} /> {m.email}
                         </a>
                       )}
@@ -207,14 +207,14 @@ export default function FamilieTab({ mitglied, isAdmin }) {
                   <div className="flex items-center gap-1 shrink-0">
                     <Link
                       to={`/mitglieder/${m.id}`}
-                      className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                      className="p-2.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                     >
                       <ChevronRight size={14} />
                     </Link>
                     {isAdmin && (
                       <button
                         onClick={() => handleDelete(v.id)}
-                        className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        className="p-2.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                       >
                         <Trash2 size={14} />
                       </button>

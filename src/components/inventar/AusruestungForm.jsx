@@ -49,7 +49,7 @@ export default function AusruestungForm({ ausruestung, onSave, onDelete, onClose
           <h3 className="font-oswald uppercase tracking-wide font-bold text-white">
             {isNew ? 'Neuer Gegenstand' : 'Gegenstand bearbeiten'}
           </h3>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-white">
+          <button onClick={onClose} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-white">
             <X size={16} />
           </button>
         </div>
@@ -85,7 +85,7 @@ export default function AusruestungForm({ ausruestung, onSave, onDelete, onClose
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-muted-foreground font-medium block mb-1">Zustand</label>
               <select value={form.zustand} onChange={e => set('zustand', e.target.value)}
@@ -101,7 +101,7 @@ export default function AusruestungForm({ ausruestung, onSave, onDelete, onClose
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-muted-foreground font-medium block mb-1">Bestand (Stück)</label>
               <input type="number" value={form.bestand ?? 1} onChange={e => set('bestand', e.target.value ? Number(e.target.value) : 1)}
@@ -134,7 +134,7 @@ export default function AusruestungForm({ ausruestung, onSave, onDelete, onClose
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
                 <Truck size={14} /> Fahrzeug-Details
               </p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">Kennzeichen</label>
                   <input value={form.kennzeichen || ''} onChange={e => set('kennzeichen', e.target.value)}

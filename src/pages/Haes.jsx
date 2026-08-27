@@ -63,7 +63,8 @@ export default function Haes() {
     setLoading(false);
   };
 
-  const getMitgliedName = (id) => {
+  const getMitgliedName = (id, h) => {
+    if (h?.besitzer_name) return h.besitzer_name;
     const m = (mitglieder || []).find(m => m.id === id);
     return m ? `${m.vorname} ${m.nachname}` : '–';
   };
@@ -100,7 +101,7 @@ export default function Haes() {
     if (search) {
       return h.haesnummer?.includes(search) ||
         h.bezeichnung?.toLowerCase().includes(search.toLowerCase()) ||
-        getMitgliedName(h.aktueller_besitzer_id).toLowerCase().includes(search.toLowerCase());
+        (h.besitzer_name || getMitgliedName(h.aktueller_besitzer_id, h)).toLowerCase().includes(search.toLowerCase());
     }
     return true;
   }).sort((a, b) => {
@@ -129,7 +130,7 @@ export default function Haes() {
   );
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto overflow-x-hidden">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-oswald font-semibold text-foreground tracking-wide">Häs & Masken</h1>
@@ -140,13 +141,13 @@ export default function Haes() {
 
             <button
               onClick={() => setShowNewGruppe(true)}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-secondary text-foreground text-sm font-medium hover:bg-border transition-colors"
+              className="flex items-center gap-2 px-3 py-2.5 min-h-[44px] rounded-xl bg-secondary text-foreground text-sm font-medium hover:bg-border transition-colors"
             >
               <Plus size={16} /> <span className="hidden sm:inline">Gruppe</span>
             </button>
             <button
               onClick={() => setShowNewHaes(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
             >
               <Plus size={16} /> Häs
             </button>
@@ -155,7 +156,7 @@ export default function Haes() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 mb-4">
         {[
           { label: 'Gesamt',      value: stats.gesamt,      color: 'text-foreground',  filter: 'Alle' },
           { label: 'Aktiv',       value: stats.aktiv,       color: 'text-green-400',   filter: 'Aktiv' },
@@ -243,7 +244,7 @@ export default function Haes() {
               <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                 {h.haesgruppe_id && <span>{getGruppeName(h.haesgruppe_id)}</span>}
                 {h.aktueller_besitzer_id && (
-                  <span className="truncate">· {getMitgliedName(h.aktueller_besitzer_id)}</span>
+                  <span className="truncate">· {h.besitzer_name || getMitgliedName(h.aktueller_besitzer_id, h)}</span>
                 )}
               </div>
             </div>

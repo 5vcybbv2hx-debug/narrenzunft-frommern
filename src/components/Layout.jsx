@@ -345,7 +345,7 @@ export default function Layout() {
                 </div>
               </div>
               <button onClick={() => setSidebarOpen(false)}
-                className="p-2 rounded-md text-muted-foreground hover:text-white hover:bg-sidebar-accent transition-colors">
+                className="p-3 rounded-md text-muted-foreground hover:text-white hover:bg-sidebar-accent transition-colors">
                 <X size={18} />
               </button>
             </div>
@@ -386,7 +386,7 @@ export default function Layout() {
 
           <div className="flex items-center gap-1.5 ml-auto">
             <Link to="/benachrichtigungen"
-              className="relative p-2.5 rounded-md text-muted-foreground hover:bg-neutral-800 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
+              className="relative p-2.5 rounded-md text-muted-foreground hover:bg-neutral-800 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0">
               <Bell size={20} />
               {notifications > 0 && (
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary/10 border border-primary/30 rounded-full shadow-sm shadow-primary/50" />

@@ -58,7 +58,7 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
       <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-bold text-foreground text-lg">{isNew ? 'Neuer Termin' : 'Termin bearbeiten'}</h3>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary">
+          <button onClick={onClose} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary">
             <X size={18} />
           </button>
         </div>
@@ -155,7 +155,7 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
           </div>
 
           {form.anmeldbar && (
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
                 <label className="text-xs text-muted-foreground block mb-1">Anmeldeschluss</label>
                 <DateSelect name="anmeldeschluss" value={form.anmeldeschluss || ''} onChange={e => set('anmeldeschluss', e.target.value)}

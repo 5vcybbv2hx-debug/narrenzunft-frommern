@@ -189,7 +189,7 @@ export default function Ausfahrten() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 text-white min-h-screen bg-background">
+    <div className="max-w-4xl mx-auto px-4 py-8 text-white min-h-screen bg-background overflow-x-hidden">
       {/* Header section with Oswald font */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
@@ -226,7 +226,7 @@ export default function Ausfahrten() {
         </div>
 
         {/* Filter Chips */}
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 md:mx-0 md:px-0">
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none px-1">
           {[
             { id: 'Alle', label: 'Alle', count: counts.total },
             { id: 'Kommend', label: 'Kommend', count: counts.kommend },

@@ -145,7 +145,7 @@ export default function ArbeitsdienstNeu() {
 
       <div className="bg-card border border-border rounded-xl p-5 space-y-4 mb-4">
         {field('Titel *', 'titel')}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {field('Datum *', 'datum', 'date')}
           {field('Uhrzeit', 'uhrzeit', 'time')}
         </div>
@@ -160,7 +160,7 @@ export default function ArbeitsdienstNeu() {
 
         <div>
           <label className="text-xs text-muted-foreground font-medium block mb-1">Status</label>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {['Offen', 'In Planung', 'Abgeschlossen'].map(s => (
               <button
                 key={s}

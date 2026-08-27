@@ -259,7 +259,7 @@ export default function Mitglieder() {
 
       {/* Suche + Sort + Filter — sticky */}
       <div className="sticky top-0 z-20 -mx-4 lg:-mx-6 px-4 lg:px-6 pb-2 pt-2 bg-background/95 backdrop-blur-sm mb-3">
-      <div className="flex gap-2 mb-3">
+      <div className="flex flex-col sm:flex-row gap-2 mb-3">
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -383,7 +383,7 @@ export default function Mitglieder() {
                       );
                     });
                   })()}
-                  {m.ort && <span className="text-xs text-muted-foreground truncate max-w-[100px]">{m.ort}</span>}
+                  {m.ort && <span className="text-xs text-muted-foreground truncate max-w-[140px] sm:max-w-none">{m.ort}</span>}
                   {eintrittsJahr && (
                     <span className="text-xs text-muted-foreground">seit {eintrittsJahr}</span>
                   )}

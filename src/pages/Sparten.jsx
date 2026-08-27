@@ -96,7 +96,7 @@ export default function Sparten() {
   );
 
   return (
-    <div className="px-4 lg:px-6 py-6 max-w-4xl mx-auto">
+    <div className="px-4 lg:px-6 py-6 max-w-4xl mx-auto overflow-x-hidden">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-oswald font-semibold text-foreground tracking-wide">Sparten & Gruppen</h1>
@@ -178,17 +178,6 @@ export default function Sparten() {
                         onDelete={() => handleDelete(gruppe.id)}
                         onMitgliederChanged={loadData}
                       />
-                      <div
-                        className="absolute right-12 top-3 z-10"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/sparte/${gruppe.id}`);
-                        }}
-                      >
-                        <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-medium border border-neutral-700 transition-all shadow-sm">
-                          Verwalten <ChevronRight size={14} />
-                        </button>
-                      </div>
                     </div>
                   );
                 })}
@@ -219,17 +208,6 @@ export default function Sparten() {
                   onDelete={() => handleDelete(gruppe.id)}
                   onMitgliederChanged={loadData}
                 />
-                <div
-                  className="absolute right-12 top-3 z-10"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/sparte/${gruppe.id}`);
-                  }}
-                >
-                  <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-medium border border-neutral-700 transition-all shadow-sm">
-                    Verwalten <ChevronRight size={14} />
-                  </button>
-                </div>
               </div>
             );
           })}

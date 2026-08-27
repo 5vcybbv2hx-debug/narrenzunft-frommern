@@ -54,7 +54,7 @@ export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, auslei
               <p className="text-xs text-muted-foreground">{ausruestung.kategorie}</p>
             </div>
             {isAdmin && (
-              <button onClick={onEdit} className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors shrink-0">
+              <button onClick={onEdit} className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors shrink-0">
                 <Edit size={14} />
               </button>
             )}
@@ -120,7 +120,7 @@ export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, auslei
           {/* Ausleihen-Button */}
           <button
             onClick={onAusleihen}
-            className="mt-3 w-full py-2 rounded-lg bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors"
+            className="mt-3 w-full py-2.5 min-h-[44px] rounded-lg bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors"
           >
             + Ausleihe eintragen
           </button>

@@ -87,13 +87,13 @@ export default function UmzugCheckinModal({ veranstaltung, onClose }) {
             <h3 className="font-bold text-foreground">Check-In</h3>
             <p className="text-xs text-muted-foreground truncate max-w-[260px]">{veranstaltung.titel}</p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground">
+          <button onClick={onClose} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground">
             <X size={18} />
           </button>
         </div>
 
         {/* Statistik */}
-        <div className="grid grid-cols-3 gap-2 px-5 py-3 shrink-0">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 px-5 py-3 shrink-0">
           <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-2.5 text-center">
             <p className="text-xl font-bold text-green-400">{anwesend.length}</p>
             <p className="text-[10px] text-muted-foreground">Anwesend</p>

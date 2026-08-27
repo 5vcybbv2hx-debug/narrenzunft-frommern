@@ -334,7 +334,7 @@ export default function MitgliedDashboard() {
       )}
 
       {/* Schnellzugriff */}
-      <div className="grid grid-cols-2 gap-3 pt-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
         <Link to="/umzuege" className="flex flex-col items-center gap-2 bg-card border border-border rounded-xl p-4 hover:border-primary/50 transition-colors">
           <Calendar size={22} className="text-primary" />
           <span className="text-xs font-semibold text-foreground">Termine</span>

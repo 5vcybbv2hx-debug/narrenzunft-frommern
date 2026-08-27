@@ -120,7 +120,7 @@ export default function StatuswechselWidget() {
                   <button
                     onClick={() => statusBestaetigen(eintrag, d.empfohlener_status)}
                     disabled={isLoading}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-green-500/15 text-green-400 text-xs font-semibold hover:bg-green-500/25 transition-colors disabled:opacity-50"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 min-h-[44px] rounded-lg bg-green-500/15 text-green-400 text-xs font-semibold hover:bg-green-500/25 transition-colors disabled:opacity-50"
                   >
                     {isLoading
                       ? <div className="w-3 h-3 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
@@ -139,7 +139,7 @@ export default function StatuswechselWidget() {
       <button
         onClick={manuellPruefen}
         disabled={pruefeLaeuft}
-        className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-secondary text-muted-foreground text-xs hover:text-foreground hover:bg-border transition-colors disabled:opacity-50"
+        className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 min-h-[44px] rounded-lg bg-secondary text-muted-foreground text-xs hover:text-foreground hover:bg-border transition-colors disabled:opacity-50"
       >
         <RefreshCw size={12} className={pruefeLaeuft ? 'animate-spin' : ''} />
         {pruefeLaeuft ? 'Prüfung läuft...' : 'Jetzt manuell prüfen'}

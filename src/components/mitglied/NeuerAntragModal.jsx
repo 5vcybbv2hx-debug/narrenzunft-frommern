@@ -89,7 +89,7 @@ export default function NeuerAntragModal({ onClose, onMitgliedAngelegt }) {
     <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
       <div className="bg-card border border-border rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-border">
+        <div className="flex items-center justify-between px-4 sm:px-6 pt-6 pb-4 border-b border-border">
           <div>
             <h2 className="font-bold text-foreground text-lg">Neuer Mitgliedsantrag</h2>
             <p className="text-xs text-muted-foreground mt-0.5">Schritt {step + 1} von {STEPS.length}: <span className="text-foreground">{STEPS[step]}</span></p>
@@ -100,18 +100,18 @@ export default function NeuerAntragModal({ onClose, onMitgliedAngelegt }) {
         </div>
 
         {/* Fortschrittsbalken */}
-        <div className="flex gap-1 px-6 pt-4">
+        <div className="flex gap-1 px-4 sm:px-6 pt-4">
           {STEPS.map((_, i) => (
             <div key={i} className={`h-1 flex-1 rounded-full transition-all ${i <= step ? 'bg-primary' : 'bg-border'}`} />
           ))}
         </div>
 
-        <div className="px-6 py-5 space-y-4">
+        <div className="px-4 sm:px-6 py-5 space-y-4">
 
           {/* STEP 0 */}
           {step === 0 && (
             <>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Field label="Vorname *" value={form.vorname} onChange={v => set('vorname', v)} />
                 <Field label="Nachname *" value={form.nachname} onChange={v => set('nachname', v)} />
               </div>
@@ -124,11 +124,11 @@ export default function NeuerAntragModal({ onClose, onMitgliedAngelegt }) {
           {step === 1 && (
             <>
               <Field label="Straße & Hausnummer" value={form.strasse} onChange={v => set('strasse', v)} />
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <Field label="PLZ" value={form.plz} onChange={v => set('plz', v)} />
                 <div className="col-span-2"><Field label="Ort" value={form.ort} onChange={v => set('ort', v)} /></div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Field label="Telefon" value={form.telefon} onChange={v => set('telefon', v)} />
                 <Field label="Handy" value={form.handy} onChange={v => set('handy', v)} />
               </div>
@@ -141,7 +141,7 @@ export default function NeuerAntragModal({ onClose, onMitgliedAngelegt }) {
             <>
               <div>
                 <label className="text-xs text-muted-foreground font-medium block mb-2">Gewünschte Sparte</label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {SPARTEN.map(s => (
                     <button key={s} type="button" onClick={() => set('sparte', s)}
                       className={`py-3 rounded-xl text-sm font-semibold border transition-all ${form.sparte === s ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary text-muted-foreground border-border hover:border-primary/50'}`}>
@@ -153,11 +153,11 @@ export default function NeuerAntragModal({ onClose, onMitgliedAngelegt }) {
               <div className="border-t border-border pt-4 space-y-3">
                 <p className="text-xs font-semibold text-primary uppercase tracking-wide">SEPA-Lastschriftmandat</p>
                 <Field label="Kontoinhaber & Anschrift" value={form.sepa_kontoinhaber} onChange={v => set('sepa_kontoinhaber', v)} placeholder="Max Mustermann, Musterstr. 1, 72336..." />
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Field label="IBAN" value={form.sepa_iban} onChange={v => set('sepa_iban', v.toUpperCase())} mono placeholder="DE00 0000..." />
                   <Field label="BIC" value={form.sepa_bic} onChange={v => set('sepa_bic', v.toUpperCase())} mono />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Field label="Ort Unterzeichnung" value={form.sepa_ort} onChange={v => set('sepa_ort', v)} />
                   <Field label="Datum" type="date" value={form.sepa_datum} onChange={v => set('sepa_datum', v)} />
                 </div>
@@ -207,7 +207,7 @@ export default function NeuerAntragModal({ onClose, onMitgliedAngelegt }) {
         </div>
 
         {/* Footer Navigation */}
-        <div className="px-6 pb-6 flex gap-2">
+        <div className="px-4 sm:px-6 pb-6 flex gap-2">
           {done ? (
             <button onClick={onClose} className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold">
               Schließen

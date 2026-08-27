@@ -185,7 +185,7 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
               <input value={form.titel} onChange={e => set('titel', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
                 <label className="text-xs text-muted-foreground font-medium block mb-1">Datum</label>
                 <DateSelect name="datum" value={form.datum || ''} onChange={e => set('datum', e.target.value)}
@@ -202,7 +202,7 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
               <input value={form.ort || ''} onChange={e => set('ort', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
                 <label className="text-xs text-muted-foreground font-medium block mb-1">Personen</label>
                 <input type="number" min="0" value={form.benoetigte_personen || ''} onChange={e => set('benoetigte_personen', e.target.value ? Number(e.target.value) : '')}
@@ -353,7 +353,7 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
                         >
                           {ZUWEISUNG_STATUS.map(s => <option key={s}>{s}</option>)}
                         </select>
-                        <button onClick={() => handleRemove(z.id)} className="p-1 rounded text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 shrink-0">
+                        <button onClick={() => handleRemove(z.id)} className="p-1 rounded text-muted-foreground hover:text-destructive transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 shrink-0">
                           <X size={12} />
                         </button>
                       </div>

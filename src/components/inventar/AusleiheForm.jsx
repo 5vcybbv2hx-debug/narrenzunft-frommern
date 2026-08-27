@@ -120,7 +120,7 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
           <h3 className="font-oswald uppercase tracking-wide font-bold text-white">
             {isNew ? 'Ausleihe eintragen' : 'Ausleihe bearbeiten'}
           </h3>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-white">
+          <button onClick={onClose} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-white">
             <X size={16} />
           </button>
         </div>
@@ -272,7 +272,7 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
                       onChange={e => setNeuExtern(p => ({ ...p, organisation: e.target.value }))}
                       className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary"
                     />
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <input
                         type="text" placeholder="Telefon" value={neuExtern.telefon}
                         onChange={e => setNeuExtern(p => ({ ...p, telefon: e.target.value }))}
@@ -306,7 +306,7 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
           </div>
 
           {/* Zeitraum */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
               <label className="text-xs text-muted-foreground font-medium block mb-1">Von *</label>
               <DateSelect name="von_datum" value={form.von_datum} onChange={e => set('von_datum', e.target.value)}

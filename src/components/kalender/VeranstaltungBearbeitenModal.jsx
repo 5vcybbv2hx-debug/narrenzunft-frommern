@@ -64,11 +64,11 @@ export default function VeranstaltungBearbeitenModal({ veranstaltung, onClose, o
           </h3>
           <div className="flex items-center gap-2">
             {veranstaltung?.id && (
-              <button onClick={handleDelete} className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+              <button onClick={handleDelete} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
                 <Trash2 size={16} />
               </button>
             )}
-            <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+            <button onClick={onClose} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
               <X size={18} />
             </button>
           </div>
@@ -107,7 +107,7 @@ export default function VeranstaltungBearbeitenModal({ veranstaltung, onClose, o
           {/* Status */}
           <div>
             <label className="text-xs text-muted-foreground font-medium block mb-1">Status</label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {[{ value: 'Geplant', emoji: '📅' }, { value: 'Aktiv', emoji: '✅' }, { value: 'Abgeschlossen', emoji: '🏁' }, { value: 'Abgesagt', emoji: '❌' }].map(s => (
                 <button key={s.value} type="button" onClick={() => set('status', s.value)}
                   className={`py-2 rounded-lg text-sm font-medium transition-all border ${form.status === s.value ? 'bg-primary/20 text-primary border-primary/40' : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'}`}>

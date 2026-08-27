@@ -44,7 +44,7 @@ export default function UmzugAbschliessenModal({ veranstaltung, onClose, onAbges
       <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-bold text-foreground text-lg">Umzug abschließen</h3>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground">
+          <button onClick={onClose} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground">
             <X size={18} />
           </button>
         </div>
@@ -58,7 +58,7 @@ export default function UmzugAbschliessenModal({ veranstaltung, onClose, onAbges
 
             {/* Vorschau-Statistik */}
             {vorschau && (
-              <div className="grid grid-cols-4 gap-2 mb-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
                 <div className="bg-secondary rounded-xl p-2.5 text-center">
                   <p className="text-lg font-bold text-foreground">{vorschau.angemeldet}</p>
                   <p className="text-[10px] text-muted-foreground">Angemeldet</p>

@@ -443,7 +443,7 @@ export default function Dashboard() {
                         </span>
                       </div>
                       {pct !== null && (
-                        <div className="ml-14 h-1.5 bg-secondary rounded-full overflow-hidden">
+                        <div className="ml-0 sm:ml-14 h-1.5 bg-secondary rounded-full overflow-hidden">
                           <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
                         </div>
                       )}

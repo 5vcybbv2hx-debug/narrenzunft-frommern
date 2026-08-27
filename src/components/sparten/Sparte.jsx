@@ -79,10 +79,10 @@ export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten
         {/* Admin Buttons */}
         {isAdmin && (
           <div className="flex gap-1 shrink-0">
-            <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
+            <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="p-2.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
               <Edit size={15} />
             </button>
-            <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+            <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-2.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
               <Trash2 size={15} />
             </button>
           </div>

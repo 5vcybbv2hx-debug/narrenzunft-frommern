@@ -232,7 +232,7 @@ export default function Inventar() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-neutral-800 rounded-xl p-1 mb-5">
+      <div className="flex gap-1 bg-neutral-800 rounded-xl p-1 mb-5 overflow-x-auto scrollbar-hide">
         {[
           { id: 'uebersicht', label: 'Übersicht', icon: Package },
           { id: 'ausleihen', label: `Ausleihen (${aktuelleAusleihen.length})`, icon: Clock },
