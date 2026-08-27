@@ -37,7 +37,7 @@ export default function VeranstaltungNeu() {
   const [showArbeitsdienste, setShowArbeitsdienste] = useState(false);
 
   useEffect(() => {
-    base44.entities.Veranstaltungsvorlage.list('name', 100).then(setVorlagen).catch(() => {});
+    base44.entities.Veranstaltungsvorlage.list('name', 100).then(setVorlagen).catch((e) => { console.error('Vorlagen laden:', e); });
   }, []);
 
   const applyVorlage = (vorlage) => {

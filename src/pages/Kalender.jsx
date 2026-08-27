@@ -213,7 +213,7 @@ export default function Kalender() {
   };
 
   const handleAusfahrtUnregister = async (anmeldungId, ausfahrtId) => {
-    if (!window.confirm('Möchten Sie sich wirklich von dieser Ausfahrt abmelden?')) return;
+    if (!confirm('Möchten Sie sich wirklich von dieser Ausfahrt abmelden?')) return;
     setSubmittingAusfahrtId(ausfahrtId);
     try {
       const todayStr = format(new Date(), 'yyyy-MM-dd');

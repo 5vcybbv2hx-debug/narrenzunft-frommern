@@ -150,7 +150,7 @@ export default function Mitglieder() {
     try {
       const gruppen = await base44.entities.Haesgruppe.list('name', 200);
       gruppen.forEach(g => { gruppenMap[g.id] = g.name; });
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
 
     const rows = mitglieder
       .filter(m => !m.archiviert)

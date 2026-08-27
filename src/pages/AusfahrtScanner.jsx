@@ -200,7 +200,7 @@ export default function AusfahrtScanner() {
   useEffect(() => {
     return () => {
       if (html5QrCodeRef.current) {
-        html5QrCodeRef.current.stop().catch(() => {});
+        html5QrCodeRef.current.stop().catch(() => { /* scanner already stopped */ });
       }
     };
   }, []);
@@ -254,7 +254,7 @@ export default function AusfahrtScanner() {
                 <p className="text-gray-400 text-sm mb-2">
                   Du bist als Busverantwortlicher eingetragen, aber der QR-Scanner ist erst <strong className="text-primary">am Tag der Ausfahrt</strong> verfügbar.
                 </p>
-                <p className="text-gray-500 text-xs flex items-center justify-center gap-1.5 mt-3">
+                <p className="text-muted-foreground text-xs flex items-center justify-center gap-1.5 mt-3">
                   <Calendar className="w-4 h-4" /> {formatDisplayDate(ausfahrt.datum)}
                 </p>
               </>
@@ -290,7 +290,7 @@ export default function AusfahrtScanner() {
               <p className="text-gray-400 text-sm">{ausfahrt.titel}</p>
             </div>
           </div>
-          <p className="text-gray-500 text-xs mt-2">{formatDisplayDate(ausfahrt.datum)}</p>
+          <p className="text-muted-foreground text-xs mt-2">{formatDisplayDate(ausfahrt.datum)}</p>
           {isBusverantwortlicher && !hasGeneralAccess && (
             <p className="text-primary text-xs mt-2 font-medium flex items-center gap-1">
               <Users className="w-3.5 h-3.5" /> Du bist heute als Busverantwortlicher eingetragen
@@ -302,15 +302,15 @@ export default function AusfahrtScanner() {
         <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
           <div className="bg-card border border-border rounded-xl p-4 text-center">
             <p className="text-2xl font-bold font-oswald text-white">{gesamtCount}</p>
-            <p className="text-xs text-gray-500 mt-1">Angemeldet</p>
+            <p className="text-xs text-muted-foreground mt-1">Angemeldet</p>
           </div>
           <div className="bg-green-950/30 border border-green-800/40 rounded-xl p-4 text-center">
             <p className="text-2xl font-bold font-oswald text-green-400">{eingechecktCount}</p>
-            <p className="text-xs text-gray-500 mt-1">Eingecheckt</p>
+            <p className="text-xs text-muted-foreground mt-1">Eingecheckt</p>
           </div>
           <div className="bg-card border border-border rounded-xl p-4 text-center">
             <p className="text-2xl font-bold font-oswald text-primary">{gesamtCount - eingechecktCount}</p>
-            <p className="text-xs text-gray-500 mt-1">Offen</p>
+            <p className="text-xs text-muted-foreground mt-1">Offen</p>
           </div>
         </div>
 
@@ -328,7 +328,7 @@ export default function AusfahrtScanner() {
               <div id="qr-reader" className="w-full max-w-sm mx-auto rounded-xl overflow-hidden bg-black aspect-square" ref={scannerRef} />
               <button
                 onClick={stopScanner}
-                className="w-full bg-neutral-800 hover:bg-neutral-700 text-white border border-border font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
+                className="w-full bg-secondary hover:bg-border text-foreground border border-border font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
               >
                 <XCircle className="w-5 h-5" /> Scanner stoppen
               </button>
@@ -363,7 +363,7 @@ export default function AusfahrtScanner() {
                       {result.erfolg ? 'Erfolgreich eingecheckt' : result.fehler || 'Fehler'}
                     </p>
                   </div>
-                  <span className="text-xs text-gray-500 shrink-0">{result.timestamp}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">{result.timestamp}</span>
                 </div>
               ))}
             </div>
@@ -376,7 +376,7 @@ export default function AusfahrtScanner() {
             <h2 className="text-sm font-bold font-oswald uppercase tracking-wider text-white">
               Manuelle Check-in Liste
             </h2>
-            <span className="text-xs text-gray-500">{eingechecktCount} / {gesamtCount} eingecheckt</span>
+            <span className="text-xs text-muted-foreground">{eingechecktCount} / {gesamtCount} eingecheckt</span>
           </div>
           <div className="space-y-2 max-h-[500px] overflow-y-auto">
             {activeAnmeldungen.length === 0 ? (
@@ -395,22 +395,22 @@ export default function AusfahrtScanner() {
                     className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors text-left ${
                       isEingecheckt
                         ? 'bg-green-950/20 border-green-800/40 cursor-not-allowed'
-                        : 'bg-neutral-900 border-border hover:border-primary/40 cursor-pointer'
+                        : 'bg-secondary border-border hover:border-primary/40 cursor-pointer'
                     }`}
                   >
                     <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
-                      isEingecheckt ? 'bg-green-900/50' : 'bg-neutral-800'
+                      isEingecheckt ? 'bg-green-900/50' : 'bg-secondary'
                     }`}>
                       {isEingecheckt
                         ? <CheckCircle2 className="w-5 h-5 text-green-400" />
-                        : <Users className="w-4 h-4 text-gray-500" />
+                        : <Users className="w-4 h-4 text-muted-foreground" />
                       }
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium truncate ${isEingecheckt ? 'text-gray-500' : 'text-white'}`}>
+                      <p className={`text-sm font-medium truncate ${isEingecheckt ? 'text-muted-foreground' : 'text-white'}`}>
                         {name}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         {reg.transport === 'Bus' ? '🚌 Bus' : '🚗 Privat'}
                         {reg.anzahl_begleitpersonen > 0 && ` · +${reg.anzahl_begleitpersonen} Begleitung`}
                       </p>

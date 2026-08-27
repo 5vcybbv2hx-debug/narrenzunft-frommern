@@ -42,9 +42,8 @@ export default function Todos() {
     setLoading(true);
     setError(null);
     try {
-      const me = await base44.auth.me();
-      const [myMArr, alleTodos] = await Promise.all([
-        base44.entities.Mitglied.filter({ user_id: me?.id }),
+            const [myMArr, alleTodos] = await Promise.all([
+        base44.entities.Mitglied.filter({ user_id: user?.id }),
         base44.entities.Todo.list('-created_date', 500),
       ]);
       const myM = myMArr?.[0] || null;

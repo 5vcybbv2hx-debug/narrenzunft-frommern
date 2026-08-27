@@ -48,7 +48,6 @@ export default function Shop() {
 
       // Mitglied laden (für "Meine Bestellungen")
       try {
-        const me = await base44.auth.me();
         if (me) {
           const own = await base44.entities.Mitglied.filter({ user_id: me.id });
           const myMitglied = own && own[0];

@@ -118,7 +118,6 @@ export default function Umzuege() {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['umzuege', admin],
     queryFn: async () => {
-      const me = await base44.auth.me();
       const [vData, einstellungen, myMArr] = await Promise.all([
         base44.entities.Veranstaltung.list('datum', 200),
         base44.entities.AppEinstellung.filter({ schluessel: 'busverantwortliche' }),
@@ -198,7 +197,7 @@ export default function Umzuege() {
       }
       setShowForm(false);
       await refetch();
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setSaving(false);
   };
 
@@ -207,7 +206,7 @@ export default function Umzuege() {
     try {
       await base44.entities.Veranstaltung.delete(id);
       updateQueryData(old => ({ ...old, umzuege: old.umzuege.filter(u => u.id !== id) }));
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
   };
 
   const getMeineAnmeldung = (veranstaltungId) =>
@@ -220,14 +219,14 @@ export default function Umzuege() {
         veranstaltung_id: veranstaltungId, mitglied_id: myMitglied.id, status: 'Angemeldet', bus
       });
       updateQueryData(old => ({ ...old, meineAnmeldungen: [...old.meineAnmeldungen, t] }));
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
   };
 
   const handleAbsagen = async (teilnahme) => {
     try {
       await base44.entities.Teilnahme.update(teilnahme.id, { status: 'Abgesagt' });
       updateQueryData(old => ({ ...old, meineAnmeldungen: old.meineAnmeldungen.map(a => a.id === teilnahme.id ? { ...a, status: 'Abgesagt' } : a) }));
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
   };
 
   if (isLoading) return (

@@ -136,7 +136,7 @@ export default function VeranstaltungDetail() {
     try {
       await base44.entities.Teilnahme.update(meineTeilnahme.id, { status: 'Abgesagt' });
       loadData();
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
   };
 
   /**
@@ -148,7 +148,7 @@ export default function VeranstaltungDetail() {
       const newStatus = teilnahme.status === 'Anwesend' ? 'Angemeldet' : 'Anwesend';
       await base44.entities.Teilnahme.update(teilnahme.id, { status: newStatus });
       setTeilnahmen(prev => prev.map(t => t.id === teilnahme.id ? { ...t, status: newStatus } : t));
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
   };
 
   const handleGenerateToken = async () => {
@@ -157,7 +157,7 @@ export default function VeranstaltungDetail() {
       const token = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
       await base44.entities.Veranstaltung.update(veranstaltung.id, { busfahrer_token: token });
       setVeranstaltung(prev => ({ ...prev, busfahrer_token: token }));
-    } catch (e) {}
+    } catch (e) { console.error('Error:', e); }
     setGeneratingToken(false);
   };
 

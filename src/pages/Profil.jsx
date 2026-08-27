@@ -90,11 +90,10 @@ export default function Profil() {
   const handleDeleteAccount = async () => {
     setDeleting(true);
     try {
-      const me = await base44.auth.me();
-      await base44.integrations.Core.SendEmail({
-        to: me?.email || '',
+            await base44.integrations.Core.SendEmail({
+        to: user?.email || '',
         subject: 'Account-Löschung beantragt',
-        body: `Hallo ${me?.full_name || ''},\n\nDeine Anfrage zur Account-Löschung wurde eingereicht und wird von einem Administrator bearbeitet. Du wirst in Kürze abgemeldet.\n\nNarrenzunft Verwaltung`,
+        body: `Hallo ${user?.full_name || ''},\n\nDeine Anfrage zur Account-Löschung wurde eingereicht und wird von einem Administrator bearbeitet. Du wirst in Kürze abgemeldet.\n\nNarrenzunft Verwaltung`,
       });
     } catch (e) {
       // Proceed even if email fails

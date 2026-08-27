@@ -37,12 +37,11 @@ export default function Inventar() {
     setLoading(true);
     setError(null);
     try {
-      const me = await base44.auth.me();
-      const [a, al, ep, myMArr] = await Promise.all([
+            const [a, al, ep, myMArr] = await Promise.all([
         base44.entities.Ausruestung.list('name', 200),
         base44.entities.Ausleihe.list('-von_datum', 300),
         admin ? base44.entities.ExternePerson.list('name', 200) : Promise.resolve([]),
-        base44.entities.Mitglied.filter({ user_id: me?.id }),
+        base44.entities.Mitglied.filter({ user_id: user?.id }),
       ]);
       setAusruestungen(a.filter(x => x.aktiv !== false));
       setAusleihen(al);

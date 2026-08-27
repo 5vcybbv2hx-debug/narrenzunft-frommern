@@ -44,14 +44,14 @@ const STATUS_BADGE_COLORS = {
   'Jungaktive 15-17':'bg-cyan-900/20 text-cyan-400 border border-cyan-700/30',
   'Kinder 4-10':'bg-pink-900/20 text-pink-400 border border-pink-700/30',
   'Kleinkind 0-3':'bg-rose-900/20 text-rose-400 border border-rose-700/30',
-  'Verstorben':'bg-neutral-700 text-neutral-400',
+  'Verstorben':'bg-border text-muted-foreground',
 };
 
 const HAES_STATUS_COLORS = {
   'Aktiv':'bg-green-900/20 text-green-400 border border-green-700/30',
   'Frei':'bg-yellow-900/20 text-yellow-400 border border-yellow-700/30',
   'Verliehen':'bg-blue-900/20 text-blue-400 border border-blue-700/30',
-  'Stillgelegt':'bg-neutral-700 text-neutral-400',
+  'Stillgelegt':'bg-border text-muted-foreground',
   'Verkauft':'bg-red-900/20 text-red-400 border border-red-700/30',
 };
 
@@ -145,8 +145,8 @@ export default function MitgliedDetail() {
     if (!isNew) loadMitglied();
     // Only load Haes data for admins (needed for Häs-Zuweisung modal)
     if (admin) {
-      base44.entities.Haesgruppe.list('name', 50).then(setHaesgruppen).catch(() => {});
-      base44.entities.Haes.list('haesnummer', 500).then(setAllHaes).catch(() => {});
+      base44.entities.Haesgruppe.list('name', 50).then(setHaesgruppen).catch((e) => { console.error('Load:', e); });
+      base44.entities.Haes.list('haesnummer', 500).then(setAllHaes).catch((e) => { console.error('Load:', e); });
     }
   }, [id, admin]);
 
@@ -422,7 +422,7 @@ export default function MitgliedDetail() {
         <Lock size={40} className="text-muted-foreground mb-3" />
         <h2 className="text-xl font-bold font-oswald uppercase tracking-wide text-white mb-2">Kein Zugriff</h2>
         <p className="text-sm text-muted-foreground mb-4">Du hast keine Berechtigung, dieses Mitgliederprofil zu öffnen.</p>
-        <button onClick={() => navigate(-1)} className="px-4 py-2 rounded-lg bg-neutral-800 text-sm text-white hover:bg-neutral-700 transition-colors">
+        <button onClick={() => navigate(-1)} className="px-4 py-2 rounded-lg bg-secondary text-sm text-white hover:bg-border transition-colors">
           Zurück
         </button>
       </div>
@@ -433,7 +433,7 @@ export default function MitgliedDetail() {
     <div className="px-4 lg:px-6 py-6 max-w-3xl mx-auto overflow-x-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6 flex-wrap">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-neutral-800 transition-colors text-muted-foreground hover:text-white">
+        <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground">
           <ArrowLeft size={20} />
         </button>
         <div className="flex-1">
@@ -451,7 +451,7 @@ export default function MitgliedDetail() {
         {(admin || istKindVonMir) && editing && (
           <div className="flex gap-2">
             <button onClick={() => { setEditing(false); if (isNew) navigate(-1); }}
-              className="p-2 rounded-lg bg-neutral-800 text-muted-foreground hover:text-white transition-colors">
+              className="p-2 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors">
               <X size={18} />
             </button>
             <button onClick={handleSave} disabled={saving}
@@ -497,12 +497,12 @@ export default function MitgliedDetail() {
                   <Archive size={10} /> Archiviert
                 </span>
               )}
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE_COLORS[mitglied.mitgliedsstatus] || 'bg-neutral-800 text-muted-foreground'}`}>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE_COLORS[mitglied.mitgliedsstatus] || 'bg-secondary text-muted-foreground'}`}>
                 {mitglied.mitgliedsstatus}
               </span>
               {(mitglied.haesgruppen_ids || (mitglied.haesgruppe_id ? [mitglied.haesgruppe_id] : [])).map(gid => {
                 const g = haesgruppen.find(g => g.id === gid);
-                return g ? <span key={gid} className="text-xs px-2 py-0.5 rounded-full bg-neutral-800 text-muted-foreground flex items-center gap-1"><MapPin size={10} /> {g.name}</span> : null;
+                return g ? <span key={gid} className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground flex items-center gap-1"><MapPin size={10} /> {g.name}</span> : null;
               })}
               {mitglied.ort && <span className="text-xs text-muted-foreground">{mitglied.ort}</span>}
               {mitglied.eintrittsdatum && (
@@ -523,7 +523,7 @@ export default function MitgliedDetail() {
           ].map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeTab === tab.id ? 'bg-primary text-white shadow-sm' : 'bg-neutral-800 text-muted-foreground hover:text-white hover:bg-neutral-700'
+                activeTab === tab.id ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-white hover:bg-border'
               }`}>
               {tab.label}
             </button>
@@ -627,7 +627,7 @@ export default function MitgliedDetail() {
           <h2 className="font-semibold text-white mb-4 flex items-center gap-2"><Phone size={16} className="text-primary" /> Kontakt</h2>
           <div className="flex flex-col gap-2">
             {mitglied.email && (
-              <a href={`mailto:${mitglied.email}`} className="flex items-center gap-3 px-4 py-3 rounded-lg bg-neutral-800/50 border border-border hover:border-primary/50 hover:bg-primary/10 transition-all">
+              <a href={`mailto:${mitglied.email}`} className="flex items-center gap-3 px-4 py-3 rounded-lg bg-secondary/50 border border-border hover:border-primary/50 hover:bg-primary/10 transition-all">
                 <Mail size={18} className="text-primary shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground">E-Mail</p>
@@ -638,7 +638,7 @@ export default function MitgliedDetail() {
             )}
             {mitglied.telefon && (
               <>
-                <a href={`tel:${mitglied.telefon}`} className="flex items-center gap-3 px-4 py-3 rounded-lg bg-neutral-800/50 border border-border hover:border-primary/50 hover:bg-primary/10 transition-all">
+                <a href={`tel:${mitglied.telefon}`} className="flex items-center gap-3 px-4 py-3 rounded-lg bg-secondary/50 border border-border hover:border-primary/50 hover:bg-primary/10 transition-all">
                   <Phone size={18} className="text-primary shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-muted-foreground">Telefon</p>
@@ -768,7 +768,7 @@ export default function MitgliedDetail() {
                   <p className="text-xs text-muted-foreground">{h.bezeichnung}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${HAES_STATUS_COLORS[h.status] || 'bg-neutral-800 text-muted-foreground'}`}>{h.status}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${HAES_STATUS_COLORS[h.status] || 'bg-secondary text-muted-foreground'}`}>{h.status}</span>
                   <ChevronRight size={14} className="text-muted-foreground" />
                 </div>
               </Link>
@@ -784,7 +784,7 @@ export default function MitgliedDetail() {
           <p className="text-xs text-muted-foreground mb-4">Rolle jetzt festlegen – wird beim ersten Login automatisch übernommen.</p>
 
           {linkedUser && (
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-800/50 mb-4 flex-wrap overflow-hidden">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 mb-4 flex-wrap overflow-hidden">
               <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0">
                 {linkedUser.full_name?.[0] || '?'}
               </div>
@@ -799,7 +799,7 @@ export default function MitgliedDetail() {
           {linkedUser && (
             <button
               onClick={() => setShowNeuEinladen(true)}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-secondary text-foreground text-sm font-medium hover:bg-primary hover:text-white transition-colors mb-4"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-secondary text-foreground text-sm font-medium hover:bg-primary hover:text-foreground transition-colors mb-4"
             >
               <Send size={14} /> Mitglied neu einladen
             </button>
@@ -813,7 +813,7 @@ export default function MitgliedDetail() {
               return (
                 <button key={rolle.value} onClick={() => handleAppRolleChange(rolle.value)} disabled={roleSaving}
                   className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all disabled:opacity-50 overflow-hidden ${
-                    isSelected ? 'bg-primary/10 border-primary' : 'bg-neutral-800/40 border-border text-muted-foreground hover:border-primary/40 hover:text-white'
+                    isSelected ? 'bg-primary/10 border-primary' : 'bg-secondary/40 border-border text-muted-foreground hover:border-primary/40 hover:text-white'
                   }`}>
                   <Icon size={16} className="shrink-0" />
                   <div className="min-w-0">
@@ -913,7 +913,7 @@ export default function MitgliedDetail() {
             <Check size={16} className="text-green-400" />
             <p className="text-sm text-green-400">{success}</p>
           </div>
-          <button onClick={() => setSuccess(null)} className="text-green-400 hover:text-white"><X size={14} /></button>
+          <button onClick={() => setSuccess(null)} className="text-green-400 hover:text-foreground"><X size={14} /></button>
         </div>
       )}
 
@@ -992,7 +992,7 @@ export default function MitgliedDetail() {
               <h2 className="font-oswald uppercase tracking-wide text-lg text-white flex items-center gap-2">
                 <LogOut size={18} className="text-yellow-400" /> Austritt erfassen
               </h2>
-              <button onClick={() => setShowAustrittModal(false)} className="text-muted-foreground hover:text-white"><X size={18} /></button>
+              <button onClick={() => setShowAustrittModal(false)} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
             </div>
             <div className="space-y-4">
               <div className="bg-yellow-900/10 border border-yellow-700/20 rounded-lg p-3 flex items-start gap-2">
@@ -1016,7 +1016,7 @@ export default function MitgliedDetail() {
               </div>
               <div className="flex gap-2 pt-2">
                 <button onClick={() => setShowAustrittModal(false)}
-                  className="flex-1 py-2.5 rounded-lg bg-neutral-800 text-muted-foreground hover:text-white text-sm font-medium transition-colors">
+                  className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground hover:text-white text-sm font-medium transition-colors">
                   Abbrechen
                 </button>
                 <button onClick={handleAustritt} disabled={!austrittDatum || processingExit}
@@ -1037,7 +1037,7 @@ export default function MitgliedDetail() {
               <h2 className="font-oswald uppercase tracking-wide text-lg text-white flex items-center gap-2">
                 <Heart size={18} className="text-red-400" /> Todesfall erfassen
               </h2>
-              <button onClick={() => setShowTodesfallModal(false)} className="text-muted-foreground hover:text-white"><X size={18} /></button>
+              <button onClick={() => setShowTodesfallModal(false)} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
             </div>
             <div className="space-y-4">
               <div className="bg-red-900/10 border border-red-700/20 rounded-lg p-3 flex items-start gap-2">
@@ -1061,7 +1061,7 @@ export default function MitgliedDetail() {
               </div>
               <div className="flex gap-2 pt-2">
                 <button onClick={() => setShowTodesfallModal(false)}
-                  className="flex-1 py-2.5 rounded-lg bg-neutral-800 text-muted-foreground hover:text-white text-sm font-medium transition-colors">
+                  className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground hover:text-white text-sm font-medium transition-colors">
                   Abbrechen
                 </button>
                 <button onClick={handleTodesfall} disabled={!todesfallDatum || processingExit}
@@ -1094,7 +1094,7 @@ export default function MitgliedDetail() {
           <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-white">Häs zuweisen</h3>
-              <button onClick={() => { setShowHaesModal(false); setHaessuche(''); setHaesError(null); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-white"><X size={16} /></button>
+              <button onClick={() => { setShowHaesModal(false); setHaessuche(''); setHaesError(null); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"><X size={16} /></button>
             </div>
             {haesError && (
               <div className="mb-3 p-2 rounded-lg bg-red-900/20 border border-red-700/30 text-xs text-red-400 flex items-center gap-2">
@@ -1129,13 +1129,13 @@ export default function MitgliedDetail() {
                       }
                       setAssigningHaes(false);
                     }} disabled={assigningHaes}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-neutral-800 border border-border text-left transition-colors disabled:opacity-50">
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary border border-border text-left transition-colors disabled:opacity-50">
                       <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">{h.haesnummer[0]}</div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-white">#{h.haesnummer}</p>
                         {h.bezeichnung && <p className="text-xs text-muted-foreground truncate">{h.bezeichnung}</p>}
                       </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${HAES_STATUS_COLORS[h.status] || 'bg-neutral-800 text-muted-foreground'}`}>{h.status}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${HAES_STATUS_COLORS[h.status] || 'bg-secondary text-muted-foreground'}`}>{h.status}</span>
                     </button>
                   ))}
                 {allHaes.filter(h => !haes.some(m => m.id === h.id) &&
