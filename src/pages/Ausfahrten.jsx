@@ -189,7 +189,7 @@ export default function Ausfahrten() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 text-white min-h-screen bg-background overflow-x-hidden">
+    <div className="max-w-4xl mx-auto px-4 py-8 text-white min-h-screen bg-background">
       {/* Header section with Oswald font */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
