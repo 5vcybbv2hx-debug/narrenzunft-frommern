@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 const TABS = [
   { id: 'faellig', label: 'Fällig', icon: AlertTriangle },
@@ -153,10 +154,12 @@ export default function Ehrungen() {
           automatisch_berechnet: true, jahr: new Date().getFullYear(),
         });
       }
+      toast.success('Ehrung aktualisiert');
       await loadData();
     } catch (e) {
       console.error('Ehrung aktualisieren:', e);
       setError('Ehrung konnte nicht aktualisiert werden.');
+      toast.error('Ehrung konnte nicht aktualisiert werden');
     }
     setSaving(null);
   };
@@ -170,10 +173,12 @@ export default function Ehrungen() {
         update.verliehen_von = user?.full_name;
       }
       await base44.entities.Ehrung.update(ehrungId, update);
+      toast.success('Status aktualisiert');
       await loadData();
     } catch (e) {
       console.error('Ehrung-Status ändern:', e);
       setError('Ehrung-Status konnte nicht aktualisiert werden.');
+      toast.error('Status konnte nicht aktualisiert werden');
     }
     setSaving(null);
   };
@@ -186,10 +191,12 @@ export default function Ehrungen() {
         datum: null,
         verliehen_von: null,
       });
+      toast.success('Ehrung zurückgenommen');
       await loadData();
     } catch (e) {
       console.error('Ehrung zurücknehmen:', e);
       setError('Ehrung konnte nicht zurückgenommen werden.');
+      toast.error('Zurücknehmen fehlgeschlagen');
     }
     setSaving(null);
   };

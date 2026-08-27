@@ -4,6 +4,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
 import { CreditCard, Search, Plus, Settings, Bus, AlertCircle, Check, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 import BeitraegeEinstellungen from '@/components/beitraege/BeitraegeEinstellungen';
 import Buskosten from '@/components/beitraege/Buskosten';
 
@@ -11,7 +12,7 @@ const STATUS_COLORS = {
   'Offen':      'bg-yellow-900/20 text-yellow-400 border border-yellow-700/30',
   'Bezahlt':    'bg-green-900/20 text-green-400 border border-green-700/30',
   'Überfällig': 'bg-red-900/20 text-red-400 border border-red-700/30',
-  'Erlassen':   'bg-neutral-700 text-neutral-300',
+  'Erlassen':   'bg-secondary text-neutral-300',
 };
 
 const DEFAULT_BEITRAEGE_SATZ = {
@@ -20,7 +21,7 @@ const DEFAULT_BEITRAEGE_SATZ = {
   'Kleinkind 0-3': 0, 'Ehrenmitglied': 0,
 };
 
-const inputCls = "w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors";
+const inputCls = "w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors";
 
 export default function Beitraege() {
   const { user } = useAuth();
@@ -54,9 +55,8 @@ export default function Beitraege() {
         ]);
         setBeitraege(bData || []);
         setMitglieder(m || []);
-      } else {
-        const me = await base44.auth.me();
-        const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
+      } else if (user?.id) {
+        const myM = await base44.entities.Mitglied.filter({ user_id: user.id });
         if (myM?.[0]) {
           setMitglieder([myM[0]]);
           const bData = await base44.entities.Beitrag.filter({ mitglied_id: myM[0].id });
@@ -79,8 +79,10 @@ export default function Beitraege() {
         zahlungsdatum: new Date().toISOString().split('T')[0]
       });
       setBeitraege(prev => prev.map(b => b.id === beitrag.id ? { ...b, zahlungsstatus: 'Bezahlt', zahlungsdatum: updated.zahlungsdatum } : b));
+      toast.success('Als bezahlt markiert');
     } catch (e) {
       console.error('Bezahlt markieren:', e);
+      toast.error('Beitrag konnte nicht aktualisiert werden');
     }
   };
 
@@ -98,7 +100,10 @@ export default function Beitraege() {
       }));
       if (neueBeitraege.length > 0) {
         await base44.entities.Beitrag.bulkCreate(neueBeitraege);
+        toast.success(`${neueBeitraege.length} Beiträge erstellt`);
         await loadData();
+      } else {
+        toast.info('Keine neuen Beiträge nötig — alle bereits vorhanden');
       }
     } catch (e) {
       console.error('Jahresbeiträge erstellen:', e);
@@ -143,7 +148,7 @@ export default function Beitraege() {
         </div>
         {isAdminUser && activeTab === 'jahresbeitraege' && (
           <button onClick={() => setShowEinstellungen(true)}
-            className="p-2.5 rounded-xl bg-neutral-800 text-muted-foreground hover:text-white hover:bg-neutral-700 transition-colors"
+            className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-white hover:bg-secondary transition-colors"
             title="Beitragssätze anpassen">
             <Settings size={18} />
           </button>
@@ -161,11 +166,11 @@ export default function Beitraege() {
       {/* Tabs */}
       <div className="flex gap-1.5 mb-5">
         <button onClick={() => setActiveTab('jahresbeitraege')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'jahresbeitraege' ? 'bg-primary text-white shadow-sm' : 'bg-neutral-800 text-muted-foreground hover:text-white'}`}>
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'jahresbeitraege' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-white'}`}>
           <CreditCard size={14} /> Jahresbeiträge
         </button>
         <button onClick={() => setActiveTab('buskosten')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'buskosten' ? 'bg-primary text-white shadow-sm' : 'bg-neutral-800 text-muted-foreground hover:text-white'}`}>
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'buskosten' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-white'}`}>
           <Bus size={14} /> Buskosten
         </button>
       </div>
@@ -200,7 +205,7 @@ export default function Beitraege() {
             <div className="flex items-center gap-2">
               <label className="text-sm text-muted-foreground">Jahr:</label>
               <input type="number" value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))}
-                className="w-24 px-3 py-1.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                className="w-24 px-3 py-1.5 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
             </div>
             <button onClick={() => setConfirmCreate(true)} disabled={creating}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50">
@@ -240,7 +245,7 @@ export default function Beitraege() {
                   filter === f ? 'bg-primary text-white' : 'bg-card border border-border text-muted-foreground hover:border-primary/50'
                 }`}>
                 {f}
-                <span className={`text-[10px] font-bold px-1 rounded-full ${filter === f ? 'bg-white/20' : 'bg-neutral-800'}`}>
+                <span className={`text-[10px] font-bold px-1 rounded-full ${filter === f ? 'bg-white/20' : 'bg-secondary'}`}>
                   {fc[f] ?? 0}
                 </span>
               </button>
@@ -265,7 +270,7 @@ export default function Beitraege() {
                 {filteredBeitraege.map(b => {
                   const m = getMitglied(b.mitglied_id);
                   return (
-                    <tr key={b.id} className="border-b border-border last:border-0 hover:bg-neutral-800/30 transition-colors">
+                    <tr key={b.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
                       <td className="px-4 py-3">
                         <p className="text-sm font-medium text-white">{m ? `${m.vorname} ${m.nachname}` : '–'}</p>
                         <p className="text-xs text-muted-foreground">{b.mitgliedsstatus}</p>
