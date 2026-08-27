@@ -8,6 +8,7 @@ import HaesGroupTokenModal from '@/components/haes/HaesGroupTokenModal';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 import { isAdmin } from '@/lib/roles';
+import { toast } from 'sonner';
 
 const STATUS_COLORS = {
   'Aktiv': 'bg-green-500/20 text-green-400',
@@ -85,8 +86,12 @@ export default function Haes() {
       await base44.entities.Haesgruppe.create(newGruppe);
       setNewGruppe({ name: '', beschreibung: '' });
       setShowNewGruppe(false);
+      toast.success('Gruppe erstellt');
       loadData();
-    } catch (e) {}
+    } catch (e) {
+      console.error('Gruppe erstellen:', e);
+      toast.error('Gruppe konnte nicht erstellt werden');
+    }
   };
 
   const handleCreateHaes = async () => {
@@ -94,8 +99,12 @@ export default function Haes() {
       await base44.entities.Haes.create(newHaes);
       setNewHaes({ haesnummer: '', haesgruppe_id: '', bezeichnung: '', status: 'Frei' });
       setShowNewHaes(false);
+      toast.success('Häs erstellt');
       loadData();
-    } catch (e) {}
+    } catch (e) {
+      console.error('Häs erstellen:', e);
+      toast.error('Häs konnte nicht erstellt werden');
+    }
   };
 
   const filtered = haes.filter(h => {
@@ -122,6 +131,15 @@ export default function Haes() {
     verkauft:    haes.filter(h => h.status === 'Verkauft').length,
     stillgelegt: haes.filter(h => h.status === 'Stillgelegt').length,
   };
+
+  if (!loading && haes.length === 0 && !haes) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-4">
+      <p className="text-sm text-muted-foreground">Häs konnten nicht geladen werden</p>
+      <button onClick={() => loadData()} className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
+        Erneut versuchen
+      </button>
+    </div>
+  );
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">

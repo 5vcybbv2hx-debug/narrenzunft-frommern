@@ -8,6 +8,7 @@ import { ArrowLeft, Shirt, Plus, Trash2, UserCheck, UserX, Save, X, Search, Edit
 import HaesHistorieImportModal from '@/components/haes/HaesHistorieImportModal';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 const STATUS_COLORS = {
   'Aktiv': 'bg-green-500/20 text-green-400',
@@ -45,12 +46,16 @@ export default function HaesDetail() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [h, g, m, hist] = await Promise.all([
+      const [h, g, hist] = await Promise.all([
         base44.entities.Haes.filter({ id }),
         base44.entities.Haesgruppe.list('name', 100),
-        base44.entities.Mitglied.list('nachname', 500),
         base44.entities.HaesHistorie.filter({ haes_id: id }),
       ]);
+      // Mitglieder nur für Admins laden (für Zuweisung)
+      let m = [];
+      if (admin) {
+        m = await base44.entities.Mitglied.list('nachname', 500);
+      }
       if (h[0]) {
         setHaes(h[0]);
         setEditData(h[0]);
@@ -58,7 +63,10 @@ export default function HaesDetail() {
       setGruppen(g);
       setMitglieder(m);
       setHistorien(hist.sort((a, b) => (b.von_datum || '').localeCompare(a.von_datum || '')));
-    } catch (e) {}
+    } catch (e) {
+      console.error('Häs laden:', e);
+      toast.error('Häs konnte nicht geladen werden');
+    }
     setLoading(false);
   };
 
@@ -82,7 +90,11 @@ export default function HaesDetail() {
       await base44.entities.Haes.update(haes.id, editData);
       setHaes(editData);
       setEditing(false);
-    } catch (e) {}
+      toast.success('Häs gespeichert');
+    } catch (e) {
+      console.error('Speichern:', e);
+      toast.error('Speichern fehlgeschlagen');
+    }
     setSaving(false);
   };
 
@@ -104,10 +116,11 @@ export default function HaesDetail() {
       setNewZuweisung({ mitglied_id: '', von_datum: '', aktiv: true, notizen: '' });
       setShowAddMitglied(false);
       setConfirmDialog(null);
+      toast.success('Mitglied zugewiesen');
       loadData();
     } catch (e) {
       console.error('Häs-Zuweisung fehlgeschlagen:', e);
-      alert('Zuweisung fehlgeschlagen: ' + (e?.response?.data?.error || e.message));
+      toast.error('Zuweisung fehlgeschlagen: ' + (e?.response?.data?.error || e.message));
     }
     setSaving(false);
   };
@@ -145,24 +158,32 @@ export default function HaesDetail() {
       loadData();
     } catch (e) {
       console.error('Status-Änderung fehlgeschlagen:', e);
-      alert('Fehlgeschlagen: ' + (e?.response?.data?.error || e.message));
+      toast.error('Fehlgeschlagen: ' + (e?.response?.data?.error || e.message));
     }
   };
 
   const handleDeleteHistorie = async (historieId) => {
-    if (!window.confirm('Zuweisung löschen?')) return;
+    if (!confirm('Zuweisung wirklich löschen?')) return;
     try {
       await base44.entities.HaesHistorie.delete(historieId);
+      toast.success('Zuweisung gelöscht');
       loadData();
-    } catch (e) {}
+    } catch (e) {
+      console.error('Löschen:', e);
+      toast.error('Löschen fehlgeschlagen');
+    }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Häs wirklich löschen?')) return;
+    if (!confirm('Häs wirklich löschen? Alle Zuweisungen gehen verloren.')) return;
     try {
       await base44.entities.Haes.delete(haes.id);
+      toast.success('Häs gelöscht');
       navigate('/haes');
-    } catch (e) {}
+    } catch (e) {
+      console.error('Löschen:', e);
+      toast.error('Löschen fehlgeschlagen');
+    }
   };
 
   if (loading) return (
@@ -206,7 +227,7 @@ export default function HaesDetail() {
             <button onClick={() => setEditing(false)} className="p-2 rounded-lg bg-secondary text-muted-foreground">
               <X size={18} />
             </button>
-            <button onClick={handleSaveHaes} disabled={saving} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50">
+            <button onClick={handleSaveHaes} disabled={saving} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-white text-sm font-medium disabled:opacity-50">
               <Save size={14} /> {saving ? '...' : 'Speichern'}
             </button>
           </div>
@@ -453,7 +474,7 @@ export default function HaesDetail() {
               </button>
               <button
                 onClick={() => setShowAddMitglied(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-primary/90 transition-colors"
               >
                 <Plus size={13} /> Mitglied zuweisen
               </button>
@@ -653,7 +674,7 @@ export default function HaesDetail() {
             </div>
             <div className="flex gap-2 mt-4">
               <button onClick={() => setShowAddMitglied(false)} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium">Abbrechen</button>
-              <button onClick={() => handleAddMitglied()} disabled={saving || !newZuweisung.mitglied_id} className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">
+              <button onClick={() => handleAddMitglied()} disabled={saving || !newZuweisung.mitglied_id} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50">
                 {saving ? 'Speichern...' : 'Zuweisen'}
               </button>
             </div>
@@ -700,7 +721,7 @@ export default function HaesDetail() {
                   setSaving(false);
                 }}
                 disabled={saving}
-                className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50"
               >
                 Zuweisung anlegen
               </button>
