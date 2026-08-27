@@ -215,9 +215,14 @@ export default function Dashboard() {
     const gruppeMapVert = {};
     glVert.forEach(g => { gruppeMapVert[g.id] = g; });
     const gruppenData = {};
+    const PASSIV_STATUS = ['Passiv', 'Passiv mit Häs', 'Leihäs'];
     aktiveMitglieder.forEach(m => {
       const ids = m.haesgruppen_ids?.length ? m.haesgruppen_ids : (m.haesgruppe_id ? [m.haesgruppe_id] : []);
       const isAktiv = m.mitgliedsstatus === 'Aktiv';
+      const isPassiv = PASSIV_STATUS.includes(m.mitgliedsstatus);
+      // Kinder/Jugendliche/Ehrenmitglied/Verstorben werden hier bewusst nicht gezählt —
+      // dieses Widget zeigt nur das Aktiv/Passiv-Verhältnis der Erwachsenen.
+      if (!isAktiv && !isPassiv) return;
       ids.forEach(id => {
         const name = gruppeMapVert[id]?.name;
         if (!name) return;
