@@ -1,11 +1,38 @@
 import base44 from "@base44/vite-plugin"
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
+import fs from 'fs'
+import path from 'path'
+
+// Vite plugin: serve /sw.js from public/ with correct MIME type.
+// Without this, the Vite dev server SPA-fallback serves index.html for /sw.js,
+// causing SW registration to fail ("unsupported MIME type 'text/html'").
+// The SW bypasses CDN cache for Vite dep chunks to prevent duplicate React.
+function serveServiceWorker() {
+  return {
+    name: 'serve-service-worker',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const pathname = (req.url || '').split('?')[0]
+        if (pathname === '/sw.js') {
+          const swPath = path.resolve('public/sw.js')
+          if (fs.existsSync(swPath)) {
+            res.setHeader('Content-Type', 'application/javascript')
+            res.end(fs.readFileSync(swPath, 'utf8'))
+            return
+          }
+        }
+        next()
+      })
+    },
+  }
+}
 
 // https://vite.dev/config/
 export default defineConfig({
   logLevel: 'error',
   plugins: [
+    serveServiceWorker(),
     base44({
       legacySDKImports: process.env.BASE44_LEGACY_SDK_IMPORTS === 'true',
       hmrNotifier: true,

@@ -30,7 +30,12 @@
         // which causes the browser to cache chunks from multiple optimization passes,
         // creating duplicate React instances ("dispatcher.useState is null").
         // Only register in the preview/dev environment, not in production.
-        if (navigator.serviceWorker && window.location.hostname.indexOf('preview-sandbox') !== -1) {
+        if (navigator.serviceWorker && (
+          window.location.hostname.indexOf('preview') !== -1 ||
+          window.location.hostname.indexOf('sandbox') !== -1 ||
+          window.location.hostname === 'localhost' ||
+          window.location.hostname === '127.0.0.1'
+        )) {
           navigator.serviceWorker.register('/sw.js').catch(function () {});
         }
         // Proactive: force one cache-busting reload to clear stale Vite dep chunks.

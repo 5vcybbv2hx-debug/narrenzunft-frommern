@@ -5,13 +5,19 @@
 // The CDN sends Cache-Control: max-age=31536000, immutable for /node_modules/.vite/deps/*
 // which causes the browser to cache chunks from multiple optimization passes.
 // This SW intercepts those requests and always fetches from the network.
+//
+// SW_VERSION: bump to force the browser to install a new SW and clear all caches.
+const SW_VERSION = 'v2';
+
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((names) => Promise.all(names.map((n) => caches.delete(n)))).then(() => self.clients.claim())
+    caches.keys()
+      .then((names) => Promise.all(names.map((n) => caches.delete(n))))
+      .then(() => self.clients.claim())
   );
 });
 
