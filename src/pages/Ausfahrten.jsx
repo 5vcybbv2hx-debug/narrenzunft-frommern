@@ -288,9 +288,9 @@ export default function Ausfahrten() {
             return (
               <div 
                 key={ausfahrt.id}
-                className="bg-card border border-border rounded-xl hover:border-gray-700 transition-all duration-300 overflow-hidden flex flex-col justify-between"
+                className="bg-card border border-border rounded-xl hover:border-gray-700 transition-all duration-300 overflow-hidden flex flex-col justify-between min-w-0 w-full"
               >
-                <div className="p-4 sm:p-5 md:p-6">
+                <div className="p-4 sm:p-5 md:p-6 min-w-0">
                   {/* Top badges and actions */}
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                     <div className="flex flex-wrap gap-2 items-center">
@@ -328,9 +328,9 @@ export default function Ausfahrten() {
 
                   {/* Metadata fields */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-gray-300 mb-6">
-                    <div className="flex items-center gap-2.5">
-                      <Calendar className="w-4.5 h-4.5 text-gray-400 shrink-0" />
-                      <span>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
+                      <span className="min-w-0">
                         {ausfahrt.datum 
                           ? format(parseISO(ausfahrt.datum), 'eeee, dd. MMMM yyyy', { locale: de })
                           : 'Datum unbestimmt'
@@ -338,20 +338,20 @@ export default function Ausfahrten() {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2.5">
-                      <MapPin className="w-4.5 h-4.5 text-gray-400 shrink-0" />
-                      <span className="truncate">{ausfahrt.ort || 'Keine Ortsangabe'}</span>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
+                      <span className="truncate min-w-0">{ausfahrt.ort || 'Keine Ortsangabe'}</span>
                     </div>
 
-                    <div className="flex items-center gap-2.5">
-                      <Clock className="w-4.5 h-4.5 text-gray-400 shrink-0" />
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Clock className="w-4 h-4 text-gray-400 shrink-0" />
                       <span>
                         Abfahrt: <strong className="text-white">{ausfahrt.abfahrt_zeit || '--:--'} Uhr</strong>
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2.5">
-                      <Clock className="w-4.5 h-4.5 text-gray-400 shrink-0" />
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Clock className="w-4 h-4 text-gray-400 shrink-0" />
                       <span>
                         Beginn: <strong className="text-white">{ausfahrt.veranstaltungsbeginn || '--:--'} Uhr</strong>
                       </span>
@@ -368,7 +368,7 @@ export default function Ausfahrten() {
                 </div>
 
                 {/* Card action footer */}
-                <div className="bg-[#0c0c0c] border-t border-border px-4 py-3 sm:px-5 md:px-6 flex flex-wrap items-center justify-between gap-3">
+                <div className="bg-[#0c0c0c] border-t border-border px-4 py-3 sm:px-5 md:px-6 flex flex-wrap items-center justify-between gap-3 min-w-0">
                   <Link 
                     to={`/ausfahrten/${ausfahrt.id}`}
                     className="inline-flex items-center gap-1.5 text-sm text-gray-300 hover:text-white hover:underline font-medium"
