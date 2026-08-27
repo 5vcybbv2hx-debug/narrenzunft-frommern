@@ -35,7 +35,6 @@ const NAV_SECTIONS = [
       { path: '/mitglieder',     label: 'Mitglieder',         icon: Users,         roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter', 'admin'] },
       { path: '/beitraege',      label: 'Beiträge',           icon: CreditCard,    roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'] },
       { path: '/ehrungen',       label: 'Ehrungen',           icon: Award,         roles: ['vorstand', 'stellv_vorstand', 'admin'] },
-      { path: '/shop/verwaltung', label: 'Shop-Verwaltung',   icon: ShoppingBag,   roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'] },
       { path: '/vereine',        label: 'Vereine & Zünfte',  icon: Users,         roles: ['vorstand', 'stellv_vorstand', 'admin'] },
     ],
   },
