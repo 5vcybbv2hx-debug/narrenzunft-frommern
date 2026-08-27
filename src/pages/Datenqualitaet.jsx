@@ -158,7 +158,7 @@ export default function Datenqualitaet() {
         </div>
         <button
           onClick={loadData}
-          className="p-2.5 rounded-lg bg-neutral-800 text-muted-foreground hover:text-white hover:bg-neutral-700 transition-colors"
+          className="p-2.5 rounded-lg bg-secondary text-muted-foreground hover:text-foreground hover:bg-border transition-colors"
           title="Neu prüfen"
         >
           <RefreshCw size={16} />

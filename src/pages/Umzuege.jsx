@@ -13,6 +13,7 @@ import UmzugAbschliessenModal from '@/components/umzug/UmzugAbschliessenModal';
 import BusverantwortlicheModal from '@/components/umzug/BusverantwortlicheModal';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { toast } from 'sonner';
 import MobileSelect from '@/components/MobileSelect';
 
 function VerantwortlicheAuswahl({ mitglieder, selected, onChange, haeufige }) {
@@ -202,7 +203,7 @@ export default function Umzuege() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Termin wirklich löschen?')) return;
+    if (!confirm('Termin wirklich löschen?')) return;
     try {
       await base44.entities.Veranstaltung.delete(id);
       updateQueryData(old => ({ ...old, umzuege: old.umzuege.filter(u => u.id !== id) }));
@@ -270,7 +271,7 @@ export default function Umzuege() {
             </button>
             <button
               onClick={openNew}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
             >
               <Plus size={16} /> <span className="hidden sm:inline">Neuer Termin</span>
             </button>
@@ -367,7 +368,7 @@ export default function Umzuege() {
                           <button onClick={() => handleAnmelden(u.id, false)} className="flex-1 py-2.5 rounded-xl bg-secondary text-foreground text-sm font-semibold hover:bg-border transition-colors flex items-center justify-center gap-2">
                             <Car size={14} /> Mit Auto
                           </button>
-                          <button onClick={() => handleAnmelden(u.id, true)} className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2">
+                          <button onClick={() => handleAnmelden(u.id, true)} className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2">
                             <Bus size={14} /> Mit Bus
                           </button>
                         </div>
@@ -611,7 +612,7 @@ export default function Umzuege() {
               <button
                 onClick={handleSave}
                 disabled={saving || !form.titel || !form.datum}
-                className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 <Save size={14} /> {saving ? 'Speichern...' : editItem ? 'Aktualisieren' : 'Erstellen'}
               </button>

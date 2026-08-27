@@ -232,7 +232,7 @@ export default function Inventar() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-neutral-800 rounded-xl p-1 mb-5 overflow-x-auto scrollbar-hide">
+      <div className="flex gap-1 bg-secondary rounded-xl p-1 mb-5 overflow-x-auto scrollbar-hide">
         {[
           { id: 'uebersicht', label: 'Übersicht', icon: Package },
           { id: 'ausleihen', label: `Ausleihen (${aktuelleAusleihen.length})`, icon: Clock },
@@ -361,7 +361,7 @@ function AusleiheKarte({ ausleihe, ausruestung, ausleiherName, today, onClick, v
     'Reserviert':     'bg-blue-900/20 text-blue-400 border border-blue-700/30',
     'Ausgeliehen':    'bg-primary/20 text-primary border border-primary/30',
     'Zurückgegeben':  'bg-green-900/20 text-green-400 border border-green-700/30',
-    'Abgesagt':       'bg-neutral-700 text-gray-400',
+    'Abgesagt':       'bg-secondary text-gray-400',
   };
   const istUeberfaellig = ausleihe.bis_datum < today && ausleihe.status === 'Ausgeliehen';
 

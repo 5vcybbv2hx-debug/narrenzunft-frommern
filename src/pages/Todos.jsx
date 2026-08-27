@@ -8,7 +8,7 @@ import { de } from 'date-fns/locale';
 import TodoForm from '@/components/todos/TodoForm';
 
 const PRIORITAET_FARBEN = {
-  'Niedrig':  'bg-neutral-700 text-neutral-300',
+  'Niedrig':  'bg-secondary text-muted-foreground',
   'Mittel':   'bg-blue-900/30 text-blue-400 border border-blue-700/30',
   'Hoch':     'bg-primary/15 text-primary',
   'Dringend': 'bg-red-900/20 text-red-400 border border-red-700/30',
@@ -225,7 +225,7 @@ export default function Todos() {
 
                     {todo.faellig_am && (
                       <span className={`text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 ${
-                        istUeberfaellig ? 'bg-red-900/20 text-red-400 border border-red-700/30' : 'bg-neutral-800 text-muted-foreground'
+                        istUeberfaellig ? 'bg-red-900/20 text-red-400 border border-red-700/30' : 'bg-secondary text-muted-foreground'
                       }`}>
                         {istUeberfaellig && <AlertCircle size={9} />}
                         <Calendar size={9} /> {format(new Date(todo.faellig_am), 'dd.MM.yyyy', { locale: de })}
