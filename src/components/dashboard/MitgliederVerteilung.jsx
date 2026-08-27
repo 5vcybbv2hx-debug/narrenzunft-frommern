@@ -15,7 +15,6 @@ const STATUS_COLORS = {
 };
 
 export default function MitgliederVerteilung({ total, statusVerteilung, gruppenVerteilung }) {
-  const maxGruppe = Math.max(1, ...gruppenVerteilung.map(g => g.count));
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
@@ -43,15 +42,24 @@ export default function MitgliederVerteilung({ total, statusVerteilung, gruppenV
           <div>
             <p className="text-[11px] text-muted-foreground mb-2 font-medium uppercase tracking-wide">Häsgruppen</p>
             <div className="space-y-1.5">
-              {gruppenVerteilung.slice(0, 8).map(g => (
-                <div key={g.name} className="flex items-center gap-2">
-                  <span className="text-sm text-foreground truncate flex-1 min-w-0">{g.name}</span>
-                  <div className="w-16 sm:w-24 h-1.5 bg-secondary rounded-full overflow-hidden shrink-0">
-                    <div className="h-full bg-primary rounded-full" style={{ width: `${(g.count / maxGruppe) * 100}%` }} />
+              {gruppenVerteilung.slice(0, 8).map(g => {
+                const gesamt = g.aktiv + g.passiv;
+                const aktivPct = gesamt > 0 ? (g.aktiv / gesamt) * 100 : 0;
+                return (
+                  <div key={g.name} className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-foreground truncate flex-1 min-w-0">{g.name}</span>
+                      <span className="text-xs text-muted-foreground shrink-0 tabular-nums">
+                        <strong className="text-green-400">{g.aktiv}</strong> aktiv · <strong className="text-gray-400">{g.passiv}</strong> passiv
+                      </span>
+                    </div>
+                    <div className="flex h-1.5 rounded-full overflow-hidden bg-secondary">
+                      <div className="h-full bg-green-500" style={{ width: `${aktivPct}%` }} />
+                      <div className="h-full bg-gray-500" style={{ width: `${100 - aktivPct}%` }} />
+                    </div>
                   </div>
-                  <span className="text-xs font-semibold text-foreground tabular-nums w-6 text-right shrink-0">{g.count}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

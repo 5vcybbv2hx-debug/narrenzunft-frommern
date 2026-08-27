@@ -214,18 +214,20 @@ export default function Dashboard() {
     const glVert = haesResult?.data?.gruppen || [];
     const gruppeMapVert = {};
     glVert.forEach(g => { gruppeMapVert[g.id] = g; });
-    const gruppenCounts = {};
+    const gruppenData = {};
     aktiveMitglieder.forEach(m => {
       const ids = m.haesgruppen_ids?.length ? m.haesgruppen_ids : (m.haesgruppe_id ? [m.haesgruppe_id] : []);
+      const isAktiv = m.mitgliedsstatus === 'Aktiv';
       ids.forEach(id => {
         const name = gruppeMapVert[id]?.name;
         if (!name) return;
-        gruppenCounts[name] = (gruppenCounts[name] || 0) + 1;
+        if (!gruppenData[name]) gruppenData[name] = { name, aktiv: 0, passiv: 0 };
+        if (isAktiv) gruppenData[name].aktiv++;
+        else gruppenData[name].passiv++;
       });
     });
-    const gruppenVerteilung = Object.entries(gruppenCounts)
-      .sort((a, b) => b[1] - a[1])
-      .map(([name, count]) => ({ name, count }));
+    const gruppenVerteilung = Object.values(gruppenData)
+      .sort((a, b) => (b.aktiv + b.passiv) - (a.aktiv + a.passiv));
 
     const stats = {
       mitglieder: aktiveMitglieder.length,
