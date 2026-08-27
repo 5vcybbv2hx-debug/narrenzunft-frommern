@@ -11,13 +11,13 @@ Deno.serve(async (req) => {
     try {
       const byUserId = await base44.asServiceRole.entities.Mitglied.filter({ user_id: user.id });
       if (byUserId && byUserId.length > 0) selbst = byUserId[0];
-    } catch (e) {}
-    
+    } catch (e) { console.error('Mitglied by user_id:', e); }
+
     if (!selbst) {
       try {
         const byEmail = await base44.asServiceRole.entities.Mitglied.filter({ email: user.email });
         if (byEmail && byEmail.length > 0) selbst = byEmail[0];
-      } catch (e) {}
+      } catch (e) { console.error('Mitglied by email:', e); }
     }
 
     if (!selbst) {
@@ -29,10 +29,10 @@ Deno.serve(async (req) => {
     let verwandtschaftenReverse = [];
     try {
       verwandtschaftenDirect = await base44.asServiceRole.entities.Verwandtschaft.filter({ mitglied_id: selbst.id });
-    } catch (e) {}
+    } catch (e) { console.error('Verwandtschaft direct:', e); }
     try {
       verwandtschaftenReverse = await base44.asServiceRole.entities.Verwandtschaft.filter({ verwandter_id: selbst.id });
-    } catch (e) {}
+    } catch (e) { console.error('Verwandtschaft reverse:', e); }
 
     // Combine all relationships
     const alleBeziehungen = [];
@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
       try {
         const m = await base44.asServiceRole.entities.Mitglied.get(vid);
         if (m) verwandteMitglieder.push(m);
-      } catch (e) {}
+      } catch (e) { console.error('Verwandter Mitglied:', e); }
     }
 
     // Categorize by relationship type
@@ -82,17 +82,17 @@ Deno.serve(async (req) => {
     try {
       const alleHaes = await base44.asServiceRole.entities.Haes.list(500);
       haes = alleHaes.filter(h => familienIds.includes(h.aktueller_besitzer_id));
-    } catch (e) {}
+    } catch (e) { console.error('Haes laden:', e); }
 
     try {
       const alleDienste = await base44.asServiceRole.entities.Arbeitsdienst.list(500);
       dienste = alleDienste.filter(d => familienIds.includes(d.mitglied_id));
-    } catch (e) {}
+    } catch (e) { console.error('Dienste laden:', e); }
 
     try {
       const alleAusfahrten = await base44.asServiceRole.entities.AusfahrtAnmeldung.list(500);
       ausfahrten = alleAusfahrten.filter(a => familienIds.includes(a.mitglied_id));
-    } catch (e) {}
+    } catch (e) { console.error('Ausfahrten laden:', e); }
 
     const isAdmin = ['admin', 'vorstand', 'stellv_vorstand'].includes(user.role);
 

@@ -121,7 +121,7 @@ Deno.serve(async (req) => {
           results.haes_updated++;
         } catch (e) {
           results.haes_failed++;
-          console.log(`Fehler bei Häs ${upd.hasNum}:`, e.message);
+          console.error(`Fehler bei Häs ${upd.hasNum}:`, e.message);
         }
       }));
 

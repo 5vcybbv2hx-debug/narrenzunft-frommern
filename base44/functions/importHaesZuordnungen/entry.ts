@@ -23,14 +23,14 @@ Deno.serve(async (req) => {
 
     // Parse Header
     const header = lines[0].split(";").map(h => h.trim());
-    console.log("CSV Header:", header);
+    // console.log("CSV Header:", header);
 
     // Finde Spalten flexibel
     const vornameIdx = header.findIndex(h => h.includes("Vorname"));
     const nachnameIdx = header.findIndex(h => h.includes("Nachname"));
     const hasnummerIdx = header.findIndex(h => h.includes("snummer"));
 
-    console.log("Indices:", { vornameIdx, nachnameIdx, hasnummerIdx });
+    // console.log("Indices:", { vornameIdx, nachnameIdx, hasnummerIdx });
 
     if (vornameIdx === -1 || nachnameIdx === -1 || hasnummerIdx === -1) {
       return Response.json({ 

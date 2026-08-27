@@ -155,7 +155,7 @@ Deno.serve(async (req) => {
     });
 
     // 12. Audit-Log
-    console.log(`Umzug ${veranstaltung_id} abgeschlossen von ${user.email}: ${anwesendBestaetigt}/${angemeldet} anwesend`);
+    console.log(`Umzug ${veranstaltung_id} abgeschlossen: ${anwesendBestaetigt}/${angemeldet} anwesend`);
 
     return Response.json({
       erfolg: true,
