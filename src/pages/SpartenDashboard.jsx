@@ -61,6 +61,11 @@ export default function SpartenDashboard() {
   const [memberSearchTerm, setMemberSearchTerm] = useState('');
   const [savingVerantwortliche, setSavingVerantwortliche] = useState(false);
 
+  const [showMitgliederModal, setShowMitgliederModal] = useState(false);
+  const [mitgliederSelection, setMitgliederSelection] = useState({});
+  const [mitgliederSearchTerm, setMitgliederSearchTerm] = useState('');
+  const [savingMitglieder, setSavingMitglieder] = useState(false);
+
   const [nachrichtText, setNachrichtText] = useState('');
   const [nachrichtStatus, setNachrichtStatus] = useState(null);
 
@@ -434,6 +439,58 @@ export default function SpartenDashboard() {
       `${m.vorname} ${m.nachname}`.toLowerCase().includes(search)
     );
   }, [alleMitglieder, memberSearchTerm]);
+
+  // Mitglieder-Zuweisung Handlers
+  const handleOpenMitgliederModal = () => {
+    const initialSelection = {};
+    mitglieder.forEach(m => { initialSelection[m.id] = true; });
+    setMitgliederSelection(initialSelection);
+    setMitgliederSearchTerm('');
+    setShowMitgliederModal(true);
+  };
+
+  const handleSaveMitglieder = async () => {
+    setSavingMitglieder(true);
+    try {
+      const selectedIds = new Set(Object.keys(mitgliederSelection).filter(k => mitgliederSelection[k]));
+      const currentIds = new Set(mitglieder.map(m => m.id));
+      const bulkPayload = [];
+      for (const m of alleMitglieder) {
+        if (m.archiviert) continue;
+        const shouldBe = selectedIds.has(m.id);
+        const isCurrently = currentIds.has(m.id);
+        if (shouldBe === isCurrently) continue;
+        const currentIdsArr = m.haesgruppen_ids || [];
+        let updatedIds;
+        let updatedPrimary = m.haesgruppe_id;
+        if (shouldBe) {
+          updatedIds = [...new Set([...currentIdsArr, id])];
+          if (!updatedPrimary) updatedPrimary = id;
+        } else {
+          updatedIds = currentIdsArr.filter(gId => gId !== id);
+          if (updatedPrimary === id) updatedPrimary = updatedIds[0] || null;
+        }
+        bulkPayload.push({ id: m.id, haesgruppen_ids: updatedIds, haesgruppe_id: updatedPrimary });
+      }
+      if (bulkPayload.length > 0) {
+        await base44.entities.Mitglied.bulkUpdate(bulkPayload);
+      }
+      setShowMitgliederModal(false);
+      loadData();
+    } catch (err) {
+      alert('Fehler beim Speichern der Mitglieder: ' + err.message);
+    } finally {
+      setSavingMitglieder(false);
+    }
+  };
+
+  const filteredMitgliederForModal = useMemo(() => {
+    if (!mitgliederSearchTerm.trim()) return alleMitglieder.filter(m => !m.archiviert);
+    const search = mitgliederSearchTerm.toLowerCase();
+    return alleMitglieder.filter(m => 
+      !m.archiviert && `${m.vorname} ${m.nachname}`.toLowerCase().includes(search)
+    );
+  }, [alleMitglieder, mitgliederSearchTerm]);
   if (loading) {
     return (
       <div className="min-h-screen bg-[#080808] text-white flex flex-col items-center justify-center p-4 sm:p-6">
@@ -907,13 +964,23 @@ export default function SpartenDashboard() {
               <h2 className="text-2xl font-oswald uppercase tracking-wide text-white">
                 Gruppenmitglieder
               </h2>
-              {isAdmin(user) && (
-                <button 
-                  onClick={handleOpenVerantwortlicherModal}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-800/50 border border-neutral-700 text-white rounded-lg text-sm font-semibold transition-colors"
-                >
-                  <UserCheck className="w-4 h-4 text-primary" /> Verantwortliche zuweisen
-                </button>
+              {canEdit && (
+                <div className="flex flex-wrap gap-2">
+                  <button 
+                    onClick={handleOpenMitgliederModal}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-primary hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                  >
+                    <UserPlus className="w-4 h-4" /> Mitglieder verwalten
+                  </button>
+                  {isAdmin(user) && (
+                    <button 
+                      onClick={handleOpenVerantwortlicherModal}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-800/50 border border-neutral-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                    >
+                      <UserCheck className="w-4 h-4 text-primary" /> Verantwortliche
+                    </button>
+                  )}
+                </div>
               )}
             </div>
 
