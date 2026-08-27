@@ -134,13 +134,13 @@ export default function Vereine() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold font-oswald uppercase tracking-wide text-white">Externe Vereine & Zünfte</h1>
+          <h1 className="text-2xl font-bold font-oswald uppercase tracking-wide text-foreground">Externe Vereine & Zünfte</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{vereine.length} {vereine.length === 1 ? 'Eintrag' : 'Einträge'} · {kontakte.length} Kontakte</p>
         </div>
         {admin && (
           <button
             onClick={openNew}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-red-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-foreground text-sm font-semibold hover:bg-red-700 transition-colors"
           >
             <Plus size={16} /> Verein hinzufügen
           </button>
@@ -163,7 +163,7 @@ export default function Vereine() {
           placeholder="Verein oder Stadt suchen…"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-neutral-900 border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+          className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
         />
       </div>
 
@@ -174,12 +174,12 @@ export default function Vereine() {
           const isExpanded = expandedVerein === v.id;
           return (
             <div key={v.id} className="bg-card border border-border rounded-xl overflow-hidden">
-              <div className="p-4 flex items-start justify-between hover:bg-neutral-900/50 cursor-pointer transition-colors" onClick={() => setExpandedVerein(isExpanded ? null : v.id)}>
+              <div className="p-4 flex items-start justify-between hover:bg-secondary/50 cursor-pointer transition-colors" onClick={() => setExpandedVerein(isExpanded ? null : v.id)}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <h3 className="font-semibold text-white">{v.name}</h3>
+                    <h3 className="font-semibold text-foreground">{v.name}</h3>
                     {v.stadt && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-800 text-muted-foreground flex items-center gap-1">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground flex items-center gap-1">
                         <MapPin size={10} /> {v.stadt}
                       </span>
                     )}
@@ -212,7 +212,7 @@ export default function Vereine() {
               </div>
 
               {isExpanded && (
-                <div className="border-t border-border p-4 space-y-3 bg-neutral-900/30">
+                <div className="border-t border-border p-4 space-y-3 bg-secondary/30">
                   {vereinKontakte.length === 0 ? (
                     <p className="text-sm text-muted-foreground">Keine Kontaktpersonen eingetragen</p>
                   ) : (
@@ -220,7 +220,7 @@ export default function Vereine() {
                       <div key={k.id} className="bg-card border border-border rounded-lg p-3 flex items-start justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-medium text-sm text-white">{k.name}</p>
+                            <p className="font-medium text-sm text-foreground">{k.name}</p>
                             {k.funktion && <span className="text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary">{k.funktion}</span>}
                           </div>
                           <div className="flex flex-wrap gap-3 mt-1.5 text-xs text-muted-foreground">
@@ -261,7 +261,7 @@ export default function Vereine() {
       {filtered.length === 0 && (
         <div className="text-center py-12">
           <Building2 size={40} className="text-muted-foreground/40 mx-auto mb-3" />
-          <p className="text-white font-medium">Keine Vereine gefunden</p>
+          <p className="text-foreground font-medium">Keine Vereine gefunden</p>
           <p className="text-sm text-muted-foreground mt-1">
             {search ? `Für „${search}" wurde kein Verein gefunden` : 'Noch keine Vereine angelegt'}
           </p>
@@ -281,8 +281,8 @@ export default function Vereine() {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold font-oswald uppercase tracking-wide text-white">{editKontakt ? 'Kontakt bearbeiten' : 'Neue Kontaktperson'}</h3>
-              <button onClick={() => { setShowKontaktForm(null); setEditKontakt(null); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-white">
+              <h3 className="font-bold font-oswald uppercase tracking-wide text-foreground">{editKontakt ? 'Kontakt bearbeiten' : 'Neue Kontaktperson'}</h3>
+              <button onClick={() => { setShowKontaktForm(null); setEditKontakt(null); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground">
                 <X size={18} />
               </button>
             </div>
@@ -292,45 +292,45 @@ export default function Vereine() {
                 placeholder="Name *"
                 value={kontaktForm.name}
                 onChange={e => setKontaktForm(p => ({ ...p, name: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
               />
               <input
                 type="text"
                 placeholder="Funktion (z.B. Vorsitzender)"
                 value={kontaktForm.funktion}
                 onChange={e => setKontaktForm(p => ({ ...p, funktion: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
               />
               <input
                 type="email"
                 placeholder="E-Mail"
                 value={kontaktForm.email}
                 onChange={e => setKontaktForm(p => ({ ...p, email: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
               />
               <input
                 type="tel"
                 placeholder="Telefon"
                 value={kontaktForm.telefon}
                 onChange={e => setKontaktForm(p => ({ ...p, telefon: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
               />
               <textarea
                 placeholder="Notizen"
                 value={kontaktForm.notizen}
                 onChange={e => setKontaktForm(p => ({ ...p, notizen: e.target.value }))}
                 rows={2}
-                className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary resize-none transition-colors"
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary resize-none transition-colors"
               />
             </div>
             <div className="flex gap-2 mt-4">
-              <button onClick={() => { setShowKontaktForm(null); setEditKontakt(null); }} className="flex-1 py-2.5 rounded-lg bg-neutral-800 text-muted-foreground text-sm font-medium hover:text-white transition-colors">
+              <button onClick={() => { setShowKontaktForm(null); setEditKontakt(null); }} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium hover:text-foreground transition-colors">
                 Abbrechen
               </button>
               <button
                 onClick={() => handleSaveKontakt(showKontaktForm)}
                 disabled={saving || !kontaktForm.name}
-                className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 hover:bg-red-700 transition-colors"
+                className="flex-1 py-2.5 rounded-lg bg-primary text-foreground text-sm font-semibold disabled:opacity-50 hover:bg-red-700 transition-colors"
               >
                 {saving ? '…' : 'Speichern'}
               </button>
@@ -344,8 +344,8 @@ export default function Vereine() {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold font-oswald uppercase tracking-wide text-white">{editItem ? 'Verein bearbeiten' : 'Neuer Verein'}</h3>
-              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-muted-foreground hover:text-white">
+              <h3 className="font-bold font-oswald uppercase tracking-wide text-foreground">{editItem ? 'Verein bearbeiten' : 'Neuer Verein'}</h3>
+              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground">
                 <X size={18} />
               </button>
             </div>
@@ -355,38 +355,38 @@ export default function Vereine() {
                 placeholder="Vereinsname *"
                 value={form.name}
                 onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
               />
               <input
                 type="text"
                 placeholder="Stadt/Ort"
                 value={form.stadt}
                 onChange={e => setForm(p => ({ ...p, stadt: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
               />
               <input
                 type="url"
                 placeholder="Website"
                 value={form.website}
                 onChange={e => setForm(p => ({ ...p, website: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
               />
               <textarea
                 placeholder="Notizen"
                 value={form.notizen}
                 onChange={e => setForm(p => ({ ...p, notizen: e.target.value }))}
                 rows={2}
-                className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary resize-none transition-colors"
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary resize-none transition-colors"
               />
             </div>
             <div className="flex gap-2 mt-4">
-              <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg bg-neutral-800 text-muted-foreground text-sm font-medium hover:text-white transition-colors">
+              <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium hover:text-foreground transition-colors">
                 Abbrechen
               </button>
               <button
                 onClick={handleSave}
                 disabled={saving || !form.name}
-                className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 hover:bg-red-700 transition-colors"
+                className="flex-1 py-2.5 rounded-lg bg-primary text-foreground text-sm font-semibold disabled:opacity-50 hover:bg-red-700 transition-colors"
               >
                 {saving ? '…' : editItem ? 'Aktualisieren' : 'Erstellen'}
               </button>
@@ -403,12 +403,12 @@ export default function Vereine() {
               <div className="w-10 h-10 rounded-full bg-red-900/30 flex items-center justify-center shrink-0">
                 <AlertTriangle className="w-5 h-5 text-red-400" />
               </div>
-              <h3 className="font-oswald font-semibold text-white text-lg">
+              <h3 className="font-oswald font-semibold text-foreground text-lg">
                 {deleteTarget.type === 'verein' ? 'Verein löschen?' : 'Kontakt löschen?'}
               </h3>
             </div>
             <p className="text-sm text-muted-foreground mb-1">
-              Möchtest du <strong className="text-white">"{deleteTarget.name}"</strong> unwiderruflich löschen?
+              Möchtest du <strong className="text-foreground">"{deleteTarget.name}"</strong> unwiderruflich löschen?
             </p>
             {deleteTarget.type === 'verein' && (
               <p className="text-xs text-muted-foreground mb-5">
@@ -421,10 +421,10 @@ export default function Vereine() {
               </p>
             )}
             <div className="flex gap-3">
-              <button onClick={() => setDeleteTarget(null)} className="flex-1 py-2.5 rounded-lg bg-neutral-800 text-muted-foreground text-sm font-medium hover:text-white transition-colors">
+              <button onClick={() => setDeleteTarget(null)} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium hover:text-foreground transition-colors">
                 Abbrechen
               </button>
-              <button onClick={handleDelete} className="flex-1 py-2.5 rounded-lg bg-red-900/80 text-white text-sm font-semibold hover:bg-red-900 transition-colors">
+              <button onClick={handleDelete} className="flex-1 py-2.5 rounded-lg bg-red-900/80 text-foreground text-sm font-semibold hover:bg-red-900 transition-colors">
                 Löschen
               </button>
             </div>

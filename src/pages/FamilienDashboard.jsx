@@ -111,7 +111,7 @@ export default function FamilienDashboard() {
   };
 
   const handleRemove = async (verwandterId, beziehungLabel) => {
-    if (!window.confirm(`Beziehung "${beziehungLabel}" wirklich entfernen?`)) return;
+    if (!confirm(`Beziehung "${beziehungLabel}" wirklich entfernen?`)) return;
     // Sicherheits-Check: ohne gültige IDs dürfen wir nicht filtern –
     // sonst ignoriert Base44 das leere Feld und löscht ALLE Verwandten.
     if (!selbst?.id || !verwandterId) {
@@ -147,7 +147,7 @@ export default function FamilienDashboard() {
     return (
       <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center p-4 sm:p-6 text-white">
         <div className="w-10 h-10 border-[3px] border-border border-t-primary rounded-full animate-spin" />
-        <p className="mt-4 text-sm font-medium tracking-wide font-oswald uppercase text-neutral-400">Familie wird geladen...</p>
+        <p className="mt-4 text-sm font-medium tracking-wide font-oswald uppercase text-muted-foreground">Familie wird geladen...</p>
       </div>
     );
   }
@@ -161,7 +161,7 @@ export default function FamilienDashboard() {
             <Users className="text-primary w-8 h-8" />
             <div>
               <h1 className="text-2xl font-oswald uppercase tracking-wide leading-none">Familie</h1>
-              <p className="text-xs text-neutral-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 {selbst ? `${selbst.vorname} ${selbst.nachname}` : 'Lade...'}
               </p>
             </div>
@@ -183,13 +183,13 @@ export default function FamilienDashboard() {
               <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
               <p className="text-sm">{error}</p>
             </div>
-            <button onClick={() => setError(null)} className="text-red-400 hover:text-white"><X className="w-5 h-5" /></button>
+            <button onClick={() => setError(null)} className="text-red-400 hover:text-foreground"><X className="w-5 h-5" /></button>
           </div>
         )}
         {success && (
           <div className="bg-emerald-950/80 border border-emerald-500/30 text-emerald-200 p-4 rounded-xl flex items-center justify-between">
             <div className="flex items-center gap-3"><Check className="w-5 h-5 text-emerald-400" /><p className="text-sm">{success}</p></div>
-            <button onClick={() => setSuccess(null)} className="text-emerald-400 hover:text-white"><X className="w-4 h-4" /></button>
+            <button onClick={() => setSuccess(null)} className="text-emerald-400 hover:text-foreground"><X className="w-4 h-4" /></button>
           </div>
         )}
 
@@ -212,24 +212,24 @@ export default function FamilienDashboard() {
                     {ehepartner.vorname} {ehepartner.nachname}
                   </h3>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    {ehepartner.geburtsdatum && <span className="text-xs text-neutral-400">{getAlter(ehepartner.geburtsdatum)} Jahre</span>}
+                    {ehepartner.geburtsdatum && <span className="text-xs text-muted-foreground">{getAlter(ehepartner.geburtsdatum)} Jahre</span>}
                     <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 border border-primary/30 text-primary font-medium">
                       {ehepartner.mitgliedsstatus || 'Aktiv'}
                     </span>
                     {ehepartner.haesgruppe_id && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-400">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
                         {ehepartner.haesgruppe_id}
                       </span>
                     )}
                   </div>
                   <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                     {ehepartner.telefon && (
-                      <a href={`tel:${ehepartner.telefon}`} className="flex items-center gap-1 text-xs text-neutral-400 hover:text-primary">
+                      <a href={`tel:${ehepartner.telefon}`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
                         <Phone size={11} /> {ehepartner.telefon}
                       </a>
                     )}
                     {ehepartner.email && (
-                      <a href={`mailto:${ehepartner.email}`} className="flex items-center gap-1 text-xs text-neutral-400 hover:text-primary">
+                      <a href={`mailto:${ehepartner.email}`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
                         <Mail size={11} /> {ehepartner.email}
                       </a>
                     )}
@@ -238,7 +238,7 @@ export default function FamilienDashboard() {
               </Link>
               <button
                 onClick={() => handleRemove(ehepartner.id, 'Ehepartner/in')}
-                className="p-2 rounded-lg text-neutral-400 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
+                className="p-2 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -246,7 +246,7 @@ export default function FamilienDashboard() {
           ) : (
             <button
               onClick={() => { setShowAddModal(true); setAddBeziehung('Ehepartner/in'); }}
-              className="w-full bg-card border border-dashed border-border rounded-xl p-5 flex items-center justify-center gap-2 text-neutral-400 hover:border-primary/30 hover:text-primary transition-all"
+              className="w-full bg-card border border-dashed border-border rounded-xl p-5 flex items-center justify-center gap-2 text-muted-foreground hover:border-primary/30 hover:text-primary transition-all"
             >
               <UserPlus className="w-5 h-5" /> Ehepartner/in hinzufügen
             </button>
@@ -262,7 +262,7 @@ export default function FamilienDashboard() {
           {kinder.length === 0 ? (
             <button
               onClick={() => { setShowAddModal(true); setAddBeziehung('Kind'); }}
-              className="w-full bg-card border border-dashed border-border rounded-xl p-5 flex items-center justify-center gap-2 text-neutral-400 hover:border-primary/30 hover:text-primary transition-all"
+              className="w-full bg-card border border-dashed border-border rounded-xl p-5 flex items-center justify-center gap-2 text-muted-foreground hover:border-primary/30 hover:text-primary transition-all"
             >
               <UserPlus className="w-5 h-5" /> Kind hinzufügen
             </button>
@@ -288,7 +288,7 @@ export default function FamilienDashboard() {
                             {kind.vorname} {kind.nachname}
                           </h3>
                           <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                            {alter !== null && <span className="text-xs text-neutral-400">{alter} J.</span>}
+                            {alter !== null && <span className="text-xs text-muted-foreground">{alter} J.</span>}
                             <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
                               {kind.mitgliedsstatus || 'Aktiv'}
                             </span>
@@ -304,19 +304,19 @@ export default function FamilienDashboard() {
                     </div>
                     {/* Kurz-Stats */}
                     <div className="grid grid-cols-4 gap-1.5 mt-3">
-                      <div className="bg-neutral-900/50 rounded-lg px-2 py-1.5 text-center">
+                      <div className="bg-secondary/50 rounded-lg px-2 py-1.5 text-center">
                         <p className="text-sm font-bold text-primary">{kindTermine.length}</p>
                         <p className="text-[9px] text-neutral-500">Termine</p>
                       </div>
-                      <div className="bg-neutral-900/50 rounded-lg px-2 py-1.5 text-center">
+                      <div className="bg-secondary/50 rounded-lg px-2 py-1.5 text-center">
                         <p className="text-sm font-bold text-blue-400">{kindDienste.length}</p>
                         <p className="text-[9px] text-neutral-500">Dienste</p>
                       </div>
-                      <Link to={`/mitglieder/${kind.id}`} className="bg-neutral-900/50 rounded-lg px-2 py-1.5 text-center hover:bg-neutral-800/70 transition-colors">
+                      <Link to={`/mitglieder/${kind.id}`} className="bg-secondary/50 rounded-lg px-2 py-1.5 text-center hover:bg-border/70 transition-colors">
                         <p className="text-sm font-bold text-accent">{kindHaes.length}</p>
                         <p className="text-[9px] text-neutral-500">Häs</p>
                       </Link>
-                      <Link to="/ausfahrten" className="bg-neutral-900/50 rounded-lg px-2 py-1.5 text-center hover:bg-neutral-800/70 transition-colors">
+                      <Link to="/ausfahrten" className="bg-secondary/50 rounded-lg px-2 py-1.5 text-center hover:bg-border/70 transition-colors">
                         <p className="text-sm font-bold text-teal-400">{kindAusfahrten.length}</p>
                         <p className="text-[9px] text-neutral-500">Bus</p>
                       </Link>
@@ -325,13 +325,13 @@ export default function FamilienDashboard() {
                     <div className="flex gap-2 mt-3 pt-3 border-t border-border/50">
                       <Link
                         to={`/mitglieder/${kind.id}?edit=1`}
-                        className="flex-1 flex items-center justify-center gap-1.5 bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-secondary hover:bg-border text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors"
                       >
                         <Pencil className="w-3.5 h-3.5" /> Profil bearbeiten
                       </Link>
                       <Link
                         to="/ausfahrten"
-                        className="flex-1 flex items-center justify-center gap-1.5 bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-secondary hover:bg-border text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors"
                       >
                         <Calendar className="w-3.5 h-3.5" /> An Ausfahrt
                       </Link>
@@ -341,7 +341,7 @@ export default function FamilienDashboard() {
               })}
               <button
                 onClick={() => { setShowAddModal(true); setAddBeziehung('Kind'); }}
-                className="bg-card border border-dashed border-border rounded-xl p-4 flex items-center justify-center gap-2 text-neutral-400 hover:border-primary/30 hover:text-primary transition-all"
+                className="bg-card border border-dashed border-border rounded-xl p-4 flex items-center justify-center gap-2 text-muted-foreground hover:border-primary/30 hover:text-primary transition-all"
               >
                 <Plus className="w-4 h-4" /> Kind hinzufügen
               </button>
@@ -353,21 +353,21 @@ export default function FamilienDashboard() {
         {verwandte.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <Users className="w-5 h-5 text-neutral-400" />
+              <Users className="w-5 h-5 text-muted-foreground" />
               <h2 className="font-oswald uppercase tracking-wide text-lg">Weitere Verwandte ({verwandte.length})</h2>
             </div>
             <div className="space-y-2">
               {verwandte.map(v => (
                 <div key={v.id} className="bg-card border border-border rounded-xl p-3 flex items-center justify-between gap-3">
                   <Link to={`/mitglieder/${v.id}`} className="flex items-center gap-3 flex-1 min-w-0 group">
-                    <div className="w-9 h-9 rounded-full bg-neutral-800 flex items-center justify-center text-neutral-400 font-bold text-sm shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground font-bold text-sm shrink-0">
                       {v.vorname?.[0] || ''}{v.nachname?.[0] || ''}
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-white group-hover:text-primary transition-colors truncate">
                         {v.vorname} {v.nachname}
                       </p>
-                      <span className="text-xs text-neutral-400">{v.beziehung}</span>
+                      <span className="text-xs text-muted-foreground">{v.beziehung}</span>
                     </div>
                   </Link>
                   <button
@@ -393,10 +393,10 @@ export default function FamilienDashboard() {
                 const fuerKind = kinder.find(k => (t.eingeladene_ids || []).includes(k.id));
                 const fuerEhepartner = ehepartner && (t.eingeladene_ids || []).includes(ehepartner.id);
                 return (
-                  <div key={t.id} className="flex items-center justify-between p-2.5 rounded-lg bg-neutral-900/30 hover:bg-neutral-900/50 transition-colors">
+                  <div key={t.id} className="flex items-center justify-between p-2.5 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">{t.titel}</p>
-                      <p className="text-xs text-neutral-400">{formatDate(t.datum)}</p>
+                      <p className="text-xs text-muted-foreground">{formatDate(t.datum)}</p>
                     </div>
                     {(fuerKind || fuerEhepartner) && (
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary ml-2 shrink-0">
@@ -423,13 +423,13 @@ export default function FamilienDashboard() {
                 const mitglied = mid === selbst?.id ? selbst :
                   kinder.find(k => k.id === mid) || (mid ? verwandte.find(v => v.id === mid) : null) || ehepartner;
                 return (
-                  <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg bg-neutral-900/30">
+                  <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg bg-secondary/30">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">{dienstData.titel}</p>
-                      <p className="text-xs text-neutral-400">{formatDate(dienstData.datum)}</p>
+                      <p className="text-xs text-muted-foreground">{formatDate(dienstData.datum)}</p>
                     </div>
                     {mitglied && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-400 ml-2 shrink-0">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground ml-2 shrink-0">
                         {mitglied.vorname}
                       </span>
                     )}
@@ -447,19 +447,19 @@ export default function FamilienDashboard() {
           <div className="bg-card border border-border rounded-xl max-w-md w-full p-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-oswald uppercase tracking-wide text-lg">Verwandte/r hinzufügen</h2>
-              <button onClick={() => setShowAddModal(false)} className="text-neutral-400 hover:text-white"><X className="w-5 h-5" /></button>
+              <button onClick={() => setShowAddModal(false)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
             </div>
 
             {/* Beziehung wählen */}
             <div className="mb-4">
-              <label className="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">Beziehung</label>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Beziehung</label>
               <div className="flex flex-wrap gap-1.5">
                 {BEZIEHUNGEN.map(b => (
                   <button
                     key={b}
                     onClick={() => setAddBeziehung(b)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      addBeziehung === b ? 'bg-primary text-white' : 'bg-neutral-900 border border-border text-neutral-400 hover:text-white'
+                      addBeziehung === b ? 'bg-primary text-white' : 'bg-secondary border border-border text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     {b}
@@ -470,7 +470,7 @@ export default function FamilienDashboard() {
 
             {/* Suche */}
             <div className="mb-4">
-              <label className="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">Mitglied suchen</label>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Mitglied suchen</label>
               <div className="relative">
                 <Search className="absolute left-3 top-3 w-4 h-4 text-neutral-500" />
                 <input
@@ -478,7 +478,7 @@ export default function FamilienDashboard() {
                   placeholder="Name eingeben..."
                   value={suchbegriff}
                   onChange={e => handleSuche(e.target.value)}
-                  className="w-full bg-neutral-900 border border-border rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-primary/50"
+                  className="w-full bg-secondary border border-border rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-primary/50"
                   autoFocus
                 />
               </div>
@@ -491,14 +491,14 @@ export default function FamilienDashboard() {
                   <button
                     key={m.id}
                     onClick={() => setAusgewaehlt(m)}
-                    className="w-full flex items-center gap-3 p-2.5 rounded-lg bg-neutral-900/50 hover:bg-neutral-800 border border-border/50 hover:border-primary/30 transition-all text-left"
+                    className="w-full flex items-center gap-3 p-2.5 rounded-lg bg-secondary/50 hover:bg-secondary border border-border/50 hover:border-primary/30 transition-all text-left"
                   >
-                    <div className="w-8 h-8 rounded-full bg-neutral-800 flex items-center justify-center text-neutral-400 font-bold text-sm shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground font-bold text-sm shrink-0">
                       {m.vorname?.[0] || ''}{m.nachname?.[0] || ''}
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-medium truncate">{m.vorname} {m.nachname}</p>
-                      <p className="text-xs text-neutral-400">{m.mitgliedsstatus || ''}</p>
+                      <p className="text-xs text-muted-foreground">{m.mitgliedsstatus || ''}</p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-neutral-500 ml-auto shrink-0" />
                   </button>
@@ -514,9 +514,9 @@ export default function FamilienDashboard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold">{ausgewaehlt.vorname} {ausgewaehlt.nachname}</p>
-                  <p className="text-xs text-neutral-400">als {addBeziehung}</p>
+                  <p className="text-xs text-muted-foreground">als {addBeziehung}</p>
                 </div>
-                <button onClick={() => setAusgewaehlt(null)} className="text-neutral-400 hover:text-white">
+                <button onClick={() => setAusgewaehlt(null)} className="text-muted-foreground hover:text-foreground">
                   <X className="w-4 h-4" />
                 </button>
               </div>

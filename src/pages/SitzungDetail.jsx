@@ -286,7 +286,7 @@ function TopsTab({ terminId, tops, setTops, mitglieder, isAdmin }) {
       {isAdmin && (
         <div className="flex justify-end mb-3">
           <button onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
             <Plus size={15} /> TOP hinzufügen
           </button>
         </div>
@@ -304,7 +304,7 @@ function TopsTab({ terminId, tops, setTops, mitglieder, isAdmin }) {
           <div className="flex gap-2">
             <button onClick={() => setShowForm(false)} className="flex-1 py-2 rounded-lg bg-card text-muted-foreground text-sm border border-border">Abbrechen</button>
             <button onClick={handleCreate} disabled={saving || !form.titel}
-              className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">
+              className="flex-1 py-2 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50">
               {saving ? '...' : 'Hinzufügen'}
             </button>
           </div>
@@ -365,7 +365,7 @@ function TopsTab({ terminId, tops, setTops, mitglieder, isAdmin }) {
                         <Trash2 size={12} /> Löschen
                       </button>
                       <button onClick={() => handleNotizen(top)}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors">
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors">
                         <Save size={12} /> Notiz speichern
                       </button>
                     </div>
@@ -421,7 +421,7 @@ function AbstimmungenTab({ terminId, abstimmungen, setAbstimmungen, ausschussMit
   };
 
   const handleDelete = async (absId) => {
-    if (!window.confirm('Abstimmung löschen?')) return;
+    if (!confirm('Abstimmung wirklich löschen?')) return;
     await base44.entities.Abstimmung.delete(absId);
     setAbstimmungen(prev => prev.filter(a => a.id !== absId));
   };
@@ -431,7 +431,7 @@ function AbstimmungenTab({ terminId, abstimmungen, setAbstimmungen, ausschussMit
       {isAdmin && (
         <div className="flex justify-end mb-3">
           <button onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
             <Plus size={15} /> Abstimmung
           </button>
         </div>
@@ -451,7 +451,7 @@ function AbstimmungenTab({ terminId, abstimmungen, setAbstimmungen, ausschussMit
           <div className="flex gap-2">
             <button onClick={() => setShowForm(false)} className="flex-1 py-2 rounded-lg bg-card text-muted-foreground text-sm border border-border">Abbrechen</button>
             <button onClick={handleCreate} disabled={saving || !form.titel}
-              className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">
+              className="flex-1 py-2 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50">
               {saving ? '...' : 'Erstellen'}
             </button>
           </div>

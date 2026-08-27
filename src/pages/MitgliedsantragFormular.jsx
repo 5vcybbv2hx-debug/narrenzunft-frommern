@@ -25,7 +25,7 @@ export default function MitgliedsantragFormular() {
   useEffect(() => {
     // Eingereichter Benutzer ermitteln – via useAuth user
     // Da diese Komponente keinen useAuth-Import hat, nutzen wir die API
-    base44.auth.me().then(u => setEingereichtVon(u)).catch(() => {});
+    base44.auth.me().then(u => setEingereichtVon(u)).catch((e) => { console.error('User laden:', e); });
     // Mitglied des Users laden um ID zu ermitteln
   }, []);
 

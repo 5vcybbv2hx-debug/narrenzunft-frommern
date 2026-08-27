@@ -123,13 +123,13 @@ export default function BusfahrerInfo() {
       {/* Header */}
       <div className="bg-primary px-5 py-6 text-center">
         <div className="text-4xl mb-2">🚌</div>
-        <h1 className="text-xl font-bold text-primary-foreground">{veranstaltung.titel}</h1>
-        <p className="text-primary-foreground/80 text-sm mt-1">
+        <h1 className="text-xl font-bold text-white">{veranstaltung.titel}</h1>
+        <p className="text-white/80 text-sm mt-1">
           {format(new Date(veranstaltung.datum), 'EEEE, d. MMMM yyyy', { locale: de })}
           {veranstaltung.uhrzeit && ` · ${veranstaltung.uhrzeit} Uhr`}
         </p>
         <div className="mt-2">
-          <span className="inline-block px-3 py-1 rounded-full bg-primary-foreground/20 text-primary-foreground text-xs font-semibold">
+          <span className="inline-block px-3 py-1 rounded-full bg-primary-foreground/20 text-white text-xs font-semibold">
             Busfahrer-Infos
           </span>
         </div>
