@@ -5,6 +5,7 @@ import { isAdmin } from '@/lib/roles';
 import { FileText, Check, X, Clock, Eye, UserPlus, ChevronRight, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 const STATUS_COLORS = {
   'Neu': 'bg-yellow-500/20 text-yellow-400',
@@ -37,12 +38,17 @@ export default function Mitgliedsantraege() {
 
   const loadData = async () => {
     setLoading(true);
-    const [a, m] = await Promise.all([
-      base44.entities.Mitgliedsantrag.list('-created_date', 200),
-      base44.entities.Mitglied.list('nachname', 300),
-    ]);
-    setAntraege(a);
-    setMitglieder(m);
+    try {
+      const [a, m] = await Promise.all([
+        base44.entities.Mitgliedsantrag.list('-created_date', 200),
+        base44.entities.Mitglied.list('nachname', 300),
+      ]);
+      setAntraege(a);
+      setMitglieder(m);
+    } catch (e) {
+      console.error('Anträge laden:', e);
+      toast.error('Anträge konnten nicht geladen werden');
+    }
     setLoading(false);
   };
 
@@ -107,7 +113,7 @@ export default function Mitgliedsantraege() {
         <a
           href="/mitgliedsantrag"
           target="_blank"
-          className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+          className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
         >
           <ExternalLink size={14} /> Formular öffnen
         </a>
@@ -117,7 +123,7 @@ export default function Mitgliedsantraege() {
       <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
         {['Alle', 'Neu', 'In Bearbeitung', 'Angelegt', 'Abgelehnt'].map(s => (
           <button key={s} onClick={() => setStatusFilter(s)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${statusFilter === s ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground'}`}>
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${statusFilter === s ? 'bg-primary text-white' : 'bg-card border border-border text-muted-foreground'}`}>
             {s}
           </button>
         ))}

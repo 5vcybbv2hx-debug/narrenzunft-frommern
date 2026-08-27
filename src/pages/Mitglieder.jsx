@@ -11,6 +11,7 @@ import NeuerAntragModal from '@/components/mitglied/NeuerAntragModal';
 import { format, differenceInYears } from 'date-fns';
 import { de } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
+import { toast } from 'sonner';
 
 const STATUS_COLORS = {
   'Aktiv':              'bg-green-500/20 text-green-400',
@@ -55,9 +56,10 @@ export default function Mitglieder() {
       let m;
       if (kannListe) {
         m = await base44.entities.Mitglied.list('nachname', 2000);
+      } else if (user?.id) {
+        m = await base44.entities.Mitglied.filter({ user_id: user.id });
       } else {
-        const me = await base44.auth.me();
-        m = await base44.entities.Mitglied.filter({ user_id: me?.id });
+        m = [];
       }
       const [allHaes, allGruppen] = await Promise.all([
         base44.entities.Haes.list('haesnummer', 1000),
@@ -76,7 +78,8 @@ export default function Mitglieder() {
       return { mitglieder: m, haesMap: map, gruppenMap };
     },
   });
-  const mitglieder = data?.mitglieder || [];
+  const mitglieder = data?.mitglieder || []
+  const queryError = data === undefined && !isLoading;
   const haesMap = data?.haesMap || {};
   const gruppenMap = data?.gruppenMap || {};
 
@@ -184,6 +187,15 @@ export default function Mitglieder() {
     XLSX.utils.book_append_sheet(wb, ws, 'Mitglieder');
     XLSX.writeFile(wb, `Mitgliederliste_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
+
+  if (!isLoading && !data) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-4">
+      <p className="text-sm text-muted-foreground">Mitglieder konnten nicht geladen werden</p>
+      <button onClick={() => refetch()} className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
+        Erneut versuchen
+      </button>
+    </div>
+  );
 
   if (isLoading) return (
     <div className="flex items-center justify-center min-h-[60vh]">

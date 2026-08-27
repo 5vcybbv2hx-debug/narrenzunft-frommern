@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import DateSelect from '../components/ui/DateSelect';
 import TimeSelect from '../components/ui/TimeSelect';
-import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import {
@@ -19,6 +19,7 @@ import ArbeitsdiensteMitgliedTab from '@/components/mitglied/ArbeitsdiensteMitgl
 import FamilieTab from '@/components/mitglied/FamilieTab';
 import AntragTab from '@/components/mitglied/AntragTab';
 import NeuEinladenModal from '@/components/mitglied/NeuEinladenModal';
+import { toast } from 'sonner';
 
 const ALLE_STATUS = ['Aktiv', 'Passiv', 'Passiv mit Häs', 'Leihäs', 'Jugendliche 11-14', 'Jungaktive 15-17', 'Kinder 4-10', 'Kleinkind 0-3', 'Ehrenmitglied'];
 
@@ -76,7 +77,7 @@ function Field({ label, value, field, type = 'text', options, editing, mitglied,
           <select
             value={rawVal || ''}
             onChange={e => onChange(field, e.target.value)}
-            className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors"
+            className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors"
           >
             {options.map(o => <option key={o} value={o}>{o}</option>)}
           </select>
@@ -85,7 +86,7 @@ function Field({ label, value, field, type = 'text', options, editing, mitglied,
             type={type}
             value={rawVal || ''}
             onChange={e => onChange(field, e.target.value)}
-            className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors"
+            className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors"
           />
         )
       ) : (
@@ -98,6 +99,7 @@ function Field({ label, value, field, type = 'text', options, editing, mitglied,
 export default function MitgliedDetail() {
   const { id } = useParams();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const isNew = id === 'neu';
@@ -121,7 +123,7 @@ export default function MitgliedDetail() {
   const [roleSaving, setRoleSaving] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [inviteSent, setInviteSent] = useState(false);
-  const [activeTab, setActiveTab] = useState('profil');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'profil');
   const [istKindVonMir, setIstKindVonMir] = useState(false);
   const [showHaesModal, setShowHaesModal] = useState(false);
   const [allHaes, setAllHaes] = useState([]);
@@ -141,9 +143,12 @@ export default function MitgliedDetail() {
 
   useEffect(() => {
     if (!isNew) loadMitglied();
-    base44.entities.Haesgruppe.list('name', 50).then(setHaesgruppen).catch(() => {});
-    base44.entities.Haes.list('haesnummer', 500).then(setAllHaes).catch(() => {});
-  }, [id]);
+    // Only load Haes data for admins (needed for Häs-Zuweisung modal)
+    if (admin) {
+      base44.entities.Haesgruppe.list('name', 50).then(setHaesgruppen).catch(() => {});
+      base44.entities.Haes.list('haesnummer', 500).then(setAllHaes).catch(() => {});
+    }
+  }, [id, admin]);
 
   const loadMitglied = async () => {
     setLoading(true);
@@ -157,8 +162,7 @@ export default function MitgliedDetail() {
       ]);
       if (m[0]) {
         if (istNurMitglied(user)) {
-          const me = await base44.auth.me();
-          const myM = await base44.entities.Mitglied.filter({ user_id: me?.id });
+          const myM = await base44.entities.Mitglied.filter({ user_id: user?.id });
           if (!kannMitgliedProfilSehn(user, myM[0], m[0])) {
             setAccessDenied(true);
             setLoading(false);
@@ -167,8 +171,8 @@ export default function MitgliedDetail() {
         }
         setMitglied(m[0]);
         if (m[0].user_id) {
-          const users = await base44.entities.User.list();
-          const u = users.find(u => u.id === m[0].user_id);
+          const users = await base44.entities.User.filter({ id: m[0].user_id });
+          const u = users[0];
           if (u) setLinkedUser(u);
         }
       }
@@ -258,6 +262,7 @@ export default function MitgliedDetail() {
     } catch (e) {
       console.error('Speichern:', e);
       setError('Speichern fehlgeschlagen.');
+      toast.error('Speichern fehlgeschlagen.');
     }
     setSaving(false);
   };
@@ -589,7 +594,7 @@ export default function MitgliedDetail() {
                   if (!e.target.value) return;
                   const aktuell = mitglied.haesgruppen_ids || (mitglied.haesgruppe_id ? [mitglied.haesgruppe_id] : []);
                   if (!aktuell.includes(e.target.value)) handleFieldChange('haesgruppen_ids', [...aktuell, e.target.value]);
-                }} className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors">
+                }} className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors">
                   <option value="">+ Gruppe hinzufügen…</option>
                   {haesgruppen.filter(g => !(mitglied.haesgruppen_ids || [mitglied.haesgruppe_id]).includes(g.id))
                     .map(g => <option key={g.id} value={g.id}>{g.name} {g.typ && g.typ !== 'Häsgruppe' ? `(${g.typ})` : ''}</option>)}
@@ -607,7 +612,7 @@ export default function MitgliedDetail() {
             {admin && editing ? (
               <input type="number" min="0" value={mitglied.umzuege_vor_digitalisierung || 0}
                 onChange={e => handleFieldChange('umzuege_vor_digitalisierung', parseInt(e.target.value) || 0)}
-                className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
             ) : (
               <p className="text-sm text-white py-1">{mitglied.umzuege_vor_digitalisierung || 0} Umzüge (historisch)</p>
             )}
@@ -721,7 +726,7 @@ export default function MitgliedDetail() {
         <h2 className="font-semibold text-white mb-4">Notizen</h2>
         {editing ? (
           <textarea value={mitglied.notizen || ''} onChange={e => setMitglied(p => ({ ...p, notizen: e.target.value }))} rows={4}
-            className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary resize-none transition-colors" />
+            className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary resize-none transition-colors" />
         ) : (
           <p className="text-sm text-white whitespace-pre-wrap">{mitglied.notizen || 'Keine Notizen'}</p>
         )}
@@ -861,7 +866,7 @@ export default function MitgliedDetail() {
                     console.error('Spartenleiter-Gruppe aktualisieren:', e);
                     setError('Gruppe konnte nicht zugewiesen werden.');
                   }
-                }} className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors">
+                }} className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors">
                   <option value="">+ Gruppe hinzufügen…</option>
                   {haesgruppen.filter(g => !(mitglied.spartenleiter_haesgruppen_ids || (mitglied.spartenleiter_haesgruppe_id ? [mitglied.spartenleiter_haesgruppe_id] : [])).includes(g.id))
                     .map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
@@ -964,13 +969,13 @@ export default function MitgliedDetail() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 onClick={() => { setShowAustrittModal(true); setAustrittDatum(''); setHaeFreigeben(true); }}
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-neutral-900 border border-border text-sm font-medium text-yellow-400 hover:border-yellow-700/50 hover:bg-yellow-900/10 transition-all"
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-secondary border border-border text-sm font-medium text-yellow-400 hover:border-yellow-700/50 hover:bg-yellow-900/10 transition-all"
               >
                 <LogOut size={16} /> Austritt erfassen
               </button>
               <button
                 onClick={() => { setShowTodesfallModal(true); setTodesfallDatum(''); setHaeFreigeben(false); }}
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-neutral-900 border border-border text-sm font-medium text-red-400 hover:border-red-700/50 hover:bg-red-900/10 transition-all"
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-secondary border border-border text-sm font-medium text-red-400 hover:border-red-700/50 hover:bg-red-900/10 transition-all"
               >
                 <Heart size={16} /> Todesfall erfassen
               </button>
@@ -1000,9 +1005,9 @@ export default function MitgliedDetail() {
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Austrittsdatum</label>
                 <DateSelect value={austrittDatum} onChange={e => setAustrittDatum(e.target.value)} required
-                  className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
+                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary" />
               </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-900/50 border border-border">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 border border-border">
                 <input type="checkbox" id="haeFreiAustritt" checked={haeFreigeben} onChange={e => setHaeFreigeben(e.target.checked)}
                   className="w-4 h-4 rounded accent-primary" />
                 <label htmlFor="haeFreiAustritt" className="text-xs text-white flex-1 cursor-pointer">
@@ -1045,9 +1050,9 @@ export default function MitgliedDetail() {
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Todesdatum</label>
                 <DateSelect value={todesfallDatum} onChange={e => setTodesfallDatum(e.target.value)} required
-                  className="w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary" />
+                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary" />
               </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-900/50 border border-border">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 border border-border">
                 <input type="checkbox" id="haeFreiTod" checked={haeFreigeben} onChange={e => setHaeFreigeben(e.target.checked)}
                   className="w-4 h-4 rounded accent-primary" />
                 <label htmlFor="haeFreiTod" className="text-xs text-white flex-1 cursor-pointer">
@@ -1101,7 +1106,7 @@ export default function MitgliedDetail() {
               <div className="relative">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input type="text" placeholder="Häs-Nummer oder Bezeichnung…" value={haessuche} onChange={e => setHaessuche(e.target.value)} autoFocus
-                  className="w-full pl-8 pr-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors" />
+                  className="w-full pl-8 pr-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors" />
               </div>
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {[...allHaes]

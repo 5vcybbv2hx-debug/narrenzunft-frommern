@@ -23,7 +23,8 @@ export default function MitgliedsantragFormular() {
   const [eingereichtVon, setEingereichtVon] = useState(null);
 
   useEffect(() => {
-    // Eingereichter Benutzer ermitteln (optional – Vorstand/Spartenleiter)
+    // Eingereichter Benutzer ermitteln – via useAuth user
+    // Da diese Komponente keinen useAuth-Import hat, nutzen wir die API
     base44.auth.me().then(u => setEingereichtVon(u)).catch(() => {});
     // Mitglied des Users laden um ID zu ermitteln
   }, []);
@@ -167,7 +168,7 @@ export default function MitgliedsantragFormular() {
                 <div className="grid grid-cols-2 gap-2">
                   {SPARTEN.map(s => (
                     <button key={s} type="button" onClick={() => set('sparte', s)}
-                      className={`py-3 rounded-xl text-sm font-semibold border transition-all ${form.sparte === s ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary text-muted-foreground border-border hover:border-primary/50'}`}>
+                      className={`py-3 rounded-xl text-sm font-semibold border transition-all ${form.sparte === s ? 'bg-primary text-white border-primary' : 'bg-secondary text-muted-foreground border-border hover:border-primary/50'}`}>
                       {s}
                     </button>
                   ))}
@@ -248,7 +249,7 @@ export default function MitgliedsantragFormular() {
             <button
               onClick={() => setStep(s => s + 1)}
               disabled={step === 0 && (!form.vorname || !form.nachname)}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
               Weiter <ChevronRight size={16} />
             </button>
@@ -256,7 +257,7 @@ export default function MitgliedsantragFormular() {
             <button
               onClick={handleSubmit}
               disabled={submitting || !form.vorname || !form.nachname}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
               {submitting ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
               {submitting ? 'Wird eingereicht...' : 'Antrag einreichen'}
