@@ -177,6 +177,22 @@ export default function Ehrungen() {
     setSaving(null);
   };
 
+  const handleEhrungZuruecknehmen = async (ehrungId) => {
+    setSaving(`zurueck-${ehrungId}`);
+    try {
+      await base44.entities.Ehrung.update(ehrungId, {
+        status: 'Vorgeschlagen',
+        datum: null,
+        verliehen_von: null,
+      });
+      await loadData();
+    } catch (e) {
+      console.error('Ehrung zurücknehmen:', e);
+      setError('Ehrung konnte nicht zurückgenommen werden.');
+    }
+    setSaving(null);
+  };
+
   const exportFaellig = () => {
     const daten = faelligeEhrungen.map(e => ({ Name: `${e.mitglied.vorname} ${e.mitglied.nachname}`, Typ: e.typ, Stufe: e.stufe, AktuellerStand: e.stand }));
     exportiereAlsCSV(daten, 'faellige_ehrungen.csv');
@@ -432,22 +448,33 @@ export default function Ehrungen() {
               <p className="text-sm text-muted-foreground mt-1">Ehrungen werden hier nach Vergabe angezeigt</p>
             </div>
           ) : (
-            verlieheneEhrungen.map(e => (
-              <div key={e.id} className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-green-900/20 flex items-center justify-center shrink-0">
-                  <Award size={18} className="text-green-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-white">{getMitgliedName(e.mitglied_id)}</p>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <EhrungsBadge typ={e.typ} wert={e.wert} />
-                    {e.datum && <span className="text-xs text-muted-foreground">{format(new Date(e.datum), 'dd.MM.yyyy', { locale: de })}</span>}
-                    {e.verliehen_von && <span className="text-xs text-muted-foreground">· von {e.verliehen_von}</span>}
+            verlieheneEhrungen.map(e => {
+              const isSaving = saving === `zurueck-${e.id}`;
+              return (
+              <div key={e.id} className="bg-card border border-border rounded-xl p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-green-900/20 flex items-center justify-center shrink-0">
+                    <Award size={18} className="text-green-400" />
                   </div>
-                  {e.beschreibung && <p className="text-xs text-muted-foreground mt-1">{e.beschreibung}</p>}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-white">{getMitgliedName(e.mitglied_id)}</p>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <EhrungsBadge typ={e.typ} wert={e.wert} />
+                      {e.datum && <span className="text-xs text-muted-foreground">{format(new Date(e.datum), 'dd.MM.yyyy', { locale: de })}</span>}
+                      {e.verliehen_von && <span className="text-xs text-muted-foreground">· von {e.verliehen_von}</span>}
+                    </div>
+                    {e.beschreibung && <p className="text-xs text-muted-foreground mt-1">{e.beschreibung}</p>}
+                  </div>
                 </div>
+                {kannVerwalten && (
+                  <button disabled={isSaving} onClick={() => handleEhrungZuruecknehmen(e.id)}
+                    className="mt-3 w-full py-1.5 rounded-lg bg-red-900/20 text-red-400 hover:bg-red-900/30 transition-colors text-xs font-medium disabled:opacity-50">
+                    Zurücknehmen
+                  </button>
+                )}
               </div>
-            ))
+              );
+            })
           )}
         </div>
       )}
