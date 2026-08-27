@@ -97,9 +97,9 @@ export default function Shop() {
       case 'In Bestellung': return 'bg-blue-400/10 text-blue-400 border border-blue-400/30';
       case 'Geliefert': return 'bg-emerald-400/10 text-emerald-400 border border-emerald-400/30';
       case 'Abgeholt': return 'bg-teal-400/10 text-teal-400 border border-teal-400/30';
-      case 'Abgeschlossen': return 'bg-neutral-600/10 text-gray-400 border border-neutral-600/30';
+      case 'Abgeschlossen': return 'bg-secondary text-muted-foreground border border-border';
       case 'Storniert': return 'bg-red-400/10 text-red-400 border border-red-400/30';
-      default: return 'bg-neutral-700/10 text-white border border-neutral-700/30';
+      default: return 'bg-secondary text-foreground border border-border';
     }
   };
 
@@ -125,12 +125,12 @@ export default function Shop() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex bg-neutral-900 border border-border p-1 rounded-xl">
+            <div className="flex bg-secondary border border-border p-1 rounded-xl">
               <button onClick={() => setActiveTab('shop')} className={`px-4 py-2 min-h-[40px] rounded-lg text-sm font-medium transition-all ${activeTab === 'shop' ? 'bg-primary text-white' : 'text-neutral-400 hover:text-white'}`}>Katalog</button>
               {meineBestellungen.length > 0 && (
                 <button onClick={() => setActiveTab('bestellungen')} className={`px-4 py-2 min-h-[40px] rounded-lg text-sm font-medium relative transition-all ${activeTab === 'bestellungen' ? 'bg-primary text-white' : 'text-neutral-400 hover:text-white'}`}>
                   Meine Bestellungen
-                  <span className="ml-1.5 px-1.5 py-0.5 text-[10px] bg-neutral-800 text-neutral-300 rounded-full">{meineBestellungen.length}</span>
+                  <span className="ml-1.5 px-1.5 py-0.5 text-[10px] bg-secondary text-muted-foreground rounded-full">{meineBestellungen.length}</span>
                 </button>
               )}
             </div>
@@ -171,7 +171,7 @@ export default function Shop() {
               <div className="flex flex-wrap items-center gap-1.5">
                 {ALLE_KATEGORIEN.map((kat) => (
                   <button key={kat} onClick={() => setSelectedKategorie(kat)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium uppercase tracking-wide transition-colors ${selectedKategorie === kat ? 'bg-primary text-white' : 'bg-neutral-900 border border-border hover:bg-neutral-800 text-neutral-400 hover:text-white'}`}>
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium uppercase tracking-wide transition-colors ${selectedKategorie === kat ? 'bg-primary text-white' : 'bg-secondary border border-border hover:bg-border text-muted-foreground hover:text-foreground'}`}>
                     {kat}
                   </button>
                 ))}
@@ -180,7 +180,7 @@ export default function Shop() {
                 <Search className="absolute left-3 top-2.5 w-4 h-4 text-neutral-500" />
                 <input type="text" placeholder="Suchen..." value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-neutral-900 border border-border rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-primary/50" />
+                  className="w-full bg-card border border-border rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-primary/50" />
               </div>
             </div>
 
@@ -200,7 +200,7 @@ export default function Shop() {
                 {filteredProducts.map((product) => (
                   <div key={product.id} className="bg-card border border-border rounded-xl overflow-hidden flex flex-col transition-all hover:border-primary/20">
                     {/* Product Image / Placeholder */}
-                    <div className="aspect-square bg-neutral-900 flex items-center justify-center relative">
+                    <div className="aspect-square bg-secondary flex items-center justify-center relative">
                       {product.media && product.media.length > 0 ? (
                         <img src={product.media[0]?.url || product.media[0]?.src} alt={product.name}
                           className="w-full h-full object-cover" />
@@ -213,7 +213,7 @@ export default function Shop() {
                         </span>
                       )}
                       {!product.isInStock && (
-                        <span className="absolute top-3 right-3 bg-neutral-900 border border-red-500/40 text-red-400 text-[10px] font-bold uppercase px-2 py-1 rounded-full tracking-wider">
+                        <span className="absolute top-3 right-3 bg-card border border-red-500/40 text-red-400 text-[10px] font-bold uppercase px-2 py-1 rounded-full tracking-wider">
                           Ausverkauft
                         </span>
                       )}
@@ -222,7 +222,7 @@ export default function Shop() {
                     {/* Product Info */}
                     <div className="p-4 flex flex-col flex-1 justify-between">
                       <div>
-                        <span className="text-[10px] bg-neutral-900 border border-border px-2 py-0.5 rounded-full text-neutral-400 font-medium uppercase tracking-wider">
+                        <span className="text-[10px] bg-secondary border border-border px-2 py-0.5 rounded-full text-muted-foreground font-medium uppercase tracking-wider">
                           {product.kategorie || 'Allgemein'}
                         </span>
                         <h3 className="text-lg font-oswald uppercase tracking-wide font-bold mt-2 line-clamp-1">{product.name}</h3>
@@ -238,7 +238,7 @@ export default function Shop() {
                         <a href={product.url} target="_blank" rel="noopener noreferrer"
                           className={`flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-xl text-sm font-medium transition-all ${product.isInStock
                             ? 'bg-primary text-white hover:bg-primary/90'
-                            : 'bg-neutral-800 text-neutral-500 cursor-not-allowed pointer-events-none'}`}>
+                            : 'bg-secondary text-muted-foreground cursor-not-allowed pointer-events-none'}`}>
                           {product.isInStock ? 'Bestellen' : 'Nicht verfügbar'}
                           {product.isInStock && <ExternalLink className="w-4 h-4" />}
                         </a>
@@ -279,7 +279,7 @@ export default function Shop() {
                   return (
                     <div key={order.id} className="bg-card border border-border rounded-xl overflow-hidden">
                       <button onClick={() => toggleOrderExpand(order.id)}
-                        className="w-full p-4 flex items-center justify-between hover:bg-neutral-900/30 transition-colors">
+                        className="w-full p-4 flex items-center justify-between hover:bg-secondary/50 transition-colors">
                         <div className="flex items-center gap-4">
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center border ${isPaid ? 'bg-green-500/10 border-green-500/30' : 'bg-yellow-500/10 border-yellow-500/30'}`}>
                             {isPaid ? <Check className="w-5 h-5 text-green-400" /> : <Clock className="w-5 h-5 text-yellow-400" />}
@@ -299,7 +299,7 @@ export default function Shop() {
                         </div>
                       </button>
                       {isExpanded && (
-                        <div className="border-t border-border p-4 space-y-3 bg-neutral-900/20">
+                        <div className="border-t border-border p-4 space-y-3 bg-secondary/20">
                           {order.zahlungsart && (
                             <div className="flex items-center gap-2 text-xs text-neutral-400">
                               <Wallet className="w-3.5 h-3.5" />

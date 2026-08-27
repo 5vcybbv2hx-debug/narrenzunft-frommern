@@ -90,7 +90,7 @@ function ShopVerwaltungContent({ user }) {
         base44.entities.ShopBestellung.list('-created_date', 500),
         base44.entities.ShopArtikel.list('sortierung', 100),
         base44.entities.Mitglied.list('nachname', 500),
-        base44.entities.Haesgruppe.list('name', 200).catch(() => [])
+        base44.entities.Haesgruppe.list('name', 200).catch((e) => { console.error('Häsgruppen laden:', e); return []; })
       ]);
       setBestellungen(ordersRes || []);
       setArtikel(articlesRes || []);
@@ -137,7 +137,7 @@ function ShopVerwaltungContent({ user }) {
       setBestellungen((prev) => prev.map((o) => (o.id === bestellung.id ? { ...o, status: newStatus } : o)));
     } catch (err) {
       console.error('Error updating status:', err);
-      alert('Status konnte nicht aktualisiert werden.');
+      toast.error('Status konnte nicht aktualisiert werden.');
     }
   };
 
@@ -148,7 +148,7 @@ function ShopVerwaltungContent({ user }) {
       setArtikel((prev) => prev.map((a) => (a.id === art.id ? { ...a, aktiv: nextVal } : a)));
     } catch (err) {
       console.error('Error toggling article status:', err);
-      alert('Status konnte nicht geändert werden.');
+      toast.error('Status konnte nicht geändert werden.');
     }
   };
 
@@ -208,18 +208,18 @@ function ShopVerwaltungContent({ user }) {
       setShowArtikelModal(false);
     } catch (err) {
       console.error('Error saving article:', err);
-      alert('Fehler beim Speichern des Artikels.');
+      toast.error('Fehler beim Speichern des Artikels.');
     }
   };
 
   const handleDeleteArtikel = async (id) => {
-    if (!window.confirm('Möchten Sie diesen Artikel wirklich unwiderruflich löschen?')) return;
+    if (!confirm('Diesen Artikel wirklich unwiderruflich löschen?')) return;
     try {
       await base44.entities.ShopArtikel.delete(id);
       setArtikel((prev) => prev.filter((a) => a.id !== id));
     } catch (err) {
       console.error('Error deleting article:', err);
-      alert('Fehler beim Löschen des Artikels.');
+      toast.error('Fehler beim Löschen des Artikels.');
     }
   };
 
@@ -340,7 +340,7 @@ function ShopVerwaltungContent({ user }) {
         {[{ id: 'bestellungen', label: 'Bestellungen', icon: ShoppingBag }, { id: 'packlisten', label: 'Packlisten', icon: ClipboardList }, { id: 'sammel', label: 'Sammelbestellung', icon: Users }, { id: 'artikel', label: 'Artikelverwaltung', icon: Settings }].map((t) => {
           const Icon = t.icon;
           const active = tab === t.id;
-          return <button key={t.id} onClick={() => { setTab(t.id); setSearch(''); }} className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-medium transition ${active ? 'bg-primary text-white border-b-2 border-primary' : 'bg-neutral-800 text-gray-400 hover:text-white hover:bg-neutral-700'}`}><Icon className="w-4 h-4" />{t.label}</button>;
+          return <button key={t.id} onClick={() => { setTab(t.id); setSearch(''); }} className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-medium transition ${active ? 'bg-primary text-white border-b-2 border-primary' : 'bg-secondary text-gray-400 hover:text-white hover:bg-border'}`}><Icon className="w-4 h-4" />{t.label}</button>;
         })}
       </div>
 
@@ -355,18 +355,18 @@ function ShopVerwaltungContent({ user }) {
               <div className="flex flex-col sm:flex-row gap-3 mb-6">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input type="text" placeholder="Mitglied suchen..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-neutral-900 border border-border rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm" />
+                  <input type="text" placeholder="Mitglied suchen..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm" />
                 </div>
                 <div className="flex gap-2 shrink-0">
-                  <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 bg-neutral-900 border border-border rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm">
+                  <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm">
                     <option value="Alle">Alle Status</option>
                     {ALLE_STATUS.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
-                  <button onClick={handleExportBestellungen} className="flex items-center gap-2 bg-neutral-800 text-white px-4 py-2 rounded-xl border border-border hover:bg-neutral-700 transition text-sm"><Download className="w-4 h-4" /> CSV Export</button>
+                  <button onClick={handleExportBestellungen} className="flex items-center gap-2 bg-secondary text-white px-4 py-2 rounded-xl border border-border hover:bg-border transition text-sm"><Download className="w-4 h-4" /> CSV Export</button>
                 </div>
               </div>
               <div className="bg-card border border-border rounded-xl overflow-hidden">
-                <div className="p-4 border-b border-border flex justify-between items-center bg-neutral-900"><h3 className="font-oswald uppercase tracking-wide text-lg text-white">Bestellungen ({filteredBestellungen.length})</h3></div>
+                <div className="p-4 border-b border-border flex justify-between items-center bg-secondary"><h3 className="font-oswald uppercase tracking-wide text-lg text-white">Bestellungen ({filteredBestellungen.length})</h3></div>
                 {filteredBestellungen.length === 0 ? <div className="p-8 text-center text-gray-500">Keine Bestellungen gefunden</div> : (
                   <div className="divide-y divide-border">
                     {filteredBestellungen.map((o) => {
@@ -375,7 +375,7 @@ function ShopVerwaltungContent({ user }) {
                       const dateStr = o.created_date ? new Date(o.created_date).toLocaleDateString('de-DE') : '';
                       const itemsCount = (o.positionen || []).reduce((sum, item) => sum + (item.menge || 1), 0);
                       return (
-                        <div key={o.id} className="transition hover:bg-neutral-900/40">
+                        <div key={o.id} className="transition hover:bg-secondary/40">
                           <div onClick={() => setExpandedOrders((prev) => ({ ...prev, [o.id]: !prev[o.id] }))} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer">
                             <div className="flex items-start gap-3">
                               <ShoppingBag className="w-5 h-5 text-primary shrink-0 mt-0.5" />
@@ -391,7 +391,7 @@ function ShopVerwaltungContent({ user }) {
                             </div>
                           </div>
                           {isExpanded && (
-                            <div className="p-4 bg-neutral-900/60 border-t border-border">
+                            <div className="p-4 bg-secondary/60 border-t border-border">
                               <div className="mb-4">
                                 <h5 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Bestellte Positionen</h5>
                                 <div className="space-y-2">
@@ -409,11 +409,11 @@ function ShopVerwaltungContent({ user }) {
                                   ))}
                                 </div>
                               </div>
-                              {o.notiz && <div className="mb-3 p-3 bg-neutral-900 rounded-lg border border-border/60"><p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Notiz</p><p className="text-sm text-white">{o.notiz}</p></div>}
+                              {o.notiz && <div className="mb-3 p-3 bg-secondary rounded-lg border border-border/60"><p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Notiz</p><p className="text-sm text-white">{o.notiz}</p></div>}
                               {o.status !== 'Storniert' && (
                                 <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-border/50">
                                   {o.status === 'Offen' && <button onClick={(e) => { e.stopPropagation(); handleStatusChange(o, 'Bezahlt'); }} className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1.5 rounded-lg transition"><Check className="w-4 h-4" /> Als bezahlt markieren</button>}
-                                  <div className="flex items-center gap-2"><span className="text-xs text-gray-400">Status ändern:</span><select value={o.status || 'Offen'} onChange={(e) => handleStatusChange(o, e.target.value)} className="text-xs px-2 py-1 bg-neutral-950 border border-border rounded text-white focus:outline-none">{ALLE_STATUS.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
+                                  <div className="flex items-center gap-2"><span className="text-xs text-gray-400">Status ändern:</span><select value={o.status || 'Offen'} onChange={(e) => handleStatusChange(o, e.target.value)} className="text-xs px-2 py-1 bg-background border border-border rounded text-white focus:outline-none">{ALLE_STATUS.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
                                 </div>
                               )}
                             </div>
@@ -433,9 +433,9 @@ function ShopVerwaltungContent({ user }) {
               <div className="flex flex-col sm:flex-row gap-3 mb-6">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input type="text" placeholder="Mitglied suchen..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-neutral-900 border border-border rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm" />
+                  <input type="text" placeholder="Mitglied suchen..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm" />
                 </div>
-                <button onClick={handleExportPacklisten} className="flex items-center gap-2 bg-neutral-800 text-white px-4 py-2 rounded-xl border border-border hover:bg-neutral-700 transition text-sm self-start"><Download className="w-4 h-4" /> CSV Export</button>
+                <button onClick={handleExportPacklisten} className="flex items-center gap-2 bg-secondary text-white px-4 py-2 rounded-xl border border-border hover:bg-border transition text-sm self-start"><Download className="w-4 h-4" /> CSV Export</button>
               </div>
               <div className="space-y-4">
                 {packlistenData.length === 0 ? <div className="p-8 bg-card border border-border rounded-xl text-center text-gray-500">Keine Einträge gefunden</div> : (
@@ -452,7 +452,7 @@ function ShopVerwaltungContent({ user }) {
                     });
                     return (
                       <div key={group.mitglied_id} className="bg-card border border-border rounded-xl overflow-hidden">
-                        <div onClick={() => setExpandedPacklists((prev) => ({ ...prev, [group.mitglied_id]: !prev[group.mitglied_id] }))} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-neutral-900/30 transition">
+                        <div onClick={() => setExpandedPacklists((prev) => ({ ...prev, [group.mitglied_id]: !prev[group.mitglied_id] }))} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-secondary/30 transition">
                           <div className="flex items-start gap-3"><Users className="w-5 h-5 text-primary shrink-0 mt-0.5" /><div><h4 className="font-medium text-white text-base">{mName}</h4><p className="text-xs text-gray-400 mt-1">{group.totalItems} Artikel • {group.orders.length} Bestellung(en)</p></div></div>
                           <div className="flex items-center gap-4 justify-between sm:justify-end">
                             <div className="text-right"><p className="font-semibold text-white">{formatEuro(group.totalAmount)}</p><span className={`inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${group.paymentStatus === 'Bezahlt' ? 'text-green-400 bg-green-400/10 border-green-400/30' : 'text-yellow-400 bg-yellow-400/10 border-yellow-400/30'}`}>{group.paymentStatus}</span></div>
@@ -460,7 +460,7 @@ function ShopVerwaltungContent({ user }) {
                           </div>
                         </div>
                         {isExpanded && (
-                          <div className="p-4 bg-neutral-900/40 border-t border-border space-y-4">
+                          <div className="p-4 bg-secondary/40 border-t border-border space-y-4">
                             {/* Zahlstatus-Banner vor Ort */}
                             <div className={`flex items-center justify-between p-3 rounded-lg border ${group.paymentStatus === 'Bezahlt' ? 'bg-green-500/10 border-green-500/30' : 'bg-yellow-500/10 border-yellow-500/30'}`}>
                               <div className="flex items-center gap-2">
@@ -477,7 +477,7 @@ function ShopVerwaltungContent({ user }) {
                             {Object.entries(itemsByPerson).map(([person, items]) => {
                               const personTotal = items.reduce((sum, item) => sum + ((item.einzelpreis || 0) * (item.menge || 1)), 0);
                               return (
-                                <div key={person} className="border border-border/60 rounded-lg p-3 bg-neutral-900/60">
+                                <div key={person} className="border border-border/60 rounded-lg p-3 bg-secondary/60">
                                   <h5 className="font-oswald uppercase tracking-wide text-sm text-primary mb-2 border-b border-border/40 pb-1">Für: {person === 'Eigenbedarf' ? mName : person}</h5>
                                   <div className="space-y-1">
                                     {items.map((item, idx) => (
@@ -504,7 +504,7 @@ function ShopVerwaltungContent({ user }) {
                             })}
 
                             {/* Gesamtbetrag unten — bezahlen vor Ort */}
-                            <div className="flex items-center justify-between p-3 bg-neutral-900 rounded-lg border border-border">
+                            <div className="flex items-center justify-between p-3 bg-secondary rounded-lg border border-border">
                               <span className="text-xs text-gray-400 uppercase font-semibold tracking-wider">Zu zahlen vor Ort</span>
                               <span className="text-xl font-oswald font-bold text-primary">{formatEuro(group.totalAmount)}</span>
                             </div>
@@ -521,18 +521,18 @@ function ShopVerwaltungContent({ user }) {
           {/* SAMMELBESTELLUNG — mit Sparte/Design-Spalte */}
           {tab === 'sammel' && (
             <div>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 bg-neutral-900/60 border border-border p-4 rounded-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 bg-secondary/60 border border-border p-4 rounded-xl">
                 <div>
                   <h3 className="font-oswald uppercase tracking-wide text-lg text-white">Sammelbestellung für Dienstleister</h3>
                   <p className="text-sm text-gray-400">Gruppiert nach Artikel + Sparte/Design + Größe. Sparte bestimmt den Aufdruck/Stick.</p>
                 </div>
-                <button onClick={handleExportSammelbestellung} className="flex items-center gap-2 bg-neutral-800 text-white px-4 py-2 rounded-xl border border-border hover:bg-neutral-700 transition shrink-0 text-sm"><Download className="w-4 h-4" /> Export für Lieferanten (CSV)</button>
+                <button onClick={handleExportSammelbestellung} className="flex items-center gap-2 bg-secondary text-white px-4 py-2 rounded-xl border border-border hover:bg-border transition shrink-0 text-sm"><Download className="w-4 h-4" /> Export für Lieferanten (CSV)</button>
               </div>
               <div className="bg-card border border-border rounded-xl overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-neutral-900 border-b border-border font-oswald uppercase tracking-wide text-sm text-gray-400">
+                      <tr className="bg-secondary border-b border-border font-oswald uppercase tracking-wide text-sm text-gray-400">
                         <th className="p-4">Artikel</th>
                         <th className="p-4 text-primary">Sparte / Design</th>
                         <th className="p-4">Größe</th>
@@ -544,9 +544,9 @@ function ShopVerwaltungContent({ user }) {
                     <tbody className="divide-y divide-border text-sm">
                       {sammelbestellungData.length === 0 ? <tr><td colSpan="6" className="p-8 text-center text-gray-500">Keine aktiven Bestellpositionen vorhanden.</td></tr> : (
                         sammelbestellungData.map((s, idx) => (
-                          <tr key={idx} className="hover:bg-neutral-900/30 transition">
+                          <tr key={idx} className="hover:bg-secondary/30 transition">
                             <td className="p-4 font-medium text-white">{s.artikel_name}</td>
-                            <td className="p-4"><span className={`text-xs px-2 py-0.5 rounded border ${s.sparte !== 'Ohne Sparte' ? 'bg-primary/10 border-primary/30 text-primary font-medium' : 'bg-neutral-800 border-border text-gray-400'}`}>{s.sparte}</span></td>
+                            <td className="p-4"><span className={`text-xs px-2 py-0.5 rounded border ${s.sparte !== 'Ohne Sparte' ? 'bg-primary/10 border-primary/30 text-primary font-medium' : 'bg-secondary border-border text-gray-400'}`}>{s.sparte}</span></td>
                             <td className="p-4 text-gray-300">{s.groesse || '—'}</td>
                             <td className="p-4 text-center font-bold text-white">{s.menge}</td>
                             <td className="p-4 text-right text-gray-400">{formatEuro(s.einzelpreis)}</td>
@@ -557,7 +557,7 @@ function ShopVerwaltungContent({ user }) {
                     </tbody>
                     {sammelbestellungData.length > 0 && (
                       <tfoot>
-                        <tr className="bg-neutral-900 font-semibold border-t border-border">
+                        <tr className="bg-secondary font-semibold border-t border-border">
                           <td colSpan="5" className="p-4 text-right text-gray-400 font-oswald uppercase tracking-wide text-base">Gesamtwert:</td>
                           <td className="p-4 text-right text-primary font-oswald uppercase tracking-wide text-lg">{formatEuro(sammelGrandTotal)}</td>
                         </tr>
@@ -586,13 +586,13 @@ function ShopVerwaltungContent({ user }) {
                         </div>
                         {art.artikel_nummer && <p className="text-xs text-gray-400 mb-2">Art.-Nr: {art.artikel_nummer}</p>}
                         <p className="text-sm text-gray-300 line-clamp-2 mb-3">{art.beschreibung || 'Keine Beschreibung vorhanden.'}</p>
-                        <div className="mb-3"><p className="text-xs text-gray-400 font-semibold mb-1">Größen:</p><div className="flex flex-wrap gap-1">{Array.isArray(art.groessen) && art.groessen.length > 0 ? art.groessen.map((sz, i) => <span key={i} className="text-xs bg-neutral-900 border border-border px-1.5 py-0.5 rounded text-white">{sz}</span>) : <span className="text-xs text-gray-500">Keine Größen definiert</span>}</div></div>
+                        <div className="mb-3"><p className="text-xs text-gray-400 font-semibold mb-1">Größen:</p><div className="flex flex-wrap gap-1">{Array.isArray(art.groessen) && art.groessen.length > 0 ? art.groessen.map((sz, i) => <span key={i} className="text-xs bg-secondary border border-border px-1.5 py-0.5 rounded text-white">{sz}</span>) : <span className="text-xs text-gray-500">Keine Größen definiert</span>}</div></div>
                         {Array.isArray(art.sparten) && art.sparten.length > 0 && (<div className="mb-3"><p className="text-xs text-gray-400 font-semibold mb-1">Sparte/Design:</p><div className="flex flex-wrap gap-1">{art.sparten.map((spId, i) => <span key={i} className="text-[10px] bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-primary">{getGruppenName(spId) || spId}</span>)}</div></div>)}
                       </div>
                       <div className="pt-4 border-t border-border mt-4 flex items-center justify-between">
                         <div className="text-lg font-bold text-primary font-oswald tracking-wide">{formatEuro(art.preis || 0)}</div>
                         <div className="flex items-center gap-2">
-                          <button onClick={() => handleOpenArtikelModal(art)} className="p-1.5 bg-neutral-800 text-white rounded border border-border hover:bg-neutral-700 transition" title="Bearbeiten"><Edit className="w-4 h-4" /></button>
+                          <button onClick={() => handleOpenArtikelModal(art)} className="p-1.5 bg-secondary text-white rounded border border-border hover:bg-border transition" title="Bearbeiten"><Edit className="w-4 h-4" /></button>
                           <button onClick={() => handleDeleteArtikel(art.id)} className="p-1.5 bg-primary/10 border border-primary/30 text-primary rounded hover:bg-primary/10 transition" title="Löschen"><Trash2 className="w-4 h-4" /></button>
                         </div>
                       </div>
@@ -612,28 +612,28 @@ function ShopVerwaltungContent({ user }) {
             <button onClick={() => setShowArtikelModal(false)} className="absolute right-4 top-4 p-1 text-gray-400 hover:text-white transition"><X className="w-5 h-5" /></button>
             <h3 className="font-oswald uppercase tracking-wide text-xl mb-4 text-white">{editingArtikel ? 'Artikel bearbeiten' : 'Artikel hinzufügen'}</h3>
             <form onSubmit={handleSaveArtikel} className="space-y-4">
-              <div><label className="block text-xs font-semibold uppercase text-gray-400 mb-1">Name *</label><input type="text" required value={formName} onChange={(e) => setFormName(e.target.value)} className="w-full px-3 py-2 bg-neutral-900 border border-border rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm" placeholder="Zunfthose, Kapuzenjacke..." /></div>
-              <div><label className="block text-xs font-semibold uppercase text-gray-400 mb-1">Beschreibung</label><textarea value={formBeschreibung} onChange={(e) => setFormBeschreibung(e.target.value)} rows="2" className="w-full px-3 py-2 bg-neutral-900 border border-border rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm resize-none" placeholder="Details zum Material, Passform..." /></div>
+              <div><label className="block text-xs font-semibold uppercase text-gray-400 mb-1">Name *</label><input type="text" required value={formName} onChange={(e) => setFormName(e.target.value)} className="w-full px-3 py-2 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm" placeholder="Zunfthose, Kapuzenjacke..." /></div>
+              <div><label className="block text-xs font-semibold uppercase text-gray-400 mb-1">Beschreibung</label><textarea value={formBeschreibung} onChange={(e) => setFormBeschreibung(e.target.value)} rows="2" className="w-full px-3 py-2 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm resize-none" placeholder="Details zum Material, Passform..." /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-xs font-semibold uppercase text-gray-400 mb-1">Kategorie</label><select value={formKategorie} onChange={(e) => setFormKategorie(e.target.value)} className="w-full px-3 py-2 bg-neutral-900 border border-border rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm">{ALLE_KATEGORIEN.map((k) => <option key={k} value={k}>{k}</option>)}</select></div>
-                <div><label className="block text-xs font-semibold uppercase text-gray-400 mb-1">Preis (EUR) *</label><input type="number" step="0.01" required value={formPreis} onChange={(e) => setFormPreis(e.target.value)} className="w-full px-3 py-2 bg-neutral-900 border border-border rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm" placeholder="49.90" /></div>
+                <div><label className="block text-xs font-semibold uppercase text-gray-400 mb-1">Kategorie</label><select value={formKategorie} onChange={(e) => setFormKategorie(e.target.value)} className="w-full px-3 py-2 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm">{ALLE_KATEGORIEN.map((k) => <option key={k} value={k}>{k}</option>)}</select></div>
+                <div><label className="block text-xs font-semibold uppercase text-gray-400 mb-1">Preis (EUR) *</label><input type="number" step="0.01" required value={formPreis} onChange={(e) => setFormPreis(e.target.value)} className="w-full px-3 py-2 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm" placeholder="49.90" /></div>
               </div>
               <div>
                 <label className="block text-xs font-semibold uppercase text-gray-400 mb-2">Größen (anklicken zum Auswählen)</label>
                 <div className="flex flex-wrap gap-1.5 mb-2">
                   {(VORDEFINIERTE_GROESSEN[formKategorie] || []).map((size) => (
-                    <button key={size} type="button" onClick={() => toggleGroesse(size)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${formGroessen.includes(size) ? 'bg-primary text-white border-primary' : 'bg-neutral-900 border-border hover:bg-neutral-800 text-neutral-400 hover:text-white'}`}>{size}</button>
+                    <button key={size} type="button" onClick={() => toggleGroesse(size)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${formGroessen.includes(size) ? 'bg-primary text-white border-primary' : 'bg-secondary border-border hover:bg-secondary text-neutral-400 hover:text-white'}`}>{size}</button>
                   ))}
                 </div>
                 <div className="flex gap-2">
-                  <input type="text" value={formCustomGroesse} onChange={(e) => setFormCustomGroesse(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomGroesse(); } }} placeholder="Eigene Größe hinzufügen..." className="flex-1 px-3 py-1.5 bg-neutral-900 border border-border rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-primary text-xs" />
-                  <button type="button" onClick={addCustomGroesse} className="px-3 py-1.5 bg-neutral-800 text-white rounded-lg border border-border hover:bg-neutral-700 transition text-xs flex items-center gap-1"><Plus className="w-3.5 h-3.5" /> Hinzufügen</button>
+                  <input type="text" value={formCustomGroesse} onChange={(e) => setFormCustomGroesse(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomGroesse(); } }} placeholder="Eigene Größe hinzufügen..." className="flex-1 px-3 py-1.5 bg-secondary border border-border rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-primary text-xs" />
+                  <button type="button" onClick={addCustomGroesse} className="px-3 py-1.5 bg-secondary text-white rounded-lg border border-border hover:bg-border transition text-xs flex items-center gap-1"><Plus className="w-3.5 h-3.5" /> Hinzufügen</button>
                 </div>
                 {formGroessen.length > 0 && (<div className="mt-2 flex flex-wrap gap-1">{formGroessen.map((sz) => (<span key={sz} className="inline-flex items-center gap-1 bg-primary/10 border border-primary/30 text-primary px-2 py-1 rounded text-xs font-medium">{sz}<button type="button" onClick={() => toggleGroesse(sz)} className="text-primary hover:text-white"><X className="w-3 h-3" /></button></span>))}</div>)}
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-xs font-semibold uppercase text-gray-400 mb-1">Artikelnummer</label><input type="text" value={formArtikelNummer} onChange={(e) => setFormArtikelNummer(e.target.value)} className="w-full px-3 py-2 bg-neutral-900 border border-border rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm" placeholder="ZF-1004" /></div>
-                <div><label className="block text-xs font-semibold uppercase text-gray-400 mb-1">Sortierung (Zahl)</label><input type="number" value={formSortierung} onChange={(e) => setFormSortierung(e.target.value)} className="w-full px-3 py-2 bg-neutral-900 border border-border rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm" placeholder="10" /></div>
+                <div><label className="block text-xs font-semibold uppercase text-gray-400 mb-1">Artikelnummer</label><input type="text" value={formArtikelNummer} onChange={(e) => setFormArtikelNummer(e.target.value)} className="w-full px-3 py-2 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm" placeholder="ZF-1004" /></div>
+                <div><label className="block text-xs font-semibold uppercase text-gray-400 mb-1">Sortierung (Zahl)</label><input type="number" value={formSortierung} onChange={(e) => setFormSortierung(e.target.value)} className="w-full px-3 py-2 bg-secondary border border-border rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm" placeholder="10" /></div>
               </div>
               {gruppen.length > 0 && (
                 <div>
@@ -641,14 +641,14 @@ function ShopVerwaltungContent({ user }) {
                   <div className="flex flex-wrap gap-2">
                     {gruppen.map((sp) => {
                       const isSelected = formSparten.includes(sp.id);
-                      return <button key={sp.id} type="button" onClick={() => toggleSparte(sp.id)} className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 ${isSelected ? 'bg-primary text-white border-primary' : 'bg-neutral-900 border-border hover:bg-neutral-800 text-neutral-400 hover:text-white'}`}>{isSelected && <Check className="w-3 h-3" />}{sp.name || sp.bezeichnung || sp.id}</button>;
+                      return <button key={sp.id} type="button" onClick={() => toggleSparte(sp.id)} className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 ${isSelected ? 'bg-primary text-white border-primary' : 'bg-secondary border-border hover:bg-secondary text-neutral-400 hover:text-white'}`}>{isSelected && <Check className="w-3 h-3" />}{sp.name || sp.bezeichnung || sp.id}</button>;
                     })}
                   </div>
                   {formSparten.length === 0 && <p className="text-[10px] text-gray-500 mt-1.5">Keine Sparte ausgewählt = Artikel ist für alle Mitglieder sichtbar. Die Sparte für den Aufdruck/Stick wird automatisch aus der Sparte des bestellenden Mitglieds bestimmt.</p>}
                 </div>
               )}
-              <div className="flex items-center gap-2 pt-2"><input type="checkbox" id="formAktiv" checked={formAktiv} onChange={(e) => setFormAktiv(e.target.checked)} className="rounded bg-neutral-900 border-border text-primary focus:ring-primary focus:ring-opacity-25" /><label htmlFor="formAktiv" className="text-sm text-gray-300">Artikel aktiv und im Shop sichtbar</label></div>
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-border"><button type="button" onClick={() => setShowArtikelModal(false)} className="px-4 py-2 bg-neutral-800 text-white rounded-lg hover:bg-neutral-700 transition text-sm">Abbrechen</button><button type="submit" className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-red-700 transition text-sm">Speichern</button></div>
+              <div className="flex items-center gap-2 pt-2"><input type="checkbox" id="formAktiv" checked={formAktiv} onChange={(e) => setFormAktiv(e.target.checked)} className="rounded bg-secondary border-border text-primary focus:ring-primary focus:ring-opacity-25" /><label htmlFor="formAktiv" className="text-sm text-gray-300">Artikel aktiv und im Shop sichtbar</label></div>
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-border"><button type="button" onClick={() => setShowArtikelModal(false)} className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-border transition text-sm">Abbrechen</button><button type="submit" className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-red-700 transition text-sm">Speichern</button></div>
             </form>
           </div>
         </div>
