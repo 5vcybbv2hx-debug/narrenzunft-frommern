@@ -30,13 +30,19 @@
         // which causes the browser to cache chunks from multiple optimization passes,
         // creating duplicate React instances ("dispatcher.useState is null").
         // Only register in the preview/dev environment, not in production.
+        // Use /src/sw.js (served by Vite with correct MIME type) instead of /sw.js
+        // (which the Vite SPA fallback serves as text/html, breaking registration).
         if (navigator.serviceWorker && (
           window.location.hostname.indexOf('preview') !== -1 ||
           window.location.hostname.indexOf('sandbox') !== -1 ||
           window.location.hostname === 'localhost' ||
           window.location.hostname === '127.0.0.1'
         )) {
-          navigator.serviceWorker.register('/sw.js').catch(function () {});
+          // Unregister any old SWs first (e.g. from /sw.js that failed or stale)
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            regs.forEach(function (r) { r.unregister(); });
+          });
+          navigator.serviceWorker.register('/src/sw.js').catch(function () {});
         }
         // Proactive: force one cache-busting reload to clear stale Vite dep chunks.
         // The browser accumulates chunks from multiple optimization passes (different
