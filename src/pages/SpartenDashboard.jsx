@@ -10,6 +10,7 @@ import {
   Check, X, AlertCircle, MessageSquare, Repeat,
   Euro, UserCheck, ArrowLeft, Save, UserPlus
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function SpartenDashboard() {
   const { id } = useParams();
@@ -96,8 +97,7 @@ export default function SpartenDashboard() {
 
       // Current user's Mitglied record
       if (user) {
-        const me = await base44.auth.me();
-        const myMitgliedRecord = (await base44.entities.Mitglied.filter({ user_id: me.id }))[0];
+        const myMitgliedRecord = (await base44.entities.Mitglied.filter({ user_id: user.id }))[0];
         setMyMitglied(myMitgliedRecord || null);
       }
     } catch (err) {
@@ -205,9 +205,10 @@ export default function SpartenDashboard() {
         await base44.entities.SpartenTermin.create(payload);
       }
       setShowTerminModal(false);
+      toast.success(editingTermin ? 'Termin aktualisiert' : 'Termin erstellt');
       loadData();
     } catch (err) {
-      alert('Fehler beim Speichern des Termins: ' + err.message);
+      toast.error('Fehler beim Speichern des Termins: ' + err.message);
     }
   };
 
@@ -216,9 +217,10 @@ export default function SpartenDashboard() {
     if (!confirm('Möchtest du diesen Termin wirklich löschen?')) return;
     try {
       await base44.entities.SpartenTermin.delete(terminId);
+      toast.success('Termin gelöscht');
       loadData();
     } catch (err) {
-      alert('Fehler beim Löschen: ' + err.message);
+      toast.error('Fehler beim Löschen: ' + err.message);
     }
   };
   // Auslagen Handlers
@@ -296,9 +298,10 @@ export default function SpartenDashboard() {
         await base44.entities.SpartenAuslage.create(payload);
       }
       setShowAuslageModal(false);
+      toast.success(editingAuslage ? 'Auslage aktualisiert' : 'Auslage erstellt');
       loadData();
     } catch (err) {
-      alert('Fehler beim Speichern der Auslage: ' + err.message);
+      toast.error('Fehler beim Speichern der Auslage: ' + err.message);
     }
   };
 
@@ -311,7 +314,7 @@ export default function SpartenDashboard() {
       });
       loadData();
     } catch (err) {
-      alert('Fehler beim Aktualisieren des Status: ' + err.message);
+      toast.error('Fehler beim Aktualisieren des Status: ' + err.message);
     }
   };
 
@@ -330,7 +333,7 @@ export default function SpartenDashboard() {
       });
       loadData();
     } catch (err) {
-      alert('Fehler beim Aktualisieren des Umlagenstatus: ' + err.message);
+      toast.error('Fehler beim Aktualisieren des Umlagenstatus: ' + err.message);
     }
   };
 
@@ -395,9 +398,10 @@ export default function SpartenDashboard() {
       }
 
       setShowVerantwortlicherModal(false);
+      toast.success('Verantwortliche aktualisiert');
       loadData();
     } catch (err) {
-      alert('Fehler beim Speichern der Verantwortlichen: ' + err.message);
+      toast.error('Fehler beim Speichern der Verantwortlichen: ' + err.message);
     } finally {
       setSavingVerantwortliche(false);
     }
@@ -436,22 +440,22 @@ export default function SpartenDashboard() {
   }, [alleMitglieder, memberSearchTerm]);
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#080808] text-white flex flex-col items-center justify-center p-4 sm:p-6">
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4 sm:p-6">
         <div className="w-10 h-10 border-[3px] border-border border-t-primary rounded-full animate-spin" />
-        <p className="mt-4 text-neutral-400">Lade Dashboard...</p>
+        <p className="mt-4 text-muted-foreground">Lade Dashboard...</p>
       </div>
     );
   }
 
   if (error || !gruppe) {
     return (
-      <div className="min-h-screen bg-[#080808] text-white flex flex-col items-center justify-center p-4 sm:p-6 text-center">
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4 sm:p-6 text-center">
         <AlertCircle className="w-16 h-16 text-primary mb-4" />
         <h1 className="text-2xl font-oswald uppercase tracking-wide mb-2">Fehler beim Laden</h1>
-        <p className="text-neutral-400 mb-6 max-w-md">{error || 'Die Haesgruppe konnte nicht gefunden werden.'}</p>
+        <p className="text-muted-foreground mb-6 max-w-md">{error || 'Die Haesgruppe konnte nicht gefunden werden.'}</p>
         <button 
           onClick={() => navigate('/sparten')}
-          className="flex items-center gap-2 px-4 py-2 bg-neutral-800 hover:bg-neutral-800/50 text-white rounded-lg transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary/50 text-foreground rounded-lg transition-colors"
         >
           <ArrowLeft className="w-4 h-4" /> Zurück zur Übersicht
         </button>
@@ -463,18 +467,18 @@ export default function SpartenDashboard() {
     `flex items-center gap-2 px-4 py-3 border-b-2 font-oswald uppercase tracking-wide text-sm whitespace-nowrap transition-colors ${
       activeTab === tab 
         ? 'border-primary text-primary bg-primary/5' 
-        : 'border-transparent text-neutral-400 hover:text-white hover:bg-neutral-800/20'
+        : 'border-transparent text-muted-foreground hover:text-white hover:bg-secondary/20'
     }`;
 
   return (
-    <div className="min-h-screen bg-[#080808] text-white pb-12">
+    <div className="min-h-screen bg-background text-foreground pb-12">
       {/* HEADER BAR */}
-      <div className="border-b border-neutral-800 bg-[#0c0c0c] sticky top-0 z-10 px-4 py-4 md:px-8">
+      <div className="border-b border-border bg-card sticky top-0 z-10 px-4 py-4 md:px-8">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => navigate('/sparten')}
-              className="p-2 hover:bg-neutral-800 rounded-lg transition-colors"
+              className="p-2 hover:bg-secondary rounded-lg transition-colors"
               title="Zurück zu Sparten"
             >
               <ArrowLeft className="w-5 h-5 text-white" />
@@ -486,7 +490,7 @@ export default function SpartenDashboard() {
                 </h1>
                 {gruppe.farbe && (
                   <span 
-                    className="w-4 h-4 rounded-full border border-neutral-700 inline-block" 
+                    className="w-4 h-4 rounded-full border border-border inline-block" 
                     style={{ backgroundColor: gruppe.farbe }}
                     title={`Farbe: ${gruppe.farbe}`}
                   />
@@ -509,13 +513,13 @@ export default function SpartenDashboard() {
             <div className="flex flex-wrap gap-2">
               <button 
                 onClick={() => handleOpenTerminModal()}
-                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/80 text-foreground rounded-lg text-sm font-semibold transition-colors"
               >
                 <Plus className="w-4 h-4" /> Termin hinzufügen
               </button>
               <button 
                 onClick={() => handleOpenAuslageModal()}
-                className="flex items-center gap-2 px-4 py-2 bg-neutral-800 hover:bg-neutral-800/50 border border-neutral-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary/50 border border-border text-foreground rounded-lg text-sm font-semibold transition-colors"
               >
                 <Euro className="w-4 h-4" /> Auslage eintragen
               </button>
@@ -525,7 +529,7 @@ export default function SpartenDashboard() {
       </div>
 
       {/* HORIZONTAL SCROLLABLE TABS */}
-      <div className="border-b border-neutral-800 bg-[#0c0c0c] overflow-x-auto scrollbar-none">
+      <div className="border-b border-border bg-card overflow-x-auto scrollbar-none">
         <div className="max-w-6xl mx-auto flex px-4 md:px-8">
           <button onClick={() => setActiveTab('uebersicht')} className={tabClass('uebersicht')}>
             <Users className="w-4 h-4" /> Übersicht
@@ -552,29 +556,29 @@ export default function SpartenDashboard() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:p-6">
               <div className="bg-card border border-border rounded-xl p-4 sm:p-6 md:col-span-2 space-y-4">
-                <h3 className="text-xl font-oswald uppercase tracking-wide text-white border-b border-neutral-800 pb-2">
+                <h3 className="text-xl font-oswald uppercase tracking-wide text-white border-b border-border pb-2">
                   Gruppen-Details
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-neutral-300">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-muted-foreground">
                   <div>
-                    <span className="text-neutral-500 block text-xs uppercase tracking-wider">Name</span>
+                    <span className="text-muted-foreground block text-xs uppercase tracking-wider">Name</span>
                     <span className="text-white font-semibold text-base">{gruppe.name}</span>
                   </div>
                   <div>
-                    <span className="text-neutral-500 block text-xs uppercase tracking-wider">Typ</span>
+                    <span className="text-muted-foreground block text-xs uppercase tracking-wider">Typ</span>
                     <span className="text-white font-semibold text-base">{gruppe.typ || 'Häsgruppe'}</span>
                   </div>
                   <div className="sm:col-span-2">
-                    <span className="text-neutral-500 block text-xs uppercase tracking-wider">Beschreibung</span>
+                    <span className="text-muted-foreground block text-xs uppercase tracking-wider">Beschreibung</span>
                     <p className="text-white mt-1 leading-relaxed">{gruppe.beschreibung || 'Keine Beschreibung hinterlegt.'}</p>
                   </div>
                 </div>
 
                 {isAdmin(user) && (
-                  <div className="pt-4 border-t border-neutral-800 flex justify-end">
+                  <div className="pt-4 border-t border-border flex justify-end">
                     <button 
                       onClick={handleOpenVerantwortlicherModal}
-                      className="flex items-center gap-2 px-4 py-2 bg-neutral-800 hover:bg-neutral-800/50 border border-neutral-700 rounded-lg text-sm text-white font-semibold transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary/50 border border-border rounded-lg text-sm text-white font-semibold transition-colors"
                     >
                       <UserCheck className="w-4 h-4 text-primary" /> Verantwortliche zuweisen
                     </button>
@@ -583,21 +587,21 @@ export default function SpartenDashboard() {
               </div>
 
               <div className="bg-card border border-border rounded-xl p-4 sm:p-6 space-y-4">
-                <h3 className="text-xl font-oswald uppercase tracking-wide text-white border-b border-neutral-800 pb-2">
+                <h3 className="text-xl font-oswald uppercase tracking-wide text-white border-b border-border pb-2">
                   Verantwortliche
                 </h3>
                 {alleMitglieder.filter(m => gruppe.verantwortliche_ids?.includes(m.id)).length === 0 ? (
-                  <p className="text-sm text-neutral-500 italic">Keine Spartenleiter zugewiesen.</p>
+                  <p className="text-sm text-muted-foreground italic">Keine Spartenleiter zugewiesen.</p>
                 ) : (
                   <div className="space-y-3">
                     {alleMitglieder.filter(m => gruppe.verantwortliche_ids?.includes(m.id)).map(leader => (
-                      <Link key={leader.id} to={`/mitglieder/${leader.id}`} className="flex items-center gap-3 hover:bg-neutral-800/30 rounded-lg p-1 -m-1 transition-colors">
-                        <div className="w-10 h-10 rounded-full bg-neutral-800 flex items-center justify-center font-bold text-primary font-oswald">
+                      <Link key={leader.id} to={`/mitglieder/${leader.id}`} className="flex items-center gap-3 hover:bg-secondary/30 rounded-lg p-1 -m-1 transition-colors">
+                        <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center font-bold text-primary font-oswald">
                           {leader.vorname?.[0]}{leader.nachname?.[0]}
                         </div>
                         <div>
                           <div className="font-semibold text-white text-sm">{leader.vorname} {leader.nachname}</div>
-                          <div className="text-xs text-neutral-400">Spartenleiter</div>
+                          <div className="text-xs text-muted-foreground">Spartenleiter</div>
                         </div>
                       </Link>
                     ))}
@@ -608,11 +612,11 @@ export default function SpartenDashboard() {
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-card border border-border rounded-xl p-5">
-                <span className="text-neutral-500 text-xs block uppercase tracking-wider font-semibold mb-1">Mitglieder</span>
+                <span className="text-muted-foreground text-xs block uppercase tracking-wider font-semibold mb-1">Mitglieder</span>
                 <span className="text-2xl sm:text-3xl font-bold text-white font-oswald">{stats.mitgliederCount}</span>
               </div>
               <div className="bg-card border border-border rounded-xl p-5">
-                <span className="text-neutral-500 text-xs block uppercase tracking-wider font-semibold mb-1">Nächster Termin</span>
+                <span className="text-muted-foreground text-xs block uppercase tracking-wider font-semibold mb-1">Nächster Termin</span>
                 <span className="text-xl font-bold text-white font-oswald">
                   {stats.naechsterTermin !== 'Keiner' 
                     ? new Date(stats.naechsterTermin).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -621,16 +625,16 @@ export default function SpartenDashboard() {
                 </span>
               </div>
               <div className="bg-card border border-border rounded-xl p-5">
-                <span className="text-neutral-500 text-xs block uppercase tracking-wider font-semibold mb-1">Offene Auslagen</span>
+                <span className="text-muted-foreground text-xs block uppercase tracking-wider font-semibold mb-1">Offene Auslagen</span>
                 <span className="text-2xl sm:text-3xl font-bold text-primary font-oswald">
                   {stats.offeneCount}
                 </span>
-                <span className="text-xs text-neutral-400 block mt-1">
+                <span className="text-xs text-muted-foreground block mt-1">
                   Gesamt: {stats.offeneSum.toFixed(2)} €
                 </span>
               </div>
               <div className="bg-card border border-border rounded-xl p-5">
-                <span className="text-neutral-500 text-xs block uppercase tracking-wider font-semibold mb-1">WhatsApp-Status</span>
+                <span className="text-muted-foreground text-xs block uppercase tracking-wider font-semibold mb-1">WhatsApp-Status</span>
                 <span className="text-lg font-bold text-green-500 font-oswald flex items-center gap-1.5 mt-1">
                   <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
                   Verbunden
@@ -649,7 +653,7 @@ export default function SpartenDashboard() {
               {canEdit && (
                 <button 
                   onClick={() => handleOpenTerminModal()}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-primary hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-primary hover:bg-primary/80 text-foreground rounded-lg text-sm font-semibold transition-colors"
                 >
                   <Plus className="w-4 h-4" /> Termin hinzufügen
                 </button>
@@ -657,7 +661,7 @@ export default function SpartenDashboard() {
             </div>
 
             {termine.length === 0 ? (
-              <div className="bg-card border border-border rounded-xl p-8 text-center text-neutral-500">
+              <div className="bg-card border border-border rounded-xl p-8 text-center text-muted-foreground">
                 Keine Termine für diese Gruppe eingetragen.
               </div>
             ) : (
@@ -670,7 +674,7 @@ export default function SpartenDashboard() {
                     if (t.typ === 'Besprechung') Icon = Users;
 
                     return (
-                      <div key={t.id} className="bg-card border border-border rounded-xl p-5 flex flex-col justify-between hover:bg-neutral-800/30 transition-colors">
+                      <div key={t.id} className="bg-card border border-border rounded-xl p-5 flex flex-col justify-between hover:bg-secondary/30 transition-colors">
                         <div>
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex items-center gap-3">
@@ -678,7 +682,7 @@ export default function SpartenDashboard() {
                                 <Icon className="w-5 h-5" />
                               </div>
                               <div>
-                                <span className="text-xs text-neutral-400 font-semibold uppercase tracking-wider block">
+                                <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block">
                                   {t.typ}
                                 </span>
                                 <h4 className="text-lg font-bold text-white leading-snug mt-0.5">{t.titel}</h4>
@@ -692,25 +696,25 @@ export default function SpartenDashboard() {
                             )}
                           </div>
 
-                          <div className="mt-4 space-y-2 text-sm text-neutral-300">
+                          <div className="mt-4 space-y-2 text-sm text-muted-foreground">
                             <div className="flex items-center gap-2">
-                              <Calendar className="w-4 h-4 text-neutral-500" />
+                              <Calendar className="w-4 h-4 text-muted-foreground" />
                               <span>{new Date(t.datum).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
                             </div>
                             {(t.uhrzeit || t.endzeit) && (
                               <div className="flex items-center gap-2">
-                                <Clock className="w-4 h-4 text-neutral-500" />
+                                <Clock className="w-4 h-4 text-muted-foreground" />
                                 <span>{t.uhrzeit || '--:--'}{t.endzeit ? ` bis ${t.endzeit} Uhr` : ' Uhr'}</span>
                               </div>
                             )}
                             {t.ort && (
                               <div className="flex items-center gap-2">
-                                <MapPin className="w-4 h-4 text-neutral-500" />
+                                <MapPin className="w-4 h-4 text-muted-foreground" />
                                 <span className="text-white font-medium">{t.ort}</span>
                               </div>
                             )}
                             {t.beschreibung && (
-                              <p className="text-neutral-400 text-xs leading-relaxed mt-2 border-t border-neutral-800/60 pt-2 italic">
+                              <p className="text-muted-foreground text-xs leading-relaxed mt-2 border-t border-border/60 pt-2 italic">
                                 "{t.beschreibung}"
                               </p>
                             )}
@@ -718,17 +722,17 @@ export default function SpartenDashboard() {
                         </div>
 
                         {canEdit && (
-                          <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-neutral-800/60">
+                          <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-border/60">
                             <button 
                               onClick={() => handleOpenTerminModal(t)}
-                              className="p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors"
+                              className="p-1.5 text-muted-foreground hover:text-white hover:bg-secondary rounded-lg transition-colors"
                               title="Termin bearbeiten"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button 
                               onClick={() => handleDeleteTermin(t.id)}
-                              className="p-1.5 text-neutral-400 hover:text-primary hover:bg-neutral-800 rounded-lg transition-colors"
+                              className="p-1.5 text-muted-foreground hover:text-primary hover:bg-secondary rounded-lg transition-colors"
                               title="Termin löschen"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -753,7 +757,7 @@ export default function SpartenDashboard() {
               {canEdit && (
                 <button 
                   onClick={() => handleOpenAuslageModal()}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-primary hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-primary hover:bg-primary/80 text-foreground rounded-lg text-sm font-semibold transition-colors"
                 >
                   <Plus className="w-4 h-4" /> Auslage eintragen
                 </button>
@@ -761,7 +765,7 @@ export default function SpartenDashboard() {
             </div>
 
             {auslagen.length === 0 ? (
-              <div className="bg-card border border-border rounded-xl p-8 text-center text-neutral-500">
+              <div className="bg-card border border-border rounded-xl p-8 text-center text-muted-foreground">
                 Keine Auslagen oder Umlagen für diese Gruppe eingetragen.
               </div>
             ) : (
@@ -781,7 +785,7 @@ export default function SpartenDashboard() {
                     }
 
                     return (
-                      <div key={a.id} className="bg-card border border-border rounded-xl p-5 hover:bg-neutral-800/20 transition-colors">
+                      <div key={a.id} className="bg-card border border-border rounded-xl p-5 hover:bg-secondary/20 transition-colors">
                         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
@@ -801,11 +805,11 @@ export default function SpartenDashboard() {
                             </div>
 
                             <h4 className="text-lg font-bold text-white mt-1">{a.beschreibung}</h4>
-                            <div className="text-xs text-neutral-400">
+                            <div className="text-xs text-muted-foreground">
                               Verauslagt von <span className="text-white font-medium">{payer ? `${payer.vorname} ${payer.nachname}` : 'Unbekannt'}</span> am {new Date(a.datum).toLocaleDateString('de-DE')}
                             </div>
                             {a.notizen && (
-                              <p className="text-xs text-neutral-400 italic mt-2">"{a.notizen}"</p>
+                              <p className="text-xs text-muted-foreground italic mt-2">"{a.notizen}"</p>
                             )}
                           </div>
 
@@ -834,7 +838,7 @@ export default function SpartenDashboard() {
                                 )}
                                 <button 
                                   onClick={() => handleOpenAuslageModal(a)}
-                                  className="p-1 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors"
+                                  className="p-1 text-muted-foreground hover:text-white hover:bg-secondary rounded-lg transition-colors"
                                   title="Bearbeiten"
                                 >
                                   <Edit className="w-4 h-4" />
@@ -845,13 +849,13 @@ export default function SpartenDashboard() {
                         </div>
 
                         {isUmlage && a.anteile && (
-                          <div className="mt-4 pt-4 border-t border-neutral-800 space-y-3">
+                          <div className="mt-4 pt-4 border-t border-border space-y-3">
                             <div>
-                              <div className="flex justify-between text-xs font-semibold text-neutral-400 mb-1">
+                              <div className="flex justify-between text-xs font-semibold text-muted-foreground mb-1">
                                 <span>Umlagen-Bezahlstatus</span>
                                 <span>{paidAnteileCount} von {totalAnteileCount} bezahlt</span>
                               </div>
-                              <div className="w-full bg-neutral-800 rounded-full h-2 overflow-hidden">
+                              <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
                                 <div 
                                   className="bg-primary h-full transition-all duration-300"
                                   style={{ width: `${(paidAnteileCount / totalAnteileCount) * 100}%` }}
@@ -868,13 +872,13 @@ export default function SpartenDashboard() {
                                 return (
                                   <div 
                                     key={mId} 
-                                    className="flex items-center justify-between p-2 bg-neutral-900/60 rounded-lg border border-neutral-800/80 text-xs"
+                                    className="flex items-center justify-between p-2 bg-secondary/60 rounded-lg border border-border/80 text-xs"
                                   >
                                     <span className="text-white truncate max-w-[120px]" title={`${targetMitglied.vorname} ${targetMitglied.nachname}`}>
                                       {targetMitglied.vorname} {targetMitglied.nachname[0]}.
                                     </span>
                                     <div className="flex items-center gap-2">
-                                      <span className="text-neutral-400 font-medium">{anteil.betrag.toFixed(2)} €</span>
+                                      <span className="text-muted-foreground font-medium">{anteil.betrag.toFixed(2)} €</span>
                                       <button
                                         disabled={!canEdit}
                                         onClick={() => handleToggleAnteilBezahlt(a, mId)}
@@ -910,7 +914,7 @@ export default function SpartenDashboard() {
               {isAdmin(user) && (
                 <button 
                   onClick={handleOpenVerantwortlicherModal}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-800/50 border border-neutral-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-secondary hover:bg-secondary/50 border border-border text-foreground rounded-lg text-sm font-semibold transition-colors"
                 >
                   <UserCheck className="w-4 h-4 text-primary" /> Verantwortliche zuweisen
                 </button>
@@ -918,7 +922,7 @@ export default function SpartenDashboard() {
             </div>
 
             {mitglieder.length === 0 ? (
-              <div className="bg-card border border-border rounded-xl p-8 text-center text-neutral-500">
+              <div className="bg-card border border-border rounded-xl p-8 text-center text-muted-foreground">
                 Keine Mitglieder in dieser Gruppe eingetragen.
               </div>
             ) : (
@@ -935,9 +939,9 @@ export default function SpartenDashboard() {
                 const renderMitglied = (m) => {
                   const isSplat = gruppe.verantwortliche_ids?.includes(m.id);
                   return (
-                    <div key={m.id} className="bg-card border border-border rounded-xl p-4 flex items-center justify-between hover:bg-neutral-800/30 transition-colors">
+                    <div key={m.id} className="bg-card border border-border rounded-xl p-4 flex items-center justify-between hover:bg-secondary/30 transition-colors">
                       <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-full bg-neutral-800 flex items-center justify-center font-bold text-white font-oswald border border-neutral-700">
+                        <div className="w-11 h-11 rounded-full bg-secondary flex items-center justify-center font-bold text-white font-oswald border border-border">
                           {m.vorname?.[0]}{m.nachname?.[0]}
                         </div>
                         <div>
@@ -951,18 +955,18 @@ export default function SpartenDashboard() {
                               </span>
                             )}
                           </div>
-                          <span className="text-xs text-neutral-400 block mt-0.5">
+                          <span className="text-xs text-muted-foreground block mt-0.5">
                             {m.ort || 'Kein Wohnort hinterlegt'}
                           </span>
                         </div>
                       </div>
                       <div className="flex flex-col items-end text-right">
                         {m.mobiltelefon ? (
-                          <span className="text-xs text-neutral-300 font-medium">{m.mobiltelefon}</span>
+                          <span className="text-xs text-muted-foreground font-medium">{m.mobiltelefon}</span>
                         ) : m.email ? (
-                          <span className="text-xs text-neutral-400 truncate max-w-[120px]">{m.email}</span>
+                          <span className="text-xs text-muted-foreground truncate max-w-[120px]">{m.email}</span>
                         ) : (
-                          <span className="text-xs text-neutral-600 italic">Keine Kontaktinfo</span>
+                          <span className="text-xs text-muted-foreground italic">Keine Kontaktinfo</span>
                         )}
                       </div>
                     </div>
@@ -975,8 +979,8 @@ export default function SpartenDashboard() {
                       if (sm.length === 0) return null;
                       return (
                         <div key={sektion.titel}>
-                          <h3 className="text-sm font-oswald uppercase tracking-wide text-neutral-400 mb-3">
-                            {sektion.titel} <span className="text-neutral-600">({sm.length})</span>
+                          <h3 className="text-sm font-oswald uppercase tracking-wide text-muted-foreground mb-3">
+                            {sektion.titel} <span className="text-muted-foreground">({sm.length})</span>
                           </h3>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {sm.map(renderMitglied)}
@@ -986,8 +990,8 @@ export default function SpartenDashboard() {
                     })}
                     {sonstige.length > 0 && (
                       <div>
-                        <h3 className="text-sm font-oswald uppercase tracking-wide text-neutral-400 mb-3">
-                          Weitere <span className="text-neutral-600">({sonstige.length})</span>
+                        <h3 className="text-sm font-oswald uppercase tracking-wide text-muted-foreground mb-3">
+                          Weitere <span className="text-muted-foreground">({sonstige.length})</span>
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           {sonstige.map(renderMitglied)}
@@ -1004,19 +1008,19 @@ export default function SpartenDashboard() {
         {/* TAB 5: NACHRICHT */}
         {activeTab === 'nachricht' && (
           <div className="max-w-2xl mx-auto bg-card border border-border rounded-xl p-4 sm:p-6 space-y-6">
-            <h2 className="text-2xl font-oswald uppercase tracking-wide text-white border-b border-neutral-800 pb-2">
+            <h2 className="text-2xl font-oswald uppercase tracking-wide text-white border-b border-border pb-2">
               Nachricht an die Gruppe
             </h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-neutral-300 mb-2">Deine Nachricht</label>
+                <label className="block text-sm font-semibold text-muted-foreground mb-2">Deine Nachricht</label>
                 <textarea
                   rows={6}
                   value={nachrichtText}
                   onChange={(e) => setNachrichtText(e.target.value)}
                   placeholder="Schreibe hier wichtige Infos, Treffpunkte, Probe-Änderungen oder Sonstiges..."
-                  className="w-full bg-[#080808] border border-neutral-800 hover:border-neutral-700 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl p-4 text-white text-sm placeholder-neutral-600 transition-colors resize-none"
+                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-xl p-4 text-white text-sm placeholder-neutral-600 transition-colors resize-none"
                 />
               </div>
 
@@ -1036,7 +1040,7 @@ export default function SpartenDashboard() {
                 </div>
               )}
 
-              <div className="text-xs text-neutral-400 bg-neutral-900/60 p-3 rounded-lg border border-neutral-800/80">
+              <div className="text-xs text-muted-foreground bg-secondary/60 p-3 rounded-lg border border-border/80">
                 Die Nachricht wird an <span className="text-white font-bold">{mitglieder.length} Gruppenmitglieder</span> adressiert. Jedes Mitglied erhält eine In-App Benachrichtigung direkt auf das Handy.
               </div>
 
@@ -1044,13 +1048,13 @@ export default function SpartenDashboard() {
                 <button
                   onClick={handleSendAppNotification}
                   disabled={!nachrichtText.trim()}
-                  className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-primary hover:bg-red-700 disabled:opacity-50 disabled:hover:bg-primary text-white rounded-lg text-sm font-semibold transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-primary hover:bg-primary/80 disabled:opacity-50 disabled:hover:bg-primary text-foreground rounded-lg text-sm font-semibold transition-colors"
                 >
                   <Send className="w-4 h-4" /> An alle Gruppenmitglieder (App)
                 </button>
                 <button
-                  onClick={() => alert('WhatsApp Integration wird demnächst für deine Zunft freigeschaltet!')}
-                  className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-neutral-800 hover:bg-neutral-800/50 border border-neutral-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                  onClick={() => toast.info('WhatsApp Integration wird demnächst für deine Zunft freigeschaltet!')}
+                  className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-secondary hover:bg-secondary/50 border border-border text-foreground rounded-lg text-sm font-semibold transition-colors"
                 >
                   <MessageSquare className="w-4 h-4 text-green-500" /> An WhatsApp-Gruppe senden
                 </button>
@@ -1066,35 +1070,35 @@ export default function SpartenDashboard() {
           <div className="bg-card border border-border rounded-xl w-full max-w-lg p-4 sm:p-6 relative">
             <button 
               onClick={() => setShowTerminModal(false)}
-              className="absolute top-4 right-4 text-neutral-500 hover:text-white transition-colors"
+              className="absolute top-4 right-4 text-muted-foreground hover:text-white transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="text-xl font-oswald uppercase tracking-wide text-white border-b border-neutral-800 pb-3 mb-4">
+            <h3 className="text-xl font-oswald uppercase tracking-wide text-white border-b border-border pb-3 mb-4">
               {editingTermin ? 'Termin bearbeiten' : 'Neuer Sparten-Termin'}
             </h3>
 
             <form onSubmit={handleSaveTermin} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">Titel *</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Titel *</label>
                 <input
                   type="text"
                   required
                   value={terminForm.titel}
                   onChange={(e) => setTerminForm({ ...terminForm, titel: e.target.value })}
                   placeholder="z.B. Marsch-Probe"
-                  className="w-full bg-[#080808] border border-neutral-800 hover:border-neutral-700 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">Typ</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Typ</label>
                   <select
                     value={terminForm.typ}
                     onChange={(e) => setTerminForm({ ...terminForm, typ: e.target.value })}
-                    className="w-full bg-[#080808] border border-neutral-800 hover:border-neutral-700 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                    className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
                   >
                     <option value="Probe">Probe</option>
                     <option value="Auftritt">Auftritt</option>
@@ -1104,80 +1108,80 @@ export default function SpartenDashboard() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">Datum *</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Datum *</label>
                   <DateSelect
                     required
                     value={terminForm.datum}
                     onChange={(e) => setTerminForm({ ...terminForm, datum: e.target.value })}
-                    className="w-full bg-[#080808] border border-neutral-800 hover:border-neutral-700 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                    className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">Uhrzeit (HH:MM)</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Uhrzeit (HH:MM)</label>
                   <input
                     type="text"
                     placeholder="19:00"
                     value={terminForm.uhrzeit}
                     onChange={(e) => setTerminForm({ ...terminForm, uhrzeit: e.target.value })}
-                    className="w-full bg-[#080808] border border-neutral-800 hover:border-neutral-700 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                    className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">Endzeit (HH:MM)</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Endzeit (HH:MM)</label>
                   <input
                     type="text"
                     placeholder="21:00"
                     value={terminForm.endzeit}
                     onChange={(e) => setTerminForm({ ...terminForm, endzeit: e.target.value })}
-                    className="w-full bg-[#080808] border border-neutral-800 hover:border-neutral-700 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                    className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">Ort</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Ort</label>
                 <input
                   type="text"
                   placeholder="z.B. Zunftheim, Frommern"
                   value={terminForm.ort}
                   onChange={(e) => setTerminForm({ ...terminForm, ort: e.target.value })}
-                  className="w-full bg-[#080808] border border-neutral-800 hover:border-neutral-700 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">Beschreibung</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Beschreibung</label>
                 <textarea
                   rows={2}
                   placeholder="Optionale Details zum Termin..."
                   value={terminForm.beschreibung}
                   onChange={(e) => setTerminForm({ ...terminForm, beschreibung: e.target.value })}
-                  className="w-full bg-[#080808] border border-neutral-800 hover:border-neutral-700 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors resize-none"
+                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors resize-none"
                 />
               </div>
 
-              <div className="border-t border-neutral-800 pt-4 space-y-3">
+              <div className="border-t border-border pt-4 space-y-3">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={terminForm.wiederkehrend}
                     onChange={(e) => setTerminForm({ ...terminForm, wiederkehrend: e.target.checked })}
-                    className="rounded border-neutral-800 text-primary focus:ring-primary bg-[#080808]"
+                    className="rounded border-border text-primary focus:ring-primary bg-background"
                   />
-                  <span className="text-sm font-semibold text-neutral-300">Wiederkehrender Termin</span>
+                  <span className="text-sm font-semibold text-muted-foreground">Wiederkehrender Termin</span>
                 </label>
 
                 {terminForm.wiederkehrend && (
-                  <div className="grid grid-cols-2 gap-4 bg-neutral-900/40 p-3 rounded-lg border border-neutral-800/80">
+                  <div className="grid grid-cols-2 gap-4 bg-secondary/40 p-3 rounded-lg border border-border/80">
                     <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1">Intervall</label>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Intervall</label>
                       <select
                         value={terminForm.intervall_typ}
                         onChange={(e) => setTerminForm({ ...terminForm, intervall_typ: e.target.value })}
-                        className="w-full bg-[#080808] border border-neutral-800 text-white text-xs rounded-lg px-2 py-1.5"
+                        className="w-full bg-background border border-border text-white text-xs rounded-lg px-2 py-1.5"
                       >
                         <option value="woechentlich">Wöchentlich</option>
                         <option value="14taegig">14-tägig</option>
@@ -1185,28 +1189,28 @@ export default function SpartenDashboard() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1">Enddatum</label>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Enddatum</label>
                       <DateSelect
                         value={terminForm.enddatum}
                         onChange={(e) => setTerminForm({ ...terminForm, enddatum: e.target.value })}
-                        className="w-full bg-[#080808] border border-neutral-800 text-white text-xs rounded-lg px-2 py-1.5"
+                        className="w-full bg-background border border-border text-white text-xs rounded-lg px-2 py-1.5"
                       />
                     </div>
                   </div>
                 )}
               </div>
 
-              <div className="flex gap-3 pt-4 border-t border-neutral-800">
+              <div className="flex gap-3 pt-4 border-t border-border">
                 <button
                   type="button"
                   onClick={() => setShowTerminModal(false)}
-                  className="flex-1 py-2 border border-neutral-800 hover:bg-neutral-800 text-white font-semibold text-sm rounded-lg transition-colors"
+                  className="flex-1 py-2 border border-border hover:bg-secondary text-white font-semibold text-sm rounded-lg transition-colors"
                 >
                   Abbrechen
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2 bg-primary hover:bg-red-700 text-white font-semibold text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 py-2 bg-primary hover:bg-primary/80 text-white font-semibold text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   <Save className="w-4 h-4" /> Speichern
                 </button>
@@ -1221,23 +1225,23 @@ export default function SpartenDashboard() {
           <div className="bg-card border border-border rounded-xl w-full max-w-lg p-4 sm:p-6 relative">
             <button 
               onClick={() => setShowAuslageModal(false)}
-              className="absolute top-4 right-4 text-neutral-500 hover:text-white transition-colors"
+              className="absolute top-4 right-4 text-muted-foreground hover:text-white transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="text-xl font-oswald uppercase tracking-wide text-white border-b border-neutral-800 pb-3 mb-4">
+            <h3 className="text-xl font-oswald uppercase tracking-wide text-white border-b border-border pb-3 mb-4">
               {editingAuslage ? 'Auslage bearbeiten' : 'Neue Auslage eintragen'}
             </h3>
 
             <form onSubmit={handleSaveAuslage} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">Verauslagt von (Mitglied) *</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Verauslagt von (Mitglied) *</label>
                 <select
                   required
                   value={auslageForm.mitglied_id}
                   onChange={(e) => setAuslageForm({ ...auslageForm, mitglied_id: e.target.value })}
-                  className="w-full bg-[#080808] border border-neutral-800 hover:border-neutral-700 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
                 >
                   <option value="" disabled>Mitglied auswählen...</option>
                   {mitglieder.map(m => (
@@ -1250,7 +1254,7 @@ export default function SpartenDashboard() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">Betrag (€) *</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Betrag (€) *</label>
                   <input
                     type="number"
                     step="0.01"
@@ -1258,38 +1262,38 @@ export default function SpartenDashboard() {
                     placeholder="0.00"
                     value={auslageForm.betrag}
                     onChange={(e) => setAuslageForm({ ...auslageForm, betrag: e.target.value })}
-                    className="w-full bg-[#080808] border border-neutral-800 hover:border-neutral-700 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                    className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">Datum *</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Datum *</label>
                   <DateSelect
                     required
                     value={auslageForm.datum}
                     onChange={(e) => setAuslageForm({ ...auslageForm, datum: e.target.value })}
-                    className="w-full bg-[#080808] border border-neutral-800 hover:border-neutral-700 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                    className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">Beschreibung / Zweck *</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Beschreibung / Zweck *</label>
                 <input
                   type="text"
                   required
                   placeholder="z.B. Notenständer, Bastelmaterial..."
                   value={auslageForm.beschreibung}
                   onChange={(e) => setAuslageForm({ ...auslageForm, beschreibung: e.target.value })}
-                  className="w-full bg-[#080808] border border-neutral-800 hover:border-neutral-700 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">Typ</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Typ</label>
                 <select
                   value={auslageForm.typ}
                   onChange={(e) => setAuslageForm({ ...auslageForm, typ: e.target.value })}
-                  className="w-full bg-[#080808] border border-neutral-800 hover:border-neutral-700 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
                 >
                   <option value="Einzelerstattung">Einzelerstattung (Verein zahlt zurück)</option>
                   <option value="Umlage">Umlage (Mitglieder teilen sich Kosten)</option>
@@ -1297,8 +1301,8 @@ export default function SpartenDashboard() {
               </div>
 
               {auslageForm.typ === 'Umlage' && (
-                <div className="border border-neutral-800 bg-neutral-900/40 p-4 rounded-lg space-y-3">
-                  <span className="block text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                <div className="border border-border bg-secondary/40 p-4 rounded-lg space-y-3">
+                  <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Beteiligte Personen auswählen
                   </span>
                   
@@ -1315,7 +1319,7 @@ export default function SpartenDashboard() {
                               updated[m.id] = e.target.checked;
                               setAuslageForm({ ...auslageForm, selectedAnteile: updated });
                             }}
-                            className="rounded border-neutral-800 text-primary focus:ring-primary bg-[#080808]"
+                            className="rounded border-border text-primary focus:ring-primary bg-background"
                           />
                           <span className="text-white truncate">
                             {m.vorname} {m.nachname}
@@ -1325,8 +1329,8 @@ export default function SpartenDashboard() {
                     })}
                   </div>
 
-                  <div className="pt-2 border-t border-neutral-800 flex justify-between items-center text-xs">
-                    <span className="text-neutral-400">
+                  <div className="pt-2 border-t border-border flex justify-between items-center text-xs">
+                    <span className="text-muted-foreground">
                       Gewählt: {Object.values(auslageForm.selectedAnteile).filter(Boolean).length} Personen
                     </span>
                     <span className="text-white font-bold">
@@ -1341,27 +1345,27 @@ export default function SpartenDashboard() {
               )}
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">Interne Notizen</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Interne Notizen</label>
                 <textarea
                   rows={2}
                   placeholder="Zusätzliche Infos, Kassennotizen..."
                   value={auslageForm.notizen}
                   onChange={(e) => setAuslageForm({ ...auslageForm, notizen: e.target.value })}
-                  className="w-full bg-[#080808] border border-neutral-800 hover:border-neutral-700 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors resize-none"
+                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors resize-none"
                 />
               </div>
 
-              <div className="flex gap-3 pt-4 border-t border-neutral-800">
+              <div className="flex gap-3 pt-4 border-t border-border">
                 <button
                   type="button"
                   onClick={() => setShowAuslageModal(false)}
-                  className="flex-1 py-2 border border-neutral-800 hover:bg-neutral-800 text-white font-semibold text-sm rounded-lg transition-colors"
+                  className="flex-1 py-2 border border-border hover:bg-secondary text-white font-semibold text-sm rounded-lg transition-colors"
                 >
                   Abbrechen
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2 bg-primary hover:bg-red-700 text-white font-semibold text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 py-2 bg-primary hover:bg-primary/80 text-white font-semibold text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   <Save className="w-4 h-4" /> Speichern
                 </button>
@@ -1377,12 +1381,12 @@ export default function SpartenDashboard() {
           <div className="bg-card border border-border rounded-xl w-full max-w-lg p-4 sm:p-6 relative">
             <button 
               onClick={() => setShowVerantwortlicherModal(false)}
-              className="absolute top-4 right-4 text-neutral-500 hover:text-white transition-colors"
+              className="absolute top-4 right-4 text-muted-foreground hover:text-white transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="text-xl font-oswald uppercase tracking-wide text-white border-b border-neutral-800 pb-3 mb-4">
+            <h3 className="text-xl font-oswald uppercase tracking-wide text-white border-b border-border pb-3 mb-4">
               Verantwortliche (Spartenleiter) zuweisen
             </h3>
 
@@ -1393,20 +1397,20 @@ export default function SpartenDashboard() {
                   placeholder="Mitglied suchen..."
                   value={memberSearchTerm}
                   onChange={(e) => setMemberSearchTerm(e.target.value)}
-                  className="w-full bg-[#080808] border border-neutral-800 hover:border-neutral-700 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
                 />
               </div>
 
               <div className="max-h-60 overflow-y-auto space-y-1 pr-2">
                 {filteredAllMembers.length === 0 ? (
-                  <p className="text-center text-sm text-neutral-500 py-4">Keine passenden Mitglieder gefunden.</p>
+                  <p className="text-center text-sm text-muted-foreground py-4">Keine passenden Mitglieder gefunden.</p>
                 ) : (
                   filteredAllMembers.map(m => {
                     const isChecked = !!verantwortlicheSelection[m.id];
                     return (
                       <label 
                         key={m.id} 
-                        className="flex items-center justify-between p-2 rounded hover:bg-neutral-800/40 transition-colors cursor-pointer text-sm"
+                        className="flex items-center justify-between p-2 rounded hover:bg-secondary/40 transition-colors cursor-pointer text-sm"
                       >
                         <div className="flex items-center gap-2">
                           <input
@@ -1417,13 +1421,13 @@ export default function SpartenDashboard() {
                               updated[m.id] = e.target.checked;
                               setVerantwortlicheSelection(updated);
                             }}
-                            className="rounded border-neutral-800 text-primary focus:ring-primary bg-[#080808]"
+                            className="rounded border-border text-primary focus:ring-primary bg-background"
                           />
                           <span className="text-white font-medium">
                             {m.vorname} {m.nachname}
                           </span>
                         </div>
-                        <span className="text-xs text-neutral-400">
+                        <span className="text-xs text-muted-foreground">
                           {m.ort || ''}
                         </span>
                       </label>
@@ -1432,11 +1436,11 @@ export default function SpartenDashboard() {
                 )}
               </div>
 
-              <div className="flex gap-3 pt-4 border-t border-neutral-800">
+              <div className="flex gap-3 pt-4 border-t border-border">
                 <button
                   type="button"
                   onClick={() => setShowVerantwortlicherModal(false)}
-                  className="flex-1 py-2 border border-neutral-800 hover:bg-neutral-800 text-white font-semibold text-sm rounded-lg transition-colors"
+                  className="flex-1 py-2 border border-border hover:bg-secondary text-white font-semibold text-sm rounded-lg transition-colors"
                 >
                   Abbrechen
                 </button>
@@ -1444,7 +1448,7 @@ export default function SpartenDashboard() {
                   type="button"
                   onClick={handleSaveVerantwortliche}
                   disabled={savingVerantwortliche}
-                  className="flex-1 py-2 bg-primary hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 py-2 bg-primary hover:bg-primary/80 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   {savingVerantwortliche ? (
                     <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Speichert…</>

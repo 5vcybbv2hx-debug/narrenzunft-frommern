@@ -6,6 +6,7 @@ import { Users, Plus, Edit, Trash2, X, Save, Search, ChevronDown, ChevronUp, Use
 import { Link, useNavigate } from 'react-router-dom';
 import SparteFormModal from '@/components/sparten/SparteFormModal';
 import Sparte from '@/components/sparten/Sparte';
+import { toast } from 'sonner';
 
 export default function Sparten() {
   const { user } = useAuth();
@@ -25,17 +26,21 @@ export default function Sparten() {
 
   const loadData = async () => {
     setLoading(true);
+    try {
     const g = await base44.entities.Haesgruppe.list('name', 200);
     setGruppen(g);
     // Mitgliederliste nur für Admins und Spartenleiter laden
     if (admin || isSpartenleiter) {
-      const me = await base44.auth.me();
       const [m, myMArr] = await Promise.all([
         base44.entities.Mitglied.list('nachname', 500),
-        isSpartenleiter ? base44.entities.Mitglied.filter({ user_id: me?.id }) : Promise.resolve([]),
+        isSpartenleiter ? base44.entities.Mitglied.filter({ user_id: user?.id }) : Promise.resolve([]),
       ]);
       setMitglieder(m);
       if (myMArr[0]) setMeinMitglied(myMArr[0]);
+    }
+    } catch (e) {
+      console.error('Sparten laden:', e);
+      toast.error('Daten konnten nicht geladen werden');
     }
     setLoading(false);
   };
@@ -47,9 +52,15 @@ export default function Sparten() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Gruppe wirklich löschen?')) return;
-    await base44.entities.Haesgruppe.delete(id);
-    setGruppen(prev => prev.filter(g => g.id !== id));
+    if (!confirm('Gruppe wirklich löschen? Alle Mitglieder-Zuweisungen werden entfernt.')) return;
+    try {
+      await base44.entities.Haesgruppe.delete(id);
+      setGruppen(prev => prev.filter(g => g.id !== id));
+      toast.success('Gruppe gelöscht');
+    } catch (e) {
+      console.error('Löschen:', e);
+      toast.error('Löschen fehlgeschlagen');
+    }
   };
 
   // Typ-spezifische visuelle Metadaten

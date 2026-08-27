@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
+import { toast } from 'sonner';
 import { User, Mail, Phone, MapPin, Calendar, LogOut, Award, Shirt, Trash2, Flag, Edit, Save, X, AlertTriangle, Check, FileText } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -152,7 +153,7 @@ export default function Profil() {
                   {mitglied.mitgliedsstatus}
                 </span>
                 {mitglied.eintrittsdatum && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-800 text-muted-foreground">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
                     seit {format(new Date(mitglied.eintrittsdatum), 'yyyy')}
                   </span>
                 )}
@@ -166,7 +167,7 @@ export default function Profil() {
         {mitglied && (
           <Link
             to={`/mitglieder/${mitglied.id}`}
-            className="flex items-center justify-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg bg-neutral-800 text-sm text-white hover:bg-neutral-700 border border-border transition-colors font-medium self-start sm:self-center"
+            className="flex items-center justify-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary text-sm text-white hover:bg-border border border-border transition-colors font-medium self-start sm:self-center"
           >
             <FileText size={15} /> Vollständige Akte
           </Link>
@@ -192,7 +193,7 @@ export default function Profil() {
             className={`px-4 py-2.5 min-h-[44px] text-sm font-oswald uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap ${
               activeTab === 'profil'
                 ? 'bg-primary text-white'
-                : 'bg-neutral-800 text-muted-foreground hover:text-white'
+                : 'bg-secondary text-muted-foreground hover:text-white'
             }`}
           >
             Mein Profil
@@ -202,7 +203,7 @@ export default function Profil() {
             className={`px-4 py-2.5 min-h-[44px] text-sm font-oswald uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap ${
               activeTab === 'aktivitaet'
                 ? 'bg-primary text-white'
-                : 'bg-neutral-800 text-muted-foreground hover:text-white'
+                : 'bg-secondary text-muted-foreground hover:text-white'
             }`}
           >
             Aktivität
@@ -212,7 +213,7 @@ export default function Profil() {
             className={`px-4 py-2.5 min-h-[44px] text-sm font-oswald uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap ${
               activeTab === 'dienste'
                 ? 'bg-primary text-white'
-                : 'bg-neutral-800 text-muted-foreground hover:text-white'
+                : 'bg-secondary text-muted-foreground hover:text-white'
             }`}
           >
             Dienste
@@ -232,13 +233,13 @@ export default function Profil() {
               {!editing ? (
                 <button
                   onClick={handleEditStart}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800 text-sm text-muted-foreground hover:text-white transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-sm text-muted-foreground hover:text-white transition-colors"
                 >
                   <Edit size={13} /> Bearbeiten
                 </button>
               ) : (
                 <div className="flex gap-2">
-                  <button onClick={() => setEditing(false)} className="p-1.5 rounded-lg text-muted-foreground hover:text-white hover:bg-neutral-800 transition-colors">
+                  <button onClick={() => setEditing(false)} className="p-1.5 rounded-lg text-muted-foreground hover:text-white hover:bg-secondary transition-colors">
                     <X size={15} />
                   </button>
                   <button
@@ -257,28 +258,28 @@ export default function Profil() {
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">Telefon</label>
                   <input value={editForm.telefon} onChange={e => setEditForm(p => ({ ...p, telefon: e.target.value }))}
-                    className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                    className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">E-Mail</label>
                   <input type="email" value={editForm.email} onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))}
-                    className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                    className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">Straße & Hausnummer</label>
                   <input value={editForm.strasse} onChange={e => setEditForm(p => ({ ...p, strasse: e.target.value }))}
-                    className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                    className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
                     <label className="text-xs text-muted-foreground font-medium block mb-1">PLZ</label>
                     <input value={editForm.plz} onChange={e => setEditForm(p => ({ ...p, plz: e.target.value }))}
-                      className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                      className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground font-medium block mb-1">Ort</label>
                     <input value={editForm.ort} onChange={e => setEditForm(p => ({ ...p, ort: e.target.value }))}
-                      className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                      className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
                   </div>
                 </div>
                 <div className="border-t border-border pt-3">
@@ -289,12 +290,12 @@ export default function Profil() {
                     <div>
                       <label className="text-xs text-muted-foreground font-medium block mb-1">Name</label>
                       <input value={editForm.notfallkontakt_name} onChange={e => setEditForm(p => ({ ...p, notfallkontakt_name: e.target.value }))}
-                        className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                        className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
                     </div>
                     <div>
                       <label className="text-xs text-muted-foreground font-medium block mb-1">Telefon</label>
                       <input value={editForm.notfallkontakt_telefon} onChange={e => setEditForm(p => ({ ...p, notfallkontakt_telefon: e.target.value }))}
-                        className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                        className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
                     </div>
                   </div>
                 </div>
