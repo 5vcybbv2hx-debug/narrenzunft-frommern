@@ -194,7 +194,7 @@ export default function Mitglieder() {
   );
 
   return (
-    <div ref={containerRef} className="px-4 lg:px-6 py-6 max-w-7xl mx-auto">
+    <div ref={containerRef} className="px-4 lg:px-6 py-6 max-w-7xl mx-auto overflow-x-hidden">
       <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
 
       {/* Header */}
@@ -258,7 +258,7 @@ export default function Mitglieder() {
       )}
 
       {/* Suche + Sort + Filter — sticky */}
-      <div className="sticky top-0 z-20 -mx-4 lg:-mx-6 px-4 lg:px-6 pb-2 pt-2 bg-background/95 backdrop-blur-sm mb-3">
+      <div className="sticky top-0 z-20 -mx-4 lg:-mx-6 px-4 lg:px-6 pb-2 pt-2 bg-background/95 backdrop-blur-sm mb-3 overflow-x-hidden">
       <div className="flex flex-col sm:flex-row gap-2 mb-3">
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -340,7 +340,7 @@ export default function Mitglieder() {
             <Link
               key={m.id}
               to={`/mitglieder/${m.id}`}
-              className="flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-3 hover:border-primary/50 hover:bg-card/80 transition-all group"
+              className="flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-3 hover:border-primary/50 hover:bg-card/80 transition-all group min-w-0"
             >
               {/* Avatar */}
               <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs shrink-0 overflow-hidden">
@@ -383,7 +383,7 @@ export default function Mitglieder() {
                       );
                     });
                   })()}
-                  {m.ort && <span className="text-xs text-muted-foreground truncate max-w-[140px] sm:max-w-none">{m.ort}</span>}
+                  {m.ort && <span className="text-xs text-muted-foreground truncate max-w-[100px] sm:max-w-none">{m.ort}</span>}
                   {eintrittsJahr && (
                     <span className="text-xs text-muted-foreground">seit {eintrittsJahr}</span>
                   )}

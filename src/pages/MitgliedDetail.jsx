@@ -425,7 +425,7 @@ export default function MitgliedDetail() {
   }
 
   return (
-    <div className="px-4 lg:px-6 py-6 max-w-3xl mx-auto">
+    <div className="px-4 lg:px-6 py-6 max-w-3xl mx-auto overflow-x-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6 flex-wrap">
         <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-neutral-800 transition-colors text-muted-foreground hover:text-white">
@@ -475,7 +475,7 @@ export default function MitgliedDetail() {
 
       {/* Avatar */}
       {!isNew && (
-        <div className="flex items-center gap-4 mb-4 bg-card border border-border rounded-xl p-5">
+        <div className="flex items-center gap-4 mb-4 bg-card border border-border rounded-xl p-5 overflow-hidden">
           <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white font-bold text-2xl overflow-hidden shrink-0">
             {mitglied.profilbild_url ? (
               <img src={mitglied.profilbild_url} alt="" className="w-full h-full object-cover" />
@@ -679,7 +679,7 @@ export default function MitgliedDetail() {
               }} />
             </div>
             <Field label="Straße" field="strasse" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
-            <div className="grid grid-cols-2 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <Field label="PLZ" field="plz" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
               <Field label="Ort" field="ort" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
             </div>
@@ -757,8 +757,8 @@ export default function MitgliedDetail() {
             <p className="text-sm text-muted-foreground">Noch kein Häs zugewiesen</p>
           ) : (
             haes.map(h => (
-              <Link key={h.id} to={`/haes/${h.id}`} className="flex items-center justify-between py-2 border-b border-border last:border-0 hover:opacity-75 transition-opacity gap-2">
-                <div>
+              <Link key={h.id} to={`/haes/${h.id}`} className="flex items-center justify-between py-2 border-b border-border last:border-0 hover:opacity-75 transition-opacity gap-2 min-w-0">
+                <div className="min-w-0">
                   <p className="text-sm font-medium text-white">Nr. {h.haesnummer}</p>
                   <p className="text-xs text-muted-foreground">{h.bezeichnung}</p>
                 </div>
@@ -779,7 +779,7 @@ export default function MitgliedDetail() {
           <p className="text-xs text-muted-foreground mb-4">Rolle jetzt festlegen – wird beim ersten Login automatisch übernommen.</p>
 
           {linkedUser && (
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-800/50 mb-4 flex-wrap">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-800/50 mb-4 flex-wrap overflow-hidden">
               <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0">
                 {linkedUser.full_name?.[0] || '?'}
               </div>
@@ -807,7 +807,7 @@ export default function MitgliedDetail() {
               const isSelected = currentRole === rolle.value;
               return (
                 <button key={rolle.value} onClick={() => handleAppRolleChange(rolle.value)} disabled={roleSaving}
-                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all disabled:opacity-50 ${
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all disabled:opacity-50 overflow-hidden ${
                     isSelected ? 'bg-primary/10 border-primary' : 'bg-neutral-800/40 border-border text-muted-foreground hover:border-primary/40 hover:text-white'
                   }`}>
                   <Icon size={16} className="shrink-0" />
