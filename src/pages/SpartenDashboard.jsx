@@ -78,12 +78,12 @@ export default function SpartenDashboard() {
       setGruppe(g);
 
       // Fetch all members to filter locally (guarantees correct inclusion across all fields)
-      const allMembers = await base44.entities.Mitglied.list('nachname', 500);
+      const allMembers = await base44.entities.Mitglied.list('nachname', 1000);
       setAlleMitglieder(allMembers);
 
       // Filter members belonging to this group
       const gruppenMitglieder = allMembers.filter(m => 
-        m.haesgruppe_id === id || (m.haesgruppen_ids && m.haesgruppen_ids.includes(id))
+        !m.archiviert && (m.haesgruppe_id === id || (m.haesgruppen_ids && m.haesgruppen_ids.includes(id)))
       );
       setMitglieder(gruppenMitglieder);
 

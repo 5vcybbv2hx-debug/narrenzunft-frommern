@@ -19,7 +19,7 @@ const STATUS_GRUPPEN = [
 export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten, onEdit, onDelete }) {
   // Mitglieder dieser Gruppe
   const mitglieder = alleMitglieder.filter(m =>
-    (m.haesgruppen_ids || []).includes(gruppe.id) || m.haesgruppe_id === gruppe.id
+    !m.archiviert && ((m.haesgruppen_ids || []).includes(gruppe.id) || m.haesgruppe_id === gruppe.id)
   );
 
   // Verantwortliche (verantwortliche_ids mit Legacy-Fallback auf verantwortlicher_id)

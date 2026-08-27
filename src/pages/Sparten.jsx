@@ -31,7 +31,7 @@ export default function Sparten() {
     if (admin || isSpartenleiter) {
       const me = await base44.auth.me();
       const [m, myMArr] = await Promise.all([
-        base44.entities.Mitglied.list('nachname', 300),
+        base44.entities.Mitglied.list('nachname', 500),
         isSpartenleiter ? base44.entities.Mitglied.filter({ user_id: me?.id }) : Promise.resolve([]),
       ]);
       setMitglieder(m);
