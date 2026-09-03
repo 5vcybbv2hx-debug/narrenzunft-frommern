@@ -17,11 +17,13 @@ Deno.serve(async (req) => {
       return Response.json({ erfolg: false, fehler: 'Ungültiger Status.' }, { status: 400 });
     }
 
+    // Aufgabe laden (Service-Role, um auch fremde Datensätze zu lesen)
     const todo = await base44.asServiceRole.entities.Todo.get(todoId);
     if (!todo) {
       return Response.json({ erfolg: false, fehler: 'Aufgabe nicht gefunden.' }, { status: 404 });
     }
 
+    // Berechtigung: Vorstand/Admin, Ersteller, ODER zugewiesenes Mitglied
     const isFuehrung = ['vorstand', 'stellv_vorstand', 'admin'].includes(user.role);
     const isErsteller = todo.created_by_id === user.id;
     let isZugewiesen = false;
