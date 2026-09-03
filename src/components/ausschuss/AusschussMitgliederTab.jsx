@@ -149,25 +149,36 @@ export default function AusschussMitgliederTab({ mitglieder, isAdmin }) {
 
       {/* Spartenleiter */}
       {(() => {
-        const spartenleiter = mitglieder.filter(m => m.app_rolle === 'spartenleiter');
+        // Robust: Rolle ODER konkrete Gruppen-Zuweisung zählt — falls der
+        // Rollen-Sync bei einer Zuweisung versagt hat, erscheint die Person trotzdem.
+        const getSplatGruppen = m => m.spartenleiter_haesgruppen_ids
+          || (m.spartenleiter_haesgruppe_id ? [m.spartenleiter_haesgruppe_id] : []);
+        const spartenleiter = mitglieder.filter(m =>
+          m.app_rolle === 'spartenleiter' || getSplatGruppen(m).length > 0
+        );
         if (spartenleiter.length === 0) return null;
         return (
           <div className="mb-5">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Spartenleiter</p>
             <div className="space-y-2">
-              {spartenleiter.map(m => (
-                <div key={m.id} className="bg-card border border-border rounded-xl px-4 py-3 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-                    {m.vorname?.[0]}{m.nachname?.[0]}
+              {spartenleiter.map(m => {
+                const gruppenNamen = getSplatGruppen(m)
+                  .map(gid => getGruppenName(gid))
+                  .filter(Boolean);
+                return (
+                  <div key={m.id} className="bg-card border border-border rounded-xl px-4 py-3 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                      {m.vorname?.[0]}{m.nachname?.[0]}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{m.vorname} {m.nachname}</p>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary">
+                        {gruppenNamen.length > 0 ? `Spartenleiter · ${gruppenNamen.join(', ')}` : 'Spartenleiter'}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">{m.vorname} {m.nachname}</p>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary">
-                      {m.spartenleiter_haesgruppe_id ? `Spartenleiter · ${getGruppenName(m.spartenleiter_haesgruppe_id) || '–'}` : 'Spartenleiter'}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <div className="border-t border-border mt-4 mb-4" />
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Ausschussmitglieder</p>

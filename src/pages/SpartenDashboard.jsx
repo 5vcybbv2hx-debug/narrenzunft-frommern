@@ -107,6 +107,26 @@ export default function SpartenDashboard() {
         // (dokumentiert den Bestand, falls die Zuweisung vor Einführung der Historie erfolgte)
         if (isAdmin(user)) {
           const aktuelleV = (g.verantwortliche_ids || []).filter(vId => allMembers.some(m => m.id === vId));
+
+          // Self-Healing (2): Profil-Konsistenz reparieren — falls der zentrale Sync
+          // bei der Zuweisung nicht griff (z. B. still fehlgeschlagen), app_rolle
+          // und spartenleiter_haesgruppen_ids hier nachziehen. Vorstände/Kassierer
+          // werden nicht degradiert, nur einfache Mitglieder befördert.
+          await Promise.all(aktuelleV.map(async vId => {
+            const m = allMembers.find(x => x.id === vId);
+            const ids = m.spartenleiter_haesgruppen_ids || (m.spartenleiter_haesgruppe_id ? [m.spartenleiter_haesgruppe_id] : []);
+            const patch = {};
+            if (!ids.includes(id)) patch.spartenleiter_haesgruppen_ids = [...new Set([...ids, id])];
+            if ((m.app_rolle || 'mitglied') === 'mitglied') patch.app_rolle = 'spartenleiter';
+            if (Object.keys(patch).length > 0) {
+              try {
+                await base44.entities.Mitglied.update(m.id, patch);
+              } catch (e) {
+                console.error('Self-Healing (Profil) fehlgeschlagen:', m.id, e);
+              }
+            }
+          }));
+
           const fehlende = aktuelleV.filter(vId => !hist.some(h => h.mitglied_id === vId && !h.bis_datum));
           if (fehlende.length > 0) {
             const heute = new Date().toISOString();

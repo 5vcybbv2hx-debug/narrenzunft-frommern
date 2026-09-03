@@ -86,8 +86,27 @@ export async function syncVerantwortliche({ gruppeId, alteIds = [], neueIds = []
     }
   }
 
+  // Einzelne Updates statt bulkUpdate: bulkUpdate schlägt stillschweigend fehl,
+  // wenn ein Datensatz nicht aktualisiert werden kann — dann bleiben Rolle und
+  // Gruppen-IDs inkonsistent, ohne dass ein Fehler sichtbar wird. Einzeln können
+  // wir Fehlschläge erkennen und melden.
   if (bulkPayload.length > 0) {
-    await base44.entities.Mitglied.bulkUpdate(bulkPayload);
+    const fehler = await Promise.all(bulkPayload.map(async p => {
+      try {
+        await base44.entities.Mitglied.update(p.id, {
+          spartenleiter_haesgruppen_ids: p.spartenleiter_haesgruppen_ids,
+          app_rolle: p.app_rolle,
+        });
+        return null;
+      } catch (e) {
+        console.error('Mitglied-Sync fehlgeschlagen:', p.id, e);
+        return p.id;
+      }
+    }));
+    const gescheitert = fehler.filter(Boolean);
+    if (gescheitert.length > 0) {
+      throw new Error(`Rolle/Gruppen konnten bei ${gescheitert.length} Mitglied(ern) nicht aktualisiert werden.`);
+    }
   }
 
   // ── 4) Verknüpfte Login-Rollen (User.role) synchronisieren ──
