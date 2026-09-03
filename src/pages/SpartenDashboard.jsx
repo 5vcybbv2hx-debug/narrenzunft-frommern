@@ -64,6 +64,13 @@ export default function SpartenDashboard() {
   const [memberSearchTerm, setMemberSearchTerm] = useState('');
   const [savingVerantwortliche, setSavingVerantwortliche] = useState(false);
 
+  // Spartenleiter-Historie (Admin-Bearbeitung)
+  const [showHistorieModal, setShowHistorieModal] = useState(false);
+  const [histEditingId, setHistEditingId] = useState(null); // null = neuer Eintrag
+  const [histForm, setHistForm] = useState({ modus: 'mitglied', mitglied_id: '', mitglied_name: '', von_datum: '', bis_datum: '' });
+  const [histSearchTerm, setHistSearchTerm] = useState('');
+  const [savingHistorie, setSavingHistorie] = useState(false);
+
   const [nachrichtText, setNachrichtText] = useState('');
   const [nachrichtStatus, setNachrichtStatus] = useState(null);
 
@@ -417,6 +424,94 @@ export default function SpartenDashboard() {
     }
   };
 
+  // Spartenleiter-Historie (Admin) Handlers
+  const reloadHistorie = async () => {
+    try {
+      const hist = await base44.entities.SpartenleiterHistorie.filter({ haesgruppe_id: id }) || [];
+      setSplatHistorie([...hist].sort((a, b) => (b.von_datum || '').localeCompare(a.von_datum || '')));
+    } catch (err) {
+      console.warn('Historie konnte nicht geladen werden:', err);
+    }
+  };
+
+  const handleOpenHistorieNeu = () => {
+    setHistEditingId(null);
+    setHistForm({ modus: 'mitglied', mitglied_id: '', mitglied_name: '', von_datum: '', bis_datum: '' });
+    setHistSearchTerm('');
+    setShowHistorieModal(true);
+  };
+
+  const handleOpenHistorieEdit = (h) => {
+    setHistEditingId(h.id);
+    setHistForm({
+      modus: h.mitglied_id ? 'mitglied' : 'freitext',
+      mitglied_id: h.mitglied_id || '',
+      mitglied_name: h.mitglied_name || '',
+      von_datum: (h.von_datum || '').slice(0, 10),
+      bis_datum: (h.bis_datum || '').slice(0, 10),
+    });
+    setHistSearchTerm('');
+    setShowHistorieModal(true);
+  };
+
+  const handleSaveHistorieEintrag = async () => {
+    let name = (histForm.mitglied_name || '').trim();
+    if (histForm.modus === 'mitglied') {
+      const m = alleMitglieder.find(x => x.id === histForm.mitglied_id);
+      if (!m) { toast.error('Bitte ein Mitglied auswählen.'); return; }
+      name = [m.vorname, m.nachname].filter(Boolean).join(' ');
+    }
+    if (!name) { toast.error('Bitte einen Namen eingeben.'); return; }
+    if (!histForm.von_datum) { toast.error('Bitte den Anfang der Amtszeit angeben.'); return; }
+    if (histForm.bis_datum && histForm.bis_datum < histForm.von_datum) {
+      toast.error('Das Ende der Amtszeit liegt vor dem Anfang.');
+      return;
+    }
+    setSavingHistorie(true);
+    try {
+      const data = {
+        mitglied_id: histForm.modus === 'mitglied' ? histForm.mitglied_id : '',
+        mitglied_name: name,
+        haesgruppe_id: id,
+        haesgruppe_name: gruppe?.name || '',
+        von_datum: histForm.von_datum,
+        bis_datum: histForm.bis_datum || '',
+      };
+      if (histEditingId) {
+        await base44.entities.SpartenleiterHistorie.update(histEditingId, data);
+      } else {
+        await base44.entities.SpartenleiterHistorie.create(data);
+      }
+      toast.success(histEditingId ? 'Historien-Eintrag aktualisiert' : 'Historien-Eintrag hinzugefügt');
+      setShowHistorieModal(false);
+      reloadHistorie();
+    } catch (err) {
+      toast.error('Fehler beim Speichern: ' + err.message);
+    } finally {
+      setSavingHistorie(false);
+    }
+  };
+
+  const handleDeleteHistorieEintrag = async (histId) => {
+    if (!window.confirm('Diesen Historien-Eintrag wirklich löschen?')) return;
+    try {
+      await base44.entities.SpartenleiterHistorie.delete(histId);
+      toast.success('Eintrag gelöscht');
+      if (histEditingId === histId) setShowHistorieModal(false);
+      reloadHistorie();
+    } catch (err) {
+      toast.error('Fehler beim Löschen: ' + err.message);
+    }
+  };
+
+  const histFilteredMembers = useMemo(() => {
+    if (!histSearchTerm.trim()) return alleMitglieder;
+    const search = histSearchTerm.toLowerCase();
+    return alleMitglieder.filter(m =>
+      `${m.vorname} ${m.nachname}`.toLowerCase().includes(search)
+    );
+  }, [alleMitglieder, histSearchTerm]);
+
   // Tab 5: Sending notifications
   const handleSendAppNotification = async () => {
     if (!nachrichtText.trim()) return;
@@ -636,9 +731,22 @@ export default function SpartenDashboard() {
                 )}
 
                 {/* Spartenleiter-Historie */}
-                {splatHistorie.length > 0 && (
+                {(splatHistorie.length > 0 || isAdmin(user)) && (
                   <div className="pt-4 border-t border-border">
-                    <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-2">Spartenleiter-Historie</span>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-muted-foreground block text-xs uppercase tracking-wider">Spartenleiter-Historie</span>
+                      {isAdmin(user) && (
+                        <button
+                          onClick={handleOpenHistorieNeu}
+                          className="flex items-center gap-1 text-xs text-primary hover:text-white font-semibold transition-colors"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Verwalten
+                        </button>
+                      )}
+                    </div>
+                    {splatHistorie.length === 0 && (
+                      <p className="text-sm text-muted-foreground italic">Noch keine Einträge.</p>
+                    )}
                     <div className="space-y-1.5">
                       {splatHistorie.map(h => {
                         const aktiv = !h.bis_datum;
@@ -1509,6 +1617,151 @@ export default function SpartenDashboard() {
                   )}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SPARTENLEITER-HISTORIE MODAL */}
+      {showHistorieModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="relative bg-card border border-border rounded-xl p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setShowHistorieModal(false)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-xl font-oswald uppercase tracking-wide text-white border-b border-border pb-3 mb-4">
+              Spartenleiter-Historie
+            </h3>
+
+            {/* Formular: neuer/aktueller Eintrag */}
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <button type="button"
+                  onClick={() => setHistForm(f => ({ ...f, modus: 'mitglied' }))}
+                  className={`flex-1 py-1.5 text-sm font-semibold rounded-lg border transition-colors ${histForm.modus === 'mitglied' ? 'bg-primary text-white border-primary' : 'bg-secondary/50 text-muted-foreground border-border hover:text-white'}`}>
+                  Mitglied
+                </button>
+                <button type="button"
+                  onClick={() => setHistForm(f => ({ ...f, modus: 'freitext' }))}
+                  className={`flex-1 py-1.5 text-sm font-semibold rounded-lg border transition-colors ${histForm.modus === 'freitext' ? 'bg-primary text-white border-primary' : 'bg-secondary/50 text-muted-foreground border-border hover:text-white'}`}>
+                  Freitext
+                </button>
+              </div>
+
+              {histForm.modus === 'mitglied' ? (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    placeholder="Mitglied suchen..."
+                    value={histSearchTerm}
+                    onChange={(e) => setHistSearchTerm(e.target.value)}
+                    className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                  />
+                  <div className="max-h-44 overflow-y-auto space-y-1 pr-2">
+                    {histFilteredMembers.length === 0 ? (
+                      <p className="text-center text-sm text-muted-foreground py-3">
+                        Kein passendes Mitglied gefunden — nutze „Freitext“ für Personen ohne Datensatz.
+                      </p>
+                    ) : (
+                      histFilteredMembers.map(m => (
+                        <button type="button" key={m.id}
+                          onClick={() => setHistForm(f => ({ ...f, mitglied_id: m.id }))}
+                          className={`w-full flex items-center justify-between p-2 rounded transition-colors text-sm text-left ${histForm.mitglied_id === m.id ? 'bg-primary/20 border border-primary/50' : 'border border-transparent hover:bg-secondary/40'}`}>
+                          <span className="text-white font-medium truncate">{m.vorname} {m.nachname}</span>
+                          <span className="text-xs text-muted-foreground shrink-0 ml-2">{m.archiviert ? 'Ehemalig' : (m.ort || '')}</span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Name (frei)</label>
+                  <input
+                    type="text"
+                    placeholder="z. B. Max Mustermann"
+                    value={histForm.mitglied_name}
+                    onChange={(e) => setHistForm(f => ({ ...f, mitglied_name: e.target.value }))}
+                    className="w-full bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Für frühere Spartenleiter ohne Mitgliedsdatensatz (z. B. ausgetreten oder verstorben).</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Amt seit *</label>
+                  <DateSelect name="von_datum" value={histForm.von_datum}
+                    onChange={(e) => setHistForm(f => ({ ...f, von_datum: e.target.value }))}
+                    className="w-full bg-background border border-border focus:border-primary rounded-lg px-2 py-1.5 text-white text-sm"
+                    minYear={1950} maxYear={new Date().getFullYear() + 1} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Amt bis (leer = heute)</label>
+                  <DateSelect name="bis_datum" value={histForm.bis_datum}
+                    onChange={(e) => setHistForm(f => ({ ...f, bis_datum: e.target.value }))}
+                    className="w-full bg-background border border-border focus:border-primary rounded-lg px-2 py-1.5 text-white text-sm"
+                    minYear={1950} maxYear={new Date().getFullYear() + 1} />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2 border-t border-border">
+                <button type="button" onClick={() => setShowHistorieModal(false)}
+                  className="flex-1 py-2 border border-border hover:bg-secondary text-white font-semibold text-sm rounded-lg transition-colors">
+                  Abbrechen
+                </button>
+                <button type="button" onClick={handleSaveHistorieEintrag} disabled={savingHistorie}
+                  className="flex-1 py-2 bg-primary hover:bg-primary/80 disabled:opacity-50 text-white font-semibold text-sm rounded-lg transition-colors flex items-center justify-center gap-2">
+                  {savingHistorie ? (
+                    <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Speichert…</>
+                  ) : (
+                    <><Save className="w-4 h-4" /> {histEditingId ? 'Aktualisieren' : 'Hinzufügen'}</>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Bestehende Einträge verwalten */}
+            <div className="mt-6 pt-4 border-t border-border">
+              <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-2">Bestehende Einträge</span>
+              {splatHistorie.length === 0 ? (
+                <p className="text-sm text-muted-foreground italic">Noch keine Einträge.</p>
+              ) : (
+                <div className="space-y-1">
+                  {splatHistorie.map(h => {
+                    const aktiv = !h.bis_datum;
+                    return (
+                      <div key={h.id} className="flex items-center justify-between gap-2">
+                        <div className="min-w-0 flex items-center gap-1.5">
+                          <span className={`text-sm truncate ${aktiv ? 'text-white font-semibold' : 'text-muted-foreground'}`}>
+                            {aktiv && <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 shrink-0" />}
+                            {h.mitglied_name || 'Unbekannt'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs text-muted-foreground tabular-nums">
+                            {h.von_datum ? new Date(h.von_datum).toLocaleDateString('de-DE', { month: '2-digit', year: 'numeric' }) : '–'}
+                            {' – '}
+                            {aktiv ? 'heute' : (h.bis_datum ? new Date(h.bis_datum).toLocaleDateString('de-DE', { month: '2-digit', year: 'numeric' }) : '?')}
+                          </span>
+                          <button type="button" onClick={() => handleOpenHistorieEdit(h)}
+                            className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-white transition-colors">
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+                          <button type="button" onClick={() => handleDeleteHistorieEintrag(h.id)}
+                            className="p-1.5 rounded hover:bg-red-500/20 text-muted-foreground hover:text-red-400 transition-colors">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>
