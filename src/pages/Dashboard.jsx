@@ -15,7 +15,6 @@ import { de } from 'date-fns/locale';
 import { isAdmin, kannArbeitsdiensteVerwalten, istNurMitglied, getRollenLabel } from '@/lib/roles';
 import MitgliedDashboard from '@/components/dashboard/MitgliedDashboard';
 import StatuswechselWidget from '@/components/vorstand/StatuswechselWidget';
-import MitgliederVerteilung from '@/components/dashboard/MitgliederVerteilung';
 
 // ── Hilfsfunktionen ──────────────────────────────────────────────────────────
 
@@ -120,10 +119,10 @@ export default function Dashboard() {
     },
   });
 
-  const { stats, naechsteTermine, naechsteGeburtstage, unterbesetzte, offeneDienste, verfuegbareHaes, statusVerteilung, gruppenVerteilung, anzeigename } = useMemo(() => {
+  const { stats, naechsteTermine, naechsteGeburtstage, unterbesetzte, offeneDienste, verfuegbareHaes, anzeigename } = useMemo(() => {
     const empty = {
       stats: { mitglieder: 0, kommendeEvents: 0, offeneDienste: 0, unterbesetzt: 0, haesGesamt: 0, haesVerfuegbar: 0 },
-      naechsteTermine: [], naechsteGeburtstage: [], unterbesetzte: [], offeneDienste: [], verfuegbareHaes: [], statusVerteilung: [], gruppenVerteilung: [],
+      naechsteTermine: [], naechsteGeburtstage: [], unterbesetzte: [], offeneDienste: [], verfuegbareHaes: [],
       anzeigename: user?.full_name || '',
     };
     if (!dashData || !dashData.dashResult?.data?.erfolg || !dashData.dashResult.data.mitglieder) return empty;
@@ -204,39 +203,8 @@ export default function Dashboard() {
         }));
     }
 
-    // ── Mitglieder-Verteilung ──
+    // ── Aktive Mitglieder (für Stats) ──
     const aktiveMitglieder = mitglieder.filter(m => !m.archiviert);
-    const statusCounts = {};
-    aktiveMitglieder.forEach(m => {
-      const s = m.mitgliedsstatus || 'Ohne Status';
-      statusCounts[s] = (statusCounts[s] || 0) + 1;
-    });
-    const statusVerteilung = Object.entries(statusCounts)
-      .sort((a, b) => b[1] - a[1])
-      .map(([status, count]) => ({ status, count }));
-
-    const glVert = haesResult?.data?.gruppen || [];
-    const gruppeMapVert = {};
-    glVert.forEach(g => { gruppeMapVert[g.id] = g; });
-    const gruppenData = {};
-    const PASSIV_STATUS = ['Passiv', 'Passiv mit Häs', 'Leihäs'];
-    aktiveMitglieder.forEach(m => {
-      const ids = m.haesgruppen_ids?.length ? m.haesgruppen_ids : (m.haesgruppe_id ? [m.haesgruppe_id] : []);
-      const isAktiv = m.mitgliedsstatus === 'Aktiv';
-      const isPassiv = PASSIV_STATUS.includes(m.mitgliedsstatus);
-      // Kinder/Jugendliche/Ehrenmitglied/Verstorben werden hier bewusst nicht gezählt —
-      // dieses Widget zeigt nur das Aktiv/Passiv-Verhältnis der Erwachsenen.
-      if (!isAktiv && !isPassiv) return;
-      ids.forEach(id => {
-        const name = gruppeMapVert[id]?.name;
-        if (!name) return;
-        if (!gruppenData[name]) gruppenData[name] = { name, id, aktiv: 0, passiv: 0 };
-        if (isAktiv) gruppenData[name].aktiv++;
-        else gruppenData[name].passiv++;
-      });
-    });
-    const gruppenVerteilung = Object.values(gruppenData)
-      .sort((a, b) => (b.aktiv + b.passiv) - (a.aktiv + a.passiv));
 
     const stats = {
       mitglieder: aktiveMitglieder.length,
@@ -253,7 +221,7 @@ export default function Dashboard() {
       ? `${myMitgliedRec.vorname || ''} ${myMitgliedRec.nachname || ''}`.trim()
       : (user?.full_name || '');
 
-    return { stats, naechsteTermine, naechsteGeburtstage, unterbesetzte, offeneDienste, verfuegbareHaes, statusVerteilung, gruppenVerteilung, anzeigename };
+    return { stats, naechsteTermine, naechsteGeburtstage, unterbesetzte, offeneDienste, verfuegbareHaes, anzeigename };
   }, [dashData, today, user]);
 
   const { pullDistance, refreshing, containerRef } = usePullToRefresh(useCallback(async () => {
@@ -343,15 +311,6 @@ export default function Dashboard() {
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
-        {/* Mitglieder-Verteilung (detailliert) */}
-        {isAdminUser && (
-          <MitgliederVerteilung
-            total={stats.mitglieder}
-            statusVerteilung={statusVerteilung}
-            gruppenVerteilung={gruppenVerteilung}
-          />
-        )}
 
         {/* Anstehende Termine & Ausfahrten */}
         <SectionCard

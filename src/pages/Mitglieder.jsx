@@ -5,9 +5,10 @@ import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 import { Link, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { isAdmin, kannMitgliederlisteSehn } from '@/lib/roles';
+import { isAdmin, kannMitgliederlisteSehn, kannAusschussSehn } from '@/lib/roles';
 import { Search, Plus, User, ChevronRight, Archive, Download, ArrowUpDown, Shirt, FileText, FolderOpen, ChevronDown } from 'lucide-react';
 import NeuerAntragModal from '@/components/mitglied/NeuerAntragModal';
+import MitgliederStatistik from '@/components/mitglieder/MitgliederStatistik';
 import { format, differenceInYears } from 'date-fns';
 import { de } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
@@ -49,6 +50,7 @@ export default function Mitglieder() {
   const [showAntragModal, setShowAntragModal] = useState(false);
   const isAdminUser = isAdmin(user);
   const kannListe = kannMitgliederlisteSehn(user);
+  const kannStatistik = kannAusschussSehn(user);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['mitglieder', kannListe],
@@ -239,6 +241,15 @@ export default function Mitglieder() {
           </div>
         )}
       </div>
+
+      {/* Statistik (nur Ausschuss & Spartenleiter) */}
+      {kannStatistik && (
+        <MitgliederStatistik
+          mitglieder={mitglieder}
+          gruppenMap={gruppenMap}
+          onStatusFilter={(status) => setStatusFilter(status)}
+        />
+      )}
 
       {/* Antrag-Bereich */}
       {isAdminUser && (
