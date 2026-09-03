@@ -601,31 +601,6 @@ export default function SpartenDashboard() {
                   )}
                 </div>
 
-                {/* Spartenleiter-Historie */}
-                {splatHistorie.length > 0 && (
-                  <div className="pt-4 border-t border-border">
-                    <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-2">Spartenleiter-Historie</span>
-                    <div className="space-y-1.5">
-                      {splatHistorie.map(h => {
-                        const aktiv = !h.bis_datum;
-                        return (
-                          <div key={h.id} className="flex items-center justify-between gap-2 text-xs">
-                            <span className={aktiv ? 'text-white font-semibold' : 'text-muted-foreground'}>
-                              {aktiv && <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5" />}
-                              {h.mitglied_name || 'Unbekannt'}
-                            </span>
-                            <span className="text-muted-foreground tabular-nums">
-                              {h.von_datum ? new Date(h.von_datum).toLocaleDateString('de-DE', { month: '2-digit', year: 'numeric' }) : '–'}
-                              {' – '}
-                              {aktiv ? 'heute' : (h.bis_datum ? new Date(h.bis_datum).toLocaleDateString('de-DE', { month: '2-digit', year: 'numeric' }) : '?')}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
                 {isAdmin(user) && (
                   <div className="pt-4 border-t border-border flex justify-end">
                     <button 
@@ -657,6 +632,31 @@ export default function SpartenDashboard() {
                         </div>
                       </Link>
                     ))}
+                  </div>
+                )}
+
+                {/* Spartenleiter-Historie */}
+                {splatHistorie.length > 0 && (
+                  <div className="pt-4 border-t border-border">
+                    <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-2">Spartenleiter-Historie</span>
+                    <div className="space-y-1.5">
+                      {splatHistorie.map(h => {
+                        const aktiv = !h.bis_datum;
+                        return (
+                          <div key={h.id} className="flex items-center justify-between gap-2 text-xs">
+                            <span className={aktiv ? 'text-white font-semibold' : 'text-muted-foreground'}>
+                              {aktiv && <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5" />}
+                              {h.mitglied_name || 'Unbekannt'}
+                            </span>
+                            <span className="text-muted-foreground tabular-nums">
+                              {h.von_datum ? new Date(h.von_datum).toLocaleDateString('de-DE', { month: '2-digit', year: 'numeric' }) : '–'}
+                              {' – '}
+                              {aktiv ? 'heute' : (h.bis_datum ? new Date(h.bis_datum).toLocaleDateString('de-DE', { month: '2-digit', year: 'numeric' }) : '?')}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
