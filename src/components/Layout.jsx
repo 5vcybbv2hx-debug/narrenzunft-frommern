@@ -5,7 +5,7 @@ import { isAdmin, isDeveloper, getRollenLabel } from '@/lib/roles';
 import {
   LayoutDashboard, Users, Shirt, Calendar, Briefcase,
   Award, CreditCard, Bell, Menu, X, ChevronRight, ChevronDown,
-  LogOut, User, MoreHorizontal, Shield, ClipboardList,
+  LogOut, User, Shield, ClipboardList,
   AlertTriangle, Lock, CheckSquare, Package, Bus, FileText, ShoppingBag,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -264,22 +264,6 @@ export default function Layout() {
         );
       })}
 
-      {/* Weitere direkte Links */}
-      <div className="mt-2 pt-2 border-t border-sidebar-border/50 space-y-0.5">
-        <Link to="/benachrichtigungen" onClick={onNavigate}
-          className={`flex items-center gap-3 px-3 py-2 rounded-md transition-all text-[13px] ${
-            isActive('/benachrichtigungen') ? 'text-primary font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-sidebar-accent'
-          }`}>
-          <Bell size={14} />
-          <span>Benachrichtigungen</span>
-          {notifications > 0 && <span className="ml-auto text-[10px] bg-primary text-white px-1.5 rounded-full font-bold">{notifications}</span>}
-        </Link>
-        <Link to="/suche" onClick={onNavigate}
-          className="flex items-center gap-3 px-3 py-2 rounded-md transition-all text-[13px] text-muted-foreground hover:text-foreground hover:bg-sidebar-accent">
-          <MoreHorizontal size={14} />
-          <span>Suche & Mehr</span>
-        </Link>
-      </div>
     </nav>
   );
 
