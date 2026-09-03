@@ -235,6 +235,11 @@ export default function Veranstaltungen() {
                             {v.titel}
                           </h3>
                           <div className="flex items-center gap-1.5 shrink-0">
+                            {v.nachbereitung_status === 'Ausstehend' && v.datum && new Date(v.datum) < new Date(new Date().toDateString()) && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 border border-yellow-500/30 font-medium">
+                                Nachbereitung offen
+                              </span>
+                            )}
                             {istAngemeldet && (
                               <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium">
                                 ✓ Angemeldet
