@@ -89,33 +89,40 @@ export default function SpartenDashboard() {
       );
       setMitglieder(gruppenMitglieder);
 
-      // Spartenleiter-Historie (Amtszeiten) laden
-      const hist = await base44.entities.SpartenleiterHistorie.filter({ haesgruppe_id: id }) || [];
+      // Spartenleiter-Historie (Amtszeiten) laden — darf das Laden der
+      // Gruppe niemals blockieren (z. B. wenn Entität noch nicht bereit)
+      let hist = [];
+      try {
+        hist = await base44.entities.SpartenleiterHistorie.filter({ haesgruppe_id: id }) || [];
 
-      // Self-Healing: Aktuelle Verantwortliche ohne offene Amtszeit nachtragen
-      // (dokumentiert den Bestand, falls die Zuweisung vor Einführung der Historie erfolgte)
-      if (isAdmin(user)) {
-        const aktuelleV = (g.verantwortliche_ids || []).filter(vId => allMembers.some(m => m.id === vId));
-        const fehlende = aktuelleV.filter(vId => !hist.some(h => h.mitglied_id === vId && !h.bis_datum));
-        if (fehlende.length > 0) {
-          const heute = new Date().toISOString();
-          await Promise.all(fehlende.map(vId => {
-            const m = allMembers.find(x => x.id === vId);
-            return base44.entities.SpartenleiterHistorie.create({
-              mitglied_id: vId,
-              mitglied_name: [m.vorname, m.nachname].filter(Boolean).join(' '),
-              haesgruppe_id: id,
-              haesgruppe_name: g.name || '',
-              von_datum: heute,
-              bis_datum: '',
-            }).catch(() => {});
-          }));
-          const erg = await base44.entities.SpartenleiterHistorie.filter({ haesgruppe_id: id });
-          hist.push(...(erg || []).filter(h2 => !hist.some(h3 => h3.id === h2.id)));
+        // Self-Healing: Aktuelle Verantwortliche ohne offene Amtszeit nachtragen
+        // (dokumentiert den Bestand, falls die Zuweisung vor Einführung der Historie erfolgte)
+        if (isAdmin(user)) {
+          const aktuelleV = (g.verantwortliche_ids || []).filter(vId => allMembers.some(m => m.id === vId));
+          const fehlende = aktuelleV.filter(vId => !hist.some(h => h.mitglied_id === vId && !h.bis_datum));
+          if (fehlende.length > 0) {
+            const heute = new Date().toISOString();
+            await Promise.all(fehlende.map(vId => {
+              const m = allMembers.find(x => x.id === vId);
+              return base44.entities.SpartenleiterHistorie.create({
+                mitglied_id: vId,
+                mitglied_name: [m.vorname, m.nachname].filter(Boolean).join(' '),
+                haesgruppe_id: id,
+                haesgruppe_name: g.name || '',
+                von_datum: heute,
+                bis_datum: '',
+              }).catch(() => {});
+            }));
+            const erg = await base44.entities.SpartenleiterHistorie.filter({ haesgruppe_id: id });
+            hist.push(...(erg || []).filter(h2 => !hist.some(h3 => h3.id === h2.id)));
+          }
         }
+      } catch (histErr) {
+        console.warn('Spartenleiter-Historie nicht verfügbar:', histErr);
+        hist = [];
       }
 
-      setSplatHistorie(hist.sort((a, b) => (b.von_datum || '').localeCompare(a.von_datum || '')));
+      setSplatHistorie([...hist].sort((a, b) => (b.von_datum || '').localeCompare(a.von_datum || '')));
 
       // Fetch appointments and expenses
       const t = await base44.entities.SpartenTermin.filter({ haesgruppe_id: id });
