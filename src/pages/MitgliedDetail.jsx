@@ -1174,7 +1174,7 @@ export default function MitgliedDetail() {
                   .filter(h => !haes.some(m => m.id === h.id) &&
                     (haessuche === '' || h.haesnummer.toLowerCase().includes(haessuche.toLowerCase()) || (h.bezeichnung || '').toLowerCase().includes(haessuche.toLowerCase())))
                   .sort((a, b) => {
-                    const order = { 'Frei': 0, 'Aktiv': 1, 'Verliehen': 2, 'Stillgelegt': 3, 'Verkauft': 4 };
+                    const order = { 'Aktiv': 0, 'Verliehen': 1, 'Passiv': 2, 'Stillgelegt': 3 };
                     return (order[a.status] ?? 5) - (order[b.status] ?? 5);
                   })
                   .slice(0, 30)

@@ -13,8 +13,7 @@ import { toast } from 'sonner';
 const STATUS_COLORS = {
   'Aktiv': 'bg-green-500/20 text-green-400',
   'Verliehen': 'bg-blue-500/20 text-blue-400',
-  'Verkauft': 'bg-gray-500/20 text-gray-400',
-  'Frei': 'bg-yellow-500/20 text-yellow-400',
+  'Passiv': 'bg-yellow-500/20 text-yellow-400',
   'Stillgelegt': 'bg-red-500/20 text-red-400',
 };
 
@@ -32,7 +31,7 @@ export default function Haes() {
   const [showNewGruppe, setShowNewGruppe] = useState(false);
   const [showNewHaes, setShowNewHaes] = useState(false);
   const [newGruppe, setNewGruppe] = useState({ name: '', beschreibung: '' });
-  const [newHaes, setNewHaes] = useState({ haesnummer: '', haesgruppe_id: '', bezeichnung: '', status: 'Frei' });
+  const [newHaes, setNewHaes] = useState({ haesnummer: '', haesgruppe_id: '', bezeichnung: '', status: 'Aktiv', vereinseigentum: true });
   const [selectedGruppeToken, setSelectedGruppeToken] = useState(null);
   const isAdminUser = isAdmin(user);
 
@@ -101,7 +100,7 @@ export default function Haes() {
   const handleCreateHaes = async () => {
     try {
       await base44.entities.Haes.create(newHaes);
-      setNewHaes({ haesnummer: '', haesgruppe_id: '', bezeichnung: '', status: 'Frei' });
+      setNewHaes({ haesnummer: '', haesgruppe_id: '', bezeichnung: '', status: 'Aktiv', vereinseigentum: true });
       setShowNewHaes(false);
       toast.success('Häs erstellt');
       loadData();
@@ -131,8 +130,7 @@ export default function Haes() {
     gesamt:      haes.length,
     aktiv:       haes.filter(h => h.status === 'Aktiv').length,
     verliehen:   haes.filter(h => h.status === 'Verliehen').length,
-    frei:        haes.filter(h => h.status === 'Frei').length,
-    verkauft:    haes.filter(h => h.status === 'Verkauft').length,
+    passiv:      haes.filter(h => h.status === 'Passiv').length,
     stillgelegt: haes.filter(h => h.status === 'Stillgelegt').length,
   };
 
@@ -182,13 +180,12 @@ export default function Haes() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 mb-4">
         {[
           { label: 'Gesamt',      value: stats.gesamt,      color: 'text-foreground',  filter: 'Alle' },
           { label: 'Aktiv',       value: stats.aktiv,       color: 'text-green-400',   filter: 'Aktiv' },
           { label: 'Verliehen',   value: stats.verliehen,   color: 'text-blue-400',    filter: 'Verliehen' },
-          { label: 'Frei',        value: stats.frei,        color: 'text-yellow-400',  filter: 'Frei' },
-          { label: 'Verkauft',    value: stats.verkauft,    color: 'text-gray-400',    filter: 'Verkauft' },
+          { label: 'Passiv',      value: stats.passiv,      color: 'text-yellow-400',  filter: 'Passiv' },
           { label: 'Stillgelegt', value: stats.stillgelegt, color: 'text-red-400',     filter: 'Stillgelegt' },
         ].map(s => (
           <button
@@ -360,7 +357,7 @@ export default function Haes() {
                 onChange={e => setNewHaes(p => ({ ...p, status: e.target.value }))}
                 className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
               >
-                {['Aktiv', 'Verliehen', 'Verkauft', 'Frei', 'Stillgelegt'].map(s => <option key={s} value={s}>{s}</option>)}
+                {['Aktiv', 'Verliehen', 'Passiv', 'Stillgelegt'].map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
             <div className="flex gap-2 mt-4">

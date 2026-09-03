@@ -529,7 +529,7 @@ export default function Dashboard() {
                       </p>
                     </div>
                     <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${isVereinsbesitz ? 'bg-blue-500/15 text-blue-400' : 'bg-yellow-500/15 text-yellow-400'}`}>
-                      {isVereinsbesitz ? 'Verein' : isZugeordnet ? 'Zugeordnet' : 'Frei'}
+                      {isVereinsbesitz ? 'Verein' : isZugeordnet ? 'Zugeordnet' : 'Offen'}
                     </span>
                     <ChevronRight size={14} className="text-muted-foreground/50 group-hover:text-primary shrink-0" />
                   </Link>

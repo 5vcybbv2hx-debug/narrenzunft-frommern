@@ -13,8 +13,7 @@ import { toast } from 'sonner';
 const STATUS_COLORS = {
   'Aktiv': 'bg-green-500/20 text-green-400',
   'Verliehen': 'bg-blue-500/20 text-blue-400',
-  'Verkauft': 'bg-gray-500/20 text-gray-400',
-  'Frei': 'bg-yellow-500/20 text-yellow-400',
+  'Passiv': 'bg-yellow-500/20 text-yellow-400',
   'Stillgelegt': 'bg-red-500/20 text-red-400',
 };
 
@@ -267,7 +266,7 @@ export default function HaesDetail() {
             <div>
               <label className="text-xs text-muted-foreground font-medium block mb-1">Status</label>
               <div className="grid grid-cols-2 gap-2">
-                {['Aktiv', 'Verliehen', 'Frei', 'Verkauft', 'Stillgelegt'].map(s => (
+                {['Aktiv', 'Verliehen', 'Passiv', 'Stillgelegt'].map(s => (
                   <button
                     key={s}
                     type="button"
@@ -316,15 +315,31 @@ export default function HaesDetail() {
               </div>
             </div>
             <div className="space-y-2">
-              <label className="flex items-center gap-2.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={editData.vereinseigentum || false}
-                  onChange={e => setEditData(p => ({ ...p, vereinseigentum: e.target.checked, privat_eigentuemer_id: e.target.checked ? '' : p.privat_eigentuemer_id }))}
-                  className="rounded"
-                />
-                <span className="text-sm text-foreground">Vereinseigentum</span>
-              </label>
+              <label className="text-xs text-muted-foreground font-medium block mb-1">Eigentum</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditData(p => ({ ...p, vereinseigentum: true, privat_eigentuemer_id: '' }))}
+                  className={`py-2.5 rounded-lg text-sm font-medium transition-all border ${
+                    editData.vereinseigentum
+                      ? 'bg-primary/20 text-primary border-primary/40'
+                      : 'bg-secondary text-muted-foreground border-border hover:border-primary/40 hover:text-foreground'
+                  }`}
+                >
+                  🏛 Verein
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditData(p => ({ ...p, vereinseigentum: false }))}
+                  className={`py-2.5 rounded-lg text-sm font-medium transition-all border ${
+                    !editData.vereinseigentum
+                      ? 'bg-primary/20 text-primary border-primary/40'
+                      : 'bg-secondary text-muted-foreground border-border hover:border-primary/40 hover:text-foreground'
+                  }`}
+                >
+                  👤 Privatperson
+                </button>
+              </div>
               {!editData.vereinseigentum && (
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">Privateigentümer (Person)</label>
