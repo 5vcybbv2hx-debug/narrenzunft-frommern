@@ -794,7 +794,7 @@ export default function SpartenDashboard() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className={`grid grid-cols-2 gap-4 ${canEdit ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
               <div className="bg-card border border-border rounded-xl p-5">
                 <span className="text-muted-foreground text-xs block uppercase tracking-wider font-semibold mb-1">Mitglieder</span>
                 <span className="text-2xl sm:text-3xl font-bold text-white font-oswald">{stats.mitgliederCount}</span>
@@ -808,15 +808,17 @@ export default function SpartenDashboard() {
                   }
                 </span>
               </div>
-              <div className="bg-card border border-border rounded-xl p-5">
-                <span className="text-muted-foreground text-xs block uppercase tracking-wider font-semibold mb-1">Offene Auslagen</span>
-                <span className="text-2xl sm:text-3xl font-bold text-primary font-oswald">
-                  {stats.offeneCount}
-                </span>
-                <span className="text-xs text-muted-foreground block mt-1">
-                  Gesamt: {stats.offeneSum.toFixed(2)} €
-                </span>
-              </div>
+              {canEdit && (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <span className="text-muted-foreground text-xs block uppercase tracking-wider font-semibold mb-1">Offene Auslagen</span>
+                  <span className="text-2xl sm:text-3xl font-bold text-primary font-oswald">
+                    {stats.offeneCount}
+                  </span>
+                  <span className="text-xs text-muted-foreground block mt-1">
+                    Gesamt: {stats.offeneSum.toFixed(2)} €
+                  </span>
+                </div>
+              )}
               <div className="bg-card border border-border rounded-xl p-5">
                 <span className="text-muted-foreground text-xs block uppercase tracking-wider font-semibold mb-1">WhatsApp-Status</span>
                 <span className="text-lg font-bold text-green-500 font-oswald flex items-center gap-1.5 mt-1">
