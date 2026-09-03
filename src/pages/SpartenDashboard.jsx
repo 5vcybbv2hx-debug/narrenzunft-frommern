@@ -9,9 +9,22 @@ import {
   Calendar, Clock, MapPin, Plus, Users, Wallet, 
   Send, ChevronLeft, ChevronRight, Edit, Trash2, 
   Check, X, AlertCircle, MessageSquare, Repeat,
-  Euro, UserCheck, ArrowLeft, Save, UserPlus
+  Euro, UserCheck, ArrowLeft, Save, UserPlus, Phone, MessageCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
+
+function formatPhoneForTel(phone) {
+  if (!phone) return null;
+  return phone.replace(/[^\d+]/g, '');
+}
+
+function formatPhoneForWhatsApp(phone) {
+  if (!phone) return null;
+  let cleaned = phone.replace(/[^\d]/g, '');
+  if (cleaned.startsWith('00')) cleaned = cleaned.substring(2);
+  if (cleaned.startsWith('0')) cleaned = '49' + cleaned.substring(1);
+  return cleaned;
+}
 
 export default function SpartenDashboard() {
   const { id } = useParams();
@@ -710,12 +723,31 @@ export default function SpartenDashboard() {
                     <p className="text-sm text-muted-foreground italic">Keine Verantwortlichen zugewiesen.</p>
                   ) : (
                     <div className="flex flex-wrap gap-2">
-                      {alleMitglieder.filter(m => gruppe.verantwortliche_ids?.includes(m.id)).map(leader => (
-                        <Link key={leader.id} to={`/mitglieder/${leader.id}`}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/15 border border-primary/40 text-primary text-xs font-semibold hover:bg-primary/25 transition-colors">
-                          <UserCheck size={12} /> {leader.vorname} {leader.nachname}
-                        </Link>
-                      ))}
+                      {alleMitglieder.filter(m => gruppe.verantwortliche_ids?.includes(m.id)).map(leader => {
+                        const telefon = leader.telefon || leader.mobiltelefon;
+                        const telUrl = telefon ? `tel:${formatPhoneForTel(telefon)}` : null;
+                        const waUrl = telefon ? `https://wa.me/${formatPhoneForWhatsApp(telefon)}` : null;
+                        return (
+                          <div key={leader.id} className="inline-flex items-center gap-1">
+                            <Link to={`/mitglieder/${leader.id}`}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/15 border border-primary/40 text-primary text-xs font-semibold hover:bg-primary/25 transition-colors">
+                              <UserCheck size={12} /> {leader.vorname} {leader.nachname}
+                            </Link>
+                            {telUrl && (
+                              <a href={telUrl} title={`${leader.vorname} anrufen`}
+                                className="p-1.5 rounded-full bg-secondary border border-border text-foreground hover:bg-primary/10 hover:text-primary transition-colors">
+                                <Phone size={12} />
+                              </a>
+                            )}
+                            {waUrl && (
+                              <a href={waUrl} target="_blank" rel="noopener noreferrer" title={`${leader.vorname} WhatsApp schreiben`}
+                                className="p-1.5 rounded-full bg-green-500/15 border border-green-500/30 text-green-400 hover:bg-green-500/25 transition-colors">
+                                <MessageCircle size={12} />
+                              </a>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -740,17 +772,36 @@ export default function SpartenDashboard() {
                   <p className="text-sm text-muted-foreground italic">Keine Spartenleiter zugewiesen.</p>
                 ) : (
                   <div className="space-y-3">
-                    {alleMitglieder.filter(m => gruppe.verantwortliche_ids?.includes(m.id)).map(leader => (
-                      <Link key={leader.id} to={`/mitglieder/${leader.id}`} className="flex items-center gap-3 hover:bg-secondary/30 rounded-lg p-1 -m-1 transition-colors">
-                        <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center font-bold text-primary font-oswald">
-                          {leader.vorname?.[0]}{leader.nachname?.[0]}
+                    {alleMitglieder.filter(m => gruppe.verantwortliche_ids?.includes(m.id)).map(leader => {
+                      const telefon = leader.telefon || leader.mobiltelefon;
+                      const telUrl = telefon ? `tel:${formatPhoneForTel(telefon)}` : null;
+                      const waUrl = telefon ? `https://wa.me/${formatPhoneForWhatsApp(telefon)}` : null;
+                      return (
+                        <div key={leader.id} className="flex items-center gap-3">
+                          <Link to={`/mitglieder/${leader.id}`} className="flex items-center gap-3 flex-1 min-w-0 hover:bg-secondary/30 rounded-lg p-1 -m-1 transition-colors">
+                            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center font-bold text-primary font-oswald shrink-0">
+                              {leader.vorname?.[0]}{leader.nachname?.[0]}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-semibold text-white text-sm">{leader.vorname} {leader.nachname}</div>
+                              <div className="text-xs text-muted-foreground">Spartenleiter</div>
+                            </div>
+                          </Link>
+                          {telUrl && (
+                            <a href={telUrl} title={`${leader.vorname} anrufen`}
+                              className="p-2 rounded-lg bg-secondary border border-border text-foreground hover:bg-primary/10 hover:text-primary transition-colors shrink-0">
+                              <Phone size={14} />
+                            </a>
+                          )}
+                          {waUrl && (
+                            <a href={waUrl} target="_blank" rel="noopener noreferrer" title={`${leader.vorname} WhatsApp schreiben`}
+                              className="p-2 rounded-lg bg-green-500/15 border border-green-500/30 text-green-400 hover:bg-green-500/25 transition-colors shrink-0">
+                              <MessageCircle size={14} />
+                            </a>
+                          )}
                         </div>
-                        <div>
-                          <div className="font-semibold text-white text-sm">{leader.vorname} {leader.nachname}</div>
-                          <div className="text-xs text-muted-foreground">Spartenleiter</div>
-                        </div>
-                      </Link>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
 
