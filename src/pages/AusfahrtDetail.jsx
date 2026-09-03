@@ -508,8 +508,7 @@ export default function AusfahrtDetail() {
     .filter(a => a.transport === 'Bus')
     .reduce((sum, current) => sum + 1 + (current.anzahl_begleitpersonen || 0), 0);
 
-  const capacityLimit = ausfahrt.bus_kapazitaet || 50;
-  const progressPercentage = Math.min(100, (busPassengersCount / capacityLimit) * 100);
+  // Keine feste Kapazitätsgrenze mehr - reine Teilnehmerzahl.
 
   const formatDisplayDate = (dateStr) => {
     if (!dateStr) return '';
@@ -606,19 +605,11 @@ export default function AusfahrtDetail() {
               )}
             </div>
             
-            {/* Bus Capacity Progress — only when bus is needed */}
+            {/* Bus-Teilnehmerzahl — only when bus is needed */}
             {ausfahrt.bus_benoetigt !== false && (
-            <div className="bg-[#121212] border border-border p-3 sm:p-4 rounded-xl w-full sm:w-auto sm:min-w-[240px]">
-              <div className="flex justify-between text-sm mb-1.5 font-medium">
-                <span className="text-gray-400">Bus-Auslastung:</span>
-                <span className="text-white">{busPassengersCount} / {capacityLimit} Plätze</span>
-              </div>
-              <div className="w-full bg-secondary h-2.5 rounded-full overflow-hidden">
-                <div 
-                  className="bg-primary h-full rounded-full transition-all duration-300"
-                  style={{ width: `${progressPercentage}%` }}
-                />
-              </div>
+            <div className="bg-[#121212] border border-border p-3 sm:p-4 rounded-xl w-full sm:w-auto sm:min-w-[200px] flex items-center justify-between gap-3">
+              <span className="text-gray-400 text-sm font-medium">Bus-Teilnehmer:</span>
+              <span className="text-white text-xl font-bold font-oswald">{busPassengersCount}</span>
             </div>
             )}
           </div>

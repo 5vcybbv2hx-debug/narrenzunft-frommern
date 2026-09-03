@@ -19,7 +19,6 @@ export default function AusfahrtEditModal({ ausfahrt, sparten, onSave, onClose }
     aufstellung: '',
     startnummer: '',
     busparkplatz: '',
-    bus_kapazitaet: '',
     sparte_auftritt: false,
     sparte_id: '',
     anmeldung_start: '',
@@ -45,7 +44,6 @@ export default function AusfahrtEditModal({ ausfahrt, sparten, onSave, onClose }
         aufstellung: ausfahrt.aufstellung || '',
         startnummer: ausfahrt.startnummer || '',
         busparkplatz: ausfahrt.busparkplatz || '',
-        bus_kapazitaet: ausfahrt.bus_kapazitaet != null ? String(ausfahrt.bus_kapazitaet) : '',
         sparte_auftritt: ausfahrt.sparte_auftritt || false,
         sparte_id: ausfahrt.sparte_id || '',
         anmeldung_start: ausfahrt.anmeldung_start || '',
@@ -85,7 +83,6 @@ export default function AusfahrtEditModal({ ausfahrt, sparten, onSave, onClose }
         aufstellung: formData.aufstellung.trim() || undefined,
         startnummer: formData.startnummer.trim() || undefined,
         busparkplatz: formData.bus_benoetigt ? (formData.busparkplatz.trim() || undefined) : undefined,
-        bus_kapazitaet: formData.bus_benoetigt && formData.bus_kapazitaet ? Number(formData.bus_kapazitaet) : undefined,
         sparte_auftritt: formData.sparte_auftritt,
         sparte_id: formData.sparte_auftritt && formData.sparte_id ? formData.sparte_id : undefined,
         anmeldung_start: formData.anmeldung_start,
@@ -175,12 +172,12 @@ export default function AusfahrtEditModal({ ausfahrt, sparten, onSave, onClose }
               </label>
             </div>
             {formData.bus_benoetigt && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
+              <div className="grid grid-cols-2 gap-3 mb-3">
                 <div>
                   <label className={labelClass}>Abfahrt</label>
                   <TimeSelect name="abfahrt_zeit" value={formData.abfahrt_zeit} onChange={handleChange} className={inputClass} />
                 </div>
-                <div className="col-span-2">
+                <div>
                   <label className={labelClass}>Abfahrt Ort</label>
                   <input type="text" name="abfahrt_ort" value={formData.abfahrt_ort} onChange={handleChange} className={inputClass} />
                 </div>
@@ -189,10 +186,6 @@ export default function AusfahrtEditModal({ ausfahrt, sparten, onSave, onClose }
                   <TimeSelect name="rueckfahrt_zeit" value={formData.rueckfahrt_zeit} onChange={handleChange} className={inputClass} />
                 </div>
                 <div>
-                  <label className={labelClass}>Bus-Kapazität</label>
-                  <input type="number" name="bus_kapazitaet" value={formData.bus_kapazitaet} onChange={handleChange} placeholder="50" min="1" className={inputClass} />
-                </div>
-                <div className="col-span-2 sm:col-span-1">
                   <label className={labelClass}>Busparkplatz</label>
                   <input type="text" name="busparkplatz" value={formData.busparkplatz} onChange={handleChange} placeholder="z.B. P3" className={inputClass} />
                 </div>
