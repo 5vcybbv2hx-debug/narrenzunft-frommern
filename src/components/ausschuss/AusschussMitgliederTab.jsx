@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Users, Plus, X, Save, Trash2 } from 'lucide-react';
 
-const ROLLEN = ['Vorsitzender', 'Stellv. Vorsitzender', 'Schriftführer', 'Kassierer', 'Beisitzer', 'Jugendleiter', 'Sonstiges'];
+const ROLLEN = ['Vorsitzender', 'Stellv. Vorsitzender', 'Schriftführer', 'Kassierer', 'Häswart', 'Beisitzer', 'Jugendleiter', 'Sonstiges'];
 
 const ROLLE_FARBEN = {
   'Vorsitzender':        'bg-primary/20 text-primary',
   'Stellv. Vorsitzender':'bg-blue-500/20 text-blue-400',
   'Schriftführer':       'bg-purple-500/20 text-purple-400',
   'Kassierer':           'bg-green-500/20 text-green-400',
+  'Häswart':             'bg-amber-500/20 text-amber-400',
   'Beisitzer':           'bg-gray-500/20 text-gray-400',
   'Jugendleiter':        'bg-primary/20 text-primary',
   'Sonstiges':           'bg-secondary text-muted-foreground',
