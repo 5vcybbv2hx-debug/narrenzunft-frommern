@@ -1,0 +1,36 @@
+{
+  "name": "SpartenleiterHistorie",
+  "type": "object",
+  "properties": {
+    "mitglied_id": {
+      "type": "string",
+      "description": "ID des Mitglieds, das Spartenleiter war"
+    },
+    "mitglied_name": {
+      "type": "string",
+      "description": "Name des Mitglieds (denormalisiert)"
+    },
+    "haesgruppe_id": {
+      "type": "string",
+      "description": "ID der Gruppe/Sparte"
+    },
+    "haesgruppe_name": {
+      "type": "string",
+      "description": "Name der Gruppe (denormalisiert)"
+    },
+    "von_datum": {
+      "type": "string",
+      "format": "date",
+      "description": "Beginn der Amtszeit"
+    },
+    "bis_datum": {
+      "type": "string",
+      "format": "date",
+      "description": "Ende der Amtszeit (leer = aktuell aktiv)"
+    }
+  },
+  "required": [
+    "mitglied_id",
+    "haesgruppe_id"
+  ]
+}

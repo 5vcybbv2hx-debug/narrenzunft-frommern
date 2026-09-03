@@ -25,7 +25,8 @@ export default function SpartenDashboard() {
   const [auslagen, setAuslagen] = useState([]);
   const [alleMitglieder, setAlleMitglieder] = useState([]);
   const [myMitglied, setMyMitglied] = useState(null);
-  
+  const [splatHistorie, setSplatHistorie] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('uebersicht');
