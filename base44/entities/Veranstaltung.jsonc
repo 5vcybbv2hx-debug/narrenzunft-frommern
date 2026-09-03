@@ -117,6 +117,19 @@
     "busfahrer_token": {
       "type": "string",
       "description": "Einmaliger Token f\u00fcr den \u00f6ffentlichen Busfahrer-Zugang"
+    },
+    "vorlage_id": {
+      "type": "string",
+      "description": "ID der Vorlage, aus der diese Veranstaltung erstellt wurde (optional)"
+    },
+    "nachbereitung_status": {
+      "type": "string",
+      "enum": [
+        "Ausstehend",
+        "Abgeschlossen"
+      ],
+      "default": "Ausstehend",
+      "description": "Status der Nachbereitung der Veranstaltung"
     }
   },
   "required": [

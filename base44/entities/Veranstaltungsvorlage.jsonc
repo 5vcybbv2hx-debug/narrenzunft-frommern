@@ -60,6 +60,10 @@
           }
         }
       }
+    },
+    "bereich_vorlagen": {
+      "type": "string",
+      "description": "JSON-Array der vordefinierten Bereiche f\u00fcr diese Vorlage"
     }
   },
   "required": [

@@ -1,45 +1,57 @@
 {
-  "name": "Tagesordnungspunkt",
+  "name": "VeranstaltungBereich",
   "type": "object",
   "properties": {
-    "termin_id": {
+    "veranstaltung_id": {
       "type": "string",
-      "description": "ID des KalenderTermins (Sitzung)"
+      "description": "ID der verkn\u00fcpften Veranstaltung"
     },
-    "reihenfolge": {
-      "type": "number",
-      "default": 1
-    },
-    "titel": {
-      "type": "string"
-    },
-    "beschreibung": {
-      "type": "string"
-    },
-    "notizen": {
+    "vorlage_id": {
       "type": "string",
-      "description": "Ergebnis / Protokollnotiz"
+      "description": "ID der Vorlage, aus der dieser Bereich generiert wurde (optional)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Bezeichnung des Bereichs"
+    },
+    "verantwortlicher_id": {
+      "type": "string",
+      "description": "ID des verantwortlichen Mitglieds"
+    },
+    "verantwortlicher_name": {
+      "type": "string",
+      "description": "Name des Verantwortlichen (denormalisiert)"
     },
     "status": {
       "type": "string",
       "enum": [
         "Offen",
-        "Besprochen",
-        "Vertagt"
+        "In Planung",
+        "Erledigt"
       ],
       "default": "Offen"
     },
-    "verantwortlicher_id": {
-      "type": "string"
-    },
-    "veranstaltung_id": {
+    "notizen": {
       "type": "string",
-      "description": "ID der verkn\u00fcpften Veranstaltung (optional, f\u00fcr Veranstaltungs-TOPs)"
+      "description": "Vorab-Notizen / Planungshinweise"
+    },
+    "nachher_notizen": {
+      "type": "string",
+      "description": "Notizen zur Nachbereitung / R\u00fcckschau"
+    },
+    "liste": {
+      "type": "string",
+      "description": "JSON-Array der Positionen in diesem Bereich"
+    },
+    "sortierung": {
+      "type": "number",
+      "default": 0,
+      "description": "Reihenfolge der Bereiche"
     }
   },
   "required": [
-    "termin_id",
-    "titel"
+    "veranstaltung_id",
+    "name"
   ],
   "rls": {
     "create": {
