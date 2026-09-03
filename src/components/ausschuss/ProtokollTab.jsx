@@ -40,17 +40,6 @@ export default function ProtokollTab({ termine, mitglieder }) {
     setLoading(false);
   };
 
-  // Verfasser: nur Ausschussmitglieder. Der aktuell gesetzte Wert bleibt
-  // zusätzlich wählbar, damit ältere Protokolle beim Bearbeiten nicht
-  // 'leer' erscheinen, falls der Verfasser ausgetreten ist.
-  // (Lazy Funktion: form wird erst weiter unten deklariert.)
-  const verfasserOptions = () => {
-    const imAusschuss = mitglieder.filter(m => ausschussIds.includes(m.id));
-    if (!form.autor_mitglied_id || imAusschuss.some(m => m.id === form.autor_mitglied_id)) return imAusschuss;
-    const aktueller = mitglieder.find(m => m.id === form.autor_mitglied_id);
-    return aktueller ? [...imAusschuss, aktueller] : imAusschuss;
-  };
-
   const getSitzungsName = (terminId) => {
     const t = termine.find(t => t.id === terminId);
     return t ? t.titel : null;
@@ -156,6 +145,7 @@ export default function ProtokollTab({ termine, mitglieder }) {
           protokoll={editProtokoll}
           termine={termine}
           mitglieder={mitglieder}
+          ausschussIds={ausschussIds}
           onClose={() => { setShowModal(false); setEditProtokoll(null); }}
           onSaved={() => { setShowModal(false); setEditProtokoll(null); loadData(); }}
         />
@@ -164,7 +154,7 @@ export default function ProtokollTab({ termine, mitglieder }) {
   );
 }
 
-function ProtokollModal({ protokoll, termine, mitglieder, onClose, onSaved }) {
+function ProtokollModal({ protokoll, termine, mitglieder, ausschussIds, onClose, onSaved }) {
   const isNew = !protokoll;
   const [form, setForm] = useState({ ...EMPTY_FORM, ...protokoll });
   const [saving, setSaving] = useState(false);
@@ -172,6 +162,16 @@ function ProtokollModal({ protokoll, termine, mitglieder, onClose, onSaved }) {
   const [modus, setModus] = useState(protokoll?.datei_url ? 'datei' : 'text');
   const fileRef = useRef(null);
   const set = (f, v) => setForm(p => ({ ...p, [f]: v }));
+
+  // Verfasser: nur Ausschussmitglieder. Der aktuell gesetzte Wert bleibt
+  // zusätzlich wählbar, damit ältere Protokolle beim Bearbeiten nicht
+  // 'leer' erscheinen, falls der Verfasser ausgetreten ist.
+  const verfasserOptions = () => {
+    const imAusschuss = mitglieder.filter(m => ausschussIds.includes(m.id));
+    if (!form.autor_mitglied_id || imAusschuss.some(m => m.id === form.autor_mitglied_id)) return imAusschuss;
+    const aktueller = mitglieder.find(m => m.id === form.autor_mitglied_id);
+    return aktueller ? [...imAusschuss, aktueller] : imAusschuss;
+  };
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
