@@ -662,15 +662,19 @@ export default function SpartenDashboard() {
           <button onClick={() => setActiveTab('termine')} className={tabClass('termine')}>
             <Calendar className="w-4 h-4" /> Termine
           </button>
-          <button onClick={() => setActiveTab('auslagen')} className={tabClass('auslagen')}>
-            <Wallet className="w-4 h-4" /> Auslagen
-          </button>
-          <button onClick={() => setActiveTab('mitglieder')} className={tabClass('mitglieder')}>
-            <Users className="w-4 h-4" /> Mitglieder
-          </button>
-          <button onClick={() => setActiveTab('nachricht')} className={tabClass('nachricht')}>
-            <MessageSquare className="w-4 h-4" /> Nachricht
-          </button>
+          {canEdit && (
+            <>
+              <button onClick={() => setActiveTab('auslagen')} className={tabClass('auslagen')}>
+                <Wallet className="w-4 h-4" /> Auslagen
+              </button>
+              <button onClick={() => setActiveTab('mitglieder')} className={tabClass('mitglieder')}>
+                <Users className="w-4 h-4" /> Mitglieder
+              </button>
+              <button onClick={() => setActiveTab('nachricht')} className={tabClass('nachricht')}>
+                <MessageSquare className="w-4 h-4" /> Nachricht
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -928,7 +932,7 @@ export default function SpartenDashboard() {
         )}
 
         {/* TAB 3: AUSLAGEN */}
-        {activeTab === 'auslagen' && (
+        {canEdit && activeTab === 'auslagen' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-oswald uppercase tracking-wide text-white">
@@ -1085,7 +1089,7 @@ export default function SpartenDashboard() {
           </div>
         )}
         {/* TAB 4: MITGLIEDER */}
-        {activeTab === 'mitglieder' && (
+        {canEdit && activeTab === 'mitglieder' && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <h2 className="text-2xl font-oswald uppercase tracking-wide text-white">
@@ -1186,7 +1190,7 @@ export default function SpartenDashboard() {
         )}
 
         {/* TAB 5: NACHRICHT */}
-        {activeTab === 'nachricht' && (
+        {canEdit && activeTab === 'nachricht' && (
           <div className="max-w-2xl mx-auto bg-card border border-border rounded-xl p-4 sm:p-6 space-y-6">
             <h2 className="text-2xl font-oswald uppercase tracking-wide text-white border-b border-border pb-2">
               Nachricht an die Gruppe
