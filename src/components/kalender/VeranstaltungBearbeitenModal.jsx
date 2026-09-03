@@ -41,7 +41,7 @@ export default function VeranstaltungBearbeitenModal({ veranstaltung, onClose, o
       if (veranstaltung?.id) {
         await base44.entities.Veranstaltung.update(veranstaltung.id, form);
       } else {
-        await base44.entities.Veranstaltung.create(form);
+        await base44.entities.Veranstaltung.create({ ...form, nachbereitung_status: 'Ausstehend' });
       }
       onSaved();
     } catch (e) { console.error('Error:', e); }

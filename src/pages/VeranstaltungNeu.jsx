@@ -35,6 +35,7 @@ export default function VeranstaltungNeu() {
   const [vorlagenName, setVorlagenName] = useState('');
   const [savingVorlage, setSavingVorlage] = useState(false);
   const [showArbeitsdienste, setShowArbeitsdienste] = useState(false);
+  const [selectedVorlage, setSelectedVorlage] = useState(null);
 
   useEffect(() => {
     base44.entities.Veranstaltungsvorlage.list('name', 100).then(setVorlagen).catch((e) => { console.error('Vorlagen laden:', e); });
@@ -59,6 +60,7 @@ export default function VeranstaltungNeu() {
       setArbeitsdienste(vorlage.arbeitsdienst_vorlagen.map(a => ({ ...a })));
       setShowArbeitsdienste(true);
     }
+    setSelectedVorlage(vorlage);
     setShowVorlagen(false);
   };
 
@@ -115,7 +117,11 @@ export default function VeranstaltungNeu() {
     }
     setSaving(true);
     try {
-      const veranstaltung = await base44.entities.Veranstaltung.create(form);
+      const veranstaltung = await base44.entities.Veranstaltung.create({
+        ...form,
+        vorlage_id: selectedVorlage?.id || undefined,
+        nachbereitung_status: 'Ausstehend',
+      });
       // Arbeitsdienste anlegen
       if (arbeitsdienste.length > 0) {
         await Promise.all(
@@ -130,6 +136,30 @@ export default function VeranstaltungNeu() {
               status: 'Offen',
               veranstaltung_id: veranstaltung.id,
             }))
+        );
+      }
+      // Bereiche aus der Vorlage anlegen (Einkauf, Getränke, ...)
+      const bereichVorlagen = [];
+      try {
+        const roh = selectedVorlage?.bereich_vorlagen;
+        if (roh) bereichVorlagen.push(...(typeof roh === 'string' ? JSON.parse(roh) : roh));
+      } catch (e) { console.error('Bereich-Vorlagen parsen:', e); }
+      if (bereichVorlagen.length > 0) {
+        await Promise.all(bereichVorlagen
+          .filter(b => b.name?.trim())
+          .map((b, i) => base44.entities.VeranstaltungBereich.create({
+            veranstaltung_id: veranstaltung.id,
+            vorlage_id: selectedVorlage.id,
+            name: b.name.trim(),
+            status: 'Offen',
+            sortierung: i,
+            liste: JSON.stringify((b.positionen || []).map(p => ({
+              artikel: p.artikel || '',
+              menge: p.menge || '',
+              einheit: p.einheit || '',
+              notiz: '',
+            }))),
+          }))
         );
       }
       navigate(`/veranstaltungen/${veranstaltung.id}`);

@@ -1,7 +1,7 @@
 import TimeSelect from '../ui/TimeSelect';
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { X, Plus, Trash2, Save, LayoutTemplate, Edit, Bus, Clock, MapPin, Briefcase } from 'lucide-react';
+import { X, Plus, Trash2, Save, LayoutTemplate, Edit, Bus, Clock, MapPin, Briefcase, ShoppingBasket } from 'lucide-react';
 
 const TYP_OPTIONEN = ['Umzug', 'Abendveranstaltung', 'Intern', 'Arbeitsdienst', 'Fest'];
 
@@ -19,6 +19,7 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
       bus_erforderlich: false, anmeldung_aktiv: true,
       busparkplatz_adresse: '', busparkplatz_treffzeit: '', hinweise: '',
       arbeitsdienst_vorlagen: [],
+      bereich_vorlagen: [],
     };
   }
 
@@ -48,8 +49,32 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
       busparkplatz_treffzeit: v.busparkplatz_treffzeit || '',
       hinweise: v.hinweise || '',
       arbeitsdienst_vorlagen: v.arbeitsdienst_vorlagen || [],
+      bereich_vorlagen: parseBereiche(v.bereich_vorlagen),
     });
     setAnsicht('form');
+  };
+
+  // bereich_vorlagen: JSON-String (oder Array) -> editierbare Form {name, positionen_text}
+  const parseBereiche = (roh) => {
+    try {
+      const arr = typeof roh === 'string' ? JSON.parse(roh || '[]') : (roh || []);
+      return (Array.isArray(arr) ? arr : []).map(b => ({
+        name: b.name || '',
+        positionen_text: (b.positionen || []).map(p =>
+          [p.artikel, p.menge, p.einheit].filter(x => x !== undefined && x !== '').join(', ')
+        ).join('\n'),
+      }));
+    } catch {
+      return [];
+    }
+  };
+
+  // Textzeilen "Artikel, Menge, Einheit" -> Positionen-Array
+  const parsePositionen = (text) => {
+    return (text || '').split('\n').map(zeile => zeile.trim()).filter(Boolean).map(zeile => {
+      const teile = zeile.split(',').map(t => t.trim());
+      return { artikel: teile[0] || '', menge: teile[1] || '', einheit: teile[2] || '' };
+    });
   };
 
   const handleArbeitsdienstVorlageChange = (idx, field, value) => {
@@ -74,13 +99,38 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
     }));
   };
 
+  const handleBereichAdd = (name = '') => {
+    setForm(p => ({ ...p, bereich_vorlagen: [...(p.bereich_vorlagen || []), { name, positionen_text: '' }] }));
+  };
+
+  const handleBereichChange = (idx, field, value) => {
+    setForm(p => {
+      const liste = [...(p.bereich_vorlagen || [])];
+      liste[idx] = { ...liste[idx], [field]: value };
+      return { ...p, bereich_vorlagen: liste };
+    });
+  };
+
+  const handleBereichRemove = (idx) => {
+    setForm(p => ({ ...p, bereich_vorlagen: (p.bereich_vorlagen || []).filter((_, i) => i !== idx) }));
+  };
+
   const handleSave = async () => {
     if (!form.name) return;
     setSaving(true);
+    const payload = {
+      ...form,
+      bereich_vorlagen: (form.bereich_vorlagen || []).length
+        ? JSON.stringify((form.bereich_vorlagen || []).map(b => ({
+            name: (b.name || '').trim(),
+            positionen: parsePositionen(b.positionen_text),
+          })).filter(b => b.name))
+        : undefined,
+    };
     if (editVorlage) {
-      await base44.entities.Veranstaltungsvorlage.update(editVorlage.id, form);
+      await base44.entities.Veranstaltungsvorlage.update(editVorlage.id, payload);
     } else {
-      await base44.entities.Veranstaltungsvorlage.create(form);
+      await base44.entities.Veranstaltungsvorlage.create(payload);
     }
     setSaving(false);
     await loadVorlagen();
@@ -279,6 +329,57 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
                 ))}
                 {(form.arbeitsdienst_vorlagen || []).length === 0 && (
                   <p className="text-xs text-muted-foreground text-center py-2">Noch keine Arbeitsdienste definiert</p>
+                )}
+              </div>
+            </div>
+
+            {/* Bereichs-Vorlagen (Einkauf, Getränke, ...) */}
+            <div className="border-t border-border pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                  <ShoppingBasket size={12} /> Bereiche & Standardlisten ({(form.bereich_vorlagen || []).length})
+                </p>
+                <div className="flex gap-1.5">
+                  <button onClick={() => handleBereichAdd('Einkauf')}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-secondary border border-border text-xs text-foreground hover:border-primary/50">
+                    + Einkauf
+                  </button>
+                  <button onClick={() => handleBereichAdd('Getränke')}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-secondary border border-border text-xs text-foreground hover:border-primary/50">
+                    + Getränke
+                  </button>
+                  <button onClick={() => handleBereichAdd()}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20">
+                    <Plus size={12} /> Eigenen
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {(form.bereich_vorlagen || []).map((b, idx) => (
+                  <div key={idx} className="bg-secondary/50 border border-border rounded-lg p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={b.name || ''}
+                        onChange={e => handleBereichChange(idx, 'name', e.target.value)}
+                        placeholder="Bereichsname * (z.B. Einkauf)"
+                        className="flex-1 px-2.5 py-1.5 rounded-lg bg-card border border-border text-xs text-foreground focus:outline-none focus:border-primary"
+                      />
+                      <button onClick={() => handleBereichRemove(idx)}
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0">
+                        <X size={13} />
+                      </button>
+                    </div>
+                    <textarea
+                      value={b.positionen_text || ''}
+                      onChange={e => handleBereichChange(idx, 'positionen_text', e.target.value)}
+                      placeholder={'Standard-Positionen, eine pro Zeile:\nCola, 12, Kisten\nPommes, 10, kg'}
+                      rows={Math.min(6, Math.max(2, (b.positionen_text || '').split('\n').length))}
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-card border border-border text-xs text-foreground focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                ))}
+                {(form.bereich_vorlagen || []).length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-2">Noch keine Bereiche definiert – bei Anwendung der Vorlage werden sie als Planungsbereiche angelegt</p>
                 )}
               </div>
             </div>

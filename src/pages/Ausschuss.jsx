@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { erstelleNachbesprechungsTops } from '@/lib/nachbereitung';
+import toast from 'react-hot-toast';
 import DateSelect from '../components/ui/DateSelect';
 import TimeSelect from '../components/ui/TimeSelect';
 import { base44 } from '@/api/base44Client';
@@ -644,12 +646,15 @@ function SitzungModal({ onClose, onSaved }) {
     setSaving(true);
     setError(null);
     try {
-      await base44.entities.KalenderTermin.create({
+      const neuTermin = await base44.entities.KalenderTermin.create({
         ...form,
         terminart: 'Ausschusssitzung',
         sichtbarkeit: 'ausschuss',
         status: 'Geplant',
       });
+      // Auto-TOP: fällige Nachbesprechungen auf die Tagesordnung setzen
+      const n = await erstelleNachbesprechungsTops(neuTermin.id, form.datum);
+      if (n) toast.success(`${n} Nachbesprechungs-TOP${n > 1 ? 's' : ''} automatisch zur Tagesordnung hinzugefügt`);
       onSaved();
     } catch (e) {
       console.error('Sitzung erstellen:', e);

@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import ArbeitsdienstTab from '@/components/veranstaltung/ArbeitsdienstTab';
 import DokumenteTab from '@/components/veranstaltung/DokumenteTab';
+import PlanungTab from '@/components/veranstaltung/PlanungTab';
+import NachbereitungTab from '@/components/veranstaltung/NachbereitungTab';
 import AdresseAutocomplete from '@/components/AdresseAutocomplete';
 import { VeranstaltungsDetailsForm, VeranstaltungsDetailsView } from '@/components/veranstaltung/VeranstaltungsDetails';
 import { format } from 'date-fns';
@@ -90,7 +92,7 @@ export default function VeranstaltungDetail() {
     setSaving(true);
     try {
       if (isNew) {
-        await base44.entities.Veranstaltung.create(veranstaltung);
+        await base44.entities.Veranstaltung.create({ ...veranstaltung, nachbereitung_status: 'Ausstehend' });
         navigate('/veranstaltungen');
       } else {
         await base44.entities.Veranstaltung.update(veranstaltung.id, veranstaltung);
@@ -293,6 +295,8 @@ export default function VeranstaltungDetail() {
             { id: 'bus',           label: `Bus (${teilnahmen.filter(t => t.bus).length})` },
             { id: 'arbeitsdienste',label: 'Dienste' },
             { id: 'dokumente',     label: 'Dokumente' },
+            { id: 'planung',       label: 'Planung' },
+            { id: 'nachbereitung',label: 'Nachbereitung' },
           ].map(tab => (
             <button
               key={tab.id}
@@ -692,6 +696,20 @@ export default function VeranstaltungDetail() {
       {/* Dokumente Tab */}
       {activeTab === 'dokumente' && !isNew && (
         <DokumenteTab veranstaltung={veranstaltung} isAdmin={isAdmin} veranstaltungsName={veranstaltung.titel} />
+      )}
+
+      {/* Planung Tab – Bereiche & Listen */}
+      {activeTab === 'planung' && !isNew && (
+        <PlanungTab veranstaltung={veranstaltung} isAdmin={isAdmin} />
+      )}
+
+      {/* Nachbereitung Tab – Nachbesprechung */}
+      {activeTab === 'nachbereitung' && !isNew && (
+        <NachbereitungTab
+          veranstaltung={veranstaltung}
+          isAdmin={isAdmin}
+          onVeranstaltungChange={(patch) => setVeranstaltung(prev => ({ ...prev, ...patch }))}
+        />
       )}
 
       {/* Check-In Tab */}

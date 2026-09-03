@@ -193,7 +193,7 @@ export default function Umzuege() {
       if (editItem) {
         await base44.entities.Veranstaltung.update(editItem.id, form);
       } else {
-        await base44.entities.Veranstaltung.create(form);
+        await base44.entities.Veranstaltung.create({ ...form, nachbereitung_status: 'Ausstehend' });
       }
       setShowForm(false);
       await refetch();

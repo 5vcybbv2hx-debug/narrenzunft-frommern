@@ -1,9 +1,11 @@
+import { erstelleNachbesprechungsTops } from '@/lib/nachbereitung';
 import DateSelect from '../ui/DateSelect';
 import TimeSelect from '../ui/TimeSelect';
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, Save, Trash2 } from 'lucide-react';
 import MobileSelect from '@/components/MobileSelect';
+import toast from 'react-hot-toast';
 
 const TERMINARTEN = ['Umzug','Abendveranstaltung','Arbeitsdienst','Ausschusssitzung','Vorstandssitzung','Jugendtermin','Gruppen-Termin','Intern','Sonstiges'];
 const SICHTBARKEITEN = [
@@ -38,7 +40,12 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
     setSaving(true);
     try {
       if (isNew) {
-        await base44.entities.KalenderTermin.create(form);
+        const neuTermin = await base44.entities.KalenderTermin.create(form);
+        // Auto-TOP: Nachbesprechungen fälliger Veranstaltungen bei Ausschusssitzungen
+        if (form.terminart === 'Ausschusssitzung') {
+          const n = await erstelleNachbesprechungsTops(neuTermin.id, form.datum);
+          if (n) toast.success(`${n} Nachbesprechungs-TOP${n > 1 ? 's' : ''} automatisch hinzugefügt`);
+        }
       } else {
         await base44.entities.KalenderTermin.update(termin.id, form);
       }
