@@ -11,6 +11,7 @@ import { base44 } from '@/api/base44Client';
  *  2. Mitglied.spartenleiter_haesgruppen_ids
  *  3. Mitglied.app_rolle          (mitglied ↔ spartenleiter)
  *  4. Verknüpfter User.role        (Login-Rolle, von roles.js geprüft!)
+ *  5. SpartenleiterHistorie        (Amtszeiten: von/bis, für Historie)
  *
  * Rollen werden dabei NUR bei eindeutigen Übergängen geändert:
  *  - Beförderung:  app_rolle 'mitglied' → 'spartenleiter'
@@ -29,6 +30,15 @@ export async function syncVerantwortliche({ gruppeId, alteIds = [], neueIds = []
   alteIds = alteIds.filter(Boolean);
   neueIds = neueIds.filter(Boolean);
 
+  // Gruppen-Namen für Historie-Snapshots laden
+  let gruppeName = '';
+  try {
+    const gruppen = await base44.entities.Haesgruppe.filter({ id: gruppeId });
+    gruppeName = gruppen?.[0]?.name || '';
+  } catch (e) {
+    console.error('Gruppe für Historie laden:', e);
+  }
+
   // ── 1) Gruppe aktualisieren ──
   await base44.entities.Haesgruppe.update(gruppeId, {
     verantwortliche_ids: neueIds,
@@ -40,6 +50,8 @@ export async function syncVerantwortliche({ gruppeId, alteIds = [], neueIds = []
   if (toAdd.length === 0 && toRemove.length === 0) {
     return { promoted: [], demoted: [] };
   }
+
+  const jetzt = new Date().toISOString();
 
   // ── 2) + 3) Betroffene Mitglieder aktualisieren ──
   const bulkPayload = [];
@@ -102,6 +114,58 @@ export async function syncVerantwortliche({ gruppeId, alteIds = [], neueIds = []
       console.error('User-Rolle konnte nicht synchronisiert werden:', mitglied.id, e);
     }
   }));
+
+  // ── 5) Spartenleiter-Historie führen ──
+  // Neuer Verantwortlicher → Amtszeit beginnt (bis_datum leer)
+  // Entfernt → offene Amtszeit wird mit heute geschlossen
+  const historieTasks = [];
+
+  for (const m of mitglieder) {
+    const mitgliedName = [m.vorname, m.nachname].filter(Boolean).join(' ') || '';
+
+    if (toAdd.includes(m.id)) {
+      // Kein Duplikat anlegen, falls noch eine offene Amtszeit existiert
+      historieTasks.push(
+        (async () => {
+          try {
+            const offen = await base44.entities.SpartenleiterHistorie.filter({
+              mitglied_id: m.id, haesgruppe_id: gruppeId, bis_datum: '',
+            });
+            if (offen?.length > 0) return;
+            await base44.entities.SpartenleiterHistorie.create({
+              mitglied_id: m.id,
+              mitglied_name: mitgliedName,
+              haesgruppe_id: gruppeId,
+              haesgruppe_name: gruppeName,
+              von_datum: jetzt,
+              bis_datum: '',
+            });
+          } catch (e) {
+            console.error('Historie (hinzufügen):', e);
+          }
+        })()
+      );
+    }
+
+    if (toRemove.includes(m.id)) {
+      historieTasks.push(
+        (async () => {
+          try {
+            const offen = await base44.entities.SpartenleiterHistorie.filter({
+              mitglied_id: m.id, haesgruppe_id: gruppeId, bis_datum: '',
+            });
+            await Promise.all((offen || []).map(h =>
+              base44.entities.SpartenleiterHistorie.update(h.id, { bis_datum: jetzt })
+            ));
+          } catch (e) {
+            console.error('Historie (entfernen):', e);
+          }
+        })()
+      );
+    }
+  }
+
+  await Promise.all(historieTasks);
 
   return {
     promoted: roleChanges.filter(r => r.neueRolle === 'spartenleiter').map(r => r.mitglied.id),

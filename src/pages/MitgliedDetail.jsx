@@ -105,6 +105,17 @@ export default function MitgliedDetail() {
   const { user } = useAuth();
   const isNew = id === 'neu';
   const admin = isAdmin(user);
+
+  // Spartenleiter-Historie des Mitglieds laden (nur wenn er je Leiter war/ist)
+  const zeigeSplatSektion = mitglied?.app_rolle === 'spartenleiter' || linkedUser?.role === 'spartenleiter'
+    || (mitglied?.spartenleiter_haesgruppen_ids?.length || 0) > 0 || (mitglied?.spartenleiter_haesgruppe_id || '') !== '';
+  useEffect(() => {
+    if (!mitglied?.id || !zeigeSplatSektion || splatHistorieGeladen) return;
+    base44.entities.SpartenleiterHistorie.filter({ mitglied_id: mitglied.id })
+      .then(h => setSplatHistorie((h || []).sort((a, b) => (b.von_datum || '').localeCompare(a.von_datum || ''))))
+      .catch(() => {})
+      .finally(() => setSplatHistorieGeladen(true));
+  }, [mitglied?.id, zeigeSplatSektion, splatHistorieGeladen]);
   const kannBank = kannBankdatenSehn(user);
 
   const [mitglied, setMitglied] = useState({
@@ -121,6 +132,8 @@ export default function MitgliedDetail() {
   const [ehrungen, setEhrungen] = useState([]);
   const [linkedUser, setLinkedUser] = useState(null);
   const [haesgruppen, setHaesgruppen] = useState([]);
+  const [splatHistorie, setSplatHistorie] = useState([]);
+  const [splatHistorieGeladen, setSplatHistorieGeladen] = useState(false);
   const [roleSaving, setRoleSaving] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [inviteSent, setInviteSent] = useState(false);
@@ -501,6 +514,14 @@ export default function MitgliedDetail() {
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE_COLORS[mitglied.mitgliedsstatus] || 'bg-secondary text-muted-foreground'}`}>
                 {mitglied.mitgliedsstatus}
               </span>
+              {(mitglied.spartenleiter_haesgruppen_ids || (mitglied.spartenleiter_haesgruppe_id ? [mitglied.spartenleiter_haesgruppe_id] : [])).map(gid => {
+                const g = haesgruppen.find(g => g.id === gid);
+                return g ? (
+                  <span key={gid} className="text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/40 font-semibold flex items-center gap-1">
+                    <Crown size={10} /> Spartenleiter · {g.name}
+                  </span>
+                ) : null;
+              })}
               {(mitglied.haesgruppen_ids || (mitglied.haesgruppe_id ? [mitglied.haesgruppe_id] : [])).map(gid => {
                 const g = haesgruppen.find(g => g.id === gid);
                 return g ? <span key={gid} className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground flex items-center gap-1"><MapPin size={10} /> {g.name}</span> : null;
@@ -827,7 +848,7 @@ export default function MitgliedDetail() {
             })}
           </div>
 
-          {(mitglied.app_rolle === 'spartenleiter' || linkedUser?.role === 'spartenleiter') && (
+          {(zeigeSplatSektion || linkedUser?.role === 'spartenleiter') && (
             <div className="mb-3">
               <label className="text-xs text-muted-foreground font-medium block mb-1">Zuständige Gruppen (Spartenleiter)</label>
               <div className="space-y-2">
@@ -886,6 +907,30 @@ export default function MitgliedDetail() {
                     .map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                 </select>
               </div>
+
+              {/* Spartenleiter-Historie (Amtszeiten) */}
+              {splatHistorie.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-border">
+                  <label className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Spartenleiter-Historie</label>
+                  <div className="space-y-1 mt-1.5">
+                    {splatHistorie.map(h => {
+                      const aktiv = !h.bis_datum;
+                      return (
+                        <div key={h.id} className="flex items-center justify-between gap-2 text-xs">
+                          <span className={aktiv ? 'text-primary font-semibold' : 'text-muted-foreground'}>
+                            {h.haesgruppe_name || 'Gruppe'}
+                          </span>
+                          <span className="text-muted-foreground tabular-nums">
+                            {h.von_datum ? new Date(h.von_datum).toLocaleDateString('de-DE', { month: '2-digit', year: 'numeric' }) : '–'}
+                            {' – '}
+                            {aktiv ? 'heute' : (h.bis_datum ? new Date(h.bis_datum).toLocaleDateString('de-DE', { month: '2-digit', year: 'numeric' }) : '?')}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

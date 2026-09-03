@@ -89,6 +89,34 @@ export default function SpartenDashboard() {
       );
       setMitglieder(gruppenMitglieder);
 
+      // Spartenleiter-Historie (Amtszeiten) laden
+      const hist = await base44.entities.SpartenleiterHistorie.filter({ haesgruppe_id: id }) || [];
+
+      // Self-Healing: Aktuelle Verantwortliche ohne offene Amtszeit nachtragen
+      // (dokumentiert den Bestand, falls die Zuweisung vor Einführung der Historie erfolgte)
+      if (isAdmin(user)) {
+        const aktuelleV = (g.verantwortliche_ids || []).filter(vId => allMembers.some(m => m.id === vId));
+        const fehlende = aktuelleV.filter(vId => !hist.some(h => h.mitglied_id === vId && !h.bis_datum));
+        if (fehlende.length > 0) {
+          const heute = new Date().toISOString();
+          await Promise.all(fehlende.map(vId => {
+            const m = allMembers.find(x => x.id === vId);
+            return base44.entities.SpartenleiterHistorie.create({
+              mitglied_id: vId,
+              mitglied_name: [m.vorname, m.nachname].filter(Boolean).join(' '),
+              haesgruppe_id: id,
+              haesgruppe_name: g.name || '',
+              von_datum: heute,
+              bis_datum: '',
+            }).catch(() => {});
+          }));
+          const erg = await base44.entities.SpartenleiterHistorie.filter({ haesgruppe_id: id });
+          hist.push(...(erg || []).filter(h2 => !hist.some(h3 => h3.id === h2.id)));
+        }
+      }
+
+      setSplatHistorie(hist.sort((a, b) => (b.von_datum || '').localeCompare(a.von_datum || '')));
+
       // Fetch appointments and expenses
       const t = await base44.entities.SpartenTermin.filter({ haesgruppe_id: id });
       setTermine(t || []);
@@ -547,6 +575,48 @@ export default function SpartenDashboard() {
                     <p className="text-white mt-1 leading-relaxed">{gruppe.beschreibung || 'Keine Beschreibung hinterlegt.'}</p>
                   </div>
                 </div>
+
+                {/* Aktuelle Verantwortliche */}
+                <div className="pt-4 border-t border-border">
+                  <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-2">Verantwortliche (Spartenleiter)</span>
+                  {alleMitglieder.filter(m => gruppe.verantwortliche_ids?.includes(m.id)).length === 0 ? (
+                    <p className="text-sm text-muted-foreground italic">Keine Verantwortlichen zugewiesen.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {alleMitglieder.filter(m => gruppe.verantwortliche_ids?.includes(m.id)).map(leader => (
+                        <Link key={leader.id} to={`/mitglieder/${leader.id}`}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/15 border border-primary/40 text-primary text-xs font-semibold hover:bg-primary/25 transition-colors">
+                          <UserCheck size={12} /> {leader.vorname} {leader.nachname}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Spartenleiter-Historie */}
+                {splatHistorie.length > 0 && (
+                  <div className="pt-4 border-t border-border">
+                    <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-2">Spartenleiter-Historie</span>
+                    <div className="space-y-1.5">
+                      {splatHistorie.map(h => {
+                        const aktiv = !h.bis_datum;
+                        return (
+                          <div key={h.id} className="flex items-center justify-between gap-2 text-xs">
+                            <span className={aktiv ? 'text-white font-semibold' : 'text-muted-foreground'}>
+                              {aktiv && <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5" />}
+                              {h.mitglied_name || 'Unbekannt'}
+                            </span>
+                            <span className="text-muted-foreground tabular-nums">
+                              {h.von_datum ? new Date(h.von_datum).toLocaleDateString('de-DE', { month: '2-digit', year: 'numeric' }) : '–'}
+                              {' – '}
+                              {aktiv ? 'heute' : (h.bis_datum ? new Date(h.bis_datum).toLocaleDateString('de-DE', { month: '2-digit', year: 'numeric' }) : '?')}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {isAdmin(user) && (
                   <div className="pt-4 border-t border-border flex justify-end">
