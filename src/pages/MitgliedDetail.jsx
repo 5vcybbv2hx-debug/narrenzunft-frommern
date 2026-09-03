@@ -12,6 +12,7 @@ import {
 import { format, differenceInYears } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { isAdmin, kannBankdatenSehn, ROLLEN_LABELS, istNurMitglied, kannMitgliedProfilSehn } from '@/lib/roles';
+import { syncVerantwortliche } from '@/lib/spartenSync';
 import EhrungsStatus from '@/components/mitglied/EhrungsStatus';
 import AdresseAutocomplete from '@/components/AdresseAutocomplete';
 import AktivitaetTab from '@/components/mitglied/AktivitaetTab';
@@ -838,9 +839,21 @@ export default function MitgliedDetail() {
                         {g.name}
                         <button type="button" onClick={async () => {
                           const aktuell = mitglied.spartenleiter_haesgruppen_ids || (mitglied.spartenleiter_haesgruppe_id ? [mitglied.spartenleiter_haesgruppe_id] : []);
-                          const neu = aktuell.filter(id => id !== gid);
-                          handleFieldChange('spartenleiter_haesgruppen_ids', neu);
-                          await base44.entities.Mitglied.update(mitglied.id, { spartenleiter_haesgruppen_ids: neu });
+                          const aktuelleGruppenV = g?.verantwortliche_ids?.length ? g.verantwortliche_ids : (g?.verantwortlicher_id ? [g.verantwortlicher_id] : []);
+                          handleFieldChange('spartenleiter_haesgruppen_ids', aktuell.filter(id => id !== gid));
+                          try {
+                            // Zentraler Sync: entfernt ihn auch aus gruppe.verantwortliche_ids,
+                            // aktualisiert app_rolle und Login-Rolle (falls letzte Gruppe)
+                            await syncVerantwortliche({
+                              gruppeId: gid,
+                              alteIds: aktuelleGruppenV,
+                              neueIds: aktuelleGruppenV.filter(id => id !== mitglied.id),
+                              mitglieder: [mitglied],
+                            });
+                          } catch (e) {
+                            console.error('Spartenleiter-Gruppe entfernen:', e);
+                            setError('Gruppe konnte nicht entfernt werden.');
+                          }
                         }} className="hover:text-red-400 transition-colors ml-0.5"><X size={10} /></button>
                       </span>
                     ) : null;
@@ -851,17 +864,18 @@ export default function MitgliedDetail() {
                   if (!gruppeId) return;
                   const aktuell = mitglied.spartenleiter_haesgruppen_ids || (mitglied.spartenleiter_haesgruppe_id ? [mitglied.spartenleiter_haesgruppe_id] : []);
                   if (aktuell.includes(gruppeId)) return;
-                  const neu = [...aktuell, gruppeId];
-                  handleFieldChange('spartenleiter_haesgruppen_ids', neu);
+                  handleFieldChange('spartenleiter_haesgruppen_ids', [...aktuell, gruppeId]);
                   try {
+                    // Zentraler Sync: Gruppe + Mitglieds-Rechte + Login-Rolle
                     const gruppeData = await base44.entities.Haesgruppe.filter({ id: gruppeId });
                     const gruppe = gruppeData[0];
                     const aktuelleV = gruppe?.verantwortliche_ids?.length ? gruppe.verantwortliche_ids : (gruppe?.verantwortlicher_id ? [gruppe.verantwortlicher_id] : []);
-                    const neueV = aktuelleV.includes(mitglied.id) ? aktuelleV : [...aktuelleV, mitglied.id];
-                    await Promise.all([
-                      base44.entities.Mitglied.update(mitglied.id, { spartenleiter_haesgruppen_ids: neu }),
-                      base44.entities.Haesgruppe.update(gruppeId, { verantwortliche_ids: neueV, verantwortlicher_id: mitglied.id }),
-                    ]);
+                    await syncVerantwortliche({
+                      gruppeId,
+                      alteIds: aktuelleV,
+                      neueIds: aktuelleV.includes(mitglied.id) ? aktuelleV : [...aktuelleV, mitglied.id],
+                      mitglieder: [mitglied],
+                    });
                   } catch (e) {
                     console.error('Spartenleiter-Gruppe aktualisieren:', e);
                     setError('Gruppe konnte nicht zugewiesen werden.');

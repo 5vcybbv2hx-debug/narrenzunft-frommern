@@ -2,6 +2,7 @@ import DateSelect from '../components/ui/DateSelect';
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
+import { syncVerantwortliche } from '@/lib/spartenSync';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, isDeveloper } from '@/lib/roles';
 import {
@@ -354,47 +355,20 @@ export default function SpartenDashboard() {
     const selectedIds = Object.keys(verantwortlicheSelection).filter(k => verantwortlicheSelection[k]);
     setSavingVerantwortliche(true);
     try {
-      // 1) Haesgruppe aktualisieren
-      await base44.entities.Haesgruppe.update(id, {
-        verantwortliche_ids: selectedIds
+      // Zentraler Sync: Gruppe + Mitglied-Rechte + Login-Rollen
+      // (haesgruppe.verantwortliche_ids, spartenleiter_haesgruppen_ids,
+      //  app_rolle und verknüpfter User.role — überall konsistent)
+      const alteIds = gruppe?.verantwortliche_ids?.length
+        ? gruppe.verantwortliche_ids
+        : (gruppe?.verantwortlicher_id ? [gruppe.verantwortlicher_id] : []);
+      const result = await syncVerantwortliche({
+        gruppeId: id,
+        alteIds,
+        neueIds: selectedIds,
+        mitglieder: alleMitglieder,
       });
-
-      // 2) Diff berechnen — nur geänderte Mitglieder
-      const oldIds = gruppe?.verantwortliche_ids || [];
-      const toAdd = selectedIds.filter(sid => !oldIds.includes(sid));
-      const toRemove = oldIds.filter(oid => !selectedIds.includes(oid));
-
-      const bulkPayload = [];
-      for (const m of alleMitglieder) {
-        const isNow = selectedIds.includes(m.id);
-        const was = oldIds.includes(m.id);
-        if (isNow === was) continue;
-
-        const currentSplatIds = m.spartenleiter_haesgruppen_ids || [];
-        const updatedSplatIds = isNow
-          ? [...new Set([...currentSplatIds, id])]
-          : currentSplatIds.filter(gId => gId !== id);
-
-        // app_rolle nur ändern, wenn nötig:
-        // - Hinzugefügt: mitglied → spartenleiter
-        // - Entfernt: spartenleiter → mitglied (nur wenn nirgends mehr Spartenleiter)
-        let appRolle = m.app_rolle || 'mitglied';
-        if (isNow && m.app_rolle === 'mitglied') {
-          appRolle = 'spartenleiter';
-        } else if (!isNow && m.app_rolle === 'spartenleiter' && updatedSplatIds.length === 0) {
-          appRolle = 'mitglied';
-        }
-
-        bulkPayload.push({
-          id: m.id,
-          spartenleiter_haesgruppen_ids: updatedSplatIds,
-          app_rolle: appRolle
-        });
-      }
-
-      // 3) Alle geänderten Mitglieder in einem bulkUpdate
-      if (bulkPayload.length > 0) {
-        await base44.entities.Mitglied.bulkUpdate(bulkPayload);
+      if (result.promoted.length > 0) {
+        toast.success(`${result.promoted.length} neue Spartenleiter-Berechtigung vergeben`);
       }
 
       setShowVerantwortlicherModal(false);

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, Save, Shield, ExternalLink, Search } from 'lucide-react';
+import { syncVerantwortliche } from '@/lib/spartenSync';
 import { Link } from 'react-router-dom';
 
 const TYPEN = ['Häsgruppe', 'Tanzgruppe', 'Musikgruppe', 'Sonstige'];
@@ -137,10 +138,37 @@ export default function SparteFormModal({ gruppe, onClose, onSaved }) {
     if (!form.name) return;
     setSaving(true);
     const saveData = { ...form, verantwortlicher_id: form.verantwortliche_ids[0] || '' };
+    const alteIds = gruppe?.verantwortliche_ids?.length
+      ? gruppe.verantwortliche_ids
+      : (gruppe?.verantwortlicher_id ? [gruppe.verantwortlicher_id] : []);
     if (isNew) {
-      await base44.entities.Haesgruppe.create(saveData);
+      const created = await base44.entities.Haesgruppe.create(saveData);
+      // Auch bei neuen Gruppen: Verantwortliche sofort überall synchronisieren
+      if (created?.id) {
+        try {
+          await syncVerantwortliche({
+            gruppeId: created.id,
+            alteIds: [],
+            neueIds: form.verantwortliche_ids,
+            mitglieder,
+          });
+        } catch (e) {
+          console.error('Verantwortliche-Sync (neue Gruppe):', e);
+        }
+      }
     } else {
       await base44.entities.Haesgruppe.update(gruppe.id, saveData);
+      // Verantwortliche ↔ Spartenleiter-Rechte überall synchronisieren
+      try {
+        await syncVerantwortliche({
+          gruppeId: gruppe.id,
+          alteIds,
+          neueIds: form.verantwortliche_ids,
+          mitglieder,
+        });
+      } catch (e) {
+        console.error('Verantwortliche-Sync:', e);
+      }
     }
     setSaving(false);
     onSaved();
