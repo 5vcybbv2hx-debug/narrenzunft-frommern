@@ -21,6 +21,7 @@ export default function ProtokollTab({ termine, mitglieder }) {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editProtokoll, setEditProtokoll] = useState(null);
+  const [ausschussIds, setAusschussIds] = useState([]);
 
   useEffect(() => {
     loadData();
@@ -29,10 +30,25 @@ export default function ProtokollTab({ termine, mitglieder }) {
   const loadData = async () => {
     setLoading(true);
     try {
-      const p = await base44.entities.Protokoll.list('-datum', 100);
+      const [p, am] = await Promise.all([
+        base44.entities.Protokoll.list('-datum', 100),
+        base44.entities.AusschussMitglied.list('-created_date', 100).catch(() => []),
+      ]);
       setProtokolle(p);
+      setAusschussIds((am || []).filter(a => a.aktiv !== false).map(a => a.mitglied_id));
     } catch (e) { console.error('Error:', e); }
     setLoading(false);
+  };
+
+  // Verfasser: nur Ausschussmitglieder. Der aktuell gesetzte Wert bleibt
+  // zusätzlich wählbar, damit ältere Protokolle beim Bearbeiten nicht
+  // 'leer' erscheinen, falls der Verfasser ausgetreten ist.
+  // (Lazy Funktion: form wird erst weiter unten deklariert.)
+  const verfasserOptions = () => {
+    const imAusschuss = mitglieder.filter(m => ausschussIds.includes(m.id));
+    if (!form.autor_mitglied_id || imAusschuss.some(m => m.id === form.autor_mitglied_id)) return imAusschuss;
+    const aktueller = mitglieder.find(m => m.id === form.autor_mitglied_id);
+    return aktueller ? [...imAusschuss, aktueller] : imAusschuss;
   };
 
   const getSitzungsName = (terminId) => {
@@ -225,7 +241,7 @@ function ProtokollModal({ protokoll, termine, mitglieder, onClose, onSaved }) {
             <select value={form.autor_mitglied_id || ''} onChange={e => set('autor_mitglied_id', e.target.value)}
               className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary">
               <option value="">–</option>
-              {mitglieder.map(m => <option key={m.id} value={m.id}>{m.vorname} {m.nachname}</option>)}
+              {verfasserOptions().map(m => <option key={m.id} value={m.id}>{m.vorname} {m.nachname}</option>)}
             </select>
           </div>
 
