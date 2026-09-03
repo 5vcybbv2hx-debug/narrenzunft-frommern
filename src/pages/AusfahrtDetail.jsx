@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { isAdmin } from '@/lib/roles';
+import { isAdmin, kannAusschussSehn } from '@/lib/roles';
 import { Bus, MapPin, Clock, Calendar, Users, ChevronRight, ArrowLeft, UserPlus, CheckCircle2, Download, X, Pencil, Trash2, Ban, AlertTriangle, QrCode, ScanLine, Search } from 'lucide-react';
 import AusfahrtEditModal from '@/components/ausfahrt/AusfahrtEditModal';
 import { format, parseISO, differenceInDays } from 'date-fns';
@@ -58,9 +58,9 @@ export default function AusfahrtDetail() {
         currentMitgliedData = mitgliedRes[0] || null;
       }
 
-      // Load all mitglieder only for admins (needed for check-in, names, etc.)
+      // Load all mitglieder for Ausschuss/Vorstand (needed for check-in, names, etc.)
       let mitgliederRes = [];
-      if (isAdmin(user)) {
+      if (kannAusschussSehn(user)) {
         mitgliederRes = await base44.entities.Mitglied.list('-nachname', 500);
       } else if (currentMitgliedData) {
         // For non-admins: only load self + family members
@@ -360,6 +360,37 @@ export default function AusfahrtDetail() {
     } catch (err) {
       console.error('Error during Begleitperson check-in:', err);
       toast.error('Check-in fehlgeschlagen.');
+    }
+  };
+
+  // Person jederzeit aus der Liste entfernen (z. B. bei anderweitiger Abmeldung)
+  // Nur für Vorstand/Ausschuss – bewusst OHNE die 3-Tage-Frist.
+  const handleRemoveRegistration = async (entry) => {
+    const name = entry.name || 'Diese Person';
+    if (!confirm(`${name} wirklich von dieser Ausfahrt entfernen?\n\nDie Abmeldung wird dokumentiert.`)) return;
+    try {
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
+      if (entry.isBegleitperson) {
+        // Einzelne Begleitperson aus dem Eltern-Datensatz entfernen
+        const parent = anmeldungen.find(a => a.id === entry.parentId);
+        if (!parent || !Array.isArray(parent.begleitpersonen)) return;
+        const updatedBp = parent.begleitpersonen.filter((_, i) => i !== entry.begleitIndex);
+        await base44.entities.AusfahrtAnmeldung.update(parent.id, {
+          begleitpersonen: updatedBp,
+          anzahl_begleitpersonen: updatedBp.length,
+        });
+      } else {
+        // Gesamte Anmeldung (Mitglied/Extern inkl. Begleitungen) auf 'Abgemeldet' setzen
+        await base44.entities.AusfahrtAnmeldung.update(entry.parentId, {
+          status: 'Abgemeldet',
+          abgemeldet_am: todayStr,
+        });
+      }
+      toast.success(`${name} entfernt`);
+      fetchData();
+    } catch (err) {
+      console.error('Error removing registration:', err);
+      toast.error('Entfernen fehlgeschlagen.');
     }
   };
 
@@ -886,8 +917,8 @@ export default function AusfahrtDetail() {
           </div>
         </div>
 
-        {/* Admin section */}
-        {isAdmin(user) && (
+        {/* Mitgliederverwaltung: Vorstand & Ausschuss */}
+        {kannAusschussSehn(user) && (
           <div className="bg-card border border-border rounded-xl p-6 mt-8">
             <div className="flex flex-wrap items-center justify-between border-b border-border pb-4 mb-6 gap-4">
               <div>
@@ -1075,26 +1106,35 @@ export default function AusfahrtDetail() {
                             )}
                           </td>
                           <td className="py-3.5 px-4 text-right">
-                            {entry.status === 'Eingecheckt' ? (
+                            <div className="flex items-center justify-end gap-2">
+                              {entry.status === 'Eingecheckt' ? (
+                                <button
+                                  onClick={() => entry.isBegleitperson
+                                    ? handleBegleitpersonCheckIn(entry.parentId, entry.begleitIndex)
+                                    : null}
+                                  disabled={!entry.isBegleitperson}
+                                  className={`${entry.isBegleitperson ? 'bg-transparent hover:bg-secondary text-yellow-500 border border-yellow-500/40' : 'bg-secondary text-muted-foreground border border-border cursor-not-allowed'} font-semibold px-3 py-1.5 rounded-lg text-xs transition-colors`}
+                                >
+                                  {entry.isBegleitperson ? 'Auschecken' : '✓ Eingecheckt'}
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => entry.isBegleitperson
+                                    ? handleBegleitpersonCheckIn(entry.parentId, entry.begleitIndex)
+                                    : handleCheckIn({ id: entry.parentId })}
+                                  className="bg-primary hover:bg-red-700 text-white font-semibold px-3 py-1.5 rounded-lg text-xs transition-colors"
+                                >
+                                  Einchecken
+                                </button>
+                              )}
                               <button
-                                onClick={() => entry.isBegleitperson
-                                  ? handleBegleitpersonCheckIn(entry.parentId, entry.begleitIndex)
-                                  : null}
-                                disabled={!entry.isBegleitperson}
-                                className={`${entry.isBegleitperson ? 'bg-transparent hover:bg-secondary text-yellow-500 border border-yellow-500/40' : 'bg-secondary text-muted-foreground border border-border cursor-not-allowed'} font-semibold px-3 py-1.5 rounded-lg text-xs transition-colors`}
+                                onClick={() => handleRemoveRegistration(entry)}
+                                title="Person entfernen (z. B. bei anderweitiger Abmeldung)"
+                                className="bg-transparent hover:bg-red-500/10 text-red-500/70 hover:text-red-500 border border-red-500/30 font-semibold p-1.5 rounded-lg text-xs transition-colors"
                               >
-                                {entry.isBegleitperson ? 'Auschecken' : '✓ Eingecheckt'}
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
-                            ) : (
-                              <button
-                                onClick={() => entry.isBegleitperson
-                                  ? handleBegleitpersonCheckIn(entry.parentId, entry.begleitIndex)
-                                  : handleCheckIn({ id: entry.parentId })}
-                                className="bg-primary hover:bg-red-700 text-white font-semibold px-3 py-1.5 rounded-lg text-xs transition-colors"
-                              >
-                                Einchecken
-                              </button>
-                            )}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -1121,9 +1161,18 @@ export default function AusfahrtDetail() {
                       {entry.isFremd ? <span className="text-xs text-yellow-500">Extern</span> : entry.isBegleitperson ? <span className="text-xs text-purple-400">Begleitung</span> : <span className="text-xs text-blue-400">Mitglied</span>}
                       <span className="text-xs text-muted-foreground">{entry.transport === 'Bus' ? '🚌' : '🚗'}</span>
                     </div>
-                    {entry.status !== 'Eingecheckt' && (
-                      <button onClick={() => entry.isBegleitperson ? handleBegleitpersonCheckIn(entry.parentId, entry.begleitIndex) : handleCheckIn({ id: entry.parentId })} className="bg-primary text-white font-semibold px-3 py-1.5 rounded-lg text-xs">Einchecken</button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {entry.status !== 'Eingecheckt' && (
+                        <button onClick={() => entry.isBegleitperson ? handleBegleitpersonCheckIn(entry.parentId, entry.begleitIndex) : handleCheckIn({ id: entry.parentId })} className="bg-primary text-white font-semibold px-3 py-1.5 rounded-lg text-xs">Einchecken</button>
+                      )}
+                      <button
+                        onClick={() => handleRemoveRegistration(entry)}
+                        title="Person entfernen"
+                        className="border border-red-500/30 hover:bg-red-500/10 text-red-500/70 hover:text-red-500 p-1.5 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
