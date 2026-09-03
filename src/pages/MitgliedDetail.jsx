@@ -106,16 +106,6 @@ export default function MitgliedDetail() {
   const isNew = id === 'neu';
   const admin = isAdmin(user);
 
-  // Spartenleiter-Historie des Mitglieds laden (nur wenn er je Leiter war/ist)
-  const zeigeSplatSektion = mitglied?.app_rolle === 'spartenleiter' || linkedUser?.role === 'spartenleiter'
-    || (mitglied?.spartenleiter_haesgruppen_ids?.length || 0) > 0 || (mitglied?.spartenleiter_haesgruppe_id || '') !== '';
-  useEffect(() => {
-    if (!mitglied?.id || !zeigeSplatSektion || splatHistorieGeladen) return;
-    base44.entities.SpartenleiterHistorie.filter({ mitglied_id: mitglied.id })
-      .then(h => setSplatHistorie((h || []).sort((a, b) => (b.von_datum || '').localeCompare(a.von_datum || ''))))
-      .catch(() => {})
-      .finally(() => setSplatHistorieGeladen(true));
-  }, [mitglied?.id, zeigeSplatSektion, splatHistorieGeladen]);
   const kannBank = kannBankdatenSehn(user);
 
   const [mitglied, setMitglied] = useState({
@@ -134,6 +124,18 @@ export default function MitgliedDetail() {
   const [haesgruppen, setHaesgruppen] = useState([]);
   const [splatHistorie, setSplatHistorie] = useState([]);
   const [splatHistorieGeladen, setSplatHistorieGeladen] = useState(false);
+
+  // Spartenleiter-Historie des Mitglieds laden (nur wenn er je Leiter war/ist)
+  const zeigeSplatSektion = mitglied?.app_rolle === 'spartenleiter' || linkedUser?.role === 'spartenleiter'
+    || (mitglied?.spartenleiter_haesgruppen_ids?.length || 0) > 0 || (mitglied?.spartenleiter_haesgruppe_id || '') !== '';
+  useEffect(() => {
+    if (!mitglied?.id || !zeigeSplatSektion || splatHistorieGeladen) return;
+    base44.entities.SpartenleiterHistorie.filter({ mitglied_id: mitglied.id })
+      .then(h => setSplatHistorie((h || []).sort((a, b) => (b.von_datum || '').localeCompare(a.von_datum || ''))))
+      .catch(() => {})
+      .finally(() => setSplatHistorieGeladen(true));
+  }, [mitglied?.id, zeigeSplatSektion, splatHistorieGeladen]);
+
   const [roleSaving, setRoleSaving] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [inviteSent, setInviteSent] = useState(false);
