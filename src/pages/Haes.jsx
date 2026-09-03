@@ -208,7 +208,7 @@ export default function Haes() {
           >
             Alle Gruppen
           </button>
-          {gruppen.map(g => {
+          {gruppen.filter(g => g.typ !== 'Tanzgruppe').map(g => {
             const count = haes.filter(h => h.haesgruppe_id === g.id).length;
             return (
             <div key={g.id} className="flex-shrink-0 relative group">
@@ -350,7 +350,7 @@ export default function Haes() {
                 className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
               >
                 <option value="">Keine Gruppe</option>
-                {gruppen.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                {gruppen.filter(g => g.typ !== 'Tanzgruppe').map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
               </select>
               <select
                 value={newHaes.status}

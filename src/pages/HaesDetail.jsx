@@ -25,6 +25,9 @@ export default function HaesDetail() {
 
   const [haes, setHaes] = useState(null);
   const [gruppen, setGruppen] = useState([]);
+
+  // Tanzgruppen haben nichts mit Häs zu tun – im Gruppen-Filter nicht auswählbar
+  const waehlbareGruppen = gruppen.filter(g => g.typ !== 'Tanzgruppe');
   const [mitglieder, setMitglieder] = useState([]);
   const [historien, setHistorien] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -297,7 +300,7 @@ export default function HaesDetail() {
                   – Keine Gruppe
                 </button>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {gruppen.map(g => (
+                  {waehlbareGruppen.map(g => (
                     <button
                       key={g.id}
                       type="button"
