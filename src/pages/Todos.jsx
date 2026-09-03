@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { kannAusschussSehn, isAdmin } from '@/lib/roles';
-import { CheckSquare, Plus, Lock, Circle, Clock, CheckCircle2, AlertCircle, Calendar, User as UserIcon, Search, ChevronDown, ListChecks } from 'lucide-react';
+import { CheckSquare, Plus, Circle, Clock, CheckCircle2, AlertCircle, Calendar, User as UserIcon, Search, ChevronDown, ListChecks } from 'lucide-react';
 import { format, differenceInCalendarDays } from 'date-fns';
 import { de } from 'date-fns/locale';
 import TodoForm from '@/components/todos/TodoForm';
@@ -18,7 +18,9 @@ const PRIO_FARBEN = {
 
 export default function Todos() {
   const { user } = useAuth();
-  const hatZugriff = kannAusschussSehn(user);
+  // Verwalten (anlegen/bearbeiten/löschen, alle Namen sehen): Vorstand/Ausschuss/Spartenleiter.
+  // Alle anderen sehen nur ihre eigenen Aufgaben und können deren Status ändern.
+  const kannVerwalten = kannAusschussSehn(user);
   const binAdmin = isAdmin(user);
 
   const [todos, setTodos] = useState([]);
@@ -36,7 +38,6 @@ export default function Todos() {
   const letzteStatus = useRef({});
 
   useEffect(() => {
-    if (!hatZugriff) return;
     loadData();
   }, []);
 
@@ -44,15 +45,36 @@ export default function Todos() {
     setLoading(true);
     setError(null);
     try {
-      const [myMArr, alleTodos, alleM] = await Promise.all([
+      const [myMArr, alleTodos] = await Promise.all([
         base44.entities.Mitglied.filter({ user_id: user?.id }).catch(() => []),
         base44.entities.Todo.list('-created_date', 500),
-        base44.entities.Mitglied.list('nachname', 1000).catch(() => []),
       ]);
       const myM = myMArr?.[0] || null;
       setMeinMitglied(myM);
       setTodos(alleTodos || []);
-      setMitglieder(alleM || []);
+
+      if (kannVerwalten) {
+        // Verwalter dürfen Aufgaben für alle Mitglieder anlegen -> volle Liste laden
+        const alleM = await base44.entities.Mitglied.list('nachname', 1000).catch(() => []);
+        setMitglieder(alleM || []);
+      } else {
+        // Normale Mitglieder: nur die Namen laden, die in ihren eigenen sichtbaren
+        // Aufgaben tatsächlich vorkommen (Zugewiesene + Ersteller).
+        const eigene = (alleTodos || []).filter(t =>
+          (t.verantwortliche_ids || []).includes(myM?.id) || t.ersteller_mitglied_id === myM?.id
+        );
+        const ids = [...new Set([
+          ...eigene.flatMap(t => t.verantwortliche_ids || []),
+          ...eigene.map(t => t.ersteller_mitglied_id).filter(Boolean),
+        ])];
+        if (ids.length > 0) {
+          const gefunden = (await Promise.all(ids.map(id => base44.entities.Mitglied.filter({ id }).catch(() => [])))).flat();
+          if (myM && !gefunden.find(m => m.id === myM.id)) gefunden.push(myM);
+          setMitglieder(gefunden);
+        } else if (myM) {
+          setMitglieder([myM]);
+        }
+      }
     } catch (e) {
       console.error('Todos laden:', e);
       setError('Aufgaben konnten nicht geladen werden.');
@@ -141,30 +163,36 @@ export default function Todos() {
     setEditTodo(null);
   };
 
+  // Status über die sichere Backend-Function ändern: erlaubt auch zugewiesenen
+  // Mitgliedern den Wechsel (die Todo-RLS lässt direkte Updates nur für
+  // Ersteller/Vorstand zu).
+  const setStatus = async (todo, neuerStatus) => {
+    try {
+      const res = await base44.functions.invoke('updateTodoStatusSicher', {
+        todo_id: todo.id, status: neuerStatus,
+      });
+      if (res?.erfolg === false) throw new Error(res?.fehler || 'Status konnte nicht geändert werden.');
+      setTodos(prev => prev.map(t => t.id === todo.id ? { ...t, status: neuerStatus } : t));
+    } catch (e) {
+      console.error('Status wechseln:', e);
+      setError('Status konnte nicht geändert werden: ' + (e?.message || 'unbekannter Fehler'));
+    }
+  };
+
   // Smart-Checkbox: haken = erledigt, aufheben = zurück zum letzten Status
   const handleErledigtToggle = async (todo) => {
     const neuerStatus = todo.status === 'Erledigt'
       ? (letzteStatus.current[todo.id] || 'Offen')
       : 'Erledigt';
     if (todo.status !== 'Erledigt') letzteStatus.current[todo.id] = todo.status;
-    try {
-      const updated = await base44.entities.Todo.update(todo.id, { status: neuerStatus });
-      setTodos(prev => prev.map(t => t.id === updated.id ? updated : t));
-    } catch (e) {
-      console.error('Status wechseln:', e);
-    }
+    await setStatus(todo, neuerStatus);
   };
 
   // Status-Chip: wechselt zwischen Offen und In Bearbeitung
   const handleStatusCycle = async (todo) => {
     if (todo.status === 'Erledigt') return;
     const neuerStatus = todo.status === 'Offen' ? 'In Bearbeitung' : 'Offen';
-    try {
-      const updated = await base44.entities.Todo.update(todo.id, { status: neuerStatus });
-      setTodos(prev => prev.map(t => t.id === updated.id ? updated : t));
-    } catch (e) {
-      console.error('Status wechseln:', e);
-    }
+    await setStatus(todo, neuerStatus);
   };
 
   const getMitgliedName = (id) => {
@@ -189,20 +217,10 @@ export default function Todos() {
   const kacheln = [
     { key: 'Aktiv', label: 'Aktiv', count: counts['Aktiv'], active: filter === 'Aktiv' },
     { key: 'Überfällig', label: 'Überfällig', count: counts['Überfällig'], active: filter === 'Überfällig', warn: true },
-    ...(binAdmin ? [{ key: 'Meine', label: 'Mir zugewiesen', count: counts['Meine'], active: filter === 'Meine' }] : []),
+    ...(kannVerwalten ? [{ key: 'Meine', label: 'Mir zugewiesen', count: counts['Meine'], active: filter === 'Meine' }] : []),
     { key: 'Erledigt', label: 'Erledigt', count: counts['Erledigt'], active: filter === 'Erledigt' },
     { key: 'Alle', label: 'Alle', count: counts['Alle'], active: filter === 'Alle' },
   ];
-
-  if (!hatZugriff) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
-        <Lock size={40} className="text-muted-foreground mb-3" />
-        <h2 className="text-xl font-bold font-oswald uppercase tracking-wide text-white mb-2">Kein Zugriff</h2>
-        <p className="text-sm text-muted-foreground">Dieser Bereich ist nur für Vorstand und Ausschuss.</p>
-      </div>
-    );
-  }
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-[60vh]">
@@ -243,13 +261,15 @@ export default function Todos() {
               <p className={`text-sm font-semibold ${istErledigt ? 'line-through text-muted-foreground' : 'text-white'}`}>
                 {todo.titel}
               </p>
-              <button
-                onClick={() => { setEditTodo(todo); setShowForm(true); }}
-                title="Bearbeiten"
-                className="text-muted-foreground hover:text-primary transition-colors shrink-0 p-1"
-              >
-                <CheckSquare size={14} />
-              </button>
+              {kannVerwalten && (
+                <button
+                  onClick={() => { setEditTodo(todo); setShowForm(true); }}
+                  title="Bearbeiten"
+                  className="text-muted-foreground hover:text-primary transition-colors shrink-0 p-1"
+                >
+                  <CheckSquare size={14} />
+                </button>
+              )}
             </div>
 
             {todo.beschreibung && (
@@ -322,15 +342,17 @@ export default function Todos() {
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             {counts['Aktiv']} aktiv{counts['Überfällig'] > 0 && ` · ${counts['Überfällig']} überfällig`}
-            {binAdmin && counts['Meine'] > 0 && ` · ${counts['Meine']} dir zugewiesen`}
+            {kannVerwalten && counts['Meine'] > 0 && ` · ${counts['Meine']} dir zugewiesen`}
           </p>
         </div>
-        <button
-          onClick={() => { setEditTodo(null); setShowForm(true); }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-red-700 transition-colors"
-        >
-          <Plus size={16} /> Neue Aufgabe
-        </button>
+        {kannVerwalten && (
+          <button
+            onClick={() => { setEditTodo(null); setShowForm(true); }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-red-700 transition-colors"
+          >
+            <Plus size={16} /> Neue Aufgabe
+          </button>
+        )}
       </div>
 
       {/* Error Banner */}
@@ -342,7 +364,7 @@ export default function Todos() {
       )}
 
       {/* Statistik-Kacheln als Filter-Shortcuts */}
-      <div className={`grid grid-cols-3 gap-2 mb-4 ${binAdmin ? 'sm:grid-cols-5' : 'sm:grid-cols-4'}`}>
+      <div className={`grid grid-cols-3 gap-2 mb-4 ${kannVerwalten ? 'sm:grid-cols-5' : 'sm:grid-cols-4'}`}>
         {kacheln.map(k => (
           <button
             key={k.key}

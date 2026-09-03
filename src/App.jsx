@@ -148,10 +148,10 @@ const AuthenticatedApp = () => {
           <Guard roles={ROLLEN_FUEHRUNG} zusatz={['ausschuss']}><SitzungDetail /></Guard>
         } />
 
-        {/* ── Todos (Rollen + Zusatz-Berechtigung 'todos') ── */}
-        <Route path="/todos" element={
-          <Guard roles={ROLLEN_FUEHRUNG} zusatz={['todos']}><Todos /></Guard>
-        } />
+        {/* ── Todos: für alle angemeldeten Nutzer offen — die Seite selbst filtert
+             nach Zugewiesenen/Erstellern; Verwalten (Anlegen/Bearbeiten für alle)
+             bleibt Führung + Zusatz-Berechtigung 'todos' vorbehalten ── */}
+        <Route path="/todos" element={<Todos />} />
 
         {/* ── Nur Vorstand + Admin ── */}
         <Route path="/ehrungen" element={

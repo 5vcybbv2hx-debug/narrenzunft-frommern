@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { Calendar, Briefcase, CreditCard, Bell, ChevronRight, Bus, Check, Clock, MapPin, Music } from 'lucide-react';
+import { Calendar, Briefcase, CreditCard, Bell, ChevronRight, Bus, Check, Clock, MapPin, Music, CheckSquare, AlertCircle, Circle } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -49,6 +49,7 @@ export default function MitgliedDashboard() {
   const [meineAnmeldungen, setMeineAnmeldungen] = useState([]);
   const [meineArbeitsdienste, setMeineArbeitsdienste] = useState([]);
   const [meineBeitraege, setMeineBeitraege] = useState([]);
+  const [meineAufgaben, setMeineAufgaben] = useState([]);
   const [ungeleseneNotifs, setUngeleseneNotifs] = useState([]);
   const [veranstaltungen, setVeranstaltungen] = useState([]);
   const [arbeitsdienste, setArbeitsdienste] = useState([]);
@@ -74,12 +75,30 @@ export default function MitgliedDashboard() {
       setMyMitglied(mitglied);
 
       // Parallele Abfragen
-      const [teilnahmen, zuweisungen, beitraege, notifs] = await Promise.all([
+      const [teilnahmen, zuweisungen, beitraege, notifs, alleAufgaben] = await Promise.all([
         base44.entities.Teilnahme.filter({ mitglied_id: mitglied.id }),
         base44.entities.ArbeitsdienstZuweisung.filter({ mitglied_id: mitglied.id }),
         base44.entities.Beitrag.filter({ mitglied_id: mitglied.id }),
         base44.entities.Benachrichtigung.filter({ mitglied_id: mitglied.id }),
+        base44.entities.Todo.list('-created_date', 500).catch(() => []),
       ]);
+
+      // Eigene offene Aufgaben: überfällig zuerst, dann Priorität, dann Fälligkeit
+      const heuteStr = today;
+      const prioRang = { 'Dringend': 0, 'Hoch': 1, 'Mittel': 2, 'Niedrig': 3 };
+      const meineOffenenAufgaben = (alleAufgaben || [])
+        .filter(t => (t.verantwortliche_ids || []).includes(mitglied.id) && t.status !== 'Erledigt')
+        .sort((a, b) => {
+          const ueA = a.faellig_am && a.faellig_am < heuteStr ? 0 : 1;
+          const ueB = b.faellig_am && b.faellig_am < heuteStr ? 0 : 1;
+          if (ueA !== ueB) return ueA - ueB;
+          const pA = prioRang[a.prioritaet] ?? 3;
+          const pB = prioRang[b.prioritaet] ?? 3;
+          if (pA !== pB) return pA - pB;
+          return (a.faellig_am || '9999-12-31').localeCompare(b.faellig_am || '9999-12-31');
+        })
+        .slice(0, 5);
+      setMeineAufgaben(meineOffenenAufgaben);
 
       // Veranstaltungen nur für angemeldete IDs laden
       const veranstaltungIds = [...new Set(teilnahmen.map(t => t.veranstaltung_id).filter(Boolean))];
@@ -196,6 +215,46 @@ export default function MitgliedDashboard() {
             {ungeleseneNotifs.length > 3 && (
               <p className="text-xs text-muted-foreground">+ {ungeleseneNotifs.length - 3} weitere</p>
             )}
+          </div>
+        </Card>
+      )}
+
+      {/* Meine Aufgaben */}
+      {meineAufgaben.length > 0 && (
+        <Card title={`Meine Aufgaben (${meineAufgaben.length})`} icon={CheckSquare} linkTo="/todos">
+          <div className="space-y-2">
+            {meineAufgaben.map(t => {
+              const ueberfaellig = t.faellig_am && t.faellig_am < today;
+              return (
+                <Link
+                  key={t.id}
+                  to="/todos"
+                  className={`flex items-start gap-3 p-2.5 -mx-2.5 rounded-lg transition-colors hover:bg-secondary/60 ${
+                    ueberfaellig ? 'border border-red-700/30 bg-red-900/10' : ''
+                  }`}
+                >
+                  {ueberfaellig
+                    ? <AlertCircle size={16} className="text-red-400 mt-0.5 shrink-0" />
+                    : <Circle size={16} className="text-yellow-400/80 mt-0.5 shrink-0" />}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{t.titel}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {t.prioritaet && (t.prioritaet === 'Dringend' || t.prioritaet === 'Hoch') && (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                          t.prioritaet === 'Dringend' ? 'bg-red-900/20 text-red-400' : 'bg-primary/15 text-primary'
+                        }`}>{t.prioritaet}</span>
+                      )}
+                      {t.faellig_am && (
+                        <span className={`text-xs flex items-center gap-1 ${ueberfaellig ? 'text-red-400' : 'text-muted-foreground'}`}>
+                          <Clock size={10} /> {format(new Date(t.faellig_am), 'dd.MM.yyyy', { locale: de })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <ChevronRight size={14} className="text-muted-foreground shrink-0 mt-1" />
+                </Link>
+              );
+            })}
           </div>
         </Card>
       )}
