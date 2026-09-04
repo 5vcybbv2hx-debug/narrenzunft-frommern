@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Plus, Trash2, Save, History, User, Loader2, ClipboardList } from 'lucide-react';
 import MobileSelect from '@/components/MobileSelect';
+import MitgliedLiveSuche from '@/components/MitgliedLiveSuche';
+import { useAuth } from '@/lib/AuthContext';
 
 /**
  * PlanungTab – Bereiche & Listen einer Veranstaltung (Einkauf, Getränke, ...).
@@ -40,8 +42,19 @@ export default function PlanungTab({ veranstaltung, isAdmin }) {
   const [dirty, setDirty] = useState({});
   const [neuBereich, setNeuBereich] = useState('');
   const [busy, setBusy] = useState(false);
+  const [meinMitgliedId, setMeinMitgliedId] = useState(null);
+  const { user } = useAuth();
 
-  const canEdit = isAdmin;
+  // Eigenes Mitgliedsprofil auflösen (für Bereichsverantwortliche)
+  useEffect(() => {
+    if (!user?.email || !mitglieder.length) return;
+    const m = mitglieder.find(x => (x.email || '').toLowerCase() === (user.email || '').toLowerCase());
+    setMeinMitgliedId(m?.id || null);
+  }, [mitglieder, user?.email]);
+
+  // Berechtigungen: Admin darf alles; Bereichsverantwortliche ihren eigenen Bereich
+  const istMeinBereich = (b) => !!meinMitgliedId && b.verantwortlicher_id === meinMitgliedId;
+  const kannBereichBearbeiten = (b) => isAdmin || istMeinBereich(b);
 
   useEffect(() => { loadData(); }, [veranstaltung?.id]);
 
@@ -183,14 +196,11 @@ export default function PlanungTab({ veranstaltung, isAdmin }) {
     } catch (e) { console.error('Bereich löschen:', e); }
   };
 
-  const mitgliedOptions = mitglieder
-    .filter(m => m.status === 'Aktiv' || !m.status)
-    .map(m => ({ label: `${m.vorname || ''} ${m.nachname || ''}`.trim(), value: m.id }));
+  const aktiveMitglieder = mitglieder.filter(m => m.status === 'Aktiv' || !m.status);
 
-  const setVerantwortlicher = (bereich, mitgliedId) => {
-    const m = mitglieder.find(x => x.id === mitgliedId);
+  const setVerantwortlicher = (bereich, m) => {
     patchBereich(bereich.id, {
-      verantwortlicher_id: mitgliedId || undefined,
+      verantwortlicher_id: m?.id || undefined,
       verantwortlicher_name: m ? `${m.vorname || ''} ${m.nachname || ''}`.trim() : '',
     });
   };
@@ -241,7 +251,7 @@ export default function PlanungTab({ veranstaltung, isAdmin }) {
         <div className="text-center py-8 border border-dashed border-border rounded-xl">
           <ClipboardList size={28} className="mx-auto text-muted-foreground mb-2" />
           <p className="text-sm text-muted-foreground mb-3">Noch keine Bereiche – z.B. "Einkauf" oder "Getränke" anlegen</p>
-          {canEdit && VORSCHLAEGE.slice(0, 3).map(v => (
+          {isAdmin && VORSCHLAEGE.slice(0, 3).map(v => (
             <button key={v} onClick={() => addBereich(v)}
               className="mx-1 px-3 py-1.5 rounded-full bg-secondary border border-border text-xs text-white hover:bg-primary hover:border-primary transition-colors">
               + {v}
@@ -260,31 +270,34 @@ export default function PlanungTab({ veranstaltung, isAdmin }) {
               <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_FARBEN[bereich.status] || STATUS_FARBEN['Offen']}`}>
                 {bereich.status}
               </span>
-              {canEdit && (
+              {isAdmin && (
                 <button onClick={() => deleteBereich(bereich.id)} className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-500/10" title="Bereich löschen">
                   <Trash2 size={14} />
                 </button>
               )}
             </div>
 
-            {/* Verantwortlicher & Status-Wechsel */}
+            {/* Verantwortlicher (Live-Suche) & Status-Wechsel */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
               <div className="flex items-center gap-2">
                 <User size={14} className="text-muted-foreground shrink-0" />
-                {canEdit ? (
-                  <MobileSelect
-                    value={bereich.verantwortlicher_id || ''}
-                    onChange={(v) => setVerantwortlicher(bereich, v)}
-                    options={[{ label: '– Niemand –', value: '' }, ...mitgliedOptions]}
-                    placeholder="Verantwortlicher wählen"
-                    label="Verantwortlicher"
-                    className="text-sm"
-                  />
+                {isAdmin ? (
+                  <div className="flex-1 min-w-0">
+                    <MitgliedLiveSuche
+                      mitglieder={aktiveMitglieder}
+                      value={bereich.verantwortlicher_name || ''}
+                      onSelect={(m) => setVerantwortlicher(bereich, m)}
+                      onClear={() => setVerantwortlicher(bereich, null)}
+                    />
+                  </div>
                 ) : (
-                  <span className="text-sm text-white">{bereich.verantwortlicher_name || '– Niemand –'}</span>
+                  <span className="text-sm text-white">
+                    {bereich.verantwortlicher_name || '– Niemand –'}
+                    {istMeinBereich(bereich) && <span className="text-primary text-xs ml-1.5">(du)</span>}
+                  </span>
                 )}
               </div>
-              {canEdit && (
+              {kannBereichBearbeiten(bereich) && (
                 <MobileSelect
                   value={bereich.status}
                   onChange={(v) => patchBereich(bereich.id, { status: v })}
@@ -296,7 +309,7 @@ export default function PlanungTab({ veranstaltung, isAdmin }) {
             </div>
 
             {/* Planungs-Notizen */}
-            {canEdit ? (
+            {kannBereichBearbeiten(bereich) ? (
               <textarea
                 value={bereich.notizen || ''}
                 onChange={e => patchBereich(bereich.id, { notizen: e.target.value })}
@@ -313,7 +326,7 @@ export default function PlanungTab({ veranstaltung, isAdmin }) {
               {bereich.liste.map((p, idx) => (
                 <div key={idx} className="rounded-lg border border-border bg-secondary/40 p-2">
                   <div className="flex items-center gap-1.5">
-                    {canEdit ? (
+                    {kannBereichBearbeiten(bereich) ? (
                       <>
                         <input value={p.artikel} onChange={e => patchPosition(bereich.id, idx, { artikel: e.target.value })}
                           placeholder="Artikel" className={`${inputCls} flex-[2_1_0%] min-w-0`} />
@@ -344,7 +357,7 @@ export default function PlanungTab({ veranstaltung, isAdmin }) {
             </div>
 
             {/* Aktionen */}
-            {canEdit && (
+            {kannBereichBearbeiten(bereich) && (
               <div className="flex flex-wrap items-center gap-2 mt-3">
                 <button onClick={() => addPosition(bereich.id)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary border border-border text-xs text-white hover:border-primary/50">
@@ -369,7 +382,7 @@ export default function PlanungTab({ veranstaltung, isAdmin }) {
       })}
 
       {/* Neuer Bereich */}
-      {canEdit && bereiche.length > 0 && (
+      {isAdmin && bereiche.length > 0 && (
         <div className="bg-card border border-dashed border-border rounded-xl p-4">
           <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-2">Bereich hinzufügen</p>
           <div className="flex gap-2">

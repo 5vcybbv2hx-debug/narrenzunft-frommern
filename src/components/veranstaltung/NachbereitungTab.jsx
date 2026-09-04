@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Loader2, Save, CheckCircle2, Circle } from 'lucide-react';
+import { useAuth } from '@/lib/AuthContext';
 import { format, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -20,9 +21,21 @@ export default function NachbereitungTab({ veranstaltung, isAdmin, onVeranstaltu
   const [loading, setLoading] = useState(true);
   const [dirty, setDirty] = useState({});
   const [busy, setBusy] = useState(false);
+  const [meinMitgliedId, setMeinMitgliedId] = useState(null);
+  const { user } = useAuth();
 
-  const canEdit = isAdmin;
   const abgeschlossen = veranstaltung?.nachbereitung_status === 'Abgeschlossen';
+
+  // Eigenes Mitgliedsprofil auflösen (für Bereichsverantwortliche)
+  useEffect(() => {
+    if (!user?.email) return;
+    base44.entities.Mitglied.filter({ email: user.email })
+      .then(ms => setMeinMitgliedId(ms[0]?.id || null))
+      .catch(e => console.error('Profil laden:', e));
+  }, [user?.email]);
+
+  // Berechtigungen: Admin darf alles; Bereichsverantwortliche ihren eigenen Bereich
+  const kannBereichBearbeiten = (b) => isAdmin || (!!meinMitgliedId && b.verantwortlicher_id === meinMitgliedId);
 
   useEffect(() => { loadData(); }, [veranstaltung?.id]);
 
@@ -121,7 +134,7 @@ export default function NachbereitungTab({ veranstaltung, isAdmin, onVeranstaltu
             ? 'Erfahrungen und Zahlen sind gespeichert und fließen beim nächsten Mal automatisch in die Planung ein.'
             : 'Offene Nachbesprechungen erscheinen automatisch als TOP, sobald eine neue Ausschusssitzung geplant wird.'}
         </p>
-        {canEdit && (
+        {isAdmin && (
           <button onClick={abgeschlossen ? wiederOeffnen : abschliessen} disabled={busy}
             className={`mt-2.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-white disabled:opacity-50 ${abgeschlossen ? 'bg-secondary border border-border' : 'bg-green-600 hover:bg-green-500'}`}>
             {abgeschlossen ? 'Wieder öffnen' : 'Nachbesprechung abgeschlossen'}
@@ -158,7 +171,7 @@ export default function NachbereitungTab({ veranstaltung, isAdmin, onVeranstaltu
                   {p.artikel || '(ohne Namen)'}
                   {p.menge ? <span className="text-muted-foreground font-normal"> · geplant: {p.menge} {p.einheit || ''}</span> : null}
                 </p>
-                {canEdit ? (
+                {kannBereichBearbeiten(bereich) ? (
                   <>
                     <div className="grid grid-cols-3 gap-1.5 mb-1.5">
                       <div>
@@ -194,7 +207,7 @@ export default function NachbereitungTab({ veranstaltung, isAdmin, onVeranstaltu
           </div>
 
           {/* Bereichs-Fazit */}
-          {canEdit ? (
+          {kannBereichBearbeiten(bereich) ? (
             <textarea
               value={bereich.nachher_notizen || ''}
               onChange={e => patchBereich(bereich.id, { nachher_notizen: e.target.value })}
@@ -206,7 +219,7 @@ export default function NachbereitungTab({ veranstaltung, isAdmin, onVeranstaltu
             <p className="text-sm text-muted-foreground mt-3 whitespace-pre-wrap">💡 {bereich.nachher_notizen}</p>
           ) : null}
 
-          {canEdit && dirty[bereich.id] && (
+          {kannBereichBearbeiten(bereich) && dirty[bereich.id] && (
             <button onClick={() => saveBereich(bereich)} disabled={busy}
               className="flex items-center gap-1.5 mt-2.5 px-3.5 py-2 rounded-lg bg-primary text-white text-xs font-semibold disabled:opacity-50">
               <Save size={13} /> {busy ? 'Speichert...' : 'Nachbereitung speichern'}
