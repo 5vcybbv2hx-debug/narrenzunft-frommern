@@ -3,7 +3,8 @@
   "type": "object",
   "properties": {
     "termin_id": {
-      "type": "string"
+      "type": "string",
+      "description": "Optionale Verkn\u00fcpfung mit Sitzung (leer = unabh\u00e4ngige Abstimmung)"
     },
     "top_id": {
       "type": "string",
@@ -47,7 +48,6 @@
     }
   },
   "required": [
-    "termin_id",
     "titel"
   ],
   "rls": {
