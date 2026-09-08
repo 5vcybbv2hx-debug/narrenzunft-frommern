@@ -58,6 +58,7 @@ export default function Ausschuss() {
   const [beschluesse, setBeschluesse] = useState([]);
   const [abstimmungen, setAbstimmungen] = useState([]);
   const [mitglieder, setMitglieder] = useState([]);
+  const [ausschussMitglieder, setAusschussMitglieder] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -86,6 +87,7 @@ export default function Ausschuss() {
       setAufgaben(data.aufgaben || []);
       setBeschluesse(data.beschluesse || []);
       setMitglieder(data.mitglieder || []);
+      setAusschussMitglieder(data.ausschussMitglieder || []);
       const abs = await base44.entities.Abstimmung.list('-created_date', 200);
       setAbstimmungen(abs || []);
     } catch (e) {
@@ -209,6 +211,7 @@ export default function Ausschuss() {
           abstimmungen={abstimmungen}
           setAbstimmungen={setAbstimmungen}
           mitglieder={mitglieder}
+          ausschussMitglieder={ausschussMitglieder}
           termine={termine}
           isAdmin={isAdmin}
           onNew={() => { setEditAbstimmung(null); setShowAbstimmungModal(true); }}

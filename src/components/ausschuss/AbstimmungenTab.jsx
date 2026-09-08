@@ -19,12 +19,17 @@ const STIMME_BTN = {
 
 const inputCls = "w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors";
 
-export default function AbstimmungenTab({ abstimmungen, setAbstimmungen, mitglieder, termine, isAdmin, onEdit, onNew }) {
+export default function AbstimmungenTab({ abstimmungen, setAbstimmungen, mitglieder, ausschussMitglieder, termine, isAdmin, onEdit, onNew }) {
   const { user } = useAuth();
   const [stimmen, setStimmen] = useState([]);
   const [myMitgliedId, setMyMitgliedId] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
   const [loadingStimmen, setLoadingStimmen] = useState(true);
+
+  // Aktive Ausschussmitglied-IDs
+  const ausschussMitgliedIds = (ausschussMitglieder || [])
+    .filter(am => am.aktiv !== false)
+    .map(am => am.mitglied_id);
 
   // Aktuelles Mitglied des Users ermitteln
   useEffect(() => {
@@ -39,6 +44,9 @@ export default function AbstimmungenTab({ abstimmungen, setAbstimmungen, mitglie
     };
     findMe();
   }, [user]);
+
+  // Ist der aktuelle User Teil des Ausschusses?
+  const isAusschussMitglied = myMitgliedId && ausschussMitgliedIds.includes(myMitgliedId);
 
   // Stimmen laden
   const loadStimmen = async () => {
@@ -199,7 +207,7 @@ export default function AbstimmungenTab({ abstimmungen, setAbstimmungen, mitglie
               </div>
 
               {/* Eigene Abstimmung — simpel direkt unter dem Titel */}
-              {!abgeschlossen && myMitgliedId && (
+              {!abgeschlossen && isAusschussMitglied && (
                 <div className="px-4 pb-3 border-t border-border/50 pt-3">
                   <p className="text-xs text-muted-foreground font-medium mb-2">
                     {myStimme ? `Deine Stimme: ${myStimme}` : 'Jetzt abstimmen:'}
@@ -220,10 +228,12 @@ export default function AbstimmungenTab({ abstimmungen, setAbstimmungen, mitglie
                 </div>
               )}
 
-              {!abgeschlossen && !myMitgliedId && (
+              {!abgeschlossen && !isAusschussMitglied && (
                 <div className="px-4 pb-3 border-t border-border/50 pt-3">
                   <p className="text-xs text-muted-foreground italic">
-                    Kein Mitgliederprofil verknüpft — Abstimmung nur als Admin möglich (Details).
+                    {myMitgliedId
+                      ? 'Du bist kein aktives Ausschussmitglied — keine Abstimmungsberechtigung.'
+                      : 'Kein Mitgliederprofil verknüpft — Abstimmung nur als Admin möglich (Details).'}
                   </p>
                 </div>
               )}
@@ -231,26 +241,28 @@ export default function AbstimmungenTab({ abstimmungen, setAbstimmungen, mitglie
               {/* Erweitert: Admin — namentliche Abstimmung & Abschließen */}
               {expandedId === abs.id && (
                 <div className="px-4 pb-4 border-t border-border pt-3 space-y-3">
-                  {/* Admin: namentliche Abstimmung */}
+                  {/* Admin: namentliche Abstimmung (nur Ausschussmitglieder) */}
                   {isAdmin && (
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                        Namentliche Abstimmung (Admin)
+                        Namentliche Abstimmung — Ausschussmitglieder ({ausschussMitgliedIds.length})
                       </p>
                       <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                        {mitglieder.length === 0 && (
-                          <p className="text-xs text-muted-foreground italic">Keine Mitglieder geladen.</p>
+                        {ausschussMitgliedIds.length === 0 && (
+                          <p className="text-xs text-muted-foreground italic">Keine aktiven Ausschussmitglieder erfasst.</p>
                         )}
-                        {mitglieder.map(m => {
-                          const stimme = absStimmen.find(s => s.mitglied_id === m.id);
+                        {ausschussMitgliedIds.map(amId => {
+                          const m = mitglieder.find(x => x.id === amId);
+                          if (!m) return null;
+                          const stimme = absStimmen.find(s => s.mitglied_id === amId);
                           return (
-                            <div key={m.id} className="flex items-center gap-2">
+                            <div key={amId} className="flex items-center gap-2">
                               <span className="text-sm text-white flex-1 truncate">{m.vorname} {m.nachname}</span>
                               {!abgeschlossen ? (
                                 <div className="flex gap-1 shrink-0">
                                   {['Ja', 'Nein', 'Enthaltung'].map(s => (
                                     <button key={s}
-                                      onClick={() => handleStimmeFuerMitglied(abs.id, m.id, s)}
+                                      onClick={() => handleStimmeFuerMitglied(abs.id, amId, s)}
                                       className={`px-2 py-1 rounded-lg text-xs font-semibold border transition-all ${
                                         stimme?.stimme === s
                                           ? STIMME_FARBEN[s]
