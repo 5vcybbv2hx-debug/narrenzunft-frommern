@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, ROLLEN_LABELS } from '@/lib/roles';
-import { Shield, Search, ChevronDown, ChevronUp, Lock, Check, AlertCircle, User, Users, ClipboardList, Wallet, Crown, Package, Landmark, CheckSquare } from 'lucide-react';
+import { Shield, Search, ChevronDown, ChevronUp, Lock, Check, AlertCircle, User, Users, ClipboardList, Wallet, Crown, Package, Landmark, CheckSquare, ShoppingBag } from 'lucide-react';
 
 const ROLLEN_OPTIONEN = [
   { value: 'mitglied',        label: 'Mitglied',        desc: 'Grundzugang',          Icon: User },
@@ -16,6 +16,7 @@ const ZUSATZ_BERECHTIGUNGEN = [
   { value: 'inventar',  label: 'Inventar & Verleih', desc: 'Kann Gegenstände ausleihen und verwalten', Icon: Package },
   { value: 'ausschuss', label: 'Ausschuss-Zugang',   desc: 'Sieht Ausschussbereich & Sitzungen',       Icon: Landmark },
   { value: 'todos',     label: 'Aufgaben',           desc: 'Sieht und erstellt Aufgaben',             Icon: CheckSquare },
+  { value: 'shop',      label: 'Interner Bedarf',    desc: 'Verwaltet Artikel, Bestellrunden & Ausgabe', Icon: ShoppingBag },
 ];
 
 export default function Berechtigungen() {
