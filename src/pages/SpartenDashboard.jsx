@@ -752,7 +752,7 @@ export default function SpartenDashboard() {
                   )}
                 </div>
 
-                {isAdmin(user) && (
+                {canEdit && (
                   <div className="pt-4 border-t border-border flex justify-end">
                     <button 
                       onClick={handleOpenVerantwortlicherModal}
@@ -1148,7 +1148,7 @@ export default function SpartenDashboard() {
               <h2 className="text-2xl font-oswald uppercase tracking-wide text-white">
                 Gruppenmitglieder
               </h2>
-              {isAdmin(user) && (
+              {canEdit && (
                 <button 
                   onClick={handleOpenVerantwortlicherModal}
                   className="flex items-center gap-2 px-3 py-1.5 bg-secondary hover:bg-secondary/50 border border-border text-foreground rounded-lg text-sm font-semibold transition-colors"
