@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import InternerBedarf from '@/components/shop/InternerBedarf';
 import { base44 } from '@/api/base44Client';
 import {
   Shirt,
@@ -9,12 +10,14 @@ import {
   AlertCircle,
   ShoppingBag,
   Store,
+  ClipboardList,
 } from 'lucide-react';
 
 const ALLE_KATEGORIEN = ['Alle', 'Erwachsene', 'Garde', 'Kinder', 'Ersatzteile', 'Sonstiges'];
 const WIX_SHOP_URL = 'https://www.narrenzunft-frommern.de/category/all-products';
 
 export default function Shop() {
+  const [activeTab, setActiveTab] = useState('wix');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [wixProducts, setWixProducts] = useState([]);
@@ -81,6 +84,25 @@ export default function Shop() {
         </div>
       </div>
 
+      {/* Tab-Umschalter: Wix-Shop / Interner Bedarf */}
+      <div className="max-w-7xl mx-auto px-4 mt-4">
+        <div className="flex bg-card border border-border rounded-xl p-1">
+          <button onClick={() => setActiveTab('wix')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-oswald uppercase tracking-wide transition-colors ${activeTab === 'wix' ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground'}`}>
+            <Store className="w-4 h-4" /> Zunftshop (Wix)
+          </button>
+          <button onClick={() => setActiveTab('intern')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-oswald uppercase tracking-wide transition-colors ${activeTab === 'intern' ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground'}`}>
+            <ClipboardList className="w-4 h-4" /> Interner Bedarf
+          </button>
+        </div>
+      </div>
+
+      {activeTab === 'intern' ? (
+        <div className="max-w-7xl mx-auto px-4 mt-6">
+          <InternerBedarf />
+        </div>
+      ) : (
       <div className="max-w-7xl mx-auto px-4 mt-6">
         {error && (
           <div className="bg-destructive/10 border border-destructive/30 text-destructive p-4 rounded-xl mb-6 flex items-start justify-between">
@@ -192,6 +214,7 @@ export default function Shop() {
           </a>
         </div>
       </div>
+      )}
     </div>
   );
 }
