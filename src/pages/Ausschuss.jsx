@@ -14,6 +14,7 @@ import {
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import AusschussMitgliederTab from '@/components/ausschuss/AusschussMitgliederTab';
+import AbstimmungenTab from '@/components/ausschuss/AbstimmungenTab';
 import ProtokollTab from '@/components/ausschuss/ProtokollTab';
 import MitgliedLiveSuche from '@/components/MitgliedLiveSuche';
 import { kannAusschussSehn } from '@/lib/roles';
@@ -204,48 +205,15 @@ export default function Ausschuss() {
 
       {/* ABSTIMMUNGEN */}
       {activeTab === 'abstimmungen' && (
-        <div>
-          <div className="flex justify-end mb-4">
-            <button onClick={() => { setEditAbstimmung(null); setShowAbstimmungModal(true); }}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-red-700 transition-colors">
-              <Plus size={15} /> Abstimmung
-            </button>
-          </div>
-          <div className="space-y-2">
-            {abstimmungen.map(a => {
-              const sitzung = termine.find(t => t.id === a.termin_id);
-              return (
-                <div key={a.id} className="bg-card border border-border rounded-xl p-4 flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <p className="text-sm font-semibold text-white">{a.titel}</p>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${a.status === 'Abgeschlossen' ? 'bg-green-900/20 text-green-400 border border-green-700/30' : 'bg-yellow-900/20 text-yellow-400 border border-yellow-700/30'}`}>
-                        {a.status}
-                      </span>
-                      {a.ergebnis && (
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${a.ergebnis === 'Angenommen' ? 'bg-green-900/20 text-green-400 border border-green-700/30' : 'bg-red-900/20 text-red-400 border border-red-700/30'}`}>
-                          {a.ergebnis}
-                        </span>
-                      )}
-                    </div>
-                    {a.beschreibung && <p className="text-xs text-muted-foreground">{a.beschreibung}</p>}
-                    {sitzung && <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1"><ClipboardList size={11} /> {sitzung.titel} · {sitzung.datum}</p>}
-                  </div>
-                  <button onClick={() => { setEditAbstimmung(a); setShowAbstimmungModal(true); }}
-                    className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
-                    <FileText size={14} />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-          {abstimmungen.length === 0 && (
-            <div className="text-center py-12 bg-card border border-border rounded-xl">
-              <Vote size={32} className="text-muted-foreground/40 mx-auto mb-2" />
-              <p className="text-sm text-white">Noch keine Abstimmungen erfasst</p>
-            </div>
-          )}
-        </div>
+        <AbstimmungenTab
+          abstimmungen={abstimmungen}
+          setAbstimmungen={setAbstimmungen}
+          mitglieder={mitglieder}
+          termine={termine}
+          isAdmin={isAdmin}
+          onNew={() => { setEditAbstimmung(null); setShowAbstimmungModal(true); }}
+          onEdit={(a) => { setEditAbstimmung(a); setShowAbstimmungModal(true); }}
+        />
       )}
 
       {/* PROTOKOLLE */}
