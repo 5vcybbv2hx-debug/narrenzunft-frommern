@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import AusschussMitgliederTab from '@/components/ausschuss/AusschussMitgliederTab';
 import ProtokollTab from '@/components/ausschuss/ProtokollTab';
+import MitgliedLiveSuche from '@/components/MitgliedLiveSuche';
 import { kannAusschussSehn } from '@/lib/roles';
 
 const PRIO_FARBEN = {
@@ -478,10 +479,13 @@ function AufgabeModal({ aufgabe, mitglieder, termine, onClose, onSaved }) {
           </div>
           <div>
             <label className={labelCls}>Verantwortlich</label>
-            <select value={form.verantwortlicher_id || ''} onChange={e => set('verantwortlicher_id', e.target.value)} className={selectCls}>
-              <option value="">–</option>
-              {mitglieder.map(m => <option key={m.id} value={m.id}>{m.vorname} {m.nachname}</option>)}
-            </select>
+            <MitgliedLiveSuche
+              mitglieder={mitglieder}
+              value={(() => { const m = mitglieder.find(x => x.id === form.verantwortlicher_id); return m ? `${m.vorname} ${m.nachname}` : ''; })()}
+              onSelect={(m) => set('verantwortlicher_id', m.id)}
+              onClear={() => set('verantwortlicher_id', '')}
+              placeholder="Verantwortlichen suchen…"
+            />
           </div>
           <div>
             <label className={labelCls}>Zugehörige Sitzung</label>
