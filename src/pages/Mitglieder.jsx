@@ -6,8 +6,9 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannMitgliederlisteSehn, kannAusschussSehn } from '@/lib/roles';
-import { Search, Plus, User, ChevronRight, Archive, Download, ArrowUpDown, Shirt, FileText, FolderOpen, ChevronDown } from 'lucide-react';
+import { Search, Plus, User, ChevronRight, Archive, Download, ArrowUpDown, Shirt, FileText, FolderOpen, ChevronDown, Send } from 'lucide-react';
 import NeuerAntragModal from '@/components/mitglied/NeuerAntragModal';
+import BulkEinladenModal from '@/components/mitglied/BulkEinladenModal';
 import MitgliederStatistik from '@/components/mitglieder/MitgliederStatistik';
 import { format, differenceInYears } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -48,6 +49,7 @@ export default function Mitglieder() {
   const [zeigeArchiviert, setZeigeArchiviert] = useState(false);
   const [sortBy, setSortBy] = useState('nachname');
   const [showAntragModal, setShowAntragModal] = useState(false);
+  const [showBulkEinladen, setShowBulkEinladen] = useState(false);
   const isAdminUser = isAdmin(user);
   const kannListe = kannMitgliederlisteSehn(user);
   const kannStatistik = kannAusschussSehn(user);
@@ -224,6 +226,14 @@ export default function Mitglieder() {
         {isAdminUser && (
           <div className="flex gap-2">
             <button
+              onClick={() => setShowBulkEinladen(true)}
+              title="Mitglieder in Bulk einladen"
+              className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium hover:bg-border hover:text-foreground transition-colors"
+            >
+              <Send size={16} />
+              <span className="hidden sm:inline">Einladen</span>
+            </button>
+            <button
               onClick={handleExport}
               title="Mitgliederliste exportieren"
               className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium hover:bg-border hover:text-foreground transition-colors"
@@ -272,6 +282,12 @@ export default function Mitglieder() {
             <span className="hidden sm:inline">Anträge</span>
           </Link>
         </div>
+      )}
+
+      {showBulkEinladen && (
+        <BulkEinladenModal
+          onClose={() => setShowBulkEinladen(false)}
+        />
       )}
 
       {showAntragModal && (
