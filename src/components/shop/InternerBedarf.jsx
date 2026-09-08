@@ -5,7 +5,7 @@ import { isAdmin, kannAusschussSehn } from '@/lib/roles';
 import { toast } from 'sonner';
 import {
   ClipboardList, PenLine, Users, Plus, Pencil, Trash2, Download,
-  Lock, Unlock, CheckCircle2, Package, XCircle, Loader2, CalendarDays, ChevronDown,
+  Lock, Unlock, CheckCircle2, Package, XCircle, Loader2, CalendarDays, ChevronDown, Euro,
 } from 'lucide-react';
 import InterneBestellModal from './InterneBestellModal';
 import InternerArtikelModal from './InternerArtikelModal';
@@ -137,6 +137,16 @@ export default function InternerBedarf() {
     }
   };
 
+  const toggleBezahlt = async (b) => {
+    try {
+      await base44.entities.InterneBestellung.update(b.id, { bezahlt: !b.bezahlt });
+      laden();
+    } catch (e) {
+      console.error(e);
+      toast.error('Aktualisieren fehlgeschlagen.');
+    }
+  };
+
   const artikelToggleAktiv = async (a) => {
     try {
       await base44.entities.InternerArtikel.update(a.id, { aktiv: !a.aktiv });
@@ -181,9 +191,9 @@ export default function InternerBedarf() {
   const exportCSV = () => {
     if (!uebersichtBestellungen.length) return toast.error('Keine Bestellungen in dieser Runde.');
     const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const header = ['Mitglied', 'Empfänger', 'Artikel', 'Ausführung', 'Logo/Sparte', 'Anzahl', 'Gravur', 'Notiz', 'Status'];
+    const header = ['Mitglied', 'Empfänger', 'Artikel', 'Ausführung', 'Logo/Sparte', 'Anzahl', 'Gravur', 'Notiz', 'Ausgeteilt', 'Bezahlt'];
     const rows = uebersichtBestellungen.map((b) =>
-      [b.mitglied_name, b.fuer_name, b.artikel_name, b.variante, b.sparte_name, b.anzahl, b.gravur_name, b.notiz, b.status]
+      [b.mitglied_name, b.fuer_name, b.artikel_name, b.variante, b.sparte_name, b.anzahl, b.gravur_name, b.notiz, b.status === 'Ausgeteilt' ? 'Ja' : 'Nein', b.bezahlt ? 'Ja' : 'Nein']
         .map(esc).join(';')
     );
     const csv = [header.map(esc).join(';'), ...rows].join('\r\n');
@@ -192,6 +202,26 @@ export default function InternerBedarf() {
     const a = document.createElement('a');
     a.href = url;
     a.download = `Bestellliste_${(uebersichtRunde?.titel || 'Runde').replace(/\s+/g, '_')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Bestellliste als CSV exportiert.');
+  };
+
+  const exportRundeCSV = (runde) => {
+    const bestellungen = (alle || []).filter((b) => b.runde_id === runde.id);
+    if (!bestellungen.length) return toast.error('Keine Bestellungen in dieser Runde.');
+    const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const header = ['Mitglied', 'Empfänger', 'Artikel', 'Ausführung', 'Logo/Sparte', 'Anzahl', 'Gravur', 'Notiz', 'Ausgeteilt', 'Bezahlt'];
+    const rows = bestellungen.map((b) =>
+      [b.mitglied_name, b.fuer_name, b.artikel_name, b.variante, b.sparte_name, b.anzahl, b.gravur_name, b.notiz, b.status === 'Ausgeteilt' ? 'Ja' : 'Nein', b.bezahlt ? 'Ja' : 'Nein']
+        .map(esc).join(';')
+    );
+    const csv = [header.map(esc).join(';'), ...rows].join('\r\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Bestellliste_${runde.titel.replace(/\s+/g, '_')}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success('Bestellliste als CSV exportiert.');
@@ -315,10 +345,16 @@ export default function InternerBedarf() {
                                         {b.notiz && <span>Notiz: {b.notiz}</span>}
                                       </p>
                                     </div>
-                                    <button onClick={() => toggleAusgeteilt(b)} title={b.status === 'Ausgeteilt' ? 'Als offen markieren' : 'Als ausgeteilt markieren'}
-                                      className={`shrink-0 p-2 rounded-lg transition-colors ${b.status === 'Ausgeteilt' ? 'bg-green-500/15 text-green-400' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
-                                      <CheckCircle2 size={16} />
-                                    </button>
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      <button onClick={() => toggleBezahlt(b)} title={b.bezahlt ? 'Als nicht bezahlt markieren' : 'Als bezahlt markieren'}
+                                        className={`p-2 rounded-lg transition-colors ${b.bezahlt ? 'bg-blue-500/15 text-blue-400' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
+                                        <Euro size={16} />
+                                      </button>
+                                      <button onClick={() => toggleAusgeteilt(b)} title={b.status === 'Ausgeteilt' ? 'Als offen markieren' : 'Als ausgeteilt markieren'}
+                                        className={`p-2 rounded-lg transition-colors ${b.status === 'Ausgeteilt' ? 'bg-green-500/15 text-green-400' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
+                                        <CheckCircle2 size={16} />
+                                      </button>
+                                    </div>
                                   </div>
                                 ))}
                               </div>
@@ -422,6 +458,10 @@ export default function InternerBedarf() {
                           <Unlock size={14} />
                         </button>
                       )}
+                      <button onClick={() => exportRundeCSV(r)} title="Bestellliste als CSV exportieren"
+                        className="p-2 rounded-lg bg-secondary text-muted-foreground hover:text-primary transition-colors">
+                        <Download size={14} />
+                      </button>
                       <button onClick={() => setRundeModal(r)} title="Bearbeiten"
                         className="p-2 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors">
                         <Pencil size={14} />

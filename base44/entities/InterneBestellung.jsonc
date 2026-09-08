@@ -53,7 +53,13 @@
         "Offen",
         "Ausgeteilt"
       ],
-      "default": "Offen"
+      "default": "Offen",
+      "description": "Ausgabe-Status: Ausgeteilt = Artikel an Mitglied \u00fcbergeben"
+    },
+    "bezahlt": {
+      "type": "boolean",
+      "default": false,
+      "description": "true = Betrag f\u00fcr diese Bestellung bezahlt"
     },
     "notiz": {
       "type": "string",
