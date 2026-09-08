@@ -19,7 +19,7 @@ const Toggle = ({ label, hint, value, onChange }) => (
   </button>
 );
 
-export default function InternerArtikelModal({ artikel, onClose, onSaved }) {
+export default function InternerArtikelModal({ artikel, gruppen = [], onClose, onSaved }) {
   const [name, setName] = useState(artikel?.name || '');
   const [beschreibung, setBeschreibung] = useState(artikel?.beschreibung || '');
   const [kategorie, setKategorie] = useState(artikel?.kategorie || 'Becher');
@@ -28,8 +28,13 @@ export default function InternerArtikelModal({ artikel, onClose, onSaved }) {
   const [sparteLogo, setSparteLogo] = useState(artikel?.sparte_logo || false);
   const [preis, setPreis] = useState(artikel?.preis ?? 0);
   const [aktiv, setAktiv] = useState(artikel?.aktiv ?? true);
-  const [sortierung, setSortierung] = useState(artikel?.sortierung ?? 0);
+  const [spartenIds, setSpartenIds] = useState(
+    (artikel?.sparten || '').split(',').map((v) => v.trim()).filter(Boolean)
+  );
   const [saving, setSaving] = useState(false);
+
+  const toggleSparte = (id) =>
+    setSpartenIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
   const save = async () => {
     if (!name.trim()) return toast.error('Bitte einen Namen angeben.');
@@ -44,7 +49,7 @@ export default function InternerArtikelModal({ artikel, onClose, onSaved }) {
         sparte_logo: sparteLogo,
         preis: Number(preis) || 0,
         aktiv,
-        sortierung: Number(sortierung) || 0,
+        sparten: spartenIds.join(','),
       };
       if (artikel?.id) await base44.entities.InternerArtikel.update(artikel.id, data);
       else await base44.entities.InternerArtikel.create(data);
@@ -109,17 +114,27 @@ export default function InternerArtikelModal({ artikel, onClose, onSaved }) {
           <Toggle label="Sparten-Logo" hint="Logo der Sparte des Bestellers (z.B. Garde, Hexen)"
             value={sparteLogo} onChange={setSparteLogo} />
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-muted-foreground font-medium block mb-1.5">Preis (€, optional)</label>
-              <input type="number" min="0" step="0.5" value={preis} onChange={(e) => setPreis(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-colors" />
+          <div>
+            <label className="text-xs text-muted-foreground font-medium block mb-1.5">Preis (€, optional)</label>
+            <input type="number" min="0" step="0.5" value={preis} onChange={(e) => setPreis(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-colors" />
+          </div>
+
+          <div>
+            <label className="text-xs text-muted-foreground font-medium block mb-1.5">Für welche Sparten?</label>
+            <div className="flex flex-wrap gap-1.5">
+              {gruppen.map((g) => (
+                <button key={g.id} type="button" onClick={() => toggleSparte(g.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${spartenIds.includes(g.id) ? 'bg-primary text-white' : 'bg-secondary border border-border text-muted-foreground hover:text-foreground'}`}>
+                  {g.name}
+                </button>
+              ))}
             </div>
-            <div>
-              <label className="text-xs text-muted-foreground font-medium block mb-1.5">Sortierung</label>
-              <input type="number" value={sortierung} onChange={(e) => setSortierung(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-colors" />
-            </div>
+            <p className="text-xs text-muted-foreground mt-1.5">
+              {spartenIds.length === 0
+                ? 'Keine Sparte gewählt = allgemein für alle (unter „Allgemein“ gelistet).'
+                : 'Der Artikel erscheint in der Mitglieder-Ansicht unter den gewählten Sparten.'}
+            </p>
           </div>
 
           <Toggle label="Aktiv" hint="Inaktive Artikel sind für Mitglieder nicht bestellbar"

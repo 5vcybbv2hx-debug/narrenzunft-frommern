@@ -82,9 +82,24 @@ export default function InternerBedarf() {
   const neuesteRunde = (runden || [])[0] || null;
 
   const aktiveArtikel = useMemo(
-    () => (artikel || []).filter((a) => a.aktiv).sort((a, b) => (a.sortierung || 0) - (b.sortierung || 0)),
+    () => (artikel || [])
+      .filter((a) => a.aktiv)
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'de')),
     [artikel]
   );
+
+  // Artikel nach Sparten gruppiert (jeder sieht alles, nur gruppiert)
+  const artikelNachGruppen = useMemo(() => {
+    const spartenVon = (a) => (a.sparten || '').split(',').map((v) => v.trim()).filter(Boolean);
+    const allgemein = aktiveArtikel.filter((a) => spartenVon(a).length === 0);
+    const gruppenSortiert = [...gruppen].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'de'));
+    const sections = [{ key: '__allgemein', name: 'Allgemein', gruppe: null, artikel: allgemein }];
+    for (const g of gruppenSortiert) {
+      const list = aktiveArtikel.filter((a) => spartenVon(a).includes(g.id));
+      if (list.length > 0) sections.push({ key: g.id, name: g.name, gruppe: g, artikel: list });
+    }
+    return sections.filter((sec) => sec.artikel.length > 0);
+  }, [aktiveArtikel, gruppen]);
 
   const stornieren = async (b) => {
     if (!confirm(`Bestellung "${b.artikel_name}" wirklich stornieren?`)) return;
@@ -336,6 +351,9 @@ export default function InternerBedarf() {
                         </p>
                         <p className="text-xs text-muted-foreground truncate">
                           {a.kategorie}
+                          {(a.sparten || '').trim()
+                            ? ` · ${(a.sparten || '').split(',').map((id) => gruppen.find((g) => g.id === id.trim())?.name || '?').join(', ')}`
+                            : ' · Für alle Sparten'}
                           {a.varianten && ` · ${a.varianten}`}
                           {a.personalisierung && ' · Gravur'}
                           {a.sparte_logo && ' · Sparten-Logo'}
@@ -417,42 +435,55 @@ export default function InternerBedarf() {
         </div>
       )}
 
-      {/* ── Artikel-Auswahl (Mitglieder) ── */}
-      {aktiveArtikel.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {aktiveArtikel.map((a) => {
-            const bestellbar = !!bestellRunde && !!profil;
-            return (
-              <button key={a.id} disabled={!bestellbar} onClick={() => setBestellModal(a)}
-                className={`bg-card border border-border rounded-xl p-4 text-left transition-all ${bestellbar ? 'hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5' : 'opacity-50 cursor-not-allowed'}`}>
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary uppercase tracking-wide">{a.kategorie}</span>
-                  {a.preis > 0 && <span className="text-base font-oswald font-bold text-primary">{a.preis.toFixed(2).replace('.', ',')} €</span>}
-                </div>
-                <h3 className="font-oswald font-medium text-base text-foreground leading-tight">{a.name}</h3>
-                {a.beschreibung && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{a.beschreibung}</p>}
-                <div className="flex flex-wrap gap-1.5 mt-3">
-                  {(a.varianten || '').split(',').filter(Boolean).map((v) => (
-                    <span key={v} className="px-2 py-0.5 rounded-full bg-secondary border border-border text-xs text-muted-foreground">{v.trim()}</span>
-                  ))}
-                  {a.personalisierung && (
-                    <span className="px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 text-xs flex items-center gap-1">
-                      <PenLine size={10} /> Gravur
-                    </span>
-                  )}
-                  {a.sparte_logo && (
-                    <span className="px-2 py-0.5 rounded-full bg-secondary border border-border text-xs text-muted-foreground flex items-center gap-1">
-                      <Users size={10} /> Sparten-Logo
-                    </span>
-                  )}
-                </div>
-              </button>
-            );
-          })}
+      {/* ── Artikel-Auswahl (Mitglieder), nach Sparten gruppiert ── */}
+      {artikelNachGruppen.length > 0 && (
+        <div className="space-y-8">
+          {artikelNachGruppen.map((sec) => (
+            <div key={sec.key}>
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="font-oswald uppercase tracking-wide text-lg text-foreground">{sec.name}</h3>
+                {sec.gruppe && profil?.haesgruppe_id === sec.gruppe.id && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary text-white uppercase tracking-wide">Deine Sparte</span>
+                )}
+                <span className="flex-1 h-px bg-border" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {sec.artikel.map((a) => {
+                  const bestellbar = !!bestellRunde && !!profil;
+                  return (
+                    <button key={`${sec.key}-${a.id}`} disabled={!bestellbar} onClick={() => setBestellModal(a)}
+                      className={`bg-card border border-border rounded-xl p-4 text-left transition-all ${bestellbar ? 'hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5' : 'opacity-50 cursor-not-allowed'}`}>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary uppercase tracking-wide">{a.kategorie}</span>
+                        {a.preis > 0 && <span className="text-base font-oswald font-bold text-primary">{a.preis.toFixed(2).replace('.', ',')} €</span>}
+                      </div>
+                      <h4 className="font-oswald font-medium text-base text-foreground leading-tight">{a.name}</h4>
+                      {a.beschreibung && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{a.beschreibung}</p>}
+                      <div className="flex flex-wrap gap-1.5 mt-3">
+                        {(a.varianten || '').split(',').filter(Boolean).map((v) => (
+                          <span key={v} className="px-2 py-0.5 rounded-full bg-secondary border border-border text-xs text-muted-foreground">{v.trim()}</span>
+                        ))}
+                        {a.personalisierung && (
+                          <span className="px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 text-xs flex items-center gap-1">
+                            <PenLine size={10} /> Gravur
+                          </span>
+                        )}
+                        {a.sparte_logo && (
+                          <span className="px-2 py-0.5 rounded-full bg-secondary border border-border text-xs text-muted-foreground flex items-center gap-1">
+                            <Users size={10} /> Sparten-Logo
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
-      {aktiveArtikel.length === 0 && !loading && (
+      {artikelNachGruppen.length === 0 && !loading && (
         <div className="text-center py-16 bg-card border border-border rounded-xl">
           <Package className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
           <h3 className="font-oswald uppercase tracking-wide text-lg">Keine Artikel</h3>
@@ -517,6 +548,7 @@ export default function InternerBedarf() {
       {artikelModal && (
         <InternerArtikelModal
           artikel={artikelModal === 'new' ? null : artikelModal}
+          gruppen={gruppen}
           onClose={() => setArtikelModal(null)}
           onSaved={() => { setArtikelModal(null); laden(); }}
         />
