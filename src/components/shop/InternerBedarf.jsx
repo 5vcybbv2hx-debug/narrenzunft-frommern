@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { isAdmin, kannAusschussSehn } from '@/lib/roles';
+import { kannShopVerwalten } from '@/lib/roles';
 import { toast } from 'sonner';
 import {
   ClipboardList, PenLine, Users, Plus, Pencil, Trash2, Download,
@@ -21,8 +21,8 @@ const tageBis = (iso) => {
 
 export default function InternerBedarf() {
   const { user } = useAuth();
-  const canManage = isAdmin(user);
-  const canSeeOverview = kannAusschussSehn(user);
+  const canManage = kannShopVerwalten(user);
+  const canSeeOverview = kannShopVerwalten(user);
 
   const [loading, setLoading] = useState(true);
   const [profil, setProfil] = useState(null);

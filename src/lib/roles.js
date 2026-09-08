@@ -116,6 +116,11 @@ export function kannImportieren(user) {
   return user?.role === 'admin' || isDeveloper(user);
 }
 
+/** Internen Bedarf / Shop verwalten (nur Vorstand + Admin) */
+export function kannShopVerwalten(user) {
+  return ['vorstand', 'admin'].includes(user?.role) || isDeveloper(user);
+}
+
 /** Inventar & Verleih sehen/verwalten */
 export function kannInventarSehn(user) {
   return ['vorstand', 'stellv_vorstand', 'admin'].includes(user?.role) ||
