@@ -123,7 +123,7 @@ export default function InternerArtikelModal({ artikel, gruppen = [], onClose, o
           <div>
             <label className="text-xs text-muted-foreground font-medium block mb-1.5">Für welche Sparten?</label>
             <div className="flex flex-wrap gap-1.5">
-              {gruppen.map((g) => (
+              {gruppen.filter((g) => g.typ !== 'Tanzgruppe').map((g) => (
                 <button key={g.id} type="button" onClick={() => toggleSparte(g.id)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${spartenIds.includes(g.id) ? 'bg-primary text-white' : 'bg-secondary border border-border text-muted-foreground hover:text-foreground'}`}>
                   {g.name}
