@@ -40,11 +40,11 @@
     "sortierung": {
       "type": "number",
       "default": 0,
-      "description": "Manuelle Sortierreihenfolge"
+      "description": "Manuelle Sortierreihenfolge (ungenutzt, Sortierung erfolgt alphabetisch)"
     },
     "sparten": {
       "type": "string",
-      "description": "Komma-getrennte Haesgruppe-IDs, f\u00fcr die dieser Artikel gedacht ist (z.B. Ersatzteile nur f\u00fcr die Garde). Leer = allgemein f\u00fcr alle Sparten."
+      "description": "Komma-getrennte Haesgruppe-IDs, f\u00fcr die der Artikel gedacht ist (z.B. Ersatzteile nur f\u00fcr die Garde); leer = allgemein f\u00fcr alle Sparten"
     }
   },
   "required": [
