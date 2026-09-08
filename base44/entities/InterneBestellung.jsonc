@@ -1,0 +1,69 @@
+{
+  "name": "InterneBestellung",
+  "type": "object",
+  "properties": {
+    "runde_id": {
+      "type": "string",
+      "description": "ID der zugeh\u00f6rigen Bestellrunde"
+    },
+    "mitglied_id": {
+      "type": "string",
+      "description": "ID des bestellenden Mitglieds"
+    },
+    "mitglied_name": {
+      "type": "string",
+      "description": "Name des Bestellers (denormalisiert)"
+    },
+    "artikel_id": {
+      "type": "string",
+      "description": "ID des bestellten Artikels"
+    },
+    "artikel_name": {
+      "type": "string",
+      "description": "Name des Artikels (denormalisiert)"
+    },
+    "variante": {
+      "type": "string",
+      "description": "Gew\u00e4hlte Variante (z.B. Silber)"
+    },
+    "sparte_id": {
+      "type": "string",
+      "description": "ID der Sparte (Logo-Zuordnung)"
+    },
+    "sparte_name": {
+      "type": "string",
+      "description": "Name der Sparte (denormalisiert)"
+    },
+    "fuer_name": {
+      "type": "string",
+      "description": "Empf\u00e4nger (z.B. Familienmitglied)"
+    },
+    "gravur_name": {
+      "type": "string",
+      "description": "Laser-Name auf dem Becher; Pflicht wenn Artikel personalisierung=true"
+    },
+    "anzahl": {
+      "type": "number",
+      "default": 1,
+      "description": "Bestellte Anzahl"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Offen",
+        "Ausgeteilt"
+      ],
+      "default": "Offen"
+    },
+    "notiz": {
+      "type": "string",
+      "description": "Anmerkung zur Bestellung"
+    }
+  },
+  "required": [
+    "runde_id",
+    "mitglied_id",
+    "artikel_id",
+    "anzahl"
+  ]
+}

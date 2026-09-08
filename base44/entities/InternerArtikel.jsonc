@@ -1,0 +1,49 @@
+{
+  "name": "InternerArtikel",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Bezeichnung des Artikels"
+    },
+    "beschreibung": {
+      "type": "string",
+      "description": "Detailbeschreibung"
+    },
+    "kategorie": {
+      "type": "string",
+      "description": "Kategorie (z.B. Becher, Ersatzteile, Sonstiges)"
+    },
+    "varianten": {
+      "type": "string",
+      "description": "Komma-getrennte Varianten (z.B. 'Silber,Schwarz'); leer = keine Varianten"
+    },
+    "personalisierung": {
+      "type": "boolean",
+      "default": false,
+      "description": "true = Bestellung erfordert Angabe eines Gravur-Namens"
+    },
+    "sparte_logo": {
+      "type": "boolean",
+      "default": false,
+      "description": "true = Sparte des Bestellers wird als Logo-Zuordnung \u00fcbernommen"
+    },
+    "preis": {
+      "type": "number",
+      "default": 0,
+      "description": "Preis in Euro (0 = kein Preis anzeigen)"
+    },
+    "aktiv": {
+      "type": "boolean",
+      "default": true
+    },
+    "sortierung": {
+      "type": "number",
+      "default": 0,
+      "description": "Manuelle Sortierreihenfolge"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}
