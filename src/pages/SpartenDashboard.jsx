@@ -9,7 +9,7 @@ import {
   Calendar, Clock, MapPin, Plus, Users, Wallet, 
   Send, ChevronLeft, ChevronRight, Edit, Trash2, 
   Check, X, AlertCircle, MessageSquare, Repeat,
-  Euro, UserCheck, ArrowLeft, Save, UserPlus, Phone, MessageCircle
+  Euro, UserCheck, ArrowLeft, Save, UserPlus, Phone, MessageCircle, Search, User
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -568,14 +568,6 @@ export default function SpartenDashboard() {
     }
   };
 
-  // Filtered members list in Admin Assignment Modal
-  const filteredAllMembers = useMemo(() => {
-    if (!memberSearchTerm.trim()) return alleMitglieder;
-    const search = memberSearchTerm.toLowerCase();
-    return alleMitglieder.filter(m => 
-      `${m.vorname} ${m.nachname}`.toLowerCase().includes(search)
-    );
-  }, [alleMitglieder, memberSearchTerm]);
   if (loading) {
     return (
       <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4 sm:p-6">
@@ -1628,48 +1620,70 @@ export default function SpartenDashboard() {
             </h3>
 
             <div className="space-y-4">
+              {/* Gewählte Verantwortliche als Chips */}
               <div>
-                <input
-                  type="text"
-                  placeholder="Mitglied suchen..."
-                  value={memberSearchTerm}
-                  onChange={(e) => setMemberSearchTerm(e.target.value)}
-                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
-                />
+                <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                  Gewählte Verantwortliche ({Object.values(verantwortlicheSelection).filter(Boolean).length})
+                </span>
+                {Object.values(verantwortlicheSelection).filter(Boolean).length === 0 ? (
+                  <p className="text-sm text-muted-foreground italic">Noch niemand ausgewählt — über die Suche hinzufügen.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {Object.keys(verantwortlicheSelection).filter(mId => verantwortlicheSelection[mId]).map(mId => {
+                      const m = alleMitglieder.find(x => x.id === mId);
+                      if (!m) return null;
+                      return (
+                        <span key={mId} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/15 border border-primary/30 text-sm text-white">
+                          <UserCheck size={13} className="text-primary shrink-0" />
+                          {m.vorname} {m.nachname}
+                          <button type="button" onClick={() => setVerantwortlicheSelection(prev => ({ ...prev, [mId]: false }))}
+                            className="ml-0.5 p-0.5 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Entfernen">
+                            <X size={13} />
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
-              <div className="max-h-60 overflow-y-auto space-y-1 pr-2">
-                {filteredAllMembers.length === 0 ? (
-                  <p className="text-center text-sm text-muted-foreground py-4">Keine passenden Mitglieder gefunden.</p>
-                ) : (
-                  filteredAllMembers.map(m => {
-                    const isChecked = !!verantwortlicheSelection[m.id];
-                    return (
-                      <label 
-                        key={m.id} 
-                        className="flex items-center justify-between p-2 rounded hover:bg-secondary/40 transition-colors cursor-pointer text-sm"
-                      >
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={(e) => {
-                              const updated = { ...verantwortlicheSelection };
-                              updated[m.id] = e.target.checked;
-                              setVerantwortlicheSelection(updated);
+              {/* Live-Suche */}
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Mitglied suchen (mind. 2 Zeichen)…"
+                  value={memberSearchTerm}
+                  onChange={(e) => setMemberSearchTerm(e.target.value)}
+                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg pl-9 pr-3 py-2 text-white text-sm transition-colors"
+                  autoComplete="off"
+                />
+                {memberSearchTerm.trim().length >= 2 && (
+                  <div className="absolute z-20 left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-xl max-h-56 overflow-y-auto">
+                    {(() => {
+                      const q = memberSearchTerm.trim().toLowerCase();
+                      const treffer = (alleMitglieder || [])
+                        .filter(m => `${m.vorname || ''} ${m.nachname || ''}`.toLowerCase().includes(q))
+                        .slice(0, 10);
+                      if (treffer.length === 0) return <p className="px-3 py-2.5 text-xs text-muted-foreground">Kein Mitglied gefunden für „{memberSearchTerm}"</p>;
+                      return treffer.map(m => {
+                        const isSelected = !!verantwortlicheSelection[m.id];
+                        return (
+                          <button key={m.id} type="button"
+                            onClick={() => {
+                              setVerantwortlicheSelection(prev => ({ ...prev, [m.id]: true }));
+                              setMemberSearchTerm('');
                             }}
-                            className="rounded border-border text-primary focus:ring-primary bg-background"
-                          />
-                          <span className="text-white font-medium">
-                            {m.vorname} {m.nachname}
-                          </span>
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {m.ort || ''}
-                        </span>
-                      </label>
-                    );
-                  })
+                            className="w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-primary/10 border-b border-border last:border-0 transition-colors">
+                            <User size={13} className="text-muted-foreground shrink-0" />
+                            <span className="text-sm text-white truncate">{m.vorname} {m.nachname}</span>
+                            {m.ort && <span className="text-xs text-muted-foreground ml-auto shrink-0">{m.ort}</span>}
+                            {isSelected && <UserCheck size={13} className="text-primary shrink-0" />}
+                          </button>
+                        );
+                      });
+                    })()}
+                  </div>
                 )}
               </div>
 
