@@ -154,7 +154,7 @@ export default function Dashboard() {
         const naechste = diesesJ < heute4B
           ? new Date(heute4B.getFullYear() + 1, geb.getMonth(), geb.getDate())
           : diesesJ;
-        return { ...m, _naechsteGeb: naechste, _alter: new Date().getFullYear() - geb.getFullYear() };
+        return { ...m, _naechsteGeb: naechste, _wirdAlter: naechste.getFullYear() - geb.getFullYear() };
       })
       .filter(m => m._naechsteGeb <= in30Tagen)
       .sort((a, b) => a._naechsteGeb - b._naechsteGeb)
@@ -377,7 +377,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{m.vorname} {m.nachname}</p>
-                      <p className="text-xs text-muted-foreground">wird {m._alter + 1} Jahre</p>
+                      <p className="text-xs text-muted-foreground">wird {m._wirdAlter} Jahre</p>
                     </div>
                     {/* Telefon-Button */}
                     {telUrl && (
