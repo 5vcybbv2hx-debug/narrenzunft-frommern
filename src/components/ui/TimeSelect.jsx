@@ -96,10 +96,10 @@ export default function TimeSelect({
             role="button"
             tabIndex={-1}
             onClick={(e) => { e.stopPropagation(); emit('', ''); }}
-            className="text-muted-foreground hover:text-primary px-1"
+            className="shrink-0 p-1.5 -mr-1 rounded-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
             aria-label="Zeit löschen"
           >
-            <X size={14} />
+            <X size={13} />
           </span>
         )}
       </button>
