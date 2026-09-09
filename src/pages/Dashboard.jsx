@@ -310,6 +310,11 @@ export default function Dashboard() {
         )}
       </div>
 
+      {/* Offene Verleih-Anfragen (ganz oben, Vorstand + zuständige Personen) */}
+      <div className="mb-4">
+        <VerleihAnfragenWidget />
+      </div>
+
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
@@ -551,9 +556,6 @@ export default function Dashboard() {
             <StatuswechselWidget />
           </SectionCard>
         )}
-
-        {/* Offene Verleih-Anfragen (Vorstand + zuständige Personen) */}
-        <VerleihAnfragenWidget />
 
       </div>
     </div>
