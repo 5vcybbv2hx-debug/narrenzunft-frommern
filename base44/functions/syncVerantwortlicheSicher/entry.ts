@@ -45,6 +45,18 @@ export default async function(req) {
     const sauberAlt = (alteIds || []).filter(Boolean);
     const sauberNeu = (neueIds || []).filter(Boolean);
 
+    // ── Spartenleiter dürfen nur tatsächliche Gruppenmitglieder befördern ──
+    if (!isFuehrung && sauberNeu.length > 0) {
+      const neueMitglieder = await srv.entities.Mitglied.filter({ id: { $in: sauberNeu } });
+      const alleInGruppe = (neueMitglieder || []).every(m =>
+        (m.haesgruppen_ids || []).includes(gruppeId) ||
+        m.haesgruppe_id === gruppeId
+      );
+      if (!alleInGruppe) {
+        return Response.json({ error: 'Spartenleiter dürfen nur Mitglieder ihrer eigenen Gruppe zu Verantwortlichen machen.' }, { status: 403 });
+      }
+    }
+
     // ── 1) Gruppe aktualisieren ──
     await srv.entities.Haesgruppe.update(gruppeId, {
       verantwortliche_ids: sauberNeu,

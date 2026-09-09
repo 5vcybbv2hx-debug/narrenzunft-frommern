@@ -1,8 +1,9 @@
-import { createClientFromRequest } from "npm:@base44/sdk@0.8.25";
+import { createClientFromRequest } from "npm:@base44/sdk@0.8.48";
 
 /**
- * Öffentlicher Kalender-Feed (ICS) für eine Häsgruppe basierend auf Token
- * Keine Authentifizierung erforderlich - Token ist der Zugangsschlüssel
+ * Öffentlicher Kalender-Feed (ICS) für eine Häsgruppe basierend auf Token.
+ * Keine Authentifizierung erforderlich - Token ist der Zugangsschlüssel.
+ * Verwendet base44.asServiceRole statt raw fetch mit Umgebungsvariablen.
  */
 Deno.serve(async (req) => {
   try {
@@ -13,15 +14,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Token required" }, { status: 400 });
     }
 
-    // Token in AppEinstellung suchen (format: "haesgroup_<ID>")
-    const alle = await fetch('https://api.base44.dev/entities/AppEinstellung/list', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('BASE44_SERVICE_ROLE_KEY')}`,
-      }
-    }).then(r => r.json());
+    const base44 = createClientFromRequest(req);
 
-    const haesEinstellung = alle.find(e => 
+    // Token in AppEinstellung suchen (format: "haesgroup_<ID>")
+    const einstellungen = await base44.asServiceRole.entities.AppEinstellung.list();
+    const haesEinstellung = einstellungen.find(e =>
       e.schluessel?.startsWith('haesgroup_') && e.wert_ids?.[0] === token
     );
 
@@ -31,13 +28,8 @@ Deno.serve(async (req) => {
 
     const haesgruppe_id = haesEinstellung.schluessel.replace('haesgroup_', '');
 
-    // Lade alle Kalendertermine für diese Häsgruppe (öffentliche)
-    const alle_termine = await fetch('https://api.base44.dev/entities/KalenderTermin/list', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('BASE44_SERVICE_ROLE_KEY')}`,
-      }
-    }).then(r => r.json());
+    // Lade alle Kalendertermine für diese Häsgruppe
+    const alle_termine = await base44.asServiceRole.entities.KalenderTermin.list('datum', 500);
 
     // Filter: nur Häsgruppen-Termine (sichtbarkeit='haesgruppe' + haesgruppe_id matching)
     const gruppe_termine = alle_termine.filter(t =>

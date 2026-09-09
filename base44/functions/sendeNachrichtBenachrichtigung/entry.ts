@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: emp.email,
       subject: `Neue Nachricht: ${msg.betreff}`,
-      body: `Hallo ${emp.vorname},
+      text: `Hallo ${emp.vorname},
 
 du hast eine neue Nachricht von ${absenderName} erhalten:
 
