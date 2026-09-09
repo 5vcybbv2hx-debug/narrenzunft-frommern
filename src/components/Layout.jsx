@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Shirt, Calendar, Briefcase,
   Award, CreditCard, Bell, ChevronDown,
   LogOut, Shield, ClipboardList,
-  AlertTriangle, Lock, CheckSquare, Package, Bus, FileText, ShoppingBag,
+  AlertTriangle, Lock, CheckSquare, Package, FileText, ShoppingBag,
   ArrowLeft, LayoutGrid,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -20,8 +20,7 @@ export const NAV_SECTIONS = [
     title: 'Aktivitäten',
     icon: Calendar,
     items: [
-      { path: '/kalender',       label: 'Veranstaltungen',   icon: Calendar,    roles: null },
-      { path: '/ausfahrten',     label: 'Ausfahrten',         icon: Bus,         roles: null },
+      { path: '/kalender',       label: 'Termine',            icon: Calendar,    roles: null },
       { path: '/sparten',        label: 'Sparten & Gruppen', icon: Users,       roles: null },
       { path: '/haes',           label: 'Häs',                icon: Shirt,       roles: null },
       { path: '/shop',           label: 'Shop',               icon: ShoppingBag, roles: null },
@@ -82,12 +81,11 @@ const DIRECT_ITEMS = [
 const BOTTOM_NAV = [
   { path: '/',            label: 'Start',  icon: LayoutDashboard },
   { path: '/kalender',    label: 'Termine', icon: Calendar },
-  { path: '/ausfahrten',  label: 'Bus',     icon: Bus },
   { path: '/arbeitsdienste', label: 'Dienste', icon: Briefcase },
 ];
 
 // Haupttabs — auf diesen Pfaden wird kein Zurück-Button angezeigt
-const ROOT_PATHS = ['/', '/kalender', '/ausfahrten', '/arbeitsdienste', '/mehr'];
+const ROOT_PATHS = ['/', '/kalender', '/arbeitsdienste', '/mehr'];
 
 export function canSeeItem(item, user) {
   if (!item.roles) return true;
