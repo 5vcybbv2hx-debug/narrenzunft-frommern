@@ -1,4 +1,5 @@
 import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, isDeveloper, getRollenLabel } from '@/lib/roles';
@@ -7,6 +8,7 @@ import {
   Award, CreditCard, Bell, Menu, X, ChevronRight, ChevronDown,
   LogOut, User, Shield, ClipboardList,
   AlertTriangle, Lock, CheckSquare, Package, Bus, FileText, ShoppingBag,
+  ArrowLeft,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import SecureSearch from './SecureSearch';
@@ -85,6 +87,9 @@ const BOTTOM_NAV = [
   { path: '/profil',      label: 'Profil',  icon: User },
 ];
 
+// Haupttabs — auf diesen Pfaden wird kein Zurück-Button angezeigt
+const ROOT_PATHS = ['/', '/kalender', '/ausfahrten', '/arbeitsdienste', '/profil'];
+
 function canSeeItem(item, user) {
   if (!item.roles) return true;
   if (isDeveloper(user)) return true;
@@ -133,6 +138,7 @@ export default function Layout() {
     ? (`${mitglied.vorname?.[0] || ''}${mitglied.nachname?.[0] || ''}`.toUpperCase() || getInitials(user?.full_name))
     : getInitials(user?.full_name);
 
+  const isRootPath = ROOT_PATHS.includes(location.pathname);
   const activeSection = getActiveSection(location.pathname);
   const [expandedSection, setExpandedSection] = useState(activeSection || 'aktiv');
 
@@ -357,6 +363,14 @@ export default function Layout() {
                 style={{ background: 'hsl(var(--background) / 0.9)', backdropFilter: 'blur(12px)', paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
           <div className="absolute bottom-0 left-0 right-0 h-px bg-primary/30" />
 
+          {!isRootPath && (
+            <button onClick={() => navigate(-1)}
+              className="p-2.5 rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0"
+              aria-label="Zurück">
+              <ArrowLeft size={20} />
+            </button>
+          )}
+
           <div className="hidden md:flex flex-1 max-w-sm">
             <SecureSearch />
           </div>
@@ -382,7 +396,17 @@ export default function Layout() {
         </header>
 
         <main className="flex-1 pb-20 lg:pb-6">
-          <Outlet />
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={location.pathname}
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
 
         {/* ── Bottom Navigation (Mobile) ── */}

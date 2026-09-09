@@ -45,33 +45,33 @@
 
   @media (prefers-color-scheme: light) {
     :root {
-      --background: 220 15% 9%;
-      --foreground: 0 0% 95%;
-      --card: 220 13% 13%;
-      --card-foreground: 0 0% 95%;
-      --popover: 220 13% 13%;
-      --popover-foreground: 0 0% 95%;
-      --primary: 0 81% 53%;
+      --background: 0 0% 100%;
+      --foreground: 220 15% 15%;
+      --card: 0 0% 100%;
+      --card-foreground: 220 15% 15%;
+      --popover: 0 0% 100%;
+      --popover-foreground: 220 15% 15%;
+      --primary: 0 72% 48%;
       --primary-foreground: 0 0% 100%;
-      --secondary: 220 12% 18%;
-      --secondary-foreground: 0 0% 75%;
-      --muted: 220 12% 16%;
-      --muted-foreground: 220 8% 52%;
-      --accent: 0 81% 53%;
+      --secondary: 220 14% 96%;
+      --secondary-foreground: 220 15% 25%;
+      --muted: 220 14% 96%;
+      --muted-foreground: 220 10% 40%;
+      --accent: 0 72% 48%;
       --accent-foreground: 0 0% 100%;
       --destructive: 0 72% 45%;
       --destructive-foreground: 0 0% 100%;
-      --border: 220 12% 20%;
-      --input: 220 12% 18%;
-      --ring: 0 81% 53%;
-      --sidebar-background: 220 18% 6%;
-      --sidebar-foreground: 0 0% 75%;
-      --sidebar-primary: 0 81% 53%;
+      --border: 220 13% 90%;
+      --input: 220 13% 92%;
+      --ring: 0 72% 48%;
+      --sidebar-background: 220 16% 97%;
+      --sidebar-foreground: 220 15% 25%;
+      --sidebar-primary: 0 72% 48%;
       --sidebar-primary-foreground: 0 0% 100%;
-      --sidebar-accent: 220 14% 12%;
-      --sidebar-accent-foreground: 0 0% 92%;
-      --sidebar-border: 220 14% 14%;
-      --sidebar-ring: 0 81% 53%;
+      --sidebar-accent: 220 14% 93%;
+      --sidebar-accent-foreground: 220 15% 20%;
+      --sidebar-border: 220 13% 88%;
+      --sidebar-ring: 0 72% 48%;
     }
   }
 }

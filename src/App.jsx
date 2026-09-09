@@ -2,7 +2,6 @@ import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -93,15 +92,6 @@ const AuthenticatedApp = () => {
 
   return (
     <div className="overflow-x-hidden">
-    <AnimatePresence mode="wait" initial={false}>
-    <motion.div
-      key={location.pathname}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.15, ease: 'easeInOut' }}
-      style={{ display: 'contents' }}
-    >
     <Routes location={location}>
       <Route element={<Layout />}>
         {/* ── Öffentlich (alle authentifizierten User) ── */}
@@ -197,8 +187,6 @@ const AuthenticatedApp = () => {
       <Route path="/busfahrer/:token" element={<BusfahrerInfo />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
-    </motion.div>
-    </AnimatePresence>
     </div>
   );
 };
