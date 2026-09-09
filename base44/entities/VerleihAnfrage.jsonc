@@ -1,0 +1,99 @@
+{
+  "name": "VerleihAnfrage",
+  "type": "object",
+  "properties": {
+    "ausruestung_id": {
+      "type": "string",
+      "description": "ID der angefragten Ausr\u00fcstung"
+    },
+    "ausruestung_name": {
+      "type": "string",
+      "description": "Name der Ausr\u00fcstung (denormalisiert)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name der anfragenden Person"
+    },
+    "telefon": {
+      "type": "string",
+      "description": "Telefonnummer der anfragenden Person"
+    },
+    "email": {
+      "type": "string",
+      "description": "E-Mail-Adresse der anfragenden Person"
+    },
+    "von_datum": {
+      "type": "string",
+      "format": "date",
+      "description": "Gew\u00fcnschter Leihbeginn"
+    },
+    "bis_datum": {
+      "type": "string",
+      "format": "date",
+      "description": "Gew\u00fcnschtes Leihende"
+    },
+    "zweck": {
+      "type": "string",
+      "description": "Zweck der Ausleihe (wof\u00fcr wird ben\u00f6tigt?)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Offen",
+        "Genehmigt",
+        "Abgelehnt"
+      ],
+      "default": "Offen",
+      "description": "Bearbeitungsstatus der Anfrage"
+    },
+    "entschieden_von": {
+      "type": "string",
+      "description": "Name/ID des Vorstands, der die Anfrage entschieden hat"
+    },
+    "entschieden_am": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum der Entscheidung"
+    },
+    "antwort_notiz": {
+      "type": "string",
+      "description": "Notiz zur Entscheidung (z.B. Begr\u00fcndung, Auflagen)"
+    }
+  },
+  "required": [
+    "name",
+    "telefon"
+  ],
+  "rls": {
+    "create": null,
+    "read": null,
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    }
+  }
+}

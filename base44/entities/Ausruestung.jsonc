@@ -75,6 +75,29 @@
     "verfuegbar_override": {
       "type": "number",
       "description": "Manuelle Korrektur der verf\u00fcgbaren St\u00fcckzahl (leer = automatische Berechnung)"
+    },
+    "verleihbar": {
+      "type": "boolean",
+      "default": false,
+      "description": "true = Gegenstand kann extern \u00fcber QR-Seite angefragt werden"
+    },
+    "verleih_preis": {
+      "type": "number",
+      "default": 0,
+      "description": "Verleihpreis in Euro pro Tag"
+    },
+    "verleih_kaution": {
+      "type": "number",
+      "default": 0,
+      "description": "Kaution in Euro f\u00fcr den externen Verleih"
+    },
+    "verleih_notiz": {
+      "type": "string",
+      "description": "\u00d6ffentliche Verleih-Bedingungen, erscheint auf der QR-Seite"
+    },
+    "verleih_verantwortlicher_id": {
+      "type": "string",
+      "description": "Mitglied-ID des zust\u00e4ndigen Vorstands f\u00fcr die Genehmigung"
     }
   },
   "required": [
