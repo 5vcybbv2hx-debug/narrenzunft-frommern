@@ -49,21 +49,12 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 3. Rolle vom Mitglied-Datensatz übertragen (nur wenn Admin die app_rolle gesetzt hat)
-    // Nicht-fatal: App-Owner können ihre Rolle nicht per API ändern lassen (Systemschutz) -
-    // das darf die restliche Verknüpfung nicht crashen lassen.
-    const gewuenschteRolle = mitglied.app_rolle;
-    if (gewuenschteRolle && gewuenschteRolle !== user.role) {
-      const erlaubteRollen = ['mitglied', 'spartenleiter', 'kassierer', 'stellv_vorstand', 'vorstand'];
-      if (erlaubteRollen.includes(gewuenschteRolle)) {
-        try {
-          await base44.asServiceRole.entities.User.update(user.id, { role: gewuenschteRolle });
-          updates.push('role → ' + gewuenschteRolle);
-        } catch (roleError) {
-          // z.B. "You cannot update the role of the owner of the app" - ignorieren, Verknüpfung geht trotzdem durch
-          updates.push('role-update fehlgeschlagen (' + roleError.message + ')');
-        }
-      }
+    // Rolle wird NICHT mehr automatisch aus app_rolle übertragen — das Feld app_rolle auf
+    // der Mitglied-Entität ist vom Benutzer selbst beschreibbar (RLS: data.user_id == user.id),
+    // was eine Rechteausweitung ermöglichen würde. Rollen müssen von einem Admin manuell
+    // über die Berechtigungen-Seite zugewiesen werden. app_rolle dient nur als Vorschlag.
+    if (mitglied.app_rolle && mitglied.app_rolle !== user.role) {
+      updates.push('role-pending (Admin-Zuweisung erforderlich: ' + mitglied.app_rolle + ')');
     }
 
     return Response.json({ linked: true, mitglied_id: mitglied.id, match_strategy: matchStrategy, updates, app_rolle: mitglied.app_rolle, zusatz_berechtigungen: mitglied.zusatz_berechtigungen || [] });
