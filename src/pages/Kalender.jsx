@@ -675,9 +675,9 @@ export default function Kalender({ nur = 'alle' }) {
 function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditVeranstaltung, compact = false, ausfahrtAnmeldung, ausfahrtAnmeldeCount, isAusfahrtOpen, canUnregisterAusfahrt, onAusfahrtRegister, onAusfahrtUnregister, submittingAusfahrt }) {
   const farbeClass = TERMINART_FARBEN[termin.terminart] || TERMINART_FARBEN['Sonstiges'];
   const isAngemeldet = anmeldung?.status === 'Angemeldet';
-  const istTeilnahme = istVonVeranstaltung && teilnahme && !['Abgesagt', 'Abgemeldet'].includes(teilnahme.status);
   const istVonVeranstaltung = termin._quelle === 'veranstaltung';
   const istVonAusfahrt = termin._quelle === 'ausfahrt';
+  const istTeilnahme = istVonVeranstaltung && teilnahme && !['Abgesagt', 'Abgemeldet'].includes(teilnahme.status);
   const [detailsOffen, setDetailsOffen] = useState(false);
 
   const hatDetails = istVonVeranstaltung && (
