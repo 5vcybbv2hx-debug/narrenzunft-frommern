@@ -340,7 +340,7 @@ export default function Layout() {
               className="relative p-2.5 rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0">
               <Bell size={20} />
               {notifications > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary/10 border border-primary/30 rounded-full shadow-sm shadow-primary/50" />
+                <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-primary rounded-full text-white text-[10px] font-bold shadow-sm shadow-primary/50">{notifications > 99 ? '99+' : notifications}</span>
               )}
             </Link>
             <Link to="/profil"

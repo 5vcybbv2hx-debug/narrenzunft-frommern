@@ -229,7 +229,7 @@ function AnwesenheitTab({ ausschussMitglieder, getMitgliedName, getAnwesenheit, 
               <div className="flex gap-1 shrink-0">
                 {['Anwesend', 'Entschuldigt', 'Unentschuldigt'].map(s => (
                   <button key={s} onClick={() => onAnwesenheit(am.mitglied_id, s)}
-                    className={`px-2 py-1 rounded-lg text-xs font-medium transition-all border ${status === s ? ANWESENHEIT_FARBEN[s] + ' border-current/30' : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'}`}>
+                    className={`px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-medium transition-all border ${status === s ? ANWESENHEIT_FARBEN[s] + ' border-current/30' : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'}`}>
                     {s === 'Anwesend' ? '✓' : s === 'Entschuldigt' ? 'E' : '✗'}
                   </button>
                 ))}
@@ -277,6 +277,7 @@ function TopsTab({ terminId, tops, setTops, mitglieder, isAdmin }) {
   };
 
   const handleDelete = async (topId) => {
+    if (!confirm('Diesen Tagesordnungspunkt wirklich löschen?')) return;
     await base44.entities.Tagesordnungspunkt.delete(topId);
     setTops(prev => prev.filter(t => t.id !== topId));
   };
@@ -516,7 +517,7 @@ function AbstimmungenTab({ terminId, abstimmungen, setAbstimmungen, ausschussMit
                           <div className="flex gap-1 shrink-0">
                             {['Ja', 'Nein', 'Enthaltung'].map(s => (
                               <button key={s} onClick={() => handleStimme(abs.id, am.mitglied_id, s)}
-                                className={`px-2 py-1 rounded-lg text-xs font-semibold border transition-all ${stimme?.stimme === s ? STIMME_FARBEN[s] : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'}`}>
+                                className={`px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold border transition-all ${stimme?.stimme === s ? STIMME_FARBEN[s] : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'}`}>
                                 {s === 'Enthaltung' ? '∼' : s === 'Ja' ? '✓' : '✗'}
                               </button>
                             ))}

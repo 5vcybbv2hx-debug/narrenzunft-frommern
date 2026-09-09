@@ -1,6 +1,8 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const UserNotRegisteredError = () => {
+  const navigate = useNavigate();
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background px-4">
       <div className="max-w-sm w-full">
@@ -37,6 +39,16 @@ const UserNotRegisteredError = () => {
           <p className="text-xs text-muted-foreground border-t border-border pt-4">
             Wende dich an den Vorstand oder Administrator der Narrenzunft Frommern.
           </p>
+          <div className="flex gap-2 mt-5">
+            <button onClick={() => navigate('/')}
+              className="flex-1 py-3 min-h-[44px] rounded-lg bg-secondary border border-border text-sm font-medium text-foreground hover:border-primary/40 transition-colors">
+              Zur Startseite
+            </button>
+            <button onClick={() => window.location.reload()}
+              className="flex-1 py-3 min-h-[44px] rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
+              Erneut versuchen
+            </button>
+          </div>
         </div>
       </div>
     </div>

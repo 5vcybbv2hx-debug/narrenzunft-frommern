@@ -58,6 +58,7 @@ export default function Mitgliedsantraege() {
   };
 
   const handleStatusChange = async (antragId, newStatus) => {
+    if (newStatus === 'Abgelehnt' && !confirm('Diesen Antrag wirklich ablehnen?')) return;
     setSaving(true);
     await base44.entities.Mitgliedsantrag.update(antragId, { status: newStatus, notizen });
     setAntraege(prev => prev.map(a => a.id === antragId ? { ...a, status: newStatus, notizen } : a));

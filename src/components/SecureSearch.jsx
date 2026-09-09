@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { Link } from 'react-router-dom';
 import { Search, Loader2, Users, Shirt, Briefcase, AlertCircle } from 'lucide-react';
 
-export default function SecureSearch() {
-  const [query, setQuery] = useState('');
+export default function SecureSearch({ initialQuery = '' }) {
+  const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState({ mitglieder: [], haes: [], dienste: [] });
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
@@ -55,7 +56,7 @@ export default function SecureSearch() {
           value={query}
           onChange={e => setQuery(e.target.value)}
           onFocus={() => total > 0 && setOpen(true)}
-          className="w-full pl-8 pr-8 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+          className="w-full pl-8 pr-8 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-base sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
         />
       </div>
 
@@ -79,10 +80,11 @@ export default function SecureSearch() {
                 <Users size={12} /> Mitglieder ({results.mitglieder.length})
               </div>
               {results.mitglieder.map(m => (
-                <a
+                <Link
                   key={m.id}
-                  href={`/mitglieder/${m.id}`}
-                  className="flex items-center gap-3 px-3 py-2.5 hover:bg-secondary transition-colors text-left border-b border-border last:border-0"
+                  to={`/mitglieder/${m.id}`}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 px-3 py-3 min-h-[44px] hover:bg-secondary active:bg-secondary transition-colors text-left border-b border-border last:border-0"
                 >
                   <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
                     {m.vorname?.[0]}{m.nachname?.[0]}
@@ -91,7 +93,7 @@ export default function SecureSearch() {
                     <p className="text-sm font-medium text-foreground truncate">{m.vorname} {m.nachname}</p>
                     <p className="text-xs text-muted-foreground">{m.mitgliedsstatus}</p>
                   </div>
-                </a>
+                </Link>
               ))}
             </>
           )}
@@ -103,10 +105,11 @@ export default function SecureSearch() {
                 <Shirt size={12} /> Häs ({results.haes.length})
               </div>
               {results.haes.map(h => (
-                <a
+                <Link
                   key={h.id}
-                  href={`/haes/${h.id}`}
-                  className="flex items-center gap-3 px-3 py-2.5 hover:bg-secondary transition-colors text-left border-b border-border last:border-0"
+                  to={`/haes/${h.id}`}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 px-3 py-3 min-h-[44px] hover:bg-secondary active:bg-secondary transition-colors text-left border-b border-border last:border-0"
                 >
                   <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-xs shrink-0">
                     #{h.haesnummer[0]}
@@ -115,7 +118,7 @@ export default function SecureSearch() {
                     <p className="text-sm font-medium text-foreground truncate">#{h.haesnummer}</p>
                     {h.bezeichnung && <p className="text-xs text-muted-foreground truncate">{h.bezeichnung}</p>}
                   </div>
-                </a>
+                </Link>
               ))}
             </>
           )}
@@ -127,9 +130,11 @@ export default function SecureSearch() {
                 <Briefcase size={12} /> Arbeitsdienste ({results.dienste.length})
               </div>
               {results.dienste.map(d => (
-                <div
+                <Link
                   key={d.id}
-                  className="flex items-center gap-3 px-3 py-2.5 hover:bg-secondary transition-colors text-left border-b border-border last:border-0 cursor-pointer"
+                  to="/arbeitsdienste"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 px-3 py-3 min-h-[44px] hover:bg-secondary active:bg-secondary transition-colors text-left border-b border-border last:border-0"
                 >
                   <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold text-xs shrink-0">
                     📋
@@ -138,7 +143,7 @@ export default function SecureSearch() {
                     <p className="text-sm font-medium text-foreground truncate">{d.titel}</p>
                     <p className="text-xs text-muted-foreground">{d.datum}</p>
                   </div>
-                </div>
+                </Link>
               ))}
             </>
           )}

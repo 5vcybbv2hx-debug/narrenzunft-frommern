@@ -102,12 +102,12 @@ export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten
 
         {/* Admin Buttons — auf Mobile versteckt, da die ganze Karte klickbar ist */}
         {isAdmin && (
-          <div className="hidden sm:flex gap-1 shrink-0">
-            <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="p-2.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
-              <Edit size={15} />
+          <div className="flex gap-0.5 shrink-0">
+            <button onClick={(e) => { e.stopPropagation(); onEdit(); }} title="Gruppe bearbeiten" className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 active:bg-primary/20 transition-colors">
+              <Edit size={16} />
             </button>
-            <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-2.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
-              <Trash2 size={15} />
+            <button onClick={(e) => { e.stopPropagation(); onDelete(); }} title="Gruppe löschen" className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 active:bg-destructive/20 transition-colors">
+              <Trash2 size={16} />
             </button>
           </div>
         )}

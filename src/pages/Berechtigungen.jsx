@@ -56,6 +56,7 @@ export default function Berechtigungen() {
 
   const handleRolleChange = async (mitglied, newRole) => {
     const prevRolle = users.find(u => u.id === mitglied.user_id)?.role || mitglied.app_rolle || 'mitglied';
+    if (newRole !== prevRolle && !confirm(`Rolle von ${mitglied.vorname} ${mitglied.nachname} wirklich von "${ROLLEN_LABELS[prevRolle] || prevRolle}" zu "${ROLLEN_LABELS[newRole] || newRole}" ändern?`)) return;
     setSaving(p => ({ ...p, [mitglied.id]: true }));
     setError(null);
     try {
@@ -76,6 +77,7 @@ export default function Berechtigungen() {
   };
 
   const handleZusatzChange = async (mitglied, berechtigung, checked) => {
+    if (!checked && !confirm(`Zusatz-Berechtigung "${berechtigung}" für ${mitglied.vorname} ${mitglied.nachname} wirklich entfernen?`)) return;
     const aktuell = mitglied.zusatz_berechtigungen || [];
     const neu = checked
       ? [...aktuell, berechtigung]

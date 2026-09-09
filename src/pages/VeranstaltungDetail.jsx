@@ -135,6 +135,7 @@ export default function VeranstaltungDetail() {
 
   const handleAbsagen = async () => {
     if (!meineTeilnahme) return;
+    if (!confirm('Möchtest du deine Teilnahme wirklich absagen?')) return;
     try {
       await base44.entities.Teilnahme.update(meineTeilnahme.id, { status: 'Abgesagt' });
       loadData();
@@ -596,7 +597,8 @@ export default function VeranstaltungDetail() {
                 {isAdmin && (
                   <button
                     onClick={() => toggleAnwesenheit(t)}
-                    className={`p-2 rounded-lg transition-colors ${
+                    title={t.status === 'Anwesend' ? 'Check-in zurücknehmen' : 'Einchecken'}
+                    className={`p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors ${
                       t.status === 'Anwesend' ? 'bg-green-500/20 text-green-400' : 'bg-secondary text-muted-foreground hover:text-foreground'
                     }`}
                   >

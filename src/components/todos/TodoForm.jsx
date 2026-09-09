@@ -9,7 +9,7 @@ const PRIORITAET_FARBEN = {
   'Dringend': 'bg-red-900/20 text-red-400 border border-red-700/30',
 };
 
-const inputCls = "w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-colors";
+const inputCls = "w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-base sm:text-sm text-foreground focus:outline-none focus:border-primary transition-colors";
 const labelCls = "text-xs text-muted-foreground font-medium block mb-1";
 
 export default function TodoForm({ todo, mitglieder, onSave, onDelete, onClose }) {

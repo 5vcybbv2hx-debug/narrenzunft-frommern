@@ -247,7 +247,7 @@ export default function Todos() {
           <button
             onClick={() => handleErledigtToggle(todo)}
             title={istErledigt ? 'Als offen markieren' : 'Als erledigt markieren'}
-            className="mt-0.5 hover:scale-110 transition-transform shrink-0"
+            className="mt-0.5 hover:scale-110 transition-transform shrink-0 p-3 -m-3 min-h-[44px] min-w-[44px] flex items-center justify-center active:scale-95"
           >
             {istErledigt
               ? <CheckCircle2 size={20} className="text-green-400" />

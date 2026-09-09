@@ -75,7 +75,7 @@ export default function TimeSelect({
 
   const display = value ? `${hour || '00'}:${minute || '00'}` : '';
   const now = new Date();
-  const btnBase = 'h-8 rounded-lg text-xs font-semibold transition-colors';
+  const btnBase = 'h-11 rounded-lg text-xs font-semibold transition-colors';
   const trigClass = `flex items-center justify-between gap-2 w-full bg-secondary border border-border rounded-lg px-3 py-2.5 min-h-[44px] text-sm cursor-pointer hover:border-primary/60 transition-colors ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`;
 
   return (
@@ -156,7 +156,7 @@ export default function TimeSelect({
                 emit(String(now.getHours()).padStart(2, '0'), String(now.getMinutes()).padStart(2, '0'));
                 setOpen(false);
               }}
-              className="flex-1 px-2 py-1.5 rounded-lg bg-secondary border border-border text-xs text-white font-semibold hover:bg-primary hover:border-primary transition-colors"
+              className="flex-1 px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-xs text-white font-semibold hover:bg-primary hover:border-primary transition-colors"
             >
               Jetzt
             </button>

@@ -190,7 +190,7 @@ export default function DateSelect({
                   key={d}
                   type="button"
                   onClick={() => pick(view.y, view.m, d)}
-                  className={`h-8 rounded-lg text-xs font-semibold transition-colors ${
+                  className={`h-11 rounded-lg text-xs font-semibold transition-colors ${
                     isSel(d)
                       ? 'bg-primary text-white'
                       : isToday(d)
@@ -211,7 +211,7 @@ export default function DateSelect({
                 key={q.label}
                 type="button"
                 onClick={() => pick(q.date.getFullYear(), q.date.getMonth(), q.date.getDate())}
-                className="flex-1 px-2 py-1.5 rounded-lg bg-secondary border border-border text-xs text-white font-semibold hover:bg-primary hover:border-primary transition-colors"
+                className="flex-1 px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-xs text-white font-semibold hover:bg-primary hover:border-primary transition-colors"
               >
                 {q.label}
               </button>

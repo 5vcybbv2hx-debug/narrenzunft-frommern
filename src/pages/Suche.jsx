@@ -10,12 +10,12 @@ export default function Suche() {
   return (
     <div className="px-4 lg:px-6 py-6 max-w-3xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground mb-2">Suche</h1>
+        <h1 className="text-2xl font-oswald font-semibold uppercase tracking-wide text-foreground mb-2">Suche</h1>
         <p className="text-sm text-muted-foreground">Finde Mitglieder, Häs und Arbeitsdienste (nur zugängliche Daten)</p>
       </div>
 
       <div className="w-full max-w-md mb-6">
-        <SecureSearch />
+        <SecureSearch initialQuery={initialQuery} />
       </div>
 
       <div className="bg-card border border-border rounded-xl p-5 text-center text-muted-foreground text-sm">

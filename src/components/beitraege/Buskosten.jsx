@@ -61,11 +61,13 @@ export default function Buskosten({ isAdmin }) {
   };
 
   const handleErlassen = async (beitrag) => {
+    if (!confirm('Beitrag wirklich erlassen?')) return;
     await base44.entities.Buskostenbeitrag.update(beitrag.id, { zahlungsstatus: 'Erlassen' });
     setBuskostenbeitraege(prev => prev.map(b => b.id === beitrag.id ? { ...b, zahlungsstatus: 'Erlassen' } : b));
   };
 
   const handleDelete = async (beitragId) => {
+    if (!confirm('Diesen Buskostenbeitrag wirklich löschen?')) return;
     await base44.entities.Buskostenbeitrag.delete(beitragId);
     setBuskostenbeitraege(prev => prev.filter(b => b.id !== beitragId));
   };

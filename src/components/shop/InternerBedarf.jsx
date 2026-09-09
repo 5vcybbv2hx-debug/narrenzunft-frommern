@@ -281,7 +281,7 @@ export default function InternerBedarf() {
             ].map(({ key, label, icon: Icon }) => (
               <button key={key} onClick={() => setAdminTab(key)}
                 className={`flex-1 flex items-center justify-center gap-2 px-3 py-3 text-xs font-oswald uppercase tracking-wide transition-colors ${adminTab === key ? 'text-primary border-b-2 border-primary bg-primary/5' : 'text-muted-foreground hover:text-foreground'}`}>
-                <Icon size={14} /> <span className="hidden sm:inline">{label}</span>
+                <Icon size={14} className="shrink-0" /> <span className="truncate">{label}</span>
               </button>
             ))}
           </div>
