@@ -1,6 +1,6 @@
 import DateSelect from '../components/ui/DateSelect';
 import TimeSelect from '../components/ui/TimeSelect';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -15,6 +15,8 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { toast } from 'sonner';
 import MobileSelect from '@/components/MobileSelect';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 function VerantwortlicheAuswahl({ mitglieder, selected, onChange, haeufige }) {
   const [suche, setSuche] = useState('');
@@ -151,6 +153,8 @@ export default function Umzuege() {
   const meineAnmeldungen = data?.meineAnmeldungen || [];
   const alleMitglieder = data?.alleMitglieder || [];
 
+  const { pullDistance, refreshing, containerRef } = usePullToRefresh(useCallback(async () => { await refetch(); }, [refetch]));
+
   const updateQueryData = (updater) => {
     queryClient.setQueryData(['umzuege', admin], old => old ? updater(old) : old);
   };
@@ -252,7 +256,8 @@ export default function Umzuege() {
   })();
 
   return (
-    <div className="px-4 lg:px-6 py-6 max-w-3xl mx-auto">
+    <div ref={containerRef} className="px-4 lg:px-6 py-6 max-w-3xl mx-auto">
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>

@@ -65,7 +65,7 @@ function VerantwortlicherSuche({ mitglieder, selectedId, onChange, onClose }) {
               autoFocus={offen}
               onChange={e => { setSuche(e.target.value); setOffen(true); }}
               onFocus={() => setOffen(true)}
-              className="w-full pl-8 pr-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+              className="w-full pl-8 pr-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
             />
           </div>
         )}
@@ -202,7 +202,7 @@ export default function SparteFormModal({ gruppe, onClose, onSaved }) {
               placeholder="z.B. Garde, Showtanzgruppe..."
               value={form.name}
               onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-              className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+              className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
             />
           </div>
 
@@ -213,7 +213,7 @@ export default function SparteFormModal({ gruppe, onClose, onSaved }) {
               value={form.beschreibung}
               onChange={e => setForm(p => ({ ...p, beschreibung: e.target.value }))}
               rows={2}
-              className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary resize-none"
+              className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary resize-none"
             />
           </div>
 

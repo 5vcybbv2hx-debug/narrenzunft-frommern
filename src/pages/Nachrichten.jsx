@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { Mail, Plus, X } from 'lucide-react';
 import NachrichtForm from '@/components/nachricht/NachrichtForm';
 import NachrichtenInbox from '@/components/nachricht/NachrichtenInbox';
 import { toast } from 'sonner';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 export default function Nachrichten() {
   const { user } = useAuth();
@@ -30,6 +32,8 @@ export default function Nachrichten() {
     setLoading(false);
   };
 
+  const { pullDistance, refreshing, containerRef } = usePullToRefresh(useCallback(async () => { await loadMitglied(); }, []));
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -48,7 +52,8 @@ export default function Nachrichten() {
   }
 
   return (
-    <div className="px-4 lg:px-6 py-6 max-w-3xl mx-auto">
+    <div ref={containerRef} className="px-4 lg:px-6 py-6 max-w-3xl mx-auto">
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>

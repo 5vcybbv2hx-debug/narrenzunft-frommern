@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -13,6 +13,8 @@ import { format, differenceInYears } from 'date-fns';
 
 import AktivitaetTab from '@/components/mitglied/AktivitaetTab';
 import ArbeitsdiensteMitgliedTab from '@/components/mitglied/ArbeitsdiensteMitgliedTab';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 export default function Profil() {
   const { user } = useAuth();
@@ -53,6 +55,8 @@ export default function Profil() {
     }
     setLoading(false);
   };
+
+  const { pullDistance, refreshing, containerRef } = usePullToRefresh(useCallback(async () => { await loadData(); }, []));
 
   const handleEditStart = () => {
     setEditForm({
@@ -115,7 +119,8 @@ export default function Profil() {
   const verlieheneEhrungen = (ehrungen || []).filter(e => e.status === 'Verliehen').length;
 
   return (
-    <div className="px-4 lg:px-6 py-6 max-w-2xl mx-auto">
+    <div ref={containerRef} className="px-4 lg:px-6 py-6 max-w-2xl mx-auto">
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
       <h1 className="text-2xl font-bold font-oswald uppercase tracking-wide text-white mb-6">Mein Profil</h1>
 
       {/* Error Banner */}

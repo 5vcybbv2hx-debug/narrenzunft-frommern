@@ -17,6 +17,7 @@ import AusschussMitgliederTab from '@/components/ausschuss/AusschussMitgliederTa
 import AbstimmungenTab from '@/components/ausschuss/AbstimmungenTab';
 import ProtokollTab from '@/components/ausschuss/ProtokollTab';
 import MitgliedLiveSuche from '@/components/MitgliedLiveSuche';
+import MobileSelect from '@/components/MobileSelect';
 import { kannAusschussSehn } from '@/lib/roles';
 
 const PRIO_FARBEN = {
@@ -381,7 +382,7 @@ function DeleteBar({ show, onConfirm, onCancel, deleting }) {
   );
 }
 
-const inputCls = "w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors";
+const inputCls = "w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors";
 const selectCls = inputCls;
 const labelCls = "text-xs text-muted-foreground block mb-1";
 
@@ -433,15 +434,11 @@ function AufgabeModal({ aufgabe, mitglieder, termine, onClose, onSaved }) {
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={labelCls}>Status</label>
-              <select value={form.status} onChange={e => set('status', e.target.value)} className={selectCls}>
-                {['Offen','In Bearbeitung','Erledigt','Abgebrochen'].map(s => <option key={s}>{s}</option>)}
-              </select>
+              <MobileSelect value={form.status} onChange={v => set('status', v)} options={['Offen','In Bearbeitung','Erledigt','Abgebrochen']} className={selectCls} />
             </div>
             <div>
               <label className={labelCls}>Priorität</label>
-              <select value={form.prioritaet} onChange={e => set('prioritaet', e.target.value)} className={selectCls}>
-                {['Niedrig','Mittel','Hoch','Dringend'].map(p => <option key={p}>{p}</option>)}
-              </select>
+              <MobileSelect value={form.prioritaet} onChange={v => set('prioritaet', v)} options={['Niedrig','Mittel','Hoch','Dringend']} className={selectCls} />
             </div>
           </div>
           <div>
@@ -460,10 +457,7 @@ function AufgabeModal({ aufgabe, mitglieder, termine, onClose, onSaved }) {
           </div>
           <div>
             <label className={labelCls}>Zugehörige Sitzung</label>
-            <select value={form.termin_id || ''} onChange={e => set('termin_id', e.target.value)} className={selectCls}>
-              <option value="">–</option>
-              {termine.map(t => <option key={t.id} value={t.id}>{t.titel} ({t.datum})</option>)}
-            </select>
+            <MobileSelect value={form.termin_id || ''} onChange={v => set('termin_id', v)} placeholder="–" options={[{label:'–', value:''}, ...termine.map(t => ({label:`${t.titel} (${t.datum})`, value:t.id}))]} className={selectCls} />
           </div>
           <textarea placeholder="Notizen" value={form.notizen || ''} onChange={e => set('notizen', e.target.value)} rows={2} className={`${inputCls} resize-none`} />
         </div>
@@ -569,9 +563,7 @@ function AbstimmungModal({ abstimmung, termine, onClose, onSaved }) {
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={labelCls}>Status</label>
-              <select value={form.status} onChange={e => set('status', e.target.value)} className={selectCls}>
-                {['Offen','Abgeschlossen'].map(s => <option key={s}>{s}</option>)}
-              </select>
+              <MobileSelect value={form.status} onChange={v => set('status', v)} options={['Offen','Abgeschlossen']} className={selectCls} />
             </div>
             <div>
               <label className={labelCls}>Angenommen ab (%)</label>
@@ -580,10 +572,7 @@ function AbstimmungModal({ abstimmung, termine, onClose, onSaved }) {
           </div>
           <div>
             <label className={labelCls}>Zugehörige Sitzung</label>
-            <select value={form.termin_id || ''} onChange={e => set('termin_id', e.target.value)} className={selectCls}>
-              <option value="">–</option>
-              {termine.map(t => <option key={t.id} value={t.id}>{t.titel} ({t.datum})</option>)}
-            </select>
+            <MobileSelect value={form.termin_id || ''} onChange={v => set('termin_id', v)} placeholder="–" options={[{label:'–', value:''}, ...termine.map(t => ({label:`${t.titel} (${t.datum})`, value:t.id}))]} className={selectCls} />
           </div>
         </div>
         {confirmDelete && <div className="mt-3"><DeleteBar show={true} onConfirm={handleDelete} onCancel={() => setConfirmDelete(false)} deleting={deleting} /></div>}
@@ -725,17 +714,12 @@ function BeschlussModal({ beschluss, termine, onClose, onSaved }) {
             </div>
             <div>
               <label className={labelCls}>Status</label>
-              <select value={form.status} onChange={e => set('status', e.target.value)} className={selectCls}>
-                {['Offen','Umgesetzt','Verworfen'].map(s => <option key={s}>{s}</option>)}
-              </select>
+              <MobileSelect value={form.status} onChange={v => set('status', v)} options={['Offen','Umgesetzt','Verworfen']} className={selectCls} />
             </div>
           </div>
           <div>
             <label className={labelCls}>Zugehörige Sitzung</label>
-            <select value={form.termin_id || ''} onChange={e => set('termin_id', e.target.value)} className={selectCls}>
-              <option value="">–</option>
-              {termine.map(t => <option key={t.id} value={t.id}>{t.titel} ({t.datum})</option>)}
-            </select>
+            <MobileSelect value={form.termin_id || ''} onChange={v => set('termin_id', v)} placeholder="–" options={[{label:'–', value:''}, ...termine.map(t => ({label:`${t.titel} (${t.datum})`, value:t.id}))]} className={selectCls} />
           </div>
           <label className="flex items-center gap-2 cursor-pointer text-sm text-white">
             <input type="checkbox" checked={form.vertraulich} onChange={e => set('vertraulich', e.target.checked)} className="rounded" />
