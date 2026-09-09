@@ -163,14 +163,24 @@ function ProtokollModal({ protokoll, termine, mitglieder, ausschussIds, onClose,
   const fileRef = useRef(null);
   const set = (f, v) => setForm(p => ({ ...p, [f]: v }));
 
-  // Verfasser: nur Ausschussmitglieder. Der aktuell gesetzte Wert bleibt
-  // zusätzlich wählbar, damit ältere Protokolle beim Bearbeiten nicht
-  // 'leer' erscheinen, falls der Verfasser ausgetreten ist.
+  // Verfasser: Ausschussmitglieder UND Spartenleiter. Der aktuell
+  // gesetzte Wert bleibt zusätzlich wählbar, damit ältere Protokolle
+  // beim Bearbeiten nicht 'leer' erscheinen, falls der Verfasser ausgetreten ist.
+  const istSpartenleiter = (m) => {
+    if (ausschussIds.includes(m.id)) return false;
+    if (m.app_rolle === 'spartenleiter') return true;
+    const ids = m.spartenleiter_haesgruppen_ids;
+    if (Array.isArray(ids)) return ids.length > 0;
+    if (typeof ids === 'string' && ids.trim()) return true;
+    return false;
+  };
+  const verfasserAusschuss = mitglieder.filter(m => ausschussIds.includes(m.id));
+  const verfasserSpartenleiter = mitglieder.filter(istSpartenleiter);
   const verfasserOptions = () => {
-    const imAusschuss = mitglieder.filter(m => ausschussIds.includes(m.id));
-    if (!form.autor_mitglied_id || imAusschuss.some(m => m.id === form.autor_mitglied_id)) return imAusschuss;
+    const basis = [...verfasserAusschuss, ...verfasserSpartenleiter];
+    if (!form.autor_mitglied_id || basis.some(m => m.id === form.autor_mitglied_id)) return basis;
     const aktueller = mitglieder.find(m => m.id === form.autor_mitglied_id);
-    return aktueller ? [...imAusschuss, aktueller] : imAusschuss;
+    return aktueller ? [...basis, aktueller] : basis;
   };
 
   const handleFileUpload = async (e) => {
@@ -215,7 +225,7 @@ function ProtokollModal({ protokoll, termine, mitglieder, ausschussIds, onClose,
 
         <div className="space-y-3">
           <input
-            type="text" placeholder="Titel *" value={form.titel}
+            type="text" placeholder={form.termin_id ? 'Titel (aus Sitzung übernommen)' : 'Titel *'} value={form.titel}
             onChange={e => set('titel', e.target.value)}
             className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
           />
@@ -228,7 +238,11 @@ function ProtokollModal({ protokoll, termine, mitglieder, ausschussIds, onClose,
             </div>
             <div>
               <label className="text-xs text-muted-foreground block mb-1">Sitzung</label>
-              <select value={form.termin_id || ''} onChange={e => set('termin_id', e.target.value)}
+              <select value={form.termin_id || ''} onChange={e => {
+                const t = termine.find(x => x.id === e.target.value);
+                // Sitzung übernimmt automatisch den Titel
+                setForm(p => ({ ...p, termin_id: e.target.value, titel: t ? t.titel : p.titel }));
+              }}
                 className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary">
                 <option value="">–</option>
                 {termine.map(t => <option key={t.id} value={t.id}>{t.titel} ({t.datum})</option>)}
@@ -241,7 +255,27 @@ function ProtokollModal({ protokoll, termine, mitglieder, ausschussIds, onClose,
             <select value={form.autor_mitglied_id || ''} onChange={e => set('autor_mitglied_id', e.target.value)}
               className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary">
               <option value="">–</option>
-              {verfasserOptions().map(m => <option key={m.id} value={m.id}>{m.vorname} {m.nachname}</option>)}
+              {verfasserAusschuss.length > 0 && (
+                <optgroup label="Ausschuss">
+                  {verfasserAusschuss.map(m => <option key={m.id} value={m.id}>{m.vorname} {m.nachname}</option>)}
+                </optgroup>
+              )}
+              {verfasserSpartenleiter.length > 0 && (
+                <optgroup label="Spartenleiter">
+                  {verfasserSpartenleiter.map(m => <option key={m.id} value={m.id}>{m.vorname} {m.nachname}</option>)}
+                </optgroup>
+              )}
+              {/* Aktuell gesetzter Verfasser, falls nicht mehr in einer Gruppe */}
+              {!verfasserAusschuss.some(m => m.id === form.autor_mitglied_id) &&
+               !verfasserSpartenleiter.some(m => m.id === form.autor_mitglied_id) &&
+               form.autor_mitglied_id && (() => {
+                 const m = mitglieder.find(x => x.id === form.autor_mitglied_id);
+                 return m ? (
+                   <optgroup label="Ehemalig / ausgetreten">
+                     <option value={m.id}>{m.vorname} {m.nachname}</option>
+                   </optgroup>
+                 ) : null;
+               })()}
             </select>
           </div>
 
