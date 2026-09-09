@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
+import { istVerleihZustaendig } from '../lib/verleih';
 import { kannInventarSehn, isAdmin } from '@/lib/roles';
 import { Package, Plus, Lock, ChevronRight, Calendar, CheckCircle2, Clock, XCircle, Globe, User, AlertCircle, AlertTriangle, Inbox, QrCode, Check, X, Phone, Mail, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -382,7 +383,7 @@ export default function Inventar() {
               ? Math.max(1, Math.ceil((new Date(an.bis_datum) - new Date(an.von_datum)) / 86400000) + 1)
               : 0;
             const kostet = tage * (ausr?.verleih_preis || 0);
-            const istZustaendig = !ausr?.verleih_verantwortlicher_id || ausr?.verleih_verantwortlicher_id === meinMitglied?.id || admin;
+            const istZustaendig = istVerleihZustaendig(ausr, meinMitglied?.id) || admin;
             return (
             <div key={an.id} className="bg-card border border-primary/30 rounded-xl p-4">
               <div className="flex items-start justify-between gap-2">

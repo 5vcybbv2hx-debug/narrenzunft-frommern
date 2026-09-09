@@ -7,6 +7,7 @@ import { Inbox, Phone, Mail, Calendar, Package, ArrowRight } from 'lucide-react'
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
+import { verleihZustaendigeIds } from '../../lib/verleih';
 /**
  * Zeigt offene Verleih-Anfragen auf dem Dashboard.
  * Sichtbar für Vorstand (alle Anfragen) und zuständige Personen (nur ihre Gegenstände).
@@ -36,7 +37,7 @@ export default function VerleihAnfragenWidget() {
     ? anfragen
     : anfragen.filter((a) => {
         const item = ausruestungen.find((x) => x.id === a.ausruestung_id);
-        return item?.verleih_verantwortlicher_id === myMitgliedId;
+        return verleihZustaendigeIds(item?.verleih_verantwortlicher_id).includes(myMitgliedId);
       });
 
   if (isLoading) return null;

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { X, Save, Trash2, Truck, AlertCircle, QrCode } from 'lucide-react';
 import MobileSelect from '../MobileSelect';
 import MitgliedLiveSuche from '../MitgliedLiveSuche';
+import { verleihZustaendigeIds } from '../../lib/verleih';
 
 const KATEGORIEN = ['Anhänger', 'Kühlanhänger', 'Bar', 'Zelt', 'Technik', 'Sonstiges'];
 const ZUSTAENDE = ['Sehr gut', 'Gut', 'Ausreichend', 'Defekt'];
@@ -197,14 +198,35 @@ export default function AusruestungForm({ ausruestung, mitglieder = [], onSave, 
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-muted-foreground font-medium block mb-1">Zuständige/r für Anfragen</label>
-                  <MitgliedLiveSuche
-                    mitglieder={mitglieder}
-                    value={(() => { const m = mitglieder.find(x => x.id === form.verleih_verantwortlicher_id); return m ? `${m.vorname} ${m.nachname}` : ''; })()}
-                    onSelect={(m) => set('verleih_verantwortlicher_id', m.id)}
-                    onClear={() => set('verleih_verantwortlicher_id', '')}
-                    placeholder="Zuständige/n suchen…"
-                  />
+                  <label className="text-xs text-muted-foreground font-medium block mb-1">Zuständige für Anfragen (mehrere möglich)</label>
+                  {(() => {
+                    const ids = verleihZustaendigeIds(form.verleih_verantwortlicher_id);
+                    return (
+                      <>
+                        {ids.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mb-2">
+                            {ids.map(id => {
+                              const m = mitglieder.find(x => x.id === id);
+                              return m ? (
+                                <span key={id} className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/20 text-primary text-xs font-medium">
+                                  {m.vorname} {m.nachname}
+                                  <button type="button" title="Zuständigen entfernen"
+                                    onClick={() => set('verleih_verantwortlicher_id', ids.filter(x => x !== id).join(','))}
+                                    className="hover:text-destructive transition-colors ml-0.5"><X size={11} /></button>
+                                </span>
+                              ) : null;
+                            })}
+                          </div>
+                        )}
+                        <MitgliedLiveSuche
+                          mitglieder={mitglieder.filter(m => !ids.includes(m.id))}
+                          value=""
+                          onSelect={(m) => set('verleih_verantwortlicher_id', [...ids, m.id].join(','))}
+                          placeholder="Zuständige/n suchen…"
+                        />
+                      </>
+                    );
+                  })()}
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">Öffentliche Hinweise (auf der QR-Seite sichtbar)</label>

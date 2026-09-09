@@ -70,8 +70,11 @@ Deno.serve(async (req) => {
     // Empfänger bestimmen: Zuständiger + Vorstand (app_rolle vorstand/stellv_vorstand/admin)
     const empfaenger = [];
     const gesehen = new Set();
-    if (a.verleih_verantwortlicher_id) {
-      const z = await base44.asServiceRole.entities.Mitglied.filter({ id: a.verleih_verantwortlicher_id });
+    const zustaendigeIds = String(a.verleih_verantwortlicher_id || '')
+      .split(',').map((x) => x.trim()).filter(Boolean);
+    for (const zid of zustaendigeIds) {
+      if (gesehen.has(zid)) continue;
+      const z = await base44.asServiceRole.entities.Mitglied.filter({ id: zid });
       const zm = z?.[0];
       if (zm) { empfaenger.push(zm); gesehen.add(zm.id); }
     }
