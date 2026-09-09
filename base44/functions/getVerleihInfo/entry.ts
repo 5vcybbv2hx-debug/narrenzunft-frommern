@@ -7,8 +7,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
-    // id via Query-Parameter (?id=...) oder letzter URL-Segment
-    const id = url.searchParams.get('id') || url.pathname.split('/').filter(Boolean).pop();
+    const body = await req.json().catch(() => ({}));
+    // id via JSON-Body (SDK-Aufruf), Query-Parameter (?id=...) oder letzter URL-Segment (direkt HTTP)
+    const id = body.id || url.searchParams.get('id') || url.pathname.split('/').filter(Boolean).pop();
     if (!id) return Response.json({ error: 'id fehlt' }, { status: 400 });
 
     const base44 = createClientFromRequest(req);

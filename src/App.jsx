@@ -77,10 +77,14 @@ const AuthenticatedApp = () => {
     );
   }
 
+  // Öffentliche Routen, die auch ohne Login erreichbar sein müssen
+  const PUBLIC_PREFIXES = ['/mitgliedsantrag', '/verleih/', '/busfahrer/'];
+  const isPublicRoute = PUBLIC_PREFIXES.some(p => location.pathname.startsWith(p));
+
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
+    } else if (authError.type === 'auth_required' && !isPublicRoute) {
       navigateToLogin();
       return null;
     }
