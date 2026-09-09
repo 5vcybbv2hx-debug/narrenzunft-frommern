@@ -50,6 +50,7 @@ import Berechtigungen from './pages/Berechtigungen';
 import Nachrichten from './pages/Nachrichten';
 import MitgliedsantragFormular from './pages/MitgliedsantragFormular';
 import VerleihAnfrage from './pages/VerleihAnfrage';
+import VerleihUebersicht from './pages/VerleihUebersicht';
 import Mitgliedsantraege from './pages/Mitgliedsantraege';
 
 const AuthenticatedApp = () => {
@@ -78,7 +79,7 @@ const AuthenticatedApp = () => {
   }
 
   // Öffentliche Routen, die auch ohne Login erreichbar sein müssen
-  const PUBLIC_PREFIXES = ['/mitgliedsantrag', '/verleih/', '/busfahrer/'];
+  const PUBLIC_PREFIXES = ['/mitgliedsantrag', '/verleih', '/busfahrer/'];
   const isPublicRoute = PUBLIC_PREFIXES.some(p => location.pathname.startsWith(p));
 
   if (authError) {
@@ -191,6 +192,7 @@ const AuthenticatedApp = () => {
         } />
       </Route>
       <Route path="/mitgliedsantrag" element={<MitgliedsantragFormular />} />
+      <Route path="/verleih" element={<VerleihUebersicht />} />
       <Route path="/verleih/:id" element={<VerleihAnfrage />} />
       <Route path="/busfahrer/:token" element={<BusfahrerInfo />} />
       <Route path="*" element={<PageNotFound />} />
