@@ -2,6 +2,7 @@ import DateSelect from '../ui/DateSelect';
 import { useState } from 'react';
 import { X, Save, Trash2, Truck, AlertCircle, QrCode } from 'lucide-react';
 import MobileSelect from '../MobileSelect';
+import MitgliedLiveSuche from '../MitgliedLiveSuche';
 
 const KATEGORIEN = ['Anhänger', 'Kühlanhänger', 'Bar', 'Zelt', 'Technik', 'Sonstiges'];
 const ZUSTAENDE = ['Sehr gut', 'Gut', 'Ausreichend', 'Defekt'];
@@ -197,11 +198,13 @@ export default function AusruestungForm({ ausruestung, mitglieder = [], onSave, 
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">Zuständige/r für Anfragen</label>
-                  <MobileSelect value={form.verleih_verantwortlicher_id || ''} onChange={v => set('verleih_verantwortlicher_id', v)}
-                    options={[
-                      { label: 'Keine/r (nur Vorstand)', value: '' },
-                      ...mitglieder.map(m => ({ label: `${m.vorname} ${m.nachname}`, value: m.id })),
-                    ]} />
+                  <MitgliedLiveSuche
+                    mitglieder={mitglieder}
+                    value={(() => { const m = mitglieder.find(x => x.id === form.verleih_verantwortlicher_id); return m ? `${m.vorname} ${m.nachname}` : ''; })()}
+                    onSelect={(m) => set('verleih_verantwortlicher_id', m.id)}
+                    onClear={() => set('verleih_verantwortlicher_id', '')}
+                    placeholder="Zuständige/n suchen…"
+                  />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">Öffentliche Hinweise (auf der QR-Seite sichtbar)</label>
