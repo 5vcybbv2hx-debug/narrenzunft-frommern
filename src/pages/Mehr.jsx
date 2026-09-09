@@ -1,146 +1,93 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
-import { isAdmin, isDeveloper, getRollenLabel } from '@/lib/roles';
-import {
-  Users, Shirt, Award, CreditCard, Calendar, Bus,
-  Briefcase, Bell, Search, LogOut, ChevronRight,
-  Shield, Settings, Star, FileText, Lock, CheckSquare,
-  Package, AlertTriangle, ClipboardList, MessageSquare
-} from 'lucide-react';
+import { getRollenLabel } from '@/lib/roles';
+import { NAV_SECTIONS, canSeeItem, canSeeSection } from '@/components/Layout';
+import SecureSearch from '@/components/SecureSearch';
+import { ChevronRight, LogOut, Shield } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 export default function Mehr() {
   const { user } = useAuth();
-  const admin = isAdmin(user);
+  const location = useLocation();
 
   const handleLogout = () => base44.auth.logout('/');
+  const isActive = (path) => location.pathname === path;
+  const istFuehrung = ['vorstand', 'stellv_vorstand', 'admin'].includes(user?.role);
 
-  const canSee = (item, user) => {
-    if (item.roles === null) return true;
-    if (isDeveloper(user)) return true;
-    if (item.roles.includes(user?.role)) return true;
-    if (item.zusatz && user?._mitglied?.zusatz_berechtigungen) {
-      if (item.zusatz.some(z => user._mitglied.zusatz_berechtigungen.includes(z))) {
-        return true;
-      }
-    }
-    return false;
-  };
+  const sichtbareSektionen = NAV_SECTIONS
+    .filter(s => canSeeSection(s, user))
+    .map(s => ({ ...s, items: s.items.filter(i => canSeeItem(i, user)) }))
+    .filter(s => s.items.length > 0);
 
-  const sections = [
-    {
-      title: 'Uebersicht',
-      items: [
-        { path: '/haes', label: 'Häs & Masken', icon: Shirt, roles: null },
-        { path: '/sparten', label: 'Sparten & Gruppen', icon: Users, roles: null },
-        { path: '/suche', label: 'Suche', icon: Search, roles: null },
-        { path: '/benachrichtigungen', label: 'Benachrichtigungen', icon: Bell, roles: null },
-        { path: '/nachrichten', label: 'Nachrichten', icon: MessageSquare, roles: null }
-      ]
-    },
-    {
-      title: 'Verwaltung',
-      items: [
-        { path: '/vorstand', label: 'Führungs-Dashboard', icon: ClipboardList, roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'] },
-        { path: '/mitglieder', label: 'Mitglieder', icon: Users, roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter', 'admin'] },
-        { path: '/mitgliedsantraege', label: 'Mitgliedsanträge', icon: FileText, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
-        { path: '/ehrungen', label: 'Ehrungen', icon: Award, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
-        { path: '/beitraege', label: 'Beiträge', icon: CreditCard, roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'] },
-        { path: '/vereine', label: 'Vereine & Zünfte', icon: Users, roles: ['vorstand', 'stellv_vorstand', 'admin'] }
-      ]
-    },
-    {
-      title: 'Organisation',
-      items: [
-        { path: '/ausschuss', label: 'Ausschussbereich', icon: Lock, roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'], zusatz: ['ausschuss'] },
-        { path: '/todos', label: 'Aufgaben', icon: CheckSquare, roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'], zusatz: ['todos'] },
-        { path: '/inventar', label: 'Inventar & Verleih', icon: Package, roles: ['vorstand', 'stellv_vorstand', 'admin'], zusatz: ['inventar'] }
-      ]
-    },
-    {
-      title: 'System',
-      items: [
-        { path: '/datenqualitaet', label: 'Datenqualität', icon: AlertTriangle, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
-        { path: '/berechtigungen', label: 'Berechtigungen', icon: Shield, roles: ['admin', 'vorstand', 'stellv_vorstand'] }
-      ]
-    },
-    {
-      title: 'Familie',
-      items: [
-        { path: '/familie', label: 'Familien-Dashboard', icon: Users, roles: null }
-      ]
-    }
-  ];
+  const displayName = user?._mitglied
+    ? `${user._mitglied.vorname || ''} ${user._mitglied.nachname || ''}`.trim()
+    : (user?.full_name || 'Benutzer');
+  const displayInitials = (displayName.split(' ').map(w => w[0]).join('').toUpperCase() || 'U').slice(0, 2);
 
   return (
-    <div className="px-4 py-6 max-w-xl mx-auto min-h-screen bg-[#080808] text-white">
-      <h1 className="text-2xl font-oswald uppercase tracking-wide text-white mb-2">Mehr</h1>
+    <div className="px-4 py-5 max-w-xl mx-auto">
+      <h1 className="font-oswald uppercase tracking-wide text-2xl text-foreground mb-4">Mehr</h1>
 
-      {/* Benutzer-Info Card */}
-      <div className="bg-card border border-border rounded-xl p-4 mb-6 flex items-center gap-3">
-        <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-[#EA2525] font-bold text-lg shrink-0">
-          {user?.full_name?.[0] || 'U'}
+      {/* Profil-Karte */}
+      <Link to="/profil"
+        className="flex items-center gap-3.5 bg-card border border-border rounded-xl p-4 mb-4 active:scale-[0.99] transition-all">
+        <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-sm shadow-primary/30">
+          {displayInitials}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-white truncate">{user?.full_name || 'Benutzer'}</p>
-          <p className="text-sm text-muted-foreground">{user?.email}</p>
-          <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full bg-primary/10 border border-primary/30 text-[#EA2525] font-medium">
-            {getRollenLabel(user?.role)}
-          </span>
+          <p className="font-semibold text-foreground truncate">{displayName}</p>
+          <p className="text-xs text-primary font-medium">{getRollenLabel(user?.role)}</p>
         </div>
-        <Link to="/profil" className="p-2 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors">
-          <ChevronRight size={18} />
-        </Link>
+        <ChevronRight size={18} className="text-muted-foreground shrink-0" />
+      </Link>
+
+      {/* Suche */}
+      <div className="mb-5">
+        <SecureSearch />
       </div>
 
-      {/* Admin Badge */}
-      {admin && (
-        <div className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-xl px-4 py-3 mb-4">
-          <Shield size={16} className="text-[#EA2525] shrink-0" />
-          <p className="text-sm text-white font-medium">Admin-Bereich aktiv</p>
+      {/* Kachel-Hub */}
+      {sichtbareSektionen.map((section) => (
+        <div key={section.id} className="mb-5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">
+            {section.title}
+          </p>
+          <div className="grid grid-cols-2 gap-2.5">
+            {section.items.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.path);
+              return (
+                <Link key={item.path} to={item.path}
+                  className={`flex flex-col items-start gap-2.5 rounded-xl border p-3.5 transition-all active:scale-[0.97] ${
+                    active
+                      ? 'bg-primary/10 border-primary/40'
+                      : 'bg-card border-border hover:border-primary/30'
+                  }`}>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                    active ? 'bg-primary border border-primary/40' : 'bg-primary/10 border border-primary/25'
+                  }`}>
+                    <Icon size={19} className="text-white" strokeWidth={active ? 2.2 : 1.9} />
+                  </div>
+                  <span className="text-[13px] font-medium text-foreground leading-tight">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+
+      {/* Führungshinweis */}
+      {istFuehrung && (
+        <div className="flex items-center gap-2 bg-primary/10 border border-primary/25 rounded-xl px-4 py-3 mb-4">
+          <Shield size={15} className="text-primary shrink-0" />
+          <p className="text-xs text-muted-foreground">Du siehst zusätzliche Verwaltungsbereiche für deine Rolle.</p>
         </div>
       )}
 
-      {/* Sektionen */}
-      {sections.map((section) => {
-        const visibleItems = section.items.filter(item => canSee(item, user));
-        if (visibleItems.length === 0) return null;
-
-        return (
-          <div key={section.title} className="mb-5">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 px-1">
-              {section.title}
-            </p>
-            <div className="bg-card border border-border rounded-xl overflow-hidden">
-              {visibleItems.map((item, idx) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={`flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/50 transition-colors ${
-                      idx < visibleItems.length - 1 ? 'border-b border-border' : ''
-                    }`}
-                  >
-                    <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center shrink-0">
-                      <Icon size={18} className="text-[#EA2525]" />
-                    </div>
-                    <span className="flex-1 text-sm font-medium text-white">{item.label}</span>
-                    <ChevronRight size={16} className="text-muted-foreground hover:text-foreground" />
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
-
-      {/* Abmelden Button */}
-      <button
-        onClick={handleLogout}
-        className="w-full flex items-center justify-center gap-3 py-3.5 rounded-xl bg-red-900/20 text-red-400 border border-red-700/30 font-semibold hover:bg-red-900/40 transition-colors mt-2"
-      >
-        <LogOut size={18} /> Abmelden
+      {/* Abmelden */}
+      <button onClick={handleLogout}
+        className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl bg-red-900/20 text-red-400 border border-red-700/30 font-medium text-sm hover:bg-red-900/40 active:scale-[0.98] transition-all">
+        <LogOut size={17} /> Abmelden
       </button>
     </div>
   );
