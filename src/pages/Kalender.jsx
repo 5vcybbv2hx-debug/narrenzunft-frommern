@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
+import { meldeAnAusfahrtSicher } from '@/lib/ausfahrtAnmeldung';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -191,17 +192,14 @@ export default function Kalender() {
     if (!myMitglied) return;
     setSubmittingAusfahrtId(ausfahrtId);
     try {
-      const todayStr = format(new Date(), 'yyyy-MM-dd');
-      await base44.entities.AusfahrtAnmeldung.create({
-        ausfahrt_id: ausfahrtId,
-        mitglied_id: myMitglied.id,
-        status: 'Angemeldet',
+      const res = await meldeAnAusfahrtSicher({
+        ausfahrtId,
+        mitgliedId: myMitglied.id,
         transport: 'Bus',
-        angemeldet_am: todayStr,
-        anzahl_begleitpersonen: 0,
-        begleitpersonen: [],
-        is_fremdangemeldet: false,
       });
+      if (res.bereitsAngemeldet) {
+        toast.info('Du bist für diese Ausfahrt bereits angemeldet.');
+      }
       const updated = await base44.entities.AusfahrtAnmeldung.filter({});
       setAusfahrtAnmeldungen(updated || []);
     } catch (e) {

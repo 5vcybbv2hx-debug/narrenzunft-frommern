@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
+import { meldeAnAusfahrtSicher } from '@/lib/ausfahrtAnmeldung';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannAusschussSehn } from '@/lib/roles';
 import { Bus, MapPin, Clock, Calendar, Users, ChevronRight, ArrowLeft, UserPlus, CheckCircle2, Download, X, Pencil, Trash2, Ban, AlertTriangle, QrCode, ScanLine, Search } from 'lucide-react';
@@ -154,39 +155,26 @@ export default function AusfahrtDetail() {
     }
 
     try {
-      const todayStr = format(new Date(), 'yyyy-MM-dd');
-      
-      // 1. Eigene Anmeldung erstellen
-      await base44.entities.AusfahrtAnmeldung.create({
-          ausfahrt_id: id,
-          mitglied_id: currentMitglied.id,
-          transport: transportType,
-          status: 'Angemeldet',
-          angemeldet_am: todayStr,
-          anzahl_begleitpersonen: 0,
-          begleitpersonen: [],
-          is_fremdangemeldet: false
-        });
+      // 1. Eigene Anmeldung — nur einmal pro Ausfahrt möglich
+      const eigen = await meldeAnAusfahrtSicher({
+        ausfahrtId: id,
+        mitgliedId: currentMitglied.id,
+        transport: transportType,
+      });
+      if (eigen.bereitsAngemeldet) {
+        toast.info('Du bist für diese Ausfahrt bereits angemeldet.');
+      }
 
       // 2. Für jedes ausgewählte Familienmitglied eine EIGENE Anmeldung erstellen
       const selectedFamily = familienmitglieder
         .filter(fm => ausgewaehlteFamilienmitglieder.includes(fm.id));
-      
+
       for (const fm of selectedFamily) {
-        const existing = anmeldungen.find(a => a.mitglied_id === fm.id && a.status !== 'Abgemeldet');
-        if (existing) continue;
-        
-        await base44.entities.AusfahrtAnmeldung.create({
-          ausfahrt_id: id,
-          mitglied_id: fm.id,
+        await meldeAnAusfahrtSicher({
+          ausfahrtId: id,
+          mitgliedId: fm.id,
           transport: transportType,
-          status: 'Angemeldet',
-          angemeldet_am: todayStr,
-          anzahl_begleitpersonen: 0,
-          begleitpersonen: [],
-          is_fremdangemeldet: false,
-          durch_admin_angemeldet: true,
-          durch_admin_name: `${currentMitglied.vorname || ''} ${currentMitglied.nachname || ''}`.trim()
+          durchAdminName: `${currentMitglied.vorname || ''} ${currentMitglied.nachname || ''}`.trim(),
         });
       }
 
@@ -201,25 +189,16 @@ export default function AusfahrtDetail() {
 
   const handleRegisterChild = async (kindId, transportType) => {
     try {
-      const todayStr = format(new Date(), 'yyyy-MM-dd');
-      // Check if child already has a registration
-      const existing = anmeldungen.find(a => a.mitglied_id === kindId && a.status !== 'Abgemeldet');
-      if (existing) {
+      const res = await meldeAnAusfahrtSicher({
+        ausfahrtId: id,
+        mitgliedId: kindId,
+        transport: transportType,
+        durchAdminName: `${currentMitglied?.vorname || ''} ${currentMitglied?.nachname || ''}`.trim() || 'Elternkonto',
+      });
+      if (res.bereitsAngemeldet) {
         toast.warning('Dieses Kind ist bereits angemeldet.');
         return;
       }
-      await base44.entities.AusfahrtAnmeldung.create({
-        ausfahrt_id: id,
-        mitglied_id: kindId,
-        transport: transportType,
-        status: 'Angemeldet',
-        angemeldet_am: todayStr,
-        anzahl_begleitpersonen: 0,
-        begleitpersonen: [],
-        is_fremdangemeldet: false,
-        durch_admin_angemeldet: true,
-        durch_admin_name: `${currentMitglied?.vorname || ''} ${currentMitglied?.nachname || ''}`.trim() || 'Elternkonto'
-      });
       toast.success('Kind angemeldet');
       fetchData();
     } catch (err) {
