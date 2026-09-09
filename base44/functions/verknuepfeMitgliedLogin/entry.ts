@@ -26,13 +26,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (!mitglied && user.full_name) {
-      const parts = user.full_name.trim().split(/\s+/);
-      if (parts.length >= 2) {
-        const byName = await base44.asServiceRole.entities.Mitglied.filter({ vorname: parts[0], nachname: parts[parts.length - 1] });
-        if (byName.length === 1) { mitglied = byName[0]; matchStrategy = 'name'; }
-      }
-    }
+    // Namens-Matching bewusst entfernt — Sicherheitsrisiko: ein Angreifer konnte sich
+    // mit dem Namen eines Vorstands-Mitglieds registrieren und dessen Rolle übernehmen.
+    // Verknüpfung ausschließlich über user_id oder verifizierte E-Mail-Adresse.
 
     if (!mitglied) return Response.json({ linked: false, message: 'Kein passendes Mitglied gefunden', user_email: user.email, user_name: user.full_name });
 
@@ -41,10 +37,10 @@ Deno.serve(async (req) => {
     if (!mitglied.user_id) {
       await base44.asServiceRole.entities.Mitglied.update(mitglied.id, { user_id: user.id });
       updates.push('user_id');
-    } else if (mitglied.user_id !== user.id && matchStrategy !== 'user_id') {
-      await base44.asServiceRole.entities.Mitglied.update(mitglied.id, { user_id: user.id });
-      updates.push('user_id (überschrieben)');
     }
+    // Bewusst KEINE Überschreibung bestehender user_id-Verknüpfungen mehr —
+    // selbst bei Email-Match könnte ein Edge-Case zur Konto-Übernahme führen.
+    // Ein Admin kann veraltete Verknüpfungen manuell korrigieren.
 
     if (user.email && mitglied.email !== user.email && matchStrategy !== 'email') {
       if (!mitglied.email || mitglied.email === '') {

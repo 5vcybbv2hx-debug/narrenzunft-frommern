@@ -29,14 +29,9 @@ Deno.serve(async (req) => {
       mitglied = all.find(m => m.email && m.email.toLowerCase() === user.email.toLowerCase());
     }
 
-    // 4. Versuch: Namens-Match (eindeutig)
-    if (!mitglied && user.full_name) {
-      const parts = user.full_name.trim().split(/\s+/);
-      if (parts.length >= 2) {
-        const byName = await base44.asServiceRole.entities.Mitglied.filter({ vorname: parts[0], nachname: parts[parts.length - 1] });
-        if (byName.length === 1) { mitglied = byName[0]; }
-      }
-    }
+    // Namens-Matching bewusst entfernt — Sicherheitsrisiko: ein Angreifer konnte sich
+    // mit dem Namen eines anderen Mitglieds registrieren und deren IBAN, SEPA-Mandate
+    // und Notfallkontakte einsehen. Verknüpfung nur über user_id oder verifizierte E-Mail.
 
     if (!mitglied) {
       return Response.json({ gefunden: false, mitglied: null, haes: [], ehrungen: [], teilnahmen: [] });

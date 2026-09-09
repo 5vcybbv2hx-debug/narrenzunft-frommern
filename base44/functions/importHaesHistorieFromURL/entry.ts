@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { validateSafeUrl } from '../../shared/validateUrl.ts';
 
 export default async function(req) {
   try {
@@ -12,6 +13,9 @@ export default async function(req) {
     const body = await req.json().catch(() => ({}));
     const fileUrl = body.fileUrl || 'https://files.base44.com/mp/private/6a216d71b6fcba886566ffb1/b1190ec3a_haes_historie_final.json';
     
+    const urlCheck = validateSafeUrl(fileUrl);
+    if (!urlCheck.ok) return Response.json({ error: urlCheck.error }, { status: 400 });
+
     const response = await fetch(fileUrl);
     if (!response.ok) {
       const text = await response.text();

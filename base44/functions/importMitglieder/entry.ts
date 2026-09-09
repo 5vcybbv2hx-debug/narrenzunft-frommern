@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { validateSafeUrl } from '../../shared/validateUrl.ts';
 
 const STATUS_MAP = {
   'active': 'Aktiv',
@@ -74,6 +75,9 @@ Deno.serve(async (req) => {
 
   const { csv_url, offset = 0, limit = 50, mode = 'all' } = await req.json();
   if (!csv_url) return Response.json({ error: 'csv_url fehlt' }, { status: 400 });
+
+  const urlCheck = validateSafeUrl(csv_url);
+  if (!urlCheck.ok) return Response.json({ error: urlCheck.error }, { status: 400 });
 
   // CSV laden
   const csvText = await fetch(csv_url).then(r => r.text());

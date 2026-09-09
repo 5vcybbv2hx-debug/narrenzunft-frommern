@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
+import { validateSafeUrl } from '../../shared/validateUrl.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -12,6 +13,9 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { csv_url } = body;
     if (!csv_url) return Response.json({ error: 'csv_url fehlt' }, { status: 400 });
+
+    const urlCheck = validateSafeUrl(csv_url);
+    if (!urlCheck.ok) return Response.json({ error: urlCheck.error }, { status: 400 });
 
     // ── CSV herunterladen und parsen ──
     const csvRes = await fetch(csv_url);
