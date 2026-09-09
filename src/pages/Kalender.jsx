@@ -9,7 +9,7 @@ import {
   MapPin, Download, Filter, X, Edit, LayoutTemplate, Bus, AlertCircle, Search
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth,
-  addMonths, subMonths, parseISO, isToday, startOfDay, isBefore, isAfter, differenceInDays } from 'date-fns';
+  addMonths, subMonths, parseISO, isToday, isSameDay, startOfDay, isBefore, isAfter, differenceInDays } from 'date-fns';
 import { de } from 'date-fns/locale';
 import KalenderTerminModal from '@/components/kalender/KalenderTerminModal';
 import VeranstaltungBearbeitenModal from '@/components/kalender/VeranstaltungBearbeitenModal';
