@@ -15,6 +15,7 @@ import { de } from 'date-fns/locale';
 import { isAdmin, kannArbeitsdiensteVerwalten, istNurMitglied, getRollenLabel } from '@/lib/roles';
 import MitgliedDashboard from '@/components/dashboard/MitgliedDashboard';
 import StatuswechselWidget from '@/components/vorstand/StatuswechselWidget';
+import VerleihAnfragenWidget from '@/components/dashboard/VerleihAnfragenWidget';
 
 // ── Hilfsfunktionen ──────────────────────────────────────────────────────────
 
@@ -550,6 +551,9 @@ export default function Dashboard() {
             <StatuswechselWidget />
           </SectionCard>
         )}
+
+        {/* Offene Verleih-Anfragen (Vorstand + zuständige Personen) */}
+        <VerleihAnfragenWidget />
 
       </div>
     </div>

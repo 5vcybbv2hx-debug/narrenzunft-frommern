@@ -72,21 +72,6 @@ Deno.serve(async (req) => {
 
     const zusammenfassung = `${n} möchte „${a.name}" vom ${von_datum} bis ${bis_datum} ausleihen.`;
 
-    // In-App-Benachrichtigungen
-    for (const m of empfaenger) {
-      try {
-        await base44.asServiceRole.entities.Benachrichtigung.create({
-          mitglied_id: m.id,
-          titel: 'Neue Verleih-Anfrage',
-          nachricht: `${zusammenfassung}${anfrage.zweck ? ` Zweck: ${anfrage.zweck}` : ''}`,
-          typ: 'Info',
-          link: '/inventar',
-        });
-      } catch (e) {
-        console.error('Benachrichtigung fehlgeschlagen:', e?.message);
-      }
-    }
-
     // E-Mail-Weiterleitung an Vorstand & Zuständige
     const emailHtml = `
       <div style="background:#0a0a0a;padding:24px;font-family:Arial,sans-serif;">
