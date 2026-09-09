@@ -1,4 +1,4 @@
-import { Edit, AlertTriangle, Check, Circle, MapPin, Globe, User, Car, Truck, Snowflake, Tent, Plug, Package, Wine } from 'lucide-react';
+import { Edit, AlertTriangle, Check, Circle, MapPin, Globe, User, Car, Truck, Snowflake, Tent, Plug, Package, Wine, QrCode } from 'lucide-react';
 
 const KATEGORIE_ICONS = {
   'Anhänger': Truck, 'Kühlanhänger': Snowflake, 'Bar': Wine,
@@ -24,7 +24,7 @@ function getTuevStatus(datum) {
   return { label: `TÜV bis ${datum}`, color: 'text-green-400 bg-green-900/20 border-green-700/30' };
 }
 
-export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, ausleiherName, isAdmin, onEdit, onAusleihen, verfuegbar, bestand }) {
+export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, ausleiherName, isAdmin, onEdit, onAusleihen, onQr, verfuegbar, bestand }) {
   const hatBestand = bestand != null && bestand > 1;
   const verfuegbarCount = verfuegbar != null ? verfuegbar : (!aktuelleAusleihe ? 1 : 0);
   const bestandCount = bestand != null ? bestand : 1;
@@ -53,11 +53,19 @@ export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, auslei
               <p className="text-sm font-semibold text-foreground">{ausruestung.name}</p>
               <p className="text-xs text-muted-foreground">{ausruestung.kategorie}</p>
             </div>
-            {isAdmin && (
-              <button onClick={onEdit} className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors shrink-0">
-                <Edit size={14} />
-              </button>
-            )}
+            <div className="flex items-center gap-1 shrink-0">
+              {ausruestung.verleihbar && (
+                <button onClick={onQr} title="QR-Code für öffentlichen Verleih"
+                  className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
+                  <QrCode size={14} />
+                </button>
+              )}
+              {isAdmin && (
+                <button onClick={onEdit} className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
+                  <Edit size={14} />
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-2 mt-2">
@@ -69,6 +77,11 @@ export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, auslei
             <span className={`text-[10px] px-2 py-0.5 rounded-full ${ZUSTAND_FARBEN[ausruestung.zustand]}`}>
               {ausruestung.zustand}
             </span>
+            {ausruestung.verleihbar && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 flex items-center gap-1">
+                <QrCode size={11} /> Verleih{ausruestung.verleih_preis > 0 ? ` · ${Number(ausruestung.verleih_preis).toFixed(2).replace('.', ',')} €/Tag` : ''}
+              </span>
+            )}
             {ausruestung.standort && (
               <a
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ausruestung.standort)}`}

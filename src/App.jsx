@@ -49,6 +49,7 @@ import Inventar from './pages/Inventar';
 import Berechtigungen from './pages/Berechtigungen';
 import Nachrichten from './pages/Nachrichten';
 import MitgliedsantragFormular from './pages/MitgliedsantragFormular';
+import VerleihAnfrage from './pages/VerleihAnfrage';
 import Mitgliedsantraege from './pages/Mitgliedsantraege';
 
 const AuthenticatedApp = () => {
@@ -186,6 +187,7 @@ const AuthenticatedApp = () => {
         } />
       </Route>
       <Route path="/mitgliedsantrag" element={<MitgliedsantragFormular />} />
+      <Route path="/verleih/:id" element={<VerleihAnfrage />} />
       <Route path="/busfahrer/:token" element={<BusfahrerInfo />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>

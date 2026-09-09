@@ -6,8 +6,7 @@ import { isAdmin, kannArbeitsdiensteVerwalten, getRollenLabel } from '@/lib/role
 import {
   Calendar, Users, Briefcase, AlertCircle, CheckCircle2,
   Clock, MapPin, ChevronRight, ArrowRight, UserCheck, UserX, Shield, Baby,
-  Shirt, Award, CreditCard
-} from 'lucide-react';
+  Shirt, Award, CreditCard, Inbox, QrCode} from 'lucide-react';
 import StatuswechselWidget from '@/components/vorstand/StatuswechselWidget';
 import { format, differenceInDays } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -46,6 +45,7 @@ export default function VorstandDashboard() {
   const [dienstZuweisungen, setDienstZuweisungen] = useState([]);
   const [mitglieder, setMitglieder] = useState([]);
   const [arbeitsdienste, setArbeitsdienste] = useState([]);
+  const [verleihAnfragen, setVerleihAnfragen] = useState([]);
   const today = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
@@ -55,15 +55,17 @@ export default function VorstandDashboard() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [v, m, ad, adz] = await Promise.all([
+      const [v, m, ad, adz, va] = await Promise.all([
         base44.entities.Veranstaltung.list('datum', 100),
         base44.entities.Mitglied.list('nachname', 300),
         base44.entities.Arbeitsdienst.list('datum', 100),
         base44.entities.ArbeitsdienstZuweisung.list('-created_date', 500),
+        base44.entities.VerleihAnfrage.list('-created_date', 100).catch(() => []),
       ]);
       setMitglieder(m);
       setDienstZuweisungen(adz);
       setArbeitsdienste(ad);
+      setVerleihAnfragen(va.filter(x => x.status === 'Offen'));
 
       // Kommende Veranstaltungen (nächste 60 Tage)
       const kommende = v
@@ -204,6 +206,28 @@ export default function VorstandDashboard() {
             </div>
           )}
         </SectionCard>
+
+        {/* Offene Verleih-Anfragen (QR) */}
+        {verleihAnfragen.length > 0 && (
+          <SectionCard title={`Verleih-Anfragen (${verleihAnfragen.length})`} icon={Inbox} linkTo="/inventar" linkLabel="Alle" accent>
+            <div className="space-y-2.5">
+              {verleihAnfragen.slice(0, 4).map(an => (
+                <Link key={an.id} to="/inventar" className="flex items-center gap-3 group">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <QrCode size={18} className="text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                      {an.ausruestung_name} <span className="text-muted-foreground font-normal">· {an.name}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{an.von_datum} → {an.bis_datum}</p>
+                  </div>
+                  <span className="text-xs px-2 py-0.5 rounded-full shrink-0 bg-primary/20 text-primary font-semibold">{an.telefon || '–'}</span>
+                </Link>
+              ))}
+            </div>
+          </SectionCard>
+        )}
 
         {/* Unterbesetzte Dienste – Dringend */}
         <SectionCard title="Dringlich: Unterbesetzte Dienste" icon={AlertCircle} linkTo="/arbeitsdienste" accent>
