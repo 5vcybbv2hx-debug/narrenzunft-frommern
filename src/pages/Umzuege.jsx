@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import MobileSelect from '@/components/MobileSelect';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 function VerantwortlicheAuswahl({ mitglieder, selected, onChange, haeufige }) {
   const [suche, setSuche] = useState('');
@@ -206,7 +207,7 @@ export default function Umzuege() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Termin wirklich löschen?')) return;
+    if (!(await confirmDialog('Termin wirklich löschen?'))) return;
     try {
       await base44.entities.Veranstaltung.delete(id);
       updateQueryData(old => ({ ...old, umzuege: old.umzuege.filter(u => u.id !== id) }));
@@ -261,7 +262,7 @@ export default function Umzuege() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Auswärtige Termine</h1>
+          <h1 className="text-2xl font-bold text-foreground font-oswald uppercase tracking-wide">Auswärtige Termine</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Umzüge & Abendveranstaltungen · {kommende.length} kommend</p>
         </div>
         {admin && (
@@ -286,7 +287,7 @@ export default function Umzuege() {
       {/* Kommende */}
       {kommende.length > 0 && (
         <div className="mb-6">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Kommende Termine</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3 font-oswald uppercase tracking-wide">Kommende Termine</h2>
           <div className="space-y-3">
             {kommende.map(u => {
               const anmeldung = getMeineAnmeldung(u.id);
@@ -399,7 +400,7 @@ export default function Umzuege() {
       {/* Vergangene */}
       {vergangene.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Vergangene Termine</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3 font-oswald uppercase tracking-wide">Vergangene Termine</h2>
           <div className="space-y-2">
             {vergangene.slice().reverse().slice(0, 10).map(u => (
               <div key={u.id} className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3 opacity-70">

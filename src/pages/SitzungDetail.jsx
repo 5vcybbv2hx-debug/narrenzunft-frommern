@@ -9,6 +9,7 @@ import {
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import MobileSelect from '@/components/MobileSelect';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 const ANWESENHEIT_FARBEN = {
   'Anwesend':      'bg-green-500/20 text-green-400',
@@ -19,13 +20,13 @@ const ANWESENHEIT_FARBEN = {
 const TOP_STATUS_FARBEN = {
   'Offen':     'bg-yellow-500/20 text-yellow-400',
   'Besprochen':'bg-green-500/20 text-green-400',
-  'Vertagt':   'bg-gray-500/20 text-gray-400',
+  'Vertagt':   'bg-gray-500/20 text-muted-foreground',
 };
 
 const STIMME_FARBEN = {
   'Ja':         'bg-green-500/20 text-green-400 border border-green-500/30',
   'Nein':       'bg-red-500/20 text-red-400 border border-red-500/30',
-  'Enthaltung': 'bg-gray-500/20 text-gray-400 border border-gray-500/30',
+  'Enthaltung': 'bg-gray-500/20 text-muted-foreground border border-gray-500/30',
 };
 
 export default function SitzungDetail() {
@@ -96,7 +97,7 @@ export default function SitzungDetail() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
         <Lock size={40} className="text-muted-foreground mb-3" />
-        <h2 className="text-xl font-bold text-foreground mb-2">Kein Zugriff</h2>
+        <h2 className="text-xl font-bold text-foreground mb-2 font-oswald uppercase tracking-wide">Kein Zugriff</h2>
         <p className="text-sm text-muted-foreground">Dieser Bereich ist nur für Vorstand und Ausschuss zugänglich.</p>
       </div>
     );
@@ -122,7 +123,7 @@ export default function SitzungDetail() {
           <ArrowLeft size={20} />
         </button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-bold text-foreground truncate">{termin.titel}</h1>
+          <h1 className="text-xl font-bold text-foreground truncate font-oswald uppercase tracking-wide">{termin.titel}</h1>
           <p className="text-sm text-muted-foreground">
             {format(new Date(termin.datum), 'EEEE, d. MMMM yyyy', { locale: de })}
             {termin.startzeit && ` · ${termin.startzeit}`}
@@ -277,7 +278,7 @@ function TopsTab({ terminId, tops, setTops, mitglieder, isAdmin }) {
   };
 
   const handleDelete = async (topId) => {
-    if (!confirm('Diesen Tagesordnungspunkt wirklich löschen?')) return;
+    if (!(await confirmDialog('Diesen Tagesordnungspunkt wirklich löschen?'))) return;
     await base44.entities.Tagesordnungspunkt.delete(topId);
     setTops(prev => prev.filter(t => t.id !== topId));
   };
@@ -422,7 +423,7 @@ function AbstimmungenTab({ terminId, abstimmungen, setAbstimmungen, ausschussMit
   };
 
   const handleDelete = async (absId) => {
-    if (!confirm('Abstimmung wirklich löschen?')) return;
+    if (!(await confirmDialog('Abstimmung wirklich löschen?'))) return;
     await base44.entities.Abstimmung.delete(absId);
     setAbstimmungen(prev => prev.filter(a => a.id !== absId));
   };

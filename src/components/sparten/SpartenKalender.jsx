@@ -5,13 +5,14 @@ import { base44 } from '@/api/base44Client';
 import { Plus, X, Save, Trash2, Calendar, Clock, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 const TYP_FARBEN = {
   'Probe':       'bg-blue-500/20 text-blue-400',
   'Auftritt':    'bg-primary/20 text-primary',
   'Besprechung': 'bg-purple-500/20 text-purple-400',
   'Ausflug':     'bg-green-500/20 text-green-400',
-  'Sonstiges':   'bg-gray-500/20 text-gray-400',
+  'Sonstiges':   'bg-gray-500/20 text-muted-foreground',
 };
 
 const LEER = { titel: '', typ: 'Probe', datum: '', uhrzeit: '', endzeit: '', ort: '', beschreibung: '' };
@@ -62,7 +63,7 @@ export default function SpartenKalender({ gruppe, kannBearbeiten }) {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Termin löschen?')) return;
+    if (!(await confirmDialog('Termin löschen?'))) return;
     await base44.entities.SpartenTermin.delete(id);
     setTermine(prev => prev.filter(t => t.id !== id));
   };

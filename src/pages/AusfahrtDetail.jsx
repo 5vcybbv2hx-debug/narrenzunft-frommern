@@ -9,6 +9,8 @@ import AusfahrtEditModal from '@/components/ausfahrt/AusfahrtEditModal';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
+import MobileSelect from '@/components/MobileSelect';
 
 export default function AusfahrtDetail() {
   const { id } = useParams();
@@ -217,7 +219,7 @@ export default function AusfahrtDetail() {
       toast.error('Abmeldung nur bis 3 Tage vor der Ausfahrt möglich.');
       return;
     }
-    if (!confirm('Kind wirklich von der Ausfahrt abmelden?')) return;
+    if (!(await confirmDialog('Kind wirklich von der Ausfahrt abmelden?'))) return;
 
     try {
       const todayStr = format(new Date(), 'yyyy-MM-dd');
@@ -244,7 +246,7 @@ export default function AusfahrtDetail() {
       return;
     }
 
-    if (!confirm('Wirklich von dieser Ausfahrt abmelden?')) {
+    if (!(await confirmDialog('Wirklich von dieser Ausfahrt abmelden?'))) {
       return;
     }
 
@@ -346,7 +348,7 @@ export default function AusfahrtDetail() {
   // Nur für Vorstand/Ausschuss – bewusst OHNE die 3-Tage-Frist.
   const handleRemoveRegistration = async (entry) => {
     const name = entry.name || 'Diese Person';
-    if (!confirm(`${name} wirklich von dieser Ausfahrt entfernen?\n\nDie Abmeldung wird dokumentiert.`)) return;
+    if (!(await confirmDialog(`${name} wirklich von dieser Ausfahrt entfernen?\n\nDie Abmeldung wird dokumentiert.`))) return;
     try {
       const todayStr = format(new Date(), 'yyyy-MM-dd');
       if (entry.isBegleitperson) {
@@ -397,7 +399,7 @@ export default function AusfahrtDetail() {
   };
 
   const handleAbsagen = async () => {
-    if (!confirm('Soll diese Ausfahrt wirklich abgesagt werden? Alle Anmeldungen bleiben erhalten, aber die Ausfahrt wird als abgesagt markiert.')) return;
+    if (!(await confirmDialog('Soll diese Ausfahrt wirklich abgesagt werden? Alle Anmeldungen bleiben erhalten, aber die Ausfahrt wird als abgesagt markiert.'))) return;
     try {
       await base44.entities.Ausfahrt.update(id, { status: 'Abgesagt' });
       fetchData();
@@ -458,7 +460,7 @@ export default function AusfahrtDetail() {
     return (
       <div className="min-h-[60vh] flex flex-col justify-center items-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-        <p className="text-gray-400 font-medium">Ausfahrt wird geladen…</p>
+        <p className="text-muted-foreground font-medium">Ausfahrt wird geladen…</p>
       </div>
     );
   }
@@ -467,7 +469,7 @@ export default function AusfahrtDetail() {
     return (
       <div className="min-h-[60vh] p-6">
         <div className="max-w-4xl mx-auto">
-          <Link to="/ausfahrten" className="inline-flex items-center text-gray-400 hover:text-white mb-6">
+          <Link to="/ausfahrten" className="inline-flex items-center text-muted-foreground hover:text-white mb-6">
             <ArrowLeft className="w-4 h-4 mr-2" /> Zurück zur Übersicht
           </Link>
           <div className="bg-card border border-border rounded-xl p-8 text-center">
@@ -557,7 +559,7 @@ export default function AusfahrtDetail() {
     <div className="min-h-[60vh] pb-12">
       <div className="max-w-5xl mx-auto px-4 pt-8">
         {/* Back Link */}
-        <Link to="/ausfahrten" className="inline-flex items-center text-gray-400 hover:text-white mb-6 transition-colors">
+        <Link to="/ausfahrten" className="inline-flex items-center text-muted-foreground hover:text-white mb-6 transition-colors">
           <ArrowLeft className="w-4 h-4 mr-2" /> Zurück zu allen Ausfahrten
         </Link>
 
@@ -572,12 +574,12 @@ export default function AusfahrtDetail() {
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-oswald tracking-wide uppercase text-white mb-2 break-words">
                 {ausfahrt.titel}
               </h1>
-              <p className="text-gray-400 flex items-center text-sm md:text-base">
+              <p className="text-muted-foreground flex items-center text-sm md:text-base">
                 <Calendar className="w-4 h-4 mr-2 text-primary" />
                 {formatDisplayDate(ausfahrt.datum)}
               </p>
               {ausfahrt.ort && (
-                <p className="text-gray-400 flex items-center text-sm md:text-base mt-1">
+                <p className="text-muted-foreground flex items-center text-sm md:text-base mt-1">
                   <MapPin className="w-4 h-4 mr-2 text-primary" />
                   {ausfahrt.ort}
                 </p>
@@ -586,8 +588,8 @@ export default function AusfahrtDetail() {
             
             {/* Bus-Teilnehmerzahl — only when bus is needed */}
             {ausfahrt.bus_benoetigt !== false && (
-            <div className="bg-[#121212] border border-border p-3 sm:p-4 rounded-xl w-full sm:w-auto sm:min-w-[200px] flex items-center justify-between gap-3">
-              <span className="text-gray-400 text-sm font-medium">Bus-Teilnehmer:</span>
+            <div className="bg-card border border-border p-3 sm:p-4 rounded-xl w-full sm:w-auto sm:min-w-[200px] flex items-center justify-between gap-3">
+              <span className="text-muted-foreground text-sm font-medium">Bus-Teilnehmer:</span>
               <span className="text-white text-xl font-bold font-oswald">{busPassengersCount}</span>
             </div>
             )}
@@ -664,7 +666,7 @@ export default function AusfahrtDetail() {
                     <Clock className="w-4 h-4 mr-2 text-primary shrink-0" />
                     {ausfahrt.abfahrt_zeit || '--- Uhr'}
                   </p>
-                  <p className="text-gray-400 text-sm ml-6 mt-0.5">
+                  <p className="text-muted-foreground text-sm ml-6 mt-0.5">
                     {ausfahrt.abfahrt_ort || '---'}
                   </p>
                 </div>
@@ -751,7 +753,7 @@ export default function AusfahrtDetail() {
                     <p className="text-sm text-green-400 font-semibold mb-1 flex items-center">
                       <CheckCircle2 className="w-4 h-4 mr-1.5" /> Du bist angemeldet!
                     </p>
-                    <p className="text-xs text-gray-400 mt-2">
+                    <p className="text-xs text-muted-foreground mt-2">
                       <span className="font-medium text-muted-foreground">Transport:</span> {myRegistration.transport === 'Bus' ? '🚌 Mit dem Bus' : '🚗 Privat'}
                     </p>
                   </div>
@@ -759,7 +761,7 @@ export default function AusfahrtDetail() {
                   {/* Familienmitglieder-Anmeldungen anzeigen */}
                   {familienmitglieder.length > 0 && (
                     <div className="space-y-2">
-                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Familienmitglieder</p>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Familienmitglieder</p>
                       {familienmitglieder.map(fm => {
                         const fmReg = anmeldungen.find(a => a.mitglied_id === fm.id && a.status !== 'Abgemeldet');
                         return (
@@ -773,7 +775,7 @@ export default function AusfahrtDetail() {
                                 <CheckCircle2 className="w-3 h-3" /> {fmReg.transport === 'Bus' ? 'Bus' : 'Privat'}
                               </span>
                             ) : (
-                              <span className="text-xs text-gray-600 shrink-0">nicht angemeldet</span>
+                              <span className="text-xs text-muted-foreground shrink-0">nicht angemeldet</span>
                             )}
                           </div>
                         );
@@ -807,14 +809,14 @@ export default function AusfahrtDetail() {
                 <div className="space-y-4">
                   {effectiveStatus !== 'Anmeldung offen' ? (
                     <div className="bg-secondary border border-border rounded-xl p-4 text-center">
-                      <p className="text-gray-400 text-sm font-medium">Die Anmeldung ist für diese Ausfahrt geschlossen.</p>
+                      <p className="text-muted-foreground text-sm font-medium">Die Anmeldung ist für diese Ausfahrt geschlossen.</p>
                     </div>
                   ) : (
                     <>
                       {/* Familienmitglieder mit anmelden (als vollwertige Teilnehmer) */}
                       {familienmitglieder.length > 0 && (
                         <div>
-                          <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                          <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                             Familienmitglieder mit anmelden
                           </label>
                           <div className="space-y-2">
@@ -895,7 +897,7 @@ export default function AusfahrtDetail() {
                 <h2 className="text-2xl font-bold font-oswald uppercase tracking-wider text-white">
                   Mitgliederverwaltung & Check-in
                 </h2>
-                <p className="text-gray-400 text-xs mt-1">
+                <p className="text-muted-foreground text-xs mt-1">
                   Verwalte Anmeldungen, trage externe Personen ein und exportiere Listen.
                 </p>
               </div>
@@ -918,75 +920,70 @@ export default function AusfahrtDetail() {
 
             {/* Inline Fremdanmeldung form */}
             {showFremdForm && (
-              <form onSubmit={handleFremdanmeldung} className="bg-[#121212] border border-border rounded-xl p-5 mb-6 space-y-4">
+              <form onSubmit={handleFremdanmeldung} className="bg-card border border-border rounded-xl p-5 mb-6 space-y-4">
                 <div className="flex items-center justify-between border-b border-border pb-2.5">
                   <span className="font-semibold text-sm">Fremdperson hinzufügen (Nicht-App-User)</span>
-                  <button type="button" onClick={() => setShowFremdForm(false)} className="text-gray-400 hover:text-foreground">
+                  <button type="button" onClick={() => setShowFremdForm(false)} className="text-muted-foreground hover:text-foreground">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-400 mb-1">Voller Name</label>
+                    <label className="block text-xs font-semibold text-muted-foreground mb-1">Voller Name</label>
                     <input
                       type="text"
                       value={fremdName}
                       onChange={(e) => setFremdName(e.target.value)}
                       placeholder="z.B. Max Mustermann"
-                      className="w-full bg-[#1c1c1c] border border-border text-white text-sm rounded-lg p-2.5 focus:ring-1 focus:ring-primary focus:outline-none"
+                      className="w-full bg-card border border-border text-white text-sm rounded-lg p-2.5 focus:ring-1 focus:ring-primary focus:outline-none"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-gray-400 mb-1">Transportart</label>
-                    <select
+                    <label className="block text-xs font-semibold text-muted-foreground mb-1">Transportart</label>
+                    <MobileSelect
                       value={fremdTransport}
-                      onChange={(e) => setFremdTransport(e.target.value)}
-                      className="w-full bg-[#1c1c1c] border border-border text-white text-sm rounded-lg p-2.5 focus:ring-1 focus:ring-primary focus:outline-none"
-                    >
-                      <option value="Bus">Busfahrt</option>
-                      <option value="Privat">Privatfahrt</option>
-                    </select>
+                      onChange={(v) => setFremdTransport(v)}
+                      options={[{ label: 'Busfahrt', value: 'Bus' }, { label: 'Privatfahrt', value: 'Privat' }]}
+                      label="Transportart" />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-gray-400 mb-1">Begleitpersonen Anzahl</label>
-                    <select
+                    <label className="block text-xs font-semibold text-muted-foreground mb-1">Begleitpersonen Anzahl</label>
+                    <MobileSelect
                       value={fremdAnzahlBegleitpersonen}
-                      onChange={(e) => handleFremdAnzahlChange(e.target.value)}
-                      className="w-full bg-[#1c1c1c] border border-border text-white text-sm rounded-lg p-2.5 focus:ring-1 focus:ring-primary focus:outline-none"
-                    >
-                      <option value="0">Keine</option>
-                      <option value="1">1 Person</option>
-                      <option value="2">2 Personen</option>
-                      <option value="3">3 Personen</option>
-                    </select>
+                      onChange={(v) => handleFremdAnzahlChange(v)}
+                      options={[
+                        { label: 'Keine', value: '0' }, { label: '1 Person', value: '1' },
+                        { label: '2 Personen', value: '2' }, { label: '3 Personen', value: '3' },
+                      ]}
+                      label="Begleitpersonen" />
                   </div>
                 </div>
 
                 {fremdBegleitpersonen.map((bp, idx) => (
                   <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3 bg-secondary border border-border rounded-lg">
                     <div>
-                      <label className="block text-xs text-gray-400 mb-1">Begleitung #{idx+1} Name</label>
+                      <label className="block text-xs text-muted-foreground mb-1">Begleitung #{idx+1} Name</label>
                       <input
                         type="text"
                         placeholder="Name"
                         value={bp.name || ''}
                         onChange={(e) => handleFremdBegleitpersonenChange(idx, 'name', e.target.value)}
-                        className="w-full bg-[#1c1c1c] border border-border text-white text-sm rounded-lg p-2 focus:ring-1 focus:ring-primary focus:outline-none"
+                        className="w-full bg-card border border-border text-white text-sm rounded-lg p-2 focus:ring-1 focus:ring-primary focus:outline-none"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-400 mb-1">Begleitung #{idx+1} Alter</label>
+                      <label className="block text-xs text-muted-foreground mb-1">Begleitung #{idx+1} Alter</label>
                       <input
                         type="number"
                         placeholder="Alter"
                         value={bp.alter || ''}
                         onChange={(e) => handleFremdBegleitpersonenChange(idx, 'alter', e.target.value)}
-                        className="w-full bg-[#1c1c1c] border border-border text-white text-sm rounded-lg p-2 focus:ring-1 focus:ring-primary focus:outline-none"
+                        className="w-full bg-card border border-border text-white text-sm rounded-lg p-2 focus:ring-1 focus:ring-primary focus:outline-none"
                       />
                     </div>
                   </div>
@@ -1014,7 +1011,7 @@ export default function AusfahrtDetail() {
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-border text-gray-400 text-xs font-semibold uppercase tracking-wider">
+                  <tr className="border-b border-border text-muted-foreground text-xs font-semibold uppercase tracking-wider">
                     <th className="py-3 px-4">Name</th>
                     <th className="py-3 px-4">Anmeldetyp</th>
                     <th className="py-3 px-4">Transport</th>
@@ -1025,7 +1022,7 @@ export default function AusfahrtDetail() {
                 <tbody className="divide-y divide-border text-sm">
                   {sortedRegistrations.length === 0 ? (
                     <tr>
-                      <td colSpan="5" className="py-6 text-center text-gray-400">
+                      <td colSpan="5" className="py-6 text-center text-muted-foreground">
                         Keine aktiven Anmeldungen für diese Ausfahrt gefunden.
                       </td>
                     </tr>
@@ -1115,7 +1112,7 @@ export default function AusfahrtDetail() {
             </div>
             <div className="md:hidden space-y-2">
               {sortedRegistrations.length === 0 ? (
-                <p className="py-6 text-center text-gray-400 text-sm">Keine aktiven Anmeldungen.</p>
+                <p className="py-6 text-center text-muted-foreground text-sm">Keine aktiven Anmeldungen.</p>
               ) : sortedRegistrations.map((entry) => (
                 <div key={entry.id} className="bg-secondary/30 border border-border rounded-xl p-3 space-y-2">
                   <div className="flex items-center justify-between gap-2">
@@ -1195,11 +1192,11 @@ export default function AusfahrtDetail() {
           <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold font-oswald uppercase tracking-wider text-white">Dein Check-in QR</h3>
-              <button onClick={() => setShowQR(false)} className="text-gray-400 hover:text-foreground">
+              <button onClick={() => setShowQR(false)} className="text-muted-foreground hover:text-foreground">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-xs text-gray-400 mb-4 text-center">
+            <p className="text-xs text-muted-foreground mb-4 text-center">
               Zeige diesen Code dem Busverantwortlichen beim Einsteigen.
             </p>
             <div className="flex justify-center mb-4">
@@ -1225,11 +1222,11 @@ export default function AusfahrtDetail() {
           <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold font-oswald uppercase tracking-wider text-white">Busverantwortliche</h3>
-              <button onClick={() => setShowBusVwModal(false)} className="text-gray-400 hover:text-foreground">
+              <button onClick={() => setShowBusVwModal(false)} className="text-muted-foreground hover:text-foreground">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-xs text-gray-400 mb-4">
+            <p className="text-xs text-muted-foreground mb-4">
               Wähle Mitglieder, die den QR-Check-in durchführen dürfen.
             </p>
             {/* Live-Suche */}

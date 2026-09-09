@@ -10,6 +10,7 @@ import {
 import InterneBestellModal from './InterneBestellModal';
 import InternerArtikelModal from './InternerArtikelModal';
 import BestellrundeModal from './BestellrundeModal';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 const heuteISO = () => new Date().toISOString().split('T')[0];
 const formatDE = (iso) => iso ? new Date(iso + (iso.length === 10 ? 'T00:00:00' : '')).toLocaleDateString('de-DE') : '';
@@ -102,7 +103,7 @@ export default function InternerBedarf() {
   }, [aktiveArtikel, gruppen]);
 
   const stornieren = async (b) => {
-    if (!confirm(`Bestellung "${b.artikel_name}" wirklich zurückziehen?`)) return;
+    if (!(await confirmDialog(`Bestellung "${b.artikel_name}" wirklich zurückziehen?`))) return;
     try {
       await base44.entities.InterneBestellung.delete(b.id);
       toast.success('Bestellung zurückgezogen.');
@@ -115,7 +116,7 @@ export default function InternerBedarf() {
 
   const rundeStatus = async (r, status) => {
     const labels = { Geschlossen: 'schließen', Bestellt: 'als bestellt markieren', Offen: 'wieder öffnen' };
-    if (!confirm(`Bestellrunde "${r.titel}" wirklich ${labels[status]}?`)) return;
+    if (!(await confirmDialog(`Bestellrunde "${r.titel}" wirklich ${labels[status]}?`))) return;
     try {
       await base44.entities.Bestellrunde.update(r.id, { status });
       toast.success(`Runde ${labels[status]} – ${labels[status] === 'bestellt' ? 'Bestellliste kann exportiert werden.' : 'erledigt.'}`);

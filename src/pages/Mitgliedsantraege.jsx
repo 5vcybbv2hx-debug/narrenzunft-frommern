@@ -6,6 +6,7 @@ import { FileText, Check, X, Clock, Eye, UserPlus, ChevronRight, ExternalLink } 
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 const STATUS_COLORS = {
   'Neu': 'bg-yellow-500/20 text-yellow-400',
@@ -58,7 +59,7 @@ export default function Mitgliedsantraege() {
   };
 
   const handleStatusChange = async (antragId, newStatus) => {
-    if (newStatus === 'Abgelehnt' && !confirm('Diesen Antrag wirklich ablehnen?')) return;
+    if (newStatus === 'Abgelehnt' && !(await confirmDialog('Diesen Antrag wirklich ablehnen?'))) return;
     setSaving(true);
     await base44.entities.Mitgliedsantrag.update(antragId, { status: newStatus, notizen });
     setAntraege(prev => prev.map(a => a.id === antragId ? { ...a, status: newStatus, notizen } : a));
@@ -104,7 +105,7 @@ export default function Mitgliedsantraege() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2 font-oswald uppercase tracking-wide">
             <FileText size={22} className="text-primary" /> Mitgliedsanträge
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">

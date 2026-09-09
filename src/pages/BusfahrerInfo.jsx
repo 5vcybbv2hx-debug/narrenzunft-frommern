@@ -110,7 +110,7 @@ export default function BusfahrerInfo() {
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="text-center max-w-sm">
         <AlertCircle size={48} className="text-destructive mx-auto mb-4" />
-        <h1 className="text-xl font-bold text-foreground mb-2">Link ungültig</h1>
+        <h1 className="text-xl font-bold text-foreground mb-2 font-oswald uppercase tracking-wide">Link ungültig</h1>
         <p className="text-muted-foreground text-sm">Dieser Busfahrer-Link ist nicht gültig oder wurde deaktiviert.</p>
       </div>
     </div>
@@ -123,7 +123,7 @@ export default function BusfahrerInfo() {
       {/* Header */}
       <div className="bg-primary px-5 py-6 text-center">
         <div className="text-4xl mb-2">🚌</div>
-        <h1 className="text-xl font-bold text-white">{veranstaltung.titel}</h1>
+        <h1 className="text-xl font-bold text-white font-oswald uppercase tracking-wide">{veranstaltung.titel}</h1>
         <p className="text-white/80 text-sm mt-1">
           {format(new Date(veranstaltung.datum), 'EEEE, d. MMMM yyyy', { locale: de })}
           {veranstaltung.uhrzeit && ` · ${veranstaltung.uhrzeit} Uhr`}

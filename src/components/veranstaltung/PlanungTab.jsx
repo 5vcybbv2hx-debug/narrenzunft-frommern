@@ -4,6 +4,7 @@ import { Plus, Trash2, Save, History, User, Loader2, ClipboardList } from 'lucid
 import MobileSelect from '@/components/MobileSelect';
 import MitgliedLiveSuche from '@/components/MitgliedLiveSuche';
 import { useAuth } from '@/lib/AuthContext';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 /**
  * PlanungTab – Bereiche & Listen einer Veranstaltung (Einkauf, Getränke, ...).
@@ -189,7 +190,7 @@ export default function PlanungTab({ veranstaltung, isAdmin }) {
   };
 
   const deleteBereich = async (id) => {
-    if (!confirm('Diesen Bereich inkl. Liste wirklich löschen?')) return;
+    if (!(await confirmDialog('Diesen Bereich inkl. Liste wirklich löschen?'))) return;
     try {
       await base44.entities.VeranstaltungBereich.delete(id);
       setBereiche(bs => bs.filter(b => b.id !== id));

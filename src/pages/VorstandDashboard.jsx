@@ -99,7 +99,7 @@ export default function VorstandDashboard() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
         <Shield size={40} className="text-muted-foreground mb-3" />
-        <h2 className="text-xl font-bold text-foreground mb-2">Kein Zugriff</h2>
+        <h2 className="text-xl font-bold text-foreground mb-2 font-oswald uppercase tracking-wide">Kein Zugriff</h2>
         <p className="text-sm text-muted-foreground">Nur für Vorstand und Spartenleiter.</p>
       </div>
     );

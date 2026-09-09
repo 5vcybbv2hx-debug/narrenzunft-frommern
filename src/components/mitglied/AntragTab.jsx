@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Upload, FileText, Download, Trash2, X, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 /**
  * Tab im Mitgliedsprofil für den ausgefüllten Mitgliedsantrag (PDF-Upload)
@@ -53,7 +54,7 @@ export default function AntragTab({ mitglied, isAdmin }) {
   };
 
   const handleRemovePdf = async () => {
-    if (!confirm('PDF-Antrag entfernen?')) return;
+    if (!(await confirmDialog('PDF-Antrag entfernen?'))) return;
     setSaving(true);
     await base44.entities.Mitglied.update(mitglied.id, {
       antrag_pdf_url: null,

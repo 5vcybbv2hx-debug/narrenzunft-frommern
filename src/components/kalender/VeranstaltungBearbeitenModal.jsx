@@ -5,6 +5,8 @@ import { base44 } from '@/api/base44Client';
 import { X, Save, Trash2 } from 'lucide-react';
 import { VeranstaltungsDetailsForm } from '@/components/veranstaltung/VeranstaltungsDetails';
 import AdresseAutocomplete from '@/components/AdresseAutocomplete';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
+import MobileSelect from '@/components/MobileSelect';
 
 const EMPTY_AUSWAERTIG = {
   titel: '', typ: 'Umzug', datum: '', uhrzeit: '', ort: '',
@@ -50,7 +52,7 @@ export default function VeranstaltungBearbeitenModal({ veranstaltung, onClose, o
 
   const handleDelete = async () => {
     if (!veranstaltung?.id) return;
-    if (!confirm('Termin wirklich löschen?')) return;
+    if (!(await confirmDialog('Termin wirklich löschen?'))) return;
     await base44.entities.Veranstaltung.delete(veranstaltung.id);
     onSaved();
   };
@@ -181,11 +183,11 @@ export default function VeranstaltungBearbeitenModal({ veranstaltung, onClose, o
           {/* Externer Verein */}
           <div className="border-t border-border pt-3">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block mb-2">🤝 Einladung von Verein</label>
-            <select value={form.externer_verein_id || ''} onChange={e => set('externer_verein_id', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary">
-              <option value="">– Kein externer Verein –</option>
-              {externe_vereine.map(v => <option key={v.id} value={v.id}>{v.name} ({v.stadt})</option>)}
-            </select>
+            <MobileSelect value={form.externer_verein_id || ''}
+              onChange={(v) => set('externer_verein_id', v)}
+              placeholder="– Kein externer Verein –"
+              options={externe_vereine.map(v => ({ label: `${v.name} (${v.stadt})`, value: v.id }))}
+              label="Externer Verein" />
           </div>
         </div>
 

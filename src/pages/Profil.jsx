@@ -149,7 +149,7 @@ export default function Profil() {
             )}
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white">{vollname || user?.full_name || 'Benutzer'}</h2>
+            <h2 className="text-xl font-bold text-white font-oswald uppercase tracking-wide">{vollname || user?.full_name || 'Benutzer'}</h2>
             <p className="text-sm text-muted-foreground">{user?.email}</p>
             {mitglied ? (
               <div className="flex flex-wrap gap-1.5 mt-1">

@@ -34,7 +34,7 @@ export default function VerleihUebersicht() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#080808] text-white flex flex-col items-center px-4 py-8">
+    <div className="min-h-screen bg-background text-white flex flex-col items-center px-4 py-8">
       {/* Kopf */}
       <div className="text-center mb-6">
         <div className="w-14 h-14 mx-auto rounded-xl bg-[#EA2525] flex items-center justify-center shadow-xl shadow-red-900/30">
@@ -46,14 +46,14 @@ export default function VerleihUebersicht() {
 
       <div className="w-full max-w-md">
         <h1 className="font-oswald uppercase text-xl text-white text-center mb-1">Verleih-Anfrage</h1>
-        <p className="text-sm text-gray-400 text-center mb-5">
+        <p className="text-sm text-muted-foreground text-center mb-5">
           Wählt einen Gegenstand aus und stellt eine Anfrage — der Vorstand meldet sich bei euch.
         </p>
 
         {loading && (
           <div className="flex flex-col items-center gap-3 py-16">
             <Loader2 size={28} className="animate-spin text-[#EA2525]" />
-            <p className="text-sm text-gray-400">Wird geladen…</p>
+            <p className="text-sm text-muted-foreground">Wird geladen…</p>
           </div>
         )}
 
@@ -65,9 +65,9 @@ export default function VerleihUebersicht() {
         )}
 
         {!loading && !fehler && items.length === 0 && (
-          <div className="bg-gray-900 border border-gray-700 rounded-xl p-8 text-center">
-            <Package size={32} className="text-gray-500 mx-auto mb-2" />
-            <p className="text-sm text-gray-400">Aktuell sind keine Gegenstände für den Verleih freigegeben.</p>
+          <div className="bg-card border border-border rounded-xl p-8 text-center">
+            <Package size={32} className="text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">Aktuell sind keine Gegenstände für den Verleih freigegeben.</p>
           </div>
         )}
 
@@ -79,7 +79,7 @@ export default function VerleihUebersicht() {
                 <button
                   key={item.id}
                   onClick={() => navigate(`/verleih/${item.id}`)}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-2xl overflow-hidden hover:border-[#EA2525]/50 transition-colors text-left group"
+                  className="w-full bg-card border border-border rounded-2xl overflow-hidden hover:border-[#EA2525]/50 transition-colors text-left group"
                 >
                   <div className="flex items-stretch">
                     {item.bild_url ? (
@@ -93,21 +93,21 @@ export default function VerleihUebersicht() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <h2 className="font-oswald uppercase text-base text-white leading-tight truncate">{item.name}</h2>
-                          <p className="text-xs text-gray-500">{item.kategorie}</p>
+                          <p className="text-xs text-muted-foreground">{item.kategorie}</p>
                         </div>
-                        <ChevronRight size={16} className="text-gray-600 group-hover:text-[#EA2525] shrink-0 mt-0.5 transition-colors" />
+                        <ChevronRight size={16} className="text-muted-foreground group-hover:text-[#EA2525] shrink-0 mt-0.5 transition-colors" />
                       </div>
                       {item.beschreibung && (
-                        <p className="text-xs text-gray-400 mt-1.5 line-clamp-2">{item.beschreibung}</p>
+                        <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{item.beschreibung}</p>
                       )}
                       <div className="flex items-center gap-3 mt-2 flex-wrap">
                         {item.preis > 0 && (
-                          <span className="text-xs text-gray-300 flex items-center gap-1">
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <Euro size={11} /> {euro(item.preis)} / Tag
                           </span>
                         )}
                         {item.kaution > 0 && (
-                          <span className="text-xs text-gray-500">Kaution: {euro(item.kaution)}</span>
+                          <span className="text-xs text-muted-foreground">Kaution: {euro(item.kaution)}</span>
                         )}
                       </div>
                     </div>
@@ -118,7 +118,7 @@ export default function VerleihUebersicht() {
           </div>
         )}
 
-        <p className="text-[11px] text-gray-600 text-center mt-6 leading-relaxed">
+        <p className="text-[11px] text-muted-foreground text-center mt-6 leading-relaxed">
           Eure Daten werden nur zur Bearbeitung der Anfrage verwendet.
         </p>
       </div>

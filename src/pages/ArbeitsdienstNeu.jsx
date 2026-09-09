@@ -96,7 +96,7 @@ export default function ArbeitsdienstNeu() {
         <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground">
           <ArrowLeft size={20} />
         </button>
-        <h1 className="text-xl font-bold text-foreground">Neuer Arbeitsdienst</h1>
+        <h1 className="text-xl font-bold text-foreground font-oswald uppercase tracking-wide">Neuer Arbeitsdienst</h1>
       </div>
 
       {/* Vorlage auswählen */}
@@ -199,7 +199,7 @@ export default function ArbeitsdienstNeu() {
       {/* Mitglieder verknüpfen */}
       <div className="bg-card border border-border rounded-xl p-5 mb-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold text-foreground flex items-center gap-2">
+          <h2 className="font-semibold text-foreground flex items-center gap-2 font-oswald uppercase tracking-wide">
             <Users size={16} className="text-primary" /> Mitglieder einteilen
           </h2>
           <div>

@@ -177,7 +177,7 @@ export default function VeranstaltungNeu() {
         <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground">
           <ArrowLeft size={20} />
         </button>
-        <h1 className="text-xl font-bold text-foreground flex-1">Neue Veranstaltung</h1>
+        <h1 className="text-xl font-bold text-foreground flex-1 font-oswald uppercase tracking-wide">Neue Veranstaltung</h1>
         {/* Als Vorlage speichern */}
         {admin && (
           <button

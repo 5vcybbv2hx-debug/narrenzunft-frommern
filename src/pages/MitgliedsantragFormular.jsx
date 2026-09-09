@@ -57,7 +57,7 @@ export default function MitgliedsantragFormular() {
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="bg-card border border-border rounded-2xl p-8 max-w-md w-full text-center">
           <CheckCircle2 size={52} className="text-green-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-foreground mb-2">Antrag eingereicht!</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-2 font-oswald uppercase tracking-wide">Antrag eingereicht!</h2>
           <p className="text-muted-foreground text-sm">
             Der Mitgliedsantrag von <strong className="text-foreground">{form.vorname} {form.nachname}</strong> wurde erfolgreich gespeichert.
             Der Vorstand wird ihn prüfen und sich melden.
@@ -73,7 +73,7 @@ export default function MitgliedsantragFormular() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="text-4xl mb-3">🎭</div>
-          <h1 className="text-2xl font-bold text-foreground">Mitgliedsantrag</h1>
+          <h1 className="text-2xl font-bold text-foreground font-oswald uppercase tracking-wide">Mitgliedsantrag</h1>
           <p className="text-sm text-muted-foreground mt-1">Narrenzunft Frommern e.V.</p>
         </div>
 
@@ -92,7 +92,7 @@ export default function MitgliedsantragFormular() {
           {/* STEP 0: Persönliches */}
           {step === 0 && (
             <>
-              <h2 className="font-bold text-foreground">Persönliche Daten</h2>
+              <h2 className="font-bold text-foreground font-oswald uppercase tracking-wide">Persönliche Daten</h2>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">Vorname *</label>
@@ -121,7 +121,7 @@ export default function MitgliedsantragFormular() {
           {/* STEP 1: Adresse & Kontakt */}
           {step === 1 && (
             <>
-              <h2 className="font-bold text-foreground">Adresse & Kontakt</h2>
+              <h2 className="font-bold text-foreground font-oswald uppercase tracking-wide">Adresse & Kontakt</h2>
               <div>
                 <label className="text-xs text-muted-foreground font-medium block mb-1">Straße</label>
                 <input value={form.strasse} onChange={e => set('strasse', e.target.value)}
@@ -162,7 +162,7 @@ export default function MitgliedsantragFormular() {
           {/* STEP 2: Sparte & SEPA */}
           {step === 2 && (
             <>
-              <h2 className="font-bold text-foreground">Sparte & SEPA-Mandat</h2>
+              <h2 className="font-bold text-foreground font-oswald uppercase tracking-wide">Sparte & SEPA-Mandat</h2>
               <div>
                 <label className="text-xs text-muted-foreground font-medium block mb-2">Gewünschte Sparte *</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -216,7 +216,7 @@ export default function MitgliedsantragFormular() {
           {/* STEP 3: Abschluss */}
           {step === 3 && (
             <>
-              <h2 className="font-bold text-foreground">Zusammenfassung</h2>
+              <h2 className="font-bold text-foreground font-oswald uppercase tracking-wide">Zusammenfassung</h2>
               <div className="space-y-2 text-sm">
                 <div className="bg-secondary rounded-xl p-4 space-y-1.5">
                   <p><span className="text-muted-foreground">Name:</span> <span className="font-medium text-foreground">{form.vorname} {form.nachname}</span></p>

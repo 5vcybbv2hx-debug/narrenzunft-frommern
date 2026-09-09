@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
+import MobileSelect from '@/components/MobileSelect';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
 import { ArrowLeft, Save, X } from 'lucide-react';
@@ -178,10 +179,9 @@ export default function AusfahrtNeu() {
               </div>
               <div>
                 <label className={labelClass}>Typ *</label>
-                <select name="typ" required value={formData.typ} onChange={handleChange} className={inputClass}>
-                  <option value="Umzug">Umzug</option>
-                  <option value="Veranstaltung">Veranstaltung</option>
-                </select>
+                <MobileSelect name="typ" required value={formData.typ}
+                  onChange={(v) => handleChange({ target: { name: 'typ', value: v } })}
+                  options={[{ label: 'Umzug', value: 'Umzug' }, { label: 'Veranstaltung', value: 'Veranstaltung' }]} label="Typ" />
               </div>
               <div>
                 <label className={labelClass}>Datum *</label>
@@ -263,10 +263,10 @@ export default function AusfahrtNeu() {
                   {loadingSparten ? (
                     <p className="text-xs text-muted-foreground">Sparten werden geladen…</p>
                   ) : (
-                    <select name="sparte_id" value={formData.sparte_id} onChange={handleChange} className={inputClass}>
-                      <option value="">— Sparte auswählen —</option>
-                      {sparten.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                    </select>
+                    <MobileSelect value={formData.sparte_id}
+                      onChange={(v) => handleChange({ target: { name: 'sparte_id', value: v } })}
+                      placeholder="— Sparte auswählen —"
+                      options={sparten.map(s => ({ label: s.name, value: s.id }))} label="Sparte" />
                   )}
                 </div>
               )}

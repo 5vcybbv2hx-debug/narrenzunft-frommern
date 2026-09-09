@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Mail, Check, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 export default function NachrichtenInbox({ empfaengerId }) {
   const [nachrichten, setNachrichten] = useState([]);
@@ -49,7 +50,7 @@ export default function NachrichtenInbox({ empfaengerId }) {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Nachricht löschen?')) return;
+    if (!(await confirmDialog('Nachricht löschen?'))) return;
     await base44.entities.Nachricht.delete(id);
     setNachrichten(prev => prev.filter(n => n.id !== id));
   };

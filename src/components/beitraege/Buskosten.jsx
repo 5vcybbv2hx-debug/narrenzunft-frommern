@@ -4,11 +4,12 @@ import { Bus, Plus, ChevronDown, ChevronUp, X, Check, Trash2, Settings } from 'l
 import BuskostenEinstellungen from '@/components/beitraege/BuskostenEinstellungen';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 const STATUS_COLORS = {
   'Offen': 'bg-yellow-500/20 text-yellow-400',
   'Bezahlt': 'bg-green-500/20 text-green-400',
-  'Erlassen': 'bg-gray-500/20 text-gray-400',
+  'Erlassen': 'bg-gray-500/20 text-muted-foreground',
 };
 
 export default function Buskosten({ isAdmin }) {
@@ -61,13 +62,13 @@ export default function Buskosten({ isAdmin }) {
   };
 
   const handleErlassen = async (beitrag) => {
-    if (!confirm('Beitrag wirklich erlassen?')) return;
+    if (!(await confirmDialog('Beitrag wirklich erlassen?'))) return;
     await base44.entities.Buskostenbeitrag.update(beitrag.id, { zahlungsstatus: 'Erlassen' });
     setBuskostenbeitraege(prev => prev.map(b => b.id === beitrag.id ? { ...b, zahlungsstatus: 'Erlassen' } : b));
   };
 
   const handleDelete = async (beitragId) => {
-    if (!confirm('Diesen Buskostenbeitrag wirklich löschen?')) return;
+    if (!(await confirmDialog('Diesen Buskostenbeitrag wirklich löschen?'))) return;
     await base44.entities.Buskostenbeitrag.delete(beitragId);
     setBuskostenbeitraege(prev => prev.filter(b => b.id !== beitragId));
   };
@@ -213,7 +214,7 @@ export default function Buskosten({ isAdmin }) {
                             {isAdmin && b.zahlungsstatus === 'Offen' && (
                               <div className="flex gap-1 shrink-0">
                                 <button onClick={() => handleMarkBezahlt(b)} className="text-xs px-2 py-1 rounded bg-green-500/10 text-green-400 hover:bg-green-500/20">✓</button>
-                                <button onClick={() => handleErlassen(b)} className="text-xs px-2 py-1 rounded bg-gray-500/10 text-gray-400 hover:bg-gray-500/20">–</button>
+                                <button onClick={() => handleErlassen(b)} className="text-xs px-2 py-1 rounded bg-gray-500/10 text-muted-foreground hover:bg-gray-500/20">–</button>
                               </div>
                             )}
                             {isAdmin && (

@@ -4,6 +4,7 @@ import { Loader2, Save, CheckCircle2, Circle } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { format, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 /**
  * NachbereitungTab – Nachbesprechung einer Veranstaltung:
@@ -83,7 +84,7 @@ export default function NachbereitungTab({ veranstaltung, isAdmin, onVeranstaltu
   };
 
   const abschliessen = async () => {
-    if (!confirm('Nachbesprechung als abgeschlossen markieren? Sie erscheint dann nicht mehr automatisch als TOP bei neuen Ausschusssitzungen.')) return;
+    if (!(await confirmDialog('Nachbesprechung als abgeschlossen markieren? Sie erscheint dann nicht mehr automatisch als TOP bei neuen Ausschusssitzungen.'))) return;
     setBusy(true);
     try {
       await base44.entities.Veranstaltung.update(veranstaltung.id, { nachbereitung_status: 'Abgeschlossen' });

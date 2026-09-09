@@ -578,7 +578,7 @@ export default function MitgliedDetail() {
 
       {/* Persönliche Daten */}
       <div className="bg-card border border-border rounded-xl p-5 mb-4">
-        <h2 className="font-semibold text-white mb-4 flex items-center gap-2"><User size={16} className="text-primary" /> Persönliche Daten</h2>
+        <h2 className="font-semibold text-white mb-4 flex items-center gap-2 font-oswald uppercase tracking-wide"><User size={16} className="text-primary" /> Persönliche Daten</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Vorname" field="vorname" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           <Field label="Nachname" field="nachname" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
@@ -648,7 +648,7 @@ export default function MitgliedDetail() {
       {/* Kontakt */}
       {!isNew && !editing && (
         <div className="bg-card border border-border rounded-xl p-5 mb-4">
-          <h2 className="font-semibold text-white mb-4 flex items-center gap-2"><Phone size={16} className="text-primary" /> Kontakt</h2>
+          <h2 className="font-semibold text-white mb-4 flex items-center gap-2 font-oswald uppercase tracking-wide"><Phone size={16} className="text-primary" /> Kontakt</h2>
           <div className="flex flex-col gap-2">
             {mitglied.email && (
               <a href={`mailto:${mitglied.email}`} className="flex items-center gap-3 px-4 py-3 rounded-lg bg-secondary/50 border border-border hover:border-primary/50 hover:bg-primary/10 transition-all">
@@ -693,7 +693,7 @@ export default function MitgliedDetail() {
 
       {/* Adresse */}
       <div className="bg-card border border-border rounded-xl p-5 mb-4">
-        <h2 className="font-semibold text-white mb-4 flex items-center gap-2"><MapPin size={16} className="text-primary" /> Adresse</h2>
+        <h2 className="font-semibold text-white mb-4 flex items-center gap-2 font-oswald uppercase tracking-wide"><MapPin size={16} className="text-primary" /> Adresse</h2>
         {editing ? (
           <div className="space-y-3">
             <div>
@@ -731,7 +731,7 @@ export default function MitgliedDetail() {
 
       {/* Notfallkontakt */}
       <div className="bg-card border border-border rounded-xl p-5 mb-4">
-        <h2 className="font-semibold text-white mb-4 flex items-center gap-2"><AlertTriangle size={16} className="text-red-400" /> Notfallkontakt</h2>
+        <h2 className="font-semibold text-white mb-4 flex items-center gap-2 font-oswald uppercase tracking-wide"><AlertTriangle size={16} className="text-red-400" /> Notfallkontakt</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Name" field="notfallkontakt_name" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           <div>
@@ -747,7 +747,7 @@ export default function MitgliedDetail() {
 
       {/* Notizen */}
       <div className="bg-card border border-border rounded-xl p-5 mb-4">
-        <h2 className="font-semibold text-white mb-4">Notizen</h2>
+        <h2 className="font-semibold text-white mb-4 font-oswald uppercase tracking-wide">Notizen</h2>
         {editing ? (
           <textarea value={mitglied.notizen || ''} onChange={e => setMitglied(p => ({ ...p, notizen: e.target.value }))} rows={4}
             className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary resize-none transition-colors" />
@@ -759,7 +759,7 @@ export default function MitgliedDetail() {
       {/* Bankverbindung */}
       {kannBank && (
         <div className="bg-card border border-border rounded-xl p-5 mb-4">
-          <h2 className="font-semibold text-white mb-4 flex items-center gap-2"><CreditCard size={16} className="text-primary" /> Bankverbindung (SEPA)</h2>
+          <h2 className="font-semibold text-white mb-4 flex items-center gap-2 font-oswald uppercase tracking-wide"><CreditCard size={16} className="text-primary" /> Bankverbindung (SEPA)</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Kontoinhaber" field="kontoinhaber" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
             <Field label="Bank" field="bankname" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
@@ -774,7 +774,7 @@ export default function MitgliedDetail() {
       {!isNew && (
         <div className="bg-card border border-border rounded-xl p-5 mb-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-white flex items-center gap-2"><Shirt size={16} className="text-primary" /> Häs ({haes.length})</h2>
+            <h2 className="font-semibold text-white flex items-center gap-2 font-oswald uppercase tracking-wide"><Shirt size={16} className="text-primary" /> Häs ({haes.length})</h2>
             {admin && (
               <button onClick={() => setShowHaesModal(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-red-700 transition-colors">
@@ -804,7 +804,7 @@ export default function MitgliedDetail() {
       {/* App-Zugang & Rolle */}
       {admin && !isNew && (
         <div className="bg-card border border-border rounded-xl p-5 mb-4">
-          <h2 className="font-semibold text-white mb-1 flex items-center gap-2"><Shield size={16} className="text-primary" /> App-Zugang & Rolle</h2>
+          <h2 className="font-semibold text-white mb-1 flex items-center gap-2 font-oswald uppercase tracking-wide"><Shield size={16} className="text-primary" /> App-Zugang & Rolle</h2>
           <p className="text-xs text-muted-foreground mb-4">Rolle jetzt festlegen – wird beim ersten Login automatisch übernommen.</p>
 
           {linkedUser && (

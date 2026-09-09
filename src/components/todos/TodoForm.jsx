@@ -94,15 +94,13 @@ export default function TodoForm({ todo, mitglieder, onSave, onDelete, onClose }
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={labelCls}>Status</label>
-              <select value={form.status} onChange={e => set('status', e.target.value)} className={inputCls}>
-                {['Offen', 'In Bearbeitung', 'Erledigt'].map(s => <option key={s}>{s}</option>)}
-              </select>
+              <MobileSelect value={form.status} onChange={v => set('status', v)}
+                options={['Offen', 'In Bearbeitung', 'Erledigt']} label="Status" />
             </div>
             <div>
               <label className={labelCls}>Priorität</label>
-              <select value={form.prioritaet} onChange={e => set('prioritaet', e.target.value)} className={inputCls}>
-                {['Niedrig', 'Mittel', 'Hoch', 'Dringend'].map(p => <option key={p}>{p}</option>)}
-              </select>
+              <MobileSelect value={form.prioritaet} onChange={v => set('prioritaet', v)}
+                options={['Niedrig', 'Mittel', 'Hoch', 'Dringend']} label="Priorität" />
             </div>
           </div>
 

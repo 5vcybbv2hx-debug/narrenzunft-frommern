@@ -206,7 +206,7 @@ export default function AusfahrtScanner() {
     return (
       <div className="min-h-[60vh] flex flex-col justify-center items-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-        <p className="text-gray-400 font-medium">Scanner wird vorbereitet…</p>
+        <p className="text-muted-foreground font-medium">Scanner wird vorbereitet…</p>
       </div>
     );
   }
@@ -215,7 +215,7 @@ export default function AusfahrtScanner() {
     return (
       <div className="min-h-[60vh] p-6">
         <div className="max-w-2xl mx-auto">
-          <Link to={`/ausfahrten/${id}`} className="inline-flex items-center text-gray-400 hover:text-white mb-6">
+          <Link to={`/ausfahrten/${id}`} className="inline-flex items-center text-muted-foreground hover:text-white mb-6">
             <ArrowLeft className="w-4 h-4 mr-2" /> Zurück zur Ausfahrt
           </Link>
           <div className="bg-card border border-border rounded-xl p-8 text-center">
@@ -232,7 +232,7 @@ export default function AusfahrtScanner() {
     return (
       <div className="min-h-[60vh] p-6">
         <div className="max-w-2xl mx-auto">
-          <Link to={`/ausfahrten/${id}`} className="inline-flex items-center text-gray-400 hover:text-white mb-6">
+          <Link to={`/ausfahrten/${id}`} className="inline-flex items-center text-muted-foreground hover:text-white mb-6">
             <ArrowLeft className="w-4 h-4 mr-2" /> Zurück zur Ausfahrt
           </Link>
           <div className="bg-card border border-border rounded-xl p-8 text-center">
@@ -242,7 +242,7 @@ export default function AusfahrtScanner() {
             </p>
             {isBusButNotToday ? (
               <>
-                <p className="text-gray-400 text-sm mb-2">
+                <p className="text-muted-foreground text-sm mb-2">
                   Du bist als Busverantwortlicher eingetragen, aber der QR-Scanner ist erst <strong className="text-primary">am Tag der Ausfahrt</strong> verfügbar.
                 </p>
                 <p className="text-muted-foreground text-xs flex items-center justify-center gap-1.5 mt-3">
@@ -250,7 +250,7 @@ export default function AusfahrtScanner() {
                 </p>
               </>
             ) : (
-              <p className="text-gray-400 text-sm">
+              <p className="text-muted-foreground text-sm">
                 Du bist nicht als Busverantwortlicher für diese Ausfahrt eingetragen. Nur Vorstände, Admins, Spartenleiter und zugewiesene Busverantwortliche (am Ausfahrtstag) haben Zugriff.
               </p>
             )}
@@ -263,7 +263,7 @@ export default function AusfahrtScanner() {
   return (
     <div className="min-h-[60vh] pb-12">
       <div className="max-w-2xl mx-auto px-4 pt-8">
-        <Link to={`/ausfahrten/${id}`} className="inline-flex items-center text-gray-400 hover:text-white mb-6 transition-colors">
+        <Link to={`/ausfahrten/${id}`} className="inline-flex items-center text-muted-foreground hover:text-white mb-6 transition-colors">
           <ArrowLeft className="w-4 h-4 mr-2" /> Zurück zur Ausfahrt
         </Link>
 
@@ -278,7 +278,7 @@ export default function AusfahrtScanner() {
               <h1 className="text-2xl font-bold font-oswald uppercase tracking-wide text-white">
                 QR Check-in
               </h1>
-              <p className="text-gray-400 text-sm">{ausfahrt.titel}</p>
+              <p className="text-muted-foreground text-sm">{ausfahrt.titel}</p>
             </div>
           </div>
           <p className="text-muted-foreground text-xs mt-2">{formatDisplayDate(ausfahrt.datum)}</p>
@@ -371,7 +371,7 @@ export default function AusfahrtScanner() {
           </div>
           <div className="space-y-2 max-h-[500px] overflow-y-auto">
             {activeAnmeldungen.length === 0 ? (
-              <p className="text-center text-gray-400 py-6 text-sm">Keine aktiven Anmeldungen.</p>
+              <p className="text-center text-muted-foreground py-6 text-sm">Keine aktiven Anmeldungen.</p>
             ) : (
               activeAnmeldungen.map(reg => {
                 const name = reg.is_fremdangemeldet

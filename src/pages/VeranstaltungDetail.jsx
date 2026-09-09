@@ -18,6 +18,7 @@ import { VeranstaltungsDetailsForm, VeranstaltungsDetailsView } from '@/componen
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 const TYPEN = ['Umzug', 'Abendveranstaltung', 'Intern', 'Arbeitsdienst', 'Fest'];
 const STATUS_LIST = ['Geplant', 'Aktiv', 'Abgeschlossen', 'Abgesagt'];
@@ -109,7 +110,7 @@ export default function VeranstaltungDetail() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Veranstaltung wirklich löschen? Alle Teilnahmen und Arbeitsdienste bleiben erhalten.')) return;
+    if (!(await confirmDialog('Veranstaltung wirklich löschen? Alle Teilnahmen und Arbeitsdienste bleiben erhalten.'))) return;
     try {
       await base44.entities.Veranstaltung.delete(veranstaltung.id);
       navigate('/veranstaltungen');
@@ -138,7 +139,7 @@ export default function VeranstaltungDetail() {
 
   const handleAbsagen = async () => {
     if (!meineTeilnahme) return;
-    if (!confirm('Möchtest du deine Teilnahme wirklich absagen?')) return;
+    if (!(await confirmDialog('Möchtest du deine Teilnahme wirklich absagen?'))) return;
     try {
       await base44.entities.Teilnahme.update(meineTeilnahme.id, { status: 'Abgesagt' });
       loadData();
@@ -374,7 +375,7 @@ export default function VeranstaltungDetail() {
           )}
 
           <div className="bg-card border border-border rounded-xl p-5">
-            <h2 className="font-semibold text-foreground mb-4">Details</h2>
+            <h2 className="font-semibold text-foreground mb-4 font-oswald uppercase tracking-wide">Details</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
                 <Field label="Titel" field="titel" />
@@ -455,7 +456,7 @@ export default function VeranstaltungDetail() {
 
           {/* Typ-spezifische Detailinfos */}
           <div className="bg-card border border-border rounded-xl p-5">
-            <h2 className="font-semibold text-foreground mb-4">
+            <h2 className="font-semibold text-foreground mb-4 font-oswald uppercase tracking-wide">
               {veranstaltung.typ === 'Umzug' ? '🎪 Umzugsinfos' : veranstaltung.typ === 'Abendveranstaltung' ? '🎭 Veranstaltungsinfos' : veranstaltung.typ === 'Fest' ? '🎉 Festinfos' : '📋 Details'}
             </h2>
             {editing ? (
@@ -472,7 +473,7 @@ export default function VeranstaltungDetail() {
           {/* Busfahrer-Link – nur für Admins */}
           {isAdmin && !isNew && (
             <div className="bg-card border border-border rounded-xl p-5">
-              <h2 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+              <h2 className="font-semibold text-foreground mb-2 flex items-center gap-2 font-oswald uppercase tracking-wide">
                 <Bus size={16} className="text-primary" /> Busfahrer-Zugang
               </h2>
               <p className="text-sm text-muted-foreground mb-4">
@@ -521,7 +522,7 @@ export default function VeranstaltungDetail() {
           {/* Löschen – nur für Admins */}
           {isAdmin && !isNew && (
             <div className="bg-card border border-destructive/30 rounded-xl p-5">
-              <h2 className="font-semibold text-foreground mb-1 flex items-center gap-2">
+              <h2 className="font-semibold text-foreground mb-1 flex items-center gap-2 font-oswald uppercase tracking-wide">
                 <Trash2 size={16} className="text-destructive" /> Veranstaltung löschen
               </h2>
               <p className="text-sm text-muted-foreground mb-4">
@@ -539,7 +540,7 @@ export default function VeranstaltungDetail() {
           {/* Infobrief versenden – nur für Admins, nur bei existierenden Veranstaltungen */}
           {isAdmin && !isNew && (
             <div className="bg-card border border-border rounded-xl p-5">
-              <h2 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+              <h2 className="font-semibold text-foreground mb-2 flex items-center gap-2 font-oswald uppercase tracking-wide">
                 <Send size={16} className="text-primary" /> Infobrief versenden
               </h2>
               <p className="text-sm text-muted-foreground mb-4">

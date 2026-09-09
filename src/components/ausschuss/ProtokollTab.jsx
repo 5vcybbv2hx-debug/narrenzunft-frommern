@@ -4,6 +4,8 @@ import { base44 } from '@/api/base44Client';
 import { Plus, X, Save, Trash2, FileText, Upload, Eye, EyeOff, Download, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
+import MobileSelect from '@/components/MobileSelect';
 
 const EMPTY_FORM = {
   titel: '',
@@ -51,7 +53,7 @@ export default function ProtokollTab({ termine, mitglieder }) {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Protokoll wirklich löschen?')) return;
+    if (!(await confirmDialog('Protokoll wirklich löschen?'))) return;
     await base44.entities.Protokoll.delete(id);
     setProtokolle(prev => prev.filter(p => p.id !== id));
   };
@@ -210,7 +212,7 @@ function ProtokollModal({ protokoll, termine, mitglieder, ausschussIds, onClose,
   };
 
   const handleDelete = async () => {
-    if (!confirm('Protokoll löschen?')) return;
+    if (!(await confirmDialog('Protokoll löschen?'))) return;
     await base44.entities.Protokoll.delete(protokoll.id);
     onSaved();
   };
@@ -238,45 +240,36 @@ function ProtokollModal({ protokoll, termine, mitglieder, ausschussIds, onClose,
             </div>
             <div>
               <label className="text-xs text-muted-foreground block mb-1">Sitzung</label>
-              <select value={form.termin_id || ''} onChange={e => {
-                const t = termine.find(x => x.id === e.target.value);
-                // Sitzung übernimmt automatisch den Titel
-                setForm(p => ({ ...p, termin_id: e.target.value, titel: t ? t.titel : p.titel }));
-              }}
-                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary">
-                <option value="">–</option>
-                {termine.map(t => <option key={t.id} value={t.id}>{t.titel} ({t.datum})</option>)}
-              </select>
+              <MobileSelect value={form.termin_id || ''}
+                onChange={(v) => {
+                  const t = termine.find(x => x.id === v);
+                  // Sitzung übernimmt automatisch den Titel
+                  setForm(p => ({ ...p, termin_id: v, titel: t ? t.titel : p.titel }));
+                }}
+                placeholder="–"
+                options={termine.map(t => ({ label: `${t.titel} (${t.datum})`, value: t.id }))}
+                label="Sitzung" />
             </div>
           </div>
 
           <div>
             <label className="text-xs text-muted-foreground block mb-1">Verfasser</label>
-            <select value={form.autor_mitglied_id || ''} onChange={e => set('autor_mitglied_id', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary">
-              <option value="">–</option>
-              {verfasserAusschuss.length > 0 && (
-                <optgroup label="Ausschuss">
-                  {verfasserAusschuss.map(m => <option key={m.id} value={m.id}>{m.vorname} {m.nachname}</option>)}
-                </optgroup>
-              )}
-              {verfasserSpartenleiter.length > 0 && (
-                <optgroup label="Spartenleiter">
-                  {verfasserSpartenleiter.map(m => <option key={m.id} value={m.id}>{m.vorname} {m.nachname}</option>)}
-                </optgroup>
-              )}
-              {/* Aktuell gesetzter Verfasser, falls nicht mehr in einer Gruppe */}
-              {!verfasserAusschuss.some(m => m.id === form.autor_mitglied_id) &&
-               !verfasserSpartenleiter.some(m => m.id === form.autor_mitglied_id) &&
-               form.autor_mitglied_id && (() => {
-                 const m = mitglieder.find(x => x.id === form.autor_mitglied_id);
-                 return m ? (
-                   <optgroup label="Ehemalig / ausgetreten">
-                     <option value={m.id}>{m.vorname} {m.nachname}</option>
-                   </optgroup>
-                 ) : null;
-               })()}
-            </select>
+            <MobileSelect value={form.autor_mitglied_id || ''}
+              onChange={(v) => set('autor_mitglied_id', v)}
+              placeholder="–"
+              options={[
+                ...verfasserAusschuss.map(m => ({ label: `🟢 ${m.vorname} ${m.nachname} · Ausschuss`, value: m.id })),
+                ...verfasserSpartenleiter.map(m => ({ label: `${m.vorname} ${m.nachname} · Spartenleiter`, value: m.id })),
+                // Aktuell gesetzter Verfasser, falls nicht mehr in einer Gruppe
+                ...(!verfasserAusschuss.some(m => m.id === form.autor_mitglied_id) &&
+                   !verfasserSpartenleiter.some(m => m.id === form.autor_mitglied_id) &&
+                   form.autor_mitglied_id
+                  ? (mitglieder.find(x => x.id === form.autor_mitglied_id)
+                    ? [{ label: `${mitglieder.find(x => x.id === form.autor_mitglied_id).vorname} ${mitglieder.find(x => x.id === form.autor_mitglied_id).nachname} · Ehemalig`, value: form.autor_mitglied_id }]
+                    : [])
+                  : []),
+              ]}
+              label="Verfasser" />
           </div>
 
           {/* Modus Toggle */}

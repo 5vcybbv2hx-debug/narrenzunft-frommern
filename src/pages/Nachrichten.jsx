@@ -57,7 +57,7 @@ export default function Nachrichten() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Nachrichten</h1>
+          <h1 className="text-2xl font-bold text-foreground font-oswald uppercase tracking-wide">Nachrichten</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Kommuniziere mit Vorstand & Funktionären</p>
         </div>
         <button

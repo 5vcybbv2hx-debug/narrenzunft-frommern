@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { ChevronDown, ChevronUp, Play, Eye, CheckCircle, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 const AKTION_COLORS = {
   'update': 'bg-blue-500/20 text-blue-400',
   'create': 'bg-green-500/20 text-green-400',
   'zuweisen': 'bg-green-500/20 text-green-400',
   'zuordnen': 'bg-blue-500/20 text-blue-400',
-  'überspringen': 'bg-gray-500/20 text-gray-400',
+  'überspringen': 'bg-gray-500/20 text-muted-foreground',
   'erstellt': 'bg-green-500/20 text-green-400',
   'würde erstellt werden': 'bg-blue-500/20 text-blue-400',
-  'bereits vorhanden': 'bg-gray-500/20 text-gray-400',
+  'bereits vorhanden': 'bg-gray-500/20 text-muted-foreground',
 };
 
 function PreviewTabelle({ data, columns }) {
@@ -114,7 +115,7 @@ export default function ImportSchritt({ schritt }) {
   };
 
   const handleExecute = async () => {
-    if (!confirm(`Schritt "${schritt.titel}" wirklich ausführen? Dies ändert Daten in der Datenbank.`)) return;
+    if (!(await confirmDialog(`Schritt "${schritt.titel}" wirklich ausführen? Dies ändert Daten in der Datenbank.`))) return;
 
     setLoading(true);
     setError(null);

@@ -424,7 +424,7 @@ export default function Inventar() {
                   {an.telefon && <a href={`tel:${an.telefon}`} className="flex items-center gap-1 hover:text-primary"><Phone size={11} /> {an.telefon}</a>}
                   {an.email && <a href={`mailto:${an.email}`} className="flex items-center gap-1 hover:text-primary truncate"><Mail size={11} /> {an.email}</a>}
                 </div>
-                {an.zweck && <p className="text-muted-foreground"><span className="text-gray-500">Zweck:</span> {an.zweck}</p>}
+                {an.zweck && <p className="text-muted-foreground"><span className="text-muted-foreground">Zweck:</span> {an.zweck}</p>}
                 {kostet > 0 && <p className="text-primary font-semibold">≈ {Number(kostet).toFixed(2).replace('.', ',')} € Miete{ausr?.verleih_kaution > 0 ? ` + ${Number(ausr.verleih_kaution).toFixed(2).replace('.', ',')} € Kaution` : ''}</p>}
               </div>
 
@@ -476,7 +476,7 @@ export default function Inventar() {
                       <p className="text-[11px] text-muted-foreground mt-0.5">{an.von_datum} → {an.bis_datum}</p>
                       {an.antwort_notiz && <p className="text-[11px] text-muted-foreground mt-0.5 italic">{an.antwort_notiz}</p>}
                     </div>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ${an.status === 'Genehmigt' ? 'bg-green-900/20 text-green-400 border border-green-700/30' : 'bg-secondary text-gray-400'}`}>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ${an.status === 'Genehmigt' ? 'bg-green-900/20 text-green-400 border border-green-700/30' : 'bg-secondary text-muted-foreground'}`}>
                       {an.status}{an.entschieden_von ? ` · ${an.entschieden_von}` : ''}
                     </span>
                   </div>
@@ -575,7 +575,7 @@ function AusleiheKarte({ ausleihe, ausruestung, ausleiherName, today, onClick, v
     'Reserviert':     'bg-blue-900/20 text-blue-400 border border-blue-700/30',
     'Ausgeliehen':    'bg-primary/20 text-primary border border-primary/30',
     'Zurückgegeben':  'bg-green-900/20 text-green-400 border border-green-700/30',
-    'Abgesagt':       'bg-secondary text-gray-400',
+    'Abgesagt':       'bg-secondary text-muted-foreground',
   };
   const istUeberfaellig = ausleihe.bis_datum < today && ausleihe.status === 'Ausgeliehen';
 

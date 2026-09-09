@@ -9,6 +9,7 @@ import HaesHistorieImportModal from '@/components/haes/HaesHistorieImportModal';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 const STATUS_COLORS = {
   'Aktiv': 'bg-green-500/20 text-green-400',
@@ -165,7 +166,7 @@ export default function HaesDetail() {
   };
 
   const handleDeleteHistorie = async (historieId) => {
-    if (!confirm('Zuweisung wirklich löschen?')) return;
+    if (!(await confirmDialog('Zuweisung wirklich löschen?'))) return;
     try {
       await base44.entities.HaesHistorie.delete(historieId);
       toast.success('Zuweisung gelöscht');
@@ -177,7 +178,7 @@ export default function HaesDetail() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Häs wirklich löschen? Alle Zuweisungen gehen verloren.')) return;
+    if (!(await confirmDialog('Häs wirklich löschen? Alle Zuweisungen gehen verloren.'))) return;
     try {
       await base44.entities.Haes.delete(haes.id);
       toast.success('Häs gelöscht');
@@ -460,7 +461,7 @@ export default function HaesDetail() {
                           {entry.aktiv ? (
                             <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium">Aktiv</span>
                           ) : (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-400 font-medium">Historisch</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-500/20 text-muted-foreground font-medium">Historisch</span>
                           )}
                         </div>
                         <p className="text-muted-foreground text-xs mt-0.5">{zeitraum}</p>
@@ -480,7 +481,7 @@ export default function HaesDetail() {
       {/* Mitglieder-Zuweisungen */}
       <div className="bg-card border border-border rounded-xl p-5 mb-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-foreground">Mitglieder-Zuweisungen</h2>
+          <h2 className="font-semibold text-foreground font-oswald uppercase tracking-wide">Mitglieder-Zuweisungen</h2>
           {admin && (
             <div className="flex gap-2">
               <button

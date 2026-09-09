@@ -5,6 +5,7 @@ import {
   ShoppingCart, CheckSquare, FileEdit, Sparkles, Loader2, LayoutTemplate
 } from 'lucide-react';
 import VorlagenModal from './VorlagenModal';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 const TYP_ICONS = {
   'Einkaufsliste': ShoppingCart,
@@ -19,7 +20,7 @@ const TYP_COLORS = {
   'Checkliste':    'bg-blue-500/20 text-blue-400',
   'Notiz':         'bg-yellow-500/20 text-yellow-400',
   'Nachbericht':   'bg-purple-500/20 text-purple-400',
-  'Sonstiges':     'bg-gray-500/20 text-gray-400',
+  'Sonstiges':     'bg-gray-500/20 text-muted-foreground',
 };
 
 const TYPEN = ['Einkaufsliste', 'Checkliste', 'Notiz', 'Nachbericht', 'Sonstiges'];
@@ -101,7 +102,7 @@ export default function DokumenteTab({ veranstaltung, isAdmin, veranstaltungsNam
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Dokument löschen?')) return;
+    if (!(await confirmDialog('Dokument löschen?'))) return;
     await base44.entities.VeranstaltungsDokument.delete(id);
     loadDokumente();
   };

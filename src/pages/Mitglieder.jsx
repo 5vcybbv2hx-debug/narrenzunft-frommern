@@ -24,8 +24,8 @@ const STATUS_COLORS = {
   'Jungaktive 15-17':   'bg-cyan-500/20 text-cyan-400',
   'Kinder 4-10':        'bg-pink-500/20 text-pink-400',
   'Kleinkind 0-3':      'bg-rose-500/20 text-rose-400',
-  'Leihäs':             'bg-gray-500/20 text-gray-400',
-  'Verstorben':         'bg-gray-600/30 text-gray-400',
+  'Leihäs':             'bg-gray-500/20 text-muted-foreground',
+  'Verstorben':         'bg-gray-600/30 text-muted-foreground',
 };
 
 const ALLE_STATUS = [
@@ -371,7 +371,7 @@ export default function Mitglieder() {
       <div className="space-y-1.5">
         {filtered.map(m => {
           const alter = getAlter(m.geburtsdatum);
-          const statusColor = STATUS_COLORS[m.mitgliedsstatus] || 'bg-gray-500/20 text-gray-400';
+          const statusColor = STATUS_COLORS[m.mitgliedsstatus] || 'bg-gray-500/20 text-muted-foreground';
           const hatHaes = !!m.haesgruppe_id;
           const haesNr = haesMap[m.id] || null;
           const eintrittsJahr = m.eintrittsdatum ? format(new Date(m.eintrittsdatum), 'yyyy') : null;

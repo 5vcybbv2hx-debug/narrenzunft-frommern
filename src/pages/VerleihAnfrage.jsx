@@ -73,7 +73,7 @@ export default function VerleihAnfrage() {
   const IconComponent = item ? (KATEGORIE_ICONS[item.kategorie] || Package) : Package;
 
   return (
-    <div className="min-h-screen bg-[#080808] text-white flex flex-col items-center px-4 py-8">
+    <div className="min-h-screen bg-background text-white flex flex-col items-center px-4 py-8">
       {/* Kopf */}
       <div className="text-center mb-6">
         <div className="w-14 h-14 mx-auto rounded-xl bg-[#EA2525] flex items-center justify-center shadow-xl shadow-red-900/30">
@@ -86,7 +86,7 @@ export default function VerleihAnfrage() {
       {loading && (
         <div className="flex flex-col items-center gap-3 py-16">
           <Loader2 size={28} className="animate-spin text-[#EA2525]" />
-          <p className="text-sm text-gray-400">Wird geladen…</p>
+          <p className="text-sm text-muted-foreground">Wird geladen…</p>
         </div>
       )}
 
@@ -99,22 +99,22 @@ export default function VerleihAnfrage() {
 
       {/* Erfolg */}
       {submitted && (
-        <div className="max-w-md w-full bg-gray-900 border border-gray-700 rounded-2xl p-6 text-center">
+        <div className="max-w-md w-full bg-card border border-border rounded-2xl p-6 text-center">
           <CheckCircle2 size={48} className="text-green-400 mx-auto mb-3" />
           <h1 className="font-oswald uppercase text-xl text-white">Anfrage erhalten!</h1>
-          <p className="text-sm text-gray-400 mt-2 leading-relaxed">
+          <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
             Vielen Dank, <strong className="text-white">{form.name}</strong>! Eure Anfrage zu <strong className="text-white">{item?.name}</strong> ist bei uns eingegangen.
           </p>
-          <p className="text-sm text-gray-400 mt-2 leading-relaxed">
+          <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
             Der Vorstand prüft die Anfrage und meldet sich dann bei euch unter der angegebenen Nummer.
           </p>
-          <div className="mt-4 px-4 py-3 rounded-xl bg-black/30 border border-gray-800 text-xs text-gray-400 text-left space-y-1">
-            <p><span className="text-gray-500">Zeitraum:</span> {form.von_datum} → {form.bis_datum}</p>
-            {item?.preis > 0 && <p><span className="text-gray-500">Miete (ca.):</span> {tage()} Tag(e) × {euro(item.preis)} = {euro(tage() * item.preis)}</p>}
+          <div className="mt-4 px-4 py-3 rounded-xl bg-black/30 border border-border text-xs text-muted-foreground text-left space-y-1">
+            <p><span className="text-muted-foreground">Zeitraum:</span> {form.von_datum} → {form.bis_datum}</p>
+            {item?.preis > 0 && <p><span className="text-muted-foreground">Miete (ca.):</span> {tage()} Tag(e) × {euro(item.preis)} = {euro(tage() * item.preis)}</p>}
             {item?.mitglied_preis != null && item?.preis > 0 && item.mitglied_preis < item.preis && (
-              <p><span className="text-gray-500">Mitglieder:</span> <span className="text-[#EA2525] font-semibold">{euro(item.mitglied_preis)} / Tag</span> — Buchung einfach über die App.</p>
+              <p><span className="text-muted-foreground">Mitglieder:</span> <span className="text-[#EA2525] font-semibold">{euro(item.mitglied_preis)} / Tag</span> — Buchung einfach über die App.</p>
             )}
-            {item?.kaution > 0 && <p><span className="text-gray-500">Kaution:</span> {euro(item.kaution)}</p>}
+            {item?.kaution > 0 && <p><span className="text-muted-foreground">Kaution:</span> {euro(item.kaution)}</p>}
           </div>
         </div>
       )}
@@ -123,7 +123,7 @@ export default function VerleihAnfrage() {
       {item && !submitted && !fehler && (
         <div className="w-full max-w-md space-y-4">
           {/* Gegenstand */}
-          <div className="bg-gray-900 border border-gray-700 rounded-2xl overflow-hidden">
+          <div className="bg-card border border-border rounded-2xl overflow-hidden">
             {item.bild_url && (
               <img src={item.bild_url} alt={item.name} className="w-full h-44 object-cover" />
             )}
@@ -136,21 +136,21 @@ export default function VerleihAnfrage() {
                 )}
                 <div>
                   <h1 className="font-oswald uppercase text-xl text-white leading-tight">{item.name}</h1>
-                  <p className="text-xs text-gray-400">{item.kategorie}</p>
+                  <p className="text-xs text-muted-foreground">{item.kategorie}</p>
                 </div>
               </div>
-              {item.beschreibung && <p className="text-sm text-gray-400 mt-3">{item.beschreibung}</p>}
+              {item.beschreibung && <p className="text-sm text-muted-foreground mt-3">{item.beschreibung}</p>}
 
               <div className="grid grid-cols-2 gap-2 mt-4">
                 {item.preis > 0 && (
-                  <div className="px-3 py-2.5 rounded-xl bg-black/30 border border-gray-800">
-                    <p className="text-[10px] text-gray-500 uppercase tracking-wide flex items-center gap-1"><Euro size={11}/> Miete pro Tag</p>
+                  <div className="px-3 py-2.5 rounded-xl bg-black/30 border border-border">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide flex items-center gap-1"><Euro size={11}/> Miete pro Tag</p>
                     <p className="text-lg font-semibold text-white mt-0.5">{euro(item.preis)}</p>
                   </div>
                 )}
                 {item.kaution > 0 && (
-                  <div className="px-3 py-2.5 rounded-xl bg-black/30 border border-gray-800">
-                    <p className="text-[10px] text-gray-500 uppercase tracking-wide flex items-center gap-1"><Euro size={11}/> Kaution</p>
+                  <div className="px-3 py-2.5 rounded-xl bg-black/30 border border-border">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide flex items-center gap-1"><Euro size={11}/> Kaution</p>
                     <p className="text-lg font-semibold text-white mt-0.5">{euro(item.kaution)}</p>
                   </div>
                 )}
@@ -158,57 +158,57 @@ export default function VerleihAnfrage() {
 
               {item.notiz && (
                 <div className="mt-3 px-3 py-2.5 rounded-xl bg-[#EA2525]/10 border border-[#EA2525]/25">
-                  <p className="text-xs text-gray-300 whitespace-pre-line">{item.notiz}</p>
+                  <p className="text-xs text-muted-foreground whitespace-pre-line">{item.notiz}</p>
                 </div>
               )}
             </div>
           </div>
 
           {/* Anfrage-Formular */}
-          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-5 space-y-3">
+          <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
             <h2 className="font-oswald uppercase text-base text-white flex items-center gap-2">
               <CalendarDays size={16} className="text-[#EA2525]" /> Ausleihanfrage stellen
             </h2>
 
             <div>
-              <label className="text-xs text-gray-400 font-medium block mb-1">Name *</label>
+              <label className="text-xs text-muted-foreground font-medium block mb-1">Name *</label>
               <input value={form.name} onChange={(e) => set('name', e.target.value)}
                 placeholder="Vor- und Nachname / Organisation"
-                className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-gray-700 text-sm text-white focus:outline-none focus:border-[#EA2525]" />
+                className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-border text-sm text-white focus:outline-none focus:border-[#EA2525]" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-gray-400 font-medium block mb-1 flex items-center gap-1"><Phone size={11} /> Telefon *</label>
+                <label className="text-xs text-muted-foreground font-medium block mb-1 flex items-center gap-1"><Phone size={11} /> Telefon *</label>
                 <input value={form.telefon} onChange={(e) => set('telefon', e.target.value)}
                   placeholder="Für Rückfragen"
-                  className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-gray-700 text-sm text-white focus:outline-none focus:border-[#EA2525]" />
+                  className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-border text-sm text-white focus:outline-none focus:border-[#EA2525]" />
               </div>
               <div>
-                <label className="text-xs text-gray-400 font-medium block mb-1 flex items-center gap-1"><Mail size={11} /> E-Mail (optional)</label>
+                <label className="text-xs text-muted-foreground font-medium block mb-1 flex items-center gap-1"><Mail size={11} /> E-Mail (optional)</label>
                 <input value={form.email} onChange={(e) => set('email', e.target.value)}
                   placeholder="name@beispiel.de"
-                  className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-gray-700 text-sm text-white focus:outline-none focus:border-[#EA2525]" />
+                  className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-border text-sm text-white focus:outline-none focus:border-[#EA2525]" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-gray-400 font-medium block mb-1">Von *</label>
+                <label className="text-xs text-muted-foreground font-medium block mb-1">Von *</label>
                 <DateSelect name="von_datum" value={form.von_datum}
                   onChange={(e) => set('von_datum', e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-gray-700 text-sm text-white" />
+                  className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-border text-sm text-white" />
               </div>
               <div>
-                <label className="text-xs text-gray-400 font-medium block mb-1">Bis *</label>
+                <label className="text-xs text-muted-foreground font-medium block mb-1">Bis *</label>
                 <DateSelect name="bis_datum" value={form.bis_datum}
                   onChange={(e) => set('bis_datum', e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-gray-700 text-sm text-white" />
+                  className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-border text-sm text-white" />
               </div>
             </div>
             <div>
-              <label className="text-xs text-gray-400 font-medium block mb-1">Wofür? (optional)</label>
+              <label className="text-xs text-muted-foreground font-medium block mb-1">Wofür? (optional)</label>
               <textarea value={form.zweck} onChange={(e) => set('zweck', e.target.value)} rows={2}
                 placeholder="z.B. Geburtstagsfeier, Vereinsfest…"
-                className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-gray-700 text-sm text-white focus:outline-none focus:border-[#EA2525] resize-none" />
+                className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-border text-sm text-white focus:outline-none focus:border-[#EA2525] resize-none" />
             </div>
 
             {/* Spamschutz: unsichtbares Feld */}
@@ -216,8 +216,8 @@ export default function VerleihAnfrage() {
               className="absolute opacity-0 pointer-events-none h-0 w-0" tabIndex={-1} autoComplete="off" aria-hidden="true" />
 
             {item.preis > 0 && tage() > 0 && (
-              <div className="px-3 py-2.5 rounded-xl bg-black/30 border border-gray-800 text-xs text-gray-400">
-                <span className="text-gray-500">Geschätzte Miete:</span> {tage()} Tag(e) × {euro(item.preis)} = <span className="text-white font-semibold">{euro(tage() * item.preis)}</span>
+              <div className="px-3 py-2.5 rounded-xl bg-black/30 border border-border text-xs text-muted-foreground">
+                <span className="text-muted-foreground">Geschätzte Miete:</span> {tage()} Tag(e) × {euro(item.preis)} = <span className="text-white font-semibold">{euro(tage() * item.preis)}</span>
                 {item.kaution > 0 && <> + {euro(item.kaution)} Kaution</>}
               </div>
             )}
@@ -228,7 +228,7 @@ export default function VerleihAnfrage() {
               {submitting ? 'Wird gesendet…' : 'Anfrage abschicken'}
             </button>
 
-            <p className="text-[11px] text-gray-500 text-center leading-relaxed">
+            <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
               Eure Daten werden nur zur Bearbeitung der Anfrage verwendet. Der Vorstand entscheidet über die Ausleihe und meldet sich telefonisch.
             </p>
           </div>

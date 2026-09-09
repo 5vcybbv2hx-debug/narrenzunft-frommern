@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Users, Plus, X, ChevronRight, Phone, Mail, Trash2, Search } from 'lucide-react';
 import { differenceInYears } from 'date-fns';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
+import MobileSelect from '@/components/MobileSelect';
 
 const BEZIEHUNGEN = [
   'Elternteil', 'Kind', 'Geschwister', 'Großelternteil',
@@ -30,7 +32,7 @@ const BEZIEHUNG_FARBEN = {
   'Onkel/Tante': 'bg-yellow-500/20 text-yellow-400',
   'Nichte/Neffe': 'bg-pink-500/20 text-pink-400',
   'Ehepartner/in': 'bg-red-500/20 text-red-400',
-  'Sonstige': 'bg-gray-500/20 text-gray-400',
+  'Sonstige': 'bg-gray-500/20 text-muted-foreground',
 };
 
 export default function FamilieTab({ mitglied, isAdmin }) {
@@ -89,7 +91,7 @@ export default function FamilieTab({ mitglied, isAdmin }) {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Beziehung wirklich entfernen?')) return;
+    if (!(await confirmDialog('Beziehung wirklich entfernen?'))) return;
     try {
       await base44.entities.Verwandtschaft.delete(id);
       setVerwandtschaften(prev => prev.filter(v => v.id !== id));
@@ -186,7 +188,7 @@ export default function FamilieTab({ mitglied, isAdmin }) {
                         {m.vorname} {m.nachname}
                       </Link>
                       {alter !== null && <span className="text-xs text-muted-foreground">{alter} J.</span>}
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${BEZIEHUNG_FARBEN[beziehungLabel] || 'bg-gray-500/20 text-gray-400'}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${BEZIEHUNG_FARBEN[beziehungLabel] || 'bg-gray-500/20 text-muted-foreground'}`}>
                         {beziehungLabel}
                       </span>
                     </div>
@@ -299,13 +301,11 @@ export default function FamilieTab({ mitglied, isAdmin }) {
 
               <div>
                 <label className="text-xs text-muted-foreground font-medium block mb-1">Beziehung (von diesem Mitglied aus) *</label>
-                <select
+                <MobileSelect
                   value={form.beziehung}
-                  onChange={e => setForm(p => ({ ...p, beziehung: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
-                >
-                  {BEZIEHUNGEN.map(b => <option key={b} value={b}>{b}</option>)}
-                </select>
+                  onChange={(v) => setForm(p => ({ ...p, beziehung: v }))}
+                  options={BEZIEHUNGEN}
+                  label="Beziehung" />
               </div>
 
               <div>

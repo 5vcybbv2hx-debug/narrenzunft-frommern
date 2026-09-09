@@ -6,6 +6,7 @@ import { base44 } from '@/api/base44Client';
 import { X, Save, Trash2 } from 'lucide-react';
 import MobileSelect from '@/components/MobileSelect';
 import toast from 'react-hot-toast';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 const TERMINARTEN = ['Umzug','Abendveranstaltung','Arbeitsdienst','Ausschusssitzung','Vorstandssitzung','Jugendtermin','Gruppen-Termin','Intern','Sonstiges'];
 const SICHTBARKEITEN = [
@@ -55,7 +56,7 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Termin wirklich löschen?')) return;
+    if (!(await confirmDialog('Termin wirklich löschen?'))) return;
     await base44.entities.KalenderTermin.delete(termin.id);
     onSaved();
   };

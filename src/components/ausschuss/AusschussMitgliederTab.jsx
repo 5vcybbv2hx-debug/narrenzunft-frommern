@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Users, Plus, X, Save, Trash2 } from 'lucide-react';
 import { syncAusschussZugang } from '@/lib/ausschussSync';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 const ROLLEN = ['Vorsitzender', 'Stellv. Vorsitzender', 'Schriftführer', 'Kassierer', 'Häswart', 'Beisitzer', 'Jugendleiter', 'Sonstiges'];
 
@@ -11,7 +12,7 @@ const ROLLE_FARBEN = {
   'Schriftführer':       'bg-purple-500/20 text-purple-400',
   'Kassierer':           'bg-green-500/20 text-green-400',
   'Häswart':             'bg-amber-500/20 text-amber-400',
-  'Beisitzer':           'bg-gray-500/20 text-gray-400',
+  'Beisitzer':           'bg-gray-500/20 text-muted-foreground',
   'Jugendleiter':        'bg-primary/20 text-primary',
   'Sonstiges':           'bg-secondary text-muted-foreground',
 };
@@ -72,7 +73,7 @@ export default function AusschussMitgliederTab({ mitglieder, isAdmin }) {
 
   const handleRemove = async (amId) => {
     const am = ausschussMitglieder.find(a => a.id === amId);
-    if (!confirm('Mitglied aus dem Ausschuss entfernen? Der Ausschuss-Zugang wird automatisch entzogen.')) return;
+    if (!(await confirmDialog('Mitglied aus dem Ausschuss entfernen? Der Ausschuss-Zugang wird automatisch entzogen.'))) return;
     await base44.entities.AusschussMitglied.delete(amId);
     // Ausschuss-Zugang automatisch entziehen
     if (am?.mitglied_id) {

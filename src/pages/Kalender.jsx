@@ -15,6 +15,7 @@ import KalenderTerminModal from '@/components/kalender/KalenderTerminModal';
 import VeranstaltungBearbeitenModal from '@/components/kalender/VeranstaltungBearbeitenModal';
 import VeranstaltungsvorlagenModal from '@/components/veranstaltung/VeranstaltungsvorlagenModal';
 import { toast } from 'sonner';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 const TERMINART_FARBEN = {
   'Umzug':             'bg-primary/20 text-primary border-primary/30',
@@ -26,7 +27,7 @@ const TERMINART_FARBEN = {
   'Vorstandssitzung':  'bg-red-600/20 text-red-300 border-red-600/30',
   'Jugendtermin':      'bg-green-500/20 text-green-400 border-green-500/30',
   'Gruppen-Termin':    'bg-teal-500/20 text-teal-400 border-teal-500/30',
-  'Intern':            'bg-gray-500/20 text-gray-400 border-gray-500/30',
+  'Intern':            'bg-gray-500/20 text-muted-foreground border-gray-500/30',
   'Sonstiges':         'bg-secondary text-muted-foreground border-border',
 };
 
@@ -224,7 +225,7 @@ export default function Kalender({ nur = 'alle' }) {
   };
 
   const handleAusfahrtUnregister = async (anmeldungId, ausfahrtId) => {
-    if (!confirm('Möchten Sie sich wirklich von dieser Ausfahrt abmelden?')) return;
+    if (!(await confirmDialog('Möchten Sie sich wirklich von dieser Ausfahrt abmelden?'))) return;
     setSubmittingAusfahrtId(ausfahrtId);
     try {
       const todayStr = format(new Date(), 'yyyy-MM-dd');

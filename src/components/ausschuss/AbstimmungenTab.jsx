@@ -8,7 +8,7 @@ import {
 const STIMME_FARBEN = {
   'Ja':         'bg-green-500/20 text-green-400 border border-green-500/30',
   'Nein':       'bg-red-500/20 text-red-400 border border-red-500/30',
-  'Enthaltung': 'bg-gray-500/20 text-gray-400 border border-gray-500/30',
+  'Enthaltung': 'bg-gray-500/20 text-muted-foreground border border-gray-500/30',
 };
 
 const STIMME_BTN = {

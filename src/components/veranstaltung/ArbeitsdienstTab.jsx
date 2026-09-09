@@ -3,6 +3,7 @@ import DateSelect from '../ui/DateSelect';
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Briefcase, Plus, Trash2, Users, Clock, MapPin, CheckCircle, AlertCircle } from 'lucide-react';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 const STATUS_COLORS = {
   'Offen': 'bg-yellow-500/20 text-yellow-400',
@@ -75,7 +76,7 @@ export default function ArbeitsdienstTab({ veranstaltung, isAdmin }) {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Arbeitsdienst wirklich löschen?')) return;
+    if (!(await confirmDialog('Arbeitsdienst wirklich löschen?'))) return;
     try {
       await base44.entities.Arbeitsdienst.delete(id);
       setDienste(prev => prev.filter(d => d.id !== id));

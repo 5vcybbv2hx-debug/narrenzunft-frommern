@@ -11,6 +11,7 @@ import {
 import { differenceInYears } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { format } from 'date-fns';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 const BEZIEHUNGEN = [
   'Ehepartner/in', 'Kind', 'Geschwister', 'Elternteil',
@@ -111,7 +112,7 @@ export default function FamilienDashboard() {
   };
 
   const handleRemove = async (verwandterId, beziehungLabel) => {
-    if (!confirm(`Beziehung "${beziehungLabel}" wirklich entfernen?`)) return;
+    if (!(await confirmDialog(`Beziehung "${beziehungLabel}" wirklich entfernen?`))) return;
     // Sicherheits-Check: ohne gültige IDs dürfen wir nicht filtern –
     // sonst ignoriert Base44 das leere Feld und löscht ALLE Verwandten.
     if (!selbst?.id || !verwandterId) {
@@ -145,7 +146,7 @@ export default function FamilienDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center p-4 sm:p-6 text-white">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 sm:p-6 text-white">
         <div className="w-10 h-10 border-[3px] border-border border-t-primary rounded-full animate-spin" />
         <p className="mt-4 text-sm font-medium tracking-wide font-oswald uppercase text-muted-foreground">Familie wird geladen...</p>
       </div>
@@ -153,9 +154,9 @@ export default function FamilienDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#080808] text-white font-sans pb-20">
+    <div className="min-h-screen bg-background text-white font-sans pb-20">
       {/* Header */}
-      <div className="border-b border-border bg-[#080808] sticky top-0 z-40">
+      <div className="border-b border-border bg-background sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Users className="text-primary w-8 h-8" />

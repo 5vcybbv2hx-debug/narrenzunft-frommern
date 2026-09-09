@@ -12,6 +12,7 @@ import {
   Euro, UserCheck, ArrowLeft, Save, UserPlus, Phone, MessageCircle, Search, User
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 function formatPhoneForTel(phone) {
   if (!phone) return null;
@@ -291,7 +292,7 @@ export default function SpartenDashboard() {
 
   const handleDeleteTermin = async (terminId) => {
     if (!canEdit) return;
-    if (!confirm('Möchtest du diesen Termin wirklich löschen?')) return;
+    if (!(await confirmDialog('Möchtest du diesen Termin wirklich löschen?'))) return;
     try {
       await base44.entities.SpartenTermin.delete(terminId);
       toast.success('Termin gelöscht');
@@ -526,7 +527,7 @@ export default function SpartenDashboard() {
   };
 
   const handleDeleteHistorieEintrag = async (histId) => {
-    if (!window.confirm('Diesen Historien-Eintrag wirklich löschen?')) return;
+    if (!(await confirmDialog('Diesen Historien-Eintrag wirklich löschen?'))) return;
     try {
       await base44.entities.SpartenleiterHistorie.delete(histId);
       toast.success('Eintrag gelöscht');

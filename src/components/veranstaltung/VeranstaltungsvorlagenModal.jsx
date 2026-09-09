@@ -2,6 +2,7 @@ import TimeSelect from '../ui/TimeSelect';
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, Plus, Trash2, Save, LayoutTemplate, Edit, Bus, Clock, MapPin, Briefcase, ShoppingBasket } from 'lucide-react';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 const TYP_OPTIONEN = ['Umzug', 'Abendveranstaltung', 'Intern', 'Arbeitsdienst', 'Fest'];
 
@@ -138,7 +139,7 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Vorlage löschen?')) return;
+    if (!(await confirmDialog('Vorlage löschen?'))) return;
     await base44.entities.Veranstaltungsvorlage.delete(id);
     setVorlagen(prev => prev.filter(v => v.id !== id));
   };

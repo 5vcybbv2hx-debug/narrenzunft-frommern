@@ -4,6 +4,7 @@ import {
   X, Plus, Trash2, Save, Copy, LayoutTemplate,
   ShoppingCart, CheckSquare, FileEdit, FileText
 } from 'lucide-react';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 const TYPEN = ['Einkaufsliste', 'Checkliste', 'Notiz', 'Nachbericht', 'Sonstiges'];
 
@@ -12,7 +13,7 @@ const TYP_COLORS = {
   'Checkliste':    'bg-blue-500/20 text-blue-400',
   'Notiz':         'bg-yellow-500/20 text-yellow-400',
   'Nachbericht':   'bg-purple-500/20 text-purple-400',
-  'Sonstiges':     'bg-gray-500/20 text-gray-400',
+  'Sonstiges':     'bg-gray-500/20 text-muted-foreground',
 };
 
 const TYP_ICONS = {
@@ -57,7 +58,7 @@ export default function VorlagenModal({ vorlagen, onAnwenden, onClose, onVorlage
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Vorlage löschen?')) return;
+    if (!(await confirmDialog('Vorlage löschen?'))) return;
     await base44.entities.DokumentVorlage.delete(id);
     onVorlagenChanged();
   };

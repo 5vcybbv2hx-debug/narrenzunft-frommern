@@ -62,7 +62,7 @@ export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten
             <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: farbe + '20', color: farbe }}>
               {gruppe.typ || 'Häsgruppe'}
             </span>
-            {!gruppe.aktiv && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-400">Inaktiv</span>}
+            {!gruppe.aktiv && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-500/20 text-muted-foreground">Inaktiv</span>}
           </div>
 
           {/* Verantwortliche */}

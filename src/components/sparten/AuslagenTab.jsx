@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Plus, Trash2, Check, X, Euro, AlertCircle, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 const STATUS_COLORS = {
   'Offen': 'bg-yellow-500/20 text-yellow-400',
@@ -91,7 +92,7 @@ export default function AuslagenTab({ gruppeId, isAdmin }) {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Auslage löschen?')) return;
+    if (!(await confirmDialog('Auslage löschen?'))) return;
     await base44.entities.SpartenAuslage.delete(id);
     setAuslagen(prev => prev.filter(a => a.id !== id));
   };

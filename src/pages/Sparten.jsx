@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import SparteFormModal from '@/components/sparten/SparteFormModal';
 import Sparte from '@/components/sparten/Sparte';
 import { toast } from 'sonner';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 export default function Sparten() {
   const { user } = useAuth();
@@ -52,7 +53,7 @@ export default function Sparten() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Gruppe wirklich löschen? Alle Mitglieder-Zuweisungen werden entfernt.')) return;
+    if (!(await confirmDialog('Gruppe wirklich löschen? Alle Mitglieder-Zuweisungen werden entfernt.'))) return;
     try {
       await base44.entities.Haesgruppe.delete(id);
       setGruppen(prev => prev.filter(g => g.id !== id));

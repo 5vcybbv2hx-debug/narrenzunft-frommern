@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, Save, Trash2, Search, Bookmark, GripVertical, AlertTriangle } from 'lucide-react';
 import MobileSelect from '../MobileSelect';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 const ZUWEISUNG_STATUS = ['Offen', 'Bestätigt', 'Erledigt', 'Abgesagt', 'Nicht erledigt'];
 
@@ -144,7 +145,7 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
   };
 
   const handleDelete = async () => {
-    if (!confirm('Arbeitsdienst wirklich löschen?')) return;
+    if (!(await confirmDialog('Arbeitsdienst wirklich löschen?'))) return;
     await base44.entities.Arbeitsdienst.delete(dienst.id);
     onSaved();
   };
