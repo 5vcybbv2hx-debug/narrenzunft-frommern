@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import { getRollenLabel } from '@/lib/roles';
@@ -9,6 +10,15 @@ import { base44 } from '@/api/base44Client';
 export default function Mehr() {
   const { user } = useAuth();
   const location = useLocation();
+  const [mitglied, setMitglied] = useState(null);
+
+  useEffect(() => {
+    let aktiv = true;
+    base44.entities.Mitglied.filter({ user_id: user?.id })
+      .then(res => { if (aktiv && res[0]) setMitglied(res[0]); })
+      .catch(e => console.error('Error:', e));
+    return () => { aktiv = false; };
+  }, [user?.id]);
 
   const handleLogout = () => base44.auth.logout('/');
   const isActive = (path) => location.pathname === path;
@@ -19,8 +29,8 @@ export default function Mehr() {
     .map(s => ({ ...s, items: s.items.filter(i => canSeeItem(i, user)) }))
     .filter(s => s.items.length > 0);
 
-  const displayName = user?._mitglied
-    ? `${user._mitglied.vorname || ''} ${user._mitglied.nachname || ''}`.trim()
+  const displayName = mitglied
+    ? `${mitglied.vorname || ''} ${mitglied.nachname || ''}`.trim()
     : (user?.full_name || 'Benutzer');
   const displayInitials = (displayName.split(' ').map(w => w[0]).join('').toUpperCase() || 'U').slice(0, 2);
 
