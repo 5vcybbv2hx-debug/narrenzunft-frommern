@@ -84,11 +84,10 @@ const BOTTOM_NAV = [
   { path: '/kalender',    label: 'Termine', icon: Calendar },
   { path: '/ausfahrten',  label: 'Bus',     icon: Bus },
   { path: '/arbeitsdienste', label: 'Dienste', icon: Briefcase },
-  { path: '/profil',      label: 'Profil',  icon: User },
 ];
 
 // Haupttabs — auf diesen Pfaden wird kein Zurück-Button angezeigt
-const ROOT_PATHS = ['/', '/kalender', '/ausfahrten', '/arbeitsdienste', '/profil'];
+const ROOT_PATHS = ['/', '/kalender', '/ausfahrten', '/arbeitsdienste'];
 
 function canSeeItem(item, user) {
   if (!item.roles) return true;
@@ -161,6 +160,11 @@ export default function Layout() {
 
   useEffect(() => { loadCurrentMitglied(); }, []);
   useEffect(() => { loadNotifications(); }, [mitglied]);
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, [sidebarOpen]);
 
   const loadCurrentMitglied = async () => {
     try {
@@ -273,6 +277,50 @@ export default function Layout() {
     </nav>
   );
 
+  // ── Mobile: flaches "Mehr"-Menü (große Touch-Ziele, kein Akkordeon) ──
+  const renderMobileMenu = (onNavigate) => (
+    <nav className="flex-1 overflow-y-auto px-3 pb-2">
+      {visibleDirect.map((item) => {
+        const Icon = item.icon;
+        const active = isActive(item.path);
+        return (
+          <Link key={item.path} to={item.path} onClick={onNavigate}
+            className={`flex items-center gap-3.5 px-3.5 py-3.5 rounded-xl text-[15px] font-medium transition-all active:scale-[0.98] ${active ? 'bg-primary/15 text-primary' : 'text-sidebar-foreground active:bg-sidebar-accent'}`}>
+            <Icon size={20} strokeWidth={active ? 2.2 : 1.8} className="shrink-0" />
+            <span className="flex-1 truncate">{item.label}</span>
+            {active && <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />}
+          </Link>
+        );
+      })}
+
+      {visibleSections.map((section) => {
+        const visibleItems = section.items.filter(i => canSeeItem(i, user));
+        if (visibleItems.length === 0) return null;
+        return (
+          <div key={section.id}>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-3.5 pt-4 pb-1.5">
+              {section.title}
+            </p>
+            <div className="space-y-1">
+              {visibleItems.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.path);
+                return (
+                  <Link key={item.path} to={item.path} onClick={onNavigate}
+                    className={`flex items-center gap-3.5 px-3.5 py-3.5 rounded-xl text-[15px] font-medium transition-all active:scale-[0.98] ${active ? 'bg-primary/15 text-primary' : 'text-sidebar-foreground active:bg-sidebar-accent'}`}>
+                    <Icon size={20} strokeWidth={active ? 2.2 : 1.8} className="shrink-0" />
+                    <span className="flex-1 truncate">{item.label}</span>
+                    {active && <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </nav>
+  );
+
   return (
     <div className="min-h-screen bg-background flex overflow-x-hidden">
 
@@ -315,45 +363,58 @@ export default function Layout() {
         </div>
       </aside>
 
-      {/* ── Mobile Sidebar Overlay ── */}
-      {sidebarOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          <aside className="relative flex flex-col w-[85vw] max-w-72 h-full z-50 shadow-2xl"
-                 style={{ background: 'hsl(var(--sidebar-background))' }}>
-            <div className="relative flex items-center justify-between px-4 py-4 border-b border-sidebar-border overflow-hidden">
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
-              <div className="flex items-center gap-3 pl-2">
-                <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shadow-md shadow-primary/30">
-                  <span className="text-white">🎭</span>
+      {/* ── Mobile "Mehr"-Menü (Sheet von rechts) ── */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <div className="lg:hidden fixed inset-0 z-50">
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              onClick={() => setSidebarOpen(false)}
+            />
+            <motion.aside
+              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+              transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
+              className="absolute right-0 top-0 bottom-0 w-[88vw] max-w-80 flex flex-col shadow-2xl"
+              style={{ background: 'hsl(var(--sidebar-background))', paddingBottom: 'env(safe-area-inset-bottom)' }}
+            >
+              {/* Kopf: Profil + Suche */}
+              <div className="px-4 pt-4 pb-3 border-b border-sidebar-border shrink-0">
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <Link to="/profil" onClick={() => setSidebarOpen(false)}
+                    className="flex items-center gap-3 flex-1 min-w-0 active:opacity-60 transition-opacity">
+                    <div className="w-11 h-11 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm shrink-0">
+                      {displayInitials}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[15px] font-semibold text-sidebar-foreground truncate">{displayName}</p>
+                      <p className="text-xs text-primary font-medium">{getRollenLabel(user?.role)}</p>
+                    </div>
+                    <ChevronRight size={16} className="text-muted-foreground shrink-0" />
+                  </Link>
+                  <button onClick={() => setSidebarOpen(false)} aria-label="Menü schließen"
+                    className="p-2.5 -mr-1.5 rounded-lg text-muted-foreground active:bg-sidebar-accent transition-colors shrink-0">
+                    <X size={20} />
+                  </button>
                 </div>
-                <div>
-                  <p className="font-oswald font-semibold text-sidebar-foreground text-sm uppercase tracking-wide">Narrenzunft</p>
-                  <p className="text-[10px] text-primary uppercase tracking-widest">Frommern</p>
-                </div>
+                <SecureSearch />
               </div>
-              <button onClick={() => setSidebarOpen(false)}
-                className="p-3 rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors">
-                <X size={18} />
-              </button>
-            </div>
 
-            <div className="px-3 py-2">
-              <SecureSearch />
-            </div>
+              {renderMobileMenu(() => setSidebarOpen(false))}
 
-            {renderAccordion(() => setSidebarOpen(false))}
-
-            <div className="px-2 py-3 border-t border-sidebar-border">
-              <button onClick={handleLogout}
-                className="flex items-center gap-3 px-3 py-3 rounded-md w-full text-red-400 hover:bg-red-500/10 transition-colors">
-                <LogOut size={18} />
-                <span className="font-medium">Abmelden</span>
-              </button>
-            </div>
-          </aside>
-        </div>
-      )}
+              {/* Abmelden */}
+              <div className="px-3 pt-2 pb-3 border-t border-sidebar-border shrink-0">
+                <button onClick={handleLogout}
+                  className="flex items-center gap-3 px-3.5 py-3.5 rounded-xl w-full text-red-400 text-[15px] font-medium active:bg-red-500/10 transition-colors">
+                  <LogOut size={20} />
+                  <span>Abmelden</span>
+                </button>
+              </div>
+            </motion.aside>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* ── Main Content ── */}
       <div className="flex-1 lg:ml-60 flex flex-col min-h-screen min-w-0">
@@ -429,11 +490,12 @@ export default function Layout() {
                 </button>
               );
             })}
-            {/* Menü-Button öffnet Sidebar Overlay */}
-            <button onClick={() => setSidebarOpen(true)}
-              className="flex flex-col items-center gap-0.5 px-2 py-2 rounded-lg transition-all min-w-[48px] text-muted-foreground hover:text-white">
-              <Menu size={20} strokeWidth={1.7} />
-              <span className="text-[10px] font-medium leading-none mt-0.5">Menü</span>
+            {/* Mehr-Button öffnet das Menü-Sheet */}
+            <button onClick={() => setSidebarOpen(true)} aria-label="Mehr Menü öffnen"
+              className={`flex flex-col items-center gap-0.5 px-2 py-2 rounded-lg transition-all min-w-[48px] ${sidebarOpen ? 'text-primary' : 'text-muted-foreground'}`}>
+              <Menu size={20} strokeWidth={sidebarOpen ? 2.4 : 1.7} />
+              <span className={`text-[10px] font-medium leading-none mt-0.5 ${sidebarOpen ? 'text-primary' : ''}`}>Mehr</span>
+              {sidebarOpen && <div className="w-4 h-0.5 rounded-full bg-primary mt-0.5" />}
             </button>
           </div>
         </nav>
