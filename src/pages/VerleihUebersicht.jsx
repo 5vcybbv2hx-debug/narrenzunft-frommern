@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Loader2, AlertCircle, Snowflake, Truck, Tent, Plug, Package, Wine, Euro, ChevronRight } from 'lucide-react';
+import { Loader2, AlertCircle, Snowflake, Truck, Tent, Plug, Package, Wine, Euro, ChevronRight, ArrowLeft } from 'lucide-react';
 
 const KATEGORIE_ICONS = {
   'Anhänger': Truck, 'Kühlanhänger': Snowflake, 'Bar': Wine,
@@ -34,7 +34,17 @@ export default function VerleihUebersicht() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background text-white flex flex-col items-center px-4 py-8">
+    <div className="min-h-screen bg-background text-white flex flex-col items-center">
+      {/* Top-Bar mit Zurück-Button */}
+      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b border-border w-full">
+        <div className="max-w-md mx-auto flex items-center px-4 h-14">
+          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors min-h-[44px]">
+            <ArrowLeft size={20} />
+            <span className="text-sm font-medium">Zurück</span>
+          </button>
+        </div>
+      </div>
+      <div className="w-full max-w-md px-4 py-8">
       {/* Kopf */}
       <div className="text-center mb-6">
         <div className="w-14 h-14 mx-auto rounded-xl bg-[#EA2525] flex items-center justify-center shadow-xl shadow-red-900/30">
@@ -121,6 +131,7 @@ export default function VerleihUebersicht() {
         <p className="text-[11px] text-muted-foreground text-center mt-6 leading-relaxed">
           Eure Daten werden nur zur Bearbeitung der Anfrage verwendet.
         </p>
+      </div>
       </div>
     </div>
   );

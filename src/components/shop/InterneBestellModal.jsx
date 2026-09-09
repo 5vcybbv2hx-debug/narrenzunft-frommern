@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, Minus, Plus, PenLine, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
+import MobileSelect from '@/components/MobileSelect';
 
 /**
  * Bestell-Modal für einen Artikel der aktiven Bestellrunde.
@@ -123,13 +124,12 @@ export default function InterneBestellModal({ artikel, runde, profil, gruppen, o
           {artikel.sparte_logo && (
             <div>
               <label className="text-xs text-muted-foreground font-medium block mb-1.5">Logo / Sparte</label>
-              <select value={sparteId} onChange={(e) => setSparteId(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-colors">
-                <option value="">– Keine Sparte –</option>
-                {gruppen.map((g) => (
-                  <option key={g.id} value={g.id}>{g.name}</option>
-                ))}
-              </select>
+              <MobileSelect
+                value={sparteId}
+                onChange={(v) => setSparteId(v)}
+                placeholder="– Keine Sparte –"
+                options={[{ label: '– Keine Sparte –', value: '' }, ...gruppen.map((g) => ({ label: g.name, value: g.id }))]}
+              />
               {eigeneSparte && sparteId === eigeneSparte.id && (
                 <p className="text-xs text-muted-foreground mt-1.5">Automatisch aus deinem Profil übernommen.</p>
               )}

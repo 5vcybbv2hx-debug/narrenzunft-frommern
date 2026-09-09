@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { CheckCircle2, Loader2, AlertCircle, Phone, Mail, Snowflake, Truck, Tent, Plug, Package, Wine, CalendarDays, Euro } from 'lucide-react';
+import { CheckCircle2, Loader2, AlertCircle, Phone, Mail, Snowflake, Truck, Tent, Plug, Package, Wine, CalendarDays, Euro, ArrowLeft } from 'lucide-react';
 import DateSelect from '../components/ui/DateSelect';
 
 const KATEGORIE_ICONS = {
@@ -13,6 +13,7 @@ const euro = (v) => Number(v || 0).toFixed(2).replace('.', ',') + ' €';
 
 export default function VerleihAnfrage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fehler, setFehler] = useState(null);
@@ -73,7 +74,17 @@ export default function VerleihAnfrage() {
   const IconComponent = item ? (KATEGORIE_ICONS[item.kategorie] || Package) : Package;
 
   return (
-    <div className="min-h-screen bg-background text-white flex flex-col items-center px-4 py-8">
+    <div className="min-h-screen bg-background text-white flex flex-col items-center">
+      {/* Top-Bar mit Zurück-Button */}
+      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b border-border w-full">
+        <div className="max-w-md mx-auto flex items-center px-4 h-14">
+          <button onClick={() => navigate('/verleih')} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors min-h-[44px]">
+            <ArrowLeft size={20} />
+            <span className="text-sm font-medium">Zurück</span>
+          </button>
+        </div>
+      </div>
+      <div className="w-full max-w-md px-4 py-8">
       {/* Kopf */}
       <div className="text-center mb-6">
         <div className="w-14 h-14 mx-auto rounded-xl bg-[#EA2525] flex items-center justify-center shadow-xl shadow-red-900/30">
@@ -234,6 +245,7 @@ export default function VerleihAnfrage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

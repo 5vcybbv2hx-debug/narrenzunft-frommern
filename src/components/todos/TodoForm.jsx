@@ -1,6 +1,7 @@
 import DateSelect from '../ui/DateSelect';
 import { useState } from 'react';
 import { X, Save, Trash2, Search, AlertTriangle } from 'lucide-react';
+import MobileSelect from '@/components/MobileSelect';
 
 const PRIORITAET_FARBEN = {
   'Niedrig':  'bg-border text-muted-foreground',

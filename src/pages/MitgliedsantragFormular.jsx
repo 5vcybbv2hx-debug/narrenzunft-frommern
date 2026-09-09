@@ -1,13 +1,15 @@
 import DateSelect from '../components/ui/DateSelect';
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { CheckCircle2, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
+import { CheckCircle2, ChevronRight, ChevronLeft, Loader2, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const SPARTEN = ['Brennnesseln', 'Hexen', 'Zäpfle Bomber', 'Garde'];
 
 const STEPS = ['Persönliches', 'Adresse & Kontakt', 'Sparte & SEPA', 'Abschluss'];
 
 export default function MitgliedsantragFormular() {
+  const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
     vorname: '', nachname: '', geburtsdatum: '',
@@ -54,7 +56,11 @@ export default function MitgliedsantragFormular() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 relative">
+        <button onClick={() => navigate(-1)} className="absolute top-4 left-4 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors min-h-[44px] z-10">
+          <ArrowLeft size={20} />
+          <span className="text-sm font-medium">Zurück</span>
+        </button>
         <div className="bg-card border border-border rounded-2xl p-8 max-w-md w-full text-center">
           <CheckCircle2 size={52} className="text-green-400 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-foreground mb-2 font-oswald uppercase tracking-wide">Antrag eingereicht!</h2>
@@ -68,8 +74,17 @@ export default function MitgliedsantragFormular() {
   }
 
   return (
-    <div className="min-h-screen bg-background px-4 py-8">
-      <div className="max-w-lg mx-auto">
+    <div className="min-h-screen bg-background">
+      {/* Top-Bar mit Zurück-Button */}
+      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b border-border">
+        <div className="max-w-lg mx-auto flex items-center px-4 h-14">
+          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors min-h-[44px]">
+            <ArrowLeft size={20} />
+            <span className="text-sm font-medium">Zurück</span>
+          </button>
+        </div>
+      </div>
+      <div className="max-w-lg mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="text-4xl mb-3">🎭</div>
