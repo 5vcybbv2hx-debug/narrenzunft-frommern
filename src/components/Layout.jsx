@@ -6,7 +6,7 @@ import { isAdmin, isDeveloper, getRollenLabel } from '@/lib/roles';
 import {
   LayoutDashboard, Users, Shirt, Calendar, Briefcase,
   Award, CreditCard, Bell, Menu, X, ChevronRight, ChevronDown,
-  LogOut, User, Shield, ClipboardList,
+  LogOut, Shield, ClipboardList,
   AlertTriangle, Lock, CheckSquare, Package, Bus, FileText, ShoppingBag,
   ArrowLeft,
 } from 'lucide-react';
