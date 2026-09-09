@@ -1,7 +1,7 @@
 import { X, QrCode, ExternalLink, Printer } from 'lucide-react';
 
 export default function VerleihQrModal({ ausruestung, onClose }) {
-  const url = `${window.location.origin}/verleih/${ausruestung.id}`;
+  const url = `${window.location.origin}/verleih`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=12&data=${encodeURIComponent(url)}`;
 
   return (
@@ -9,7 +9,7 @@ export default function VerleihQrModal({ ausruestung, onClose }) {
       <div className="bg-secondary border border-border rounded-2xl p-6 w-full max-w-sm max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-oswald uppercase tracking-wide font-bold text-foreground flex items-center gap-2">
-            <QrCode size={16} className="text-primary" /> QR-Code: {ausruestung.name}
+            <QrCode size={16} className="text-primary" /> QR-Code: Verleih-Übersicht
           </h3>
           <button onClick={onClose} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-white">
             <X size={16} />
@@ -22,7 +22,7 @@ export default function VerleihQrModal({ ausruestung, onClose }) {
 
         <p className="text-xs text-muted-foreground text-center mt-3 leading-relaxed">
           Ausdrucken (möglichst groß, min. 5×5 cm) und witterungsgeschützt auf dem Gegenstand anbringen.
-          Wer scannt, sieht Beschreibung, Preise und kann direkt eine Anfrage stellen.
+          Wer scannt, sieht alle ausleihbaren Gegenstände und kann direkt eine Anfrage stellen.
         </p>
 
         <div className="mt-4 space-y-2">
@@ -32,7 +32,7 @@ export default function VerleihQrModal({ ausruestung, onClose }) {
           </a>
           <a href={url} target="_blank" rel="noopener noreferrer"
             className="w-full py-2.5 min-h-[44px] rounded-lg bg-primary/10 text-primary text-sm font-semibold flex items-center justify-center gap-2 hover:bg-primary/20 transition-colors">
-            <ExternalLink size={15} /> Anfrage-Seite testen
+            <ExternalLink size={15} /> Übersichtsseite testen
           </a>
         </div>
 
