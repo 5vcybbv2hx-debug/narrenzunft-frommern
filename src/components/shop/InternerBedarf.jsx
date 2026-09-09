@@ -102,14 +102,14 @@ export default function InternerBedarf() {
   }, [aktiveArtikel, gruppen]);
 
   const stornieren = async (b) => {
-    if (!confirm(`Bestellung "${b.artikel_name}" wirklich stornieren?`)) return;
+    if (!confirm(`Bestellung "${b.artikel_name}" wirklich zurückziehen?`)) return;
     try {
       await base44.entities.InterneBestellung.delete(b.id);
-      toast.success('Bestellung storniert.');
+      toast.success('Bestellung zurückgezogen.');
       laden();
     } catch (e) {
       console.error(e);
-      toast.error('Stornieren fehlgeschlagen.');
+      toast.error('Zurückziehen fehlgeschlagen.');
     }
   };
 
@@ -541,7 +541,8 @@ export default function InternerBedarf() {
             <div className="space-y-2">
               {[...meine].sort((a, b) => (b.created_date || '').localeCompare(a.created_date || '')).map((b) => {
                 const runde = runden.find((r) => r.id === b.runde_id);
-                const stornierbar = !!bestellRunde && b.runde_id === bestellRunde.id;
+                // Zurückziehen möglich, solange die Runde der Bestellung noch offen ist
+                const stornierbar = runde?.status === 'Offen' && b.status !== 'Ausgeteilt';
                 return (
                   <div key={b.id} className="bg-card border border-border rounded-xl px-4 py-3 flex items-start justify-between gap-2">
                     <div className="min-w-0">
@@ -560,7 +561,7 @@ export default function InternerBedarf() {
                       {b.status === 'Ausgeteilt' ? (
                         <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-green-500/20 text-green-400 uppercase tracking-wide">Ausgeteilt</span>
                       ) : stornierbar ? (
-                        <button onClick={() => stornieren(b)} title="Bestellung stornieren"
+                        <button onClick={() => stornieren(b)} title="Bestellung zurückziehen (Runde noch offen)"
                           className="p-2 rounded-lg bg-secondary text-muted-foreground hover:text-red-400 transition-colors">
                           <Trash2 size={14} />
                         </button>
