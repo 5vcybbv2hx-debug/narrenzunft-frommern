@@ -14,7 +14,6 @@ import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Mitglieder from './pages/Mitglieder';
 import MitgliedDetail from './pages/MitgliedDetail';
-import Veranstaltungen from './pages/Veranstaltungen';
 import VeranstaltungDetail from './pages/VeranstaltungDetail';
 import VeranstaltungNeu from './pages/VeranstaltungNeu';
 import Arbeitsdienste from './pages/Arbeitsdienste';
@@ -38,7 +37,6 @@ import FamilienDashboard from './pages/FamilienDashboard';
 import Vereine from './pages/Vereine';
 import Sparten from './pages/Sparten';
 import SpartenDashboard from './pages/SpartenDashboard';
-import Ausfahrten from './pages/Ausfahrten';
 import AusfahrtDetail from './pages/AusfahrtDetail';
 import AusfahrtNeu from './pages/AusfahrtNeu';
 import AusfahrtScanner from './pages/AusfahrtScanner';
@@ -97,9 +95,9 @@ const AuthenticatedApp = () => {
         {/* ── Öffentlich (alle authentifizierten User) ── */}
         <Route path="/" element={<Dashboard />} />
         <Route path="/kalender" element={<Kalender />} />
-        <Route path="/veranstaltungen" element={<Veranstaltungen />} />
+        <Route path="/veranstaltungen" element={<Kalender nur="veranstaltung" />} />
         <Route path="/veranstaltungen/:id" element={<VeranstaltungDetail />} />
-        <Route path="/ausfahrten" element={<Ausfahrten />} />
+        <Route path="/ausfahrten" element={<Kalender nur="ausfahrt" />} />
         <Route path="/ausfahrten/:id" element={<AusfahrtDetail />} />
         <Route path="/arbeitsdienste" element={<Arbeitsdienste />} />
         <Route path="/haes" element={<Haes />} />

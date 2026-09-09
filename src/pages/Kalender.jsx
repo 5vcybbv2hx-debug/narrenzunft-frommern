@@ -6,7 +6,7 @@ import { isAdmin } from '@/lib/roles';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Calendar, List, ChevronLeft, ChevronRight, Plus, Clock,
-  MapPin, Download, Filter, X, Edit, LayoutTemplate, Bus, AlertCircle
+  MapPin, Download, Filter, X, Edit, LayoutTemplate, Bus, AlertCircle, Search
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth,
   addMonths, subMonths, parseISO, isToday, startOfDay, isBefore, isAfter, differenceInDays } from 'date-fns';
@@ -56,7 +56,7 @@ const ROLLE_ERLAUBTE_SICHTBARKEIT = {
 
 const ALLE_TERMINARTEN = ['Umzug','Abendveranstaltung','Ausfahrt-Umzug','Ausfahrt-Veranstaltung','Arbeitsdienst','Ausschusssitzung','Vorstandssitzung','Jugendtermin','Gruppen-Termin','Intern','Sonstiges'];
 
-export default function Kalender() {
+export default function Kalender({ nur = 'alle' }) {
   const { user } = useAuth();
   const admin = isAdmin(user);
   const navigate = useNavigate();
@@ -83,6 +83,9 @@ export default function Kalender() {
   const [ausfahrten, setAusfahrten] = useState([]);
   const [ausfahrtAnmeldungen, setAusfahrtAnmeldungen] = useState([]);
   const [submittingAusfahrtId, setSubmittingAusfahrtId] = useState(null);
+  const [quelle, setQuelle] = useState(nur); // 'alle' | 'veranstaltung' | 'ausfahrt'
+  const [suche, setSuche] = useState('');
+  const [meineTeilnahmen, setMeineTeilnahmen] = useState([]);
 
   const userRolle = user?.role || 'mitglied';
   const erlaubteSichtbarkeiten = ROLLE_ERLAUBTE_SICHTBARKEIT[userRolle] || ['alle'];
@@ -131,8 +134,12 @@ export default function Kalender() {
       setMyMitglied(myM);
 
       if (myM) {
-        const anm = await base44.entities.KalenderAnmeldung.filter({ mitglied_id: myM.id });
+        const [anm, teilnahmen] = await Promise.all([
+          base44.entities.KalenderAnmeldung.filter({ mitglied_id: myM.id }),
+          base44.entities.Teilnahme.filter({ mitglied_id: myM.id }),
+        ]);
         setAnmeldungen(anm);
+        setMeineTeilnahmen(teilnahmen || []);
       }
 
       // Eigene Ausfahrt-Anmeldungen laden (für eigenen Status)
@@ -158,9 +165,15 @@ export default function Kalender() {
     const backendIds = new Set(termine.map(t => t.id));
     const neueAusfahrten = ausfahrten.filter(a => !backendIds.has(a.id));
     let list = [...termine, ...neueAusfahrten];
+    if (quelle === 'ausfahrt') list = list.filter(t => t._quelle === 'ausfahrt');
+    else if (quelle === 'veranstaltung') list = list.filter(t => t._quelle === 'veranstaltung');
     if (filterArt !== 'alle') list = list.filter(t => t.terminart === filterArt);
+    if (suche.trim()) {
+      const q = suche.trim().toLowerCase();
+      list = list.filter(t => (t.titel || '').toLowerCase().includes(q) || (t.ort || '').toLowerCase().includes(q));
+    }
     return list.sort((a, b) => (a.datum || '').localeCompare(b.datum || ''));
-  }, [termine, ausfahrten, filterArt]);
+  }, [termine, ausfahrten, filterArt, quelle, suche]);
 
   const termineImMonat = useMemo(() => {
     const start = format(startOfMonth(monat), 'yyyy-MM-dd');
@@ -306,7 +319,9 @@ export default function Kalender() {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-oswald font-semibold text-foreground tracking-wide">Kalender</h1>
+          <h1 className="text-2xl font-oswald font-semibold text-foreground tracking-wide">
+            {quelle === 'ausfahrt' ? 'Bus & Ausfahrten' : quelle === 'veranstaltung' ? 'Veranstaltungen' : 'Kalender'}
+          </h1>
           <p className="text-sm text-muted-foreground mt-0.5">{gefilterteTermine.length} Termine · {format(new Date(), 'MMMM yyyy', { locale: de })}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -406,6 +421,36 @@ export default function Kalender() {
         </div>
       )}
 
+      {/* Quellen-Umschalter + Suche */}
+      <div className="flex flex-col sm:flex-row gap-2 mb-3">
+        <div className="flex gap-1.5 p-1 bg-secondary rounded-lg">
+          {[
+            { key: 'alle', label: 'Alle' },
+            { key: 'veranstaltung', label: 'Veranstaltungen' },
+            { key: 'ausfahrt', label: 'Bus' },
+          ].map(q => (
+            <button key={q.key} onClick={() => setQuelle(q.key)}
+              className={`flex-1 px-3 py-2 min-h-[40px] rounded-md text-xs font-semibold transition-all ${quelle === q.key ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground'}`}>
+              {q.label}
+            </button>
+          ))}
+        </div>
+        <div className="relative flex-1">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <input
+            value={suche}
+            onChange={e => setSuche(e.target.value)}
+            placeholder="Suchen (Titel / Ort)…"
+            className="w-full pl-9 pr-8 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+          />
+          {suche && (
+            <button onClick={() => setSuche('')} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground hover:text-foreground">
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Ansicht-Toggle */}
       <div className="flex gap-1.5 mb-4">
         <button
@@ -491,6 +536,7 @@ export default function Kalender() {
                   key={t.id}
                   termin={t}
                   anmeldung={meineAnmeldung(t.id)}
+                  teilnahme={t._veranstaltung_id ? (meineTeilnahmen.find(x => x.veranstaltung_id === t._veranstaltung_id && !['Abgesagt'].includes(x.status)) || null) : null}
                   onAnmelden={() => handleAnmelden(t)}
                   onEdit={admin ? () => { setEditTermin(t); setShowModal(true); } : null}
                   onEditVeranstaltung={admin ? (v) => { setEditVeranstaltung(v); setShowVeranstaltungModal(true); } : null}
@@ -519,6 +565,7 @@ export default function Kalender() {
                   key={t.id}
                   termin={t}
                   anmeldung={meineAnmeldung(t.id)}
+                  teilnahme={t._veranstaltung_id ? (meineTeilnahmen.find(x => x.veranstaltung_id === t._veranstaltung_id && !['Abgesagt'].includes(x.status)) || null) : null}
                   onAnmelden={() => handleAnmelden(t)}
                   onEdit={admin ? () => { setEditTermin(t); setShowModal(true); } : null}
                   onEditVeranstaltung={admin ? (v) => { setEditVeranstaltung(v); setShowVeranstaltungModal(true); } : null}
@@ -569,6 +616,7 @@ export default function Kalender() {
                   key={t.id}
                   termin={t}
                   anmeldung={meineAnmeldung(t.id)}
+                  teilnahme={t._veranstaltung_id ? (meineTeilnahmen.find(x => x.veranstaltung_id === t._veranstaltung_id && !['Abgesagt'].includes(x.status)) || null) : null}
                   onAnmelden={() => handleAnmelden(t)}
                   onEdit={admin ? () => { setEditTermin(t); setShowModal(true); } : null}
                   onEditVeranstaltung={admin ? (v) => { setEditVeranstaltung(v); setShowVeranstaltungModal(true); } : null}
@@ -624,9 +672,10 @@ export default function Kalender() {
   );
 }
 
-function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, onEditVeranstaltung, compact = false, ausfahrtAnmeldung, ausfahrtAnmeldeCount, isAusfahrtOpen, canUnregisterAusfahrt, onAusfahrtRegister, onAusfahrtUnregister, submittingAusfahrt }) {
+function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditVeranstaltung, compact = false, ausfahrtAnmeldung, ausfahrtAnmeldeCount, isAusfahrtOpen, canUnregisterAusfahrt, onAusfahrtRegister, onAusfahrtUnregister, submittingAusfahrt }) {
   const farbeClass = TERMINART_FARBEN[termin.terminart] || TERMINART_FARBEN['Sonstiges'];
   const isAngemeldet = anmeldung?.status === 'Angemeldet';
+  const istTeilnahme = istVonVeranstaltung && teilnahme && !['Abgesagt', 'Abgemeldet'].includes(teilnahme.status);
   const istVonVeranstaltung = termin._quelle === 'veranstaltung';
   const istVonAusfahrt = termin._quelle === 'ausfahrt';
   const [detailsOffen, setDetailsOffen] = useState(false);
@@ -667,6 +716,9 @@ function TerminKarte({ termin, anmeldung, onAnmelden, onEdit, onEditVeranstaltun
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400">Ausfahrt</span>
             )}
             {isAngemeldet && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">✓ Angemeldet</span>
+            )}
+            {istTeilnahme && (
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">✓ Angemeldet</span>
             )}
           </div>
