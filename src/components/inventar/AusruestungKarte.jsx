@@ -1,4 +1,4 @@
-import { Edit, AlertTriangle, Check, Circle, MapPin, Globe, User, Car, Truck, Snowflake, Tent, Plug, Package, Wine, QrCode } from 'lucide-react';
+import { Edit, AlertTriangle, Check, Circle, MapPin, Globe, User, Car, Truck, Snowflake, Tent, Plug, Package, Wine, QrCode, Clock } from 'lucide-react';
 
 const KATEGORIE_ICONS = {
   'Anhänger': Truck, 'Kühlanhänger': Snowflake, 'Bar': Wine,
@@ -24,7 +24,7 @@ function getTuevStatus(datum) {
   return { label: `TÜV bis ${datum}`, color: 'text-green-400 bg-green-900/20 border-green-700/30' };
 }
 
-export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, ausleiherName, isAdmin, onEdit, onAusleihen, onQr, verfuegbar, bestand }) {
+export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, kommendeAusleihe, ausleiherName, isAdmin, onEdit, onAusleihen, onQr, verfuegbar, bestand }) {
   const hatBestand = bestand != null && bestand > 1;
   const verfuegbarCount = verfuegbar != null ? verfuegbar : (!aktuelleAusleihe ? 1 : 0);
   const bestandCount = bestand != null ? bestand : 1;
@@ -93,6 +93,16 @@ export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, auslei
               </a>
             )}
           </div>
+
+          {/* Kommende Reservierung — 'ausgeliehen' gilt erst im Zeitraum */}
+          {!aktuelleAusleihe && kommendeAusleihe && (
+            <div className="mt-2 px-3 py-2 rounded-lg bg-blue-900/10 border border-blue-700/20 text-xs">
+              <p className="text-blue-400 flex items-center gap-1.5">
+                <Clock size={13} />
+                <span>Reserviert: {kommendeAusleihe.von_datum} → {kommendeAusleihe.bis_datum}</span>
+              </p>
+            </div>
+          )}
 
           {/* Aktuelle Ausleihe */}
           {aktuelleAusleihe && (

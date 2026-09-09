@@ -9,6 +9,7 @@ import { de } from 'date-fns/locale';
 import AusruestungKarte from '@/components/inventar/AusruestungKarte';
 import AusruestungForm from '@/components/inventar/AusruestungForm';
 import AusleiheForm from '@/components/inventar/AusleiheForm';
+import { toast } from 'sonner';
 import VerleihQrModal from '@/components/inventar/VerleihQrModal';
 
 export default function Inventar() {
@@ -85,10 +86,15 @@ export default function Inventar() {
     if (!a) return { verfuegbar: 0, bestand: 1 };
     const bestand = a.bestand ?? 1;
     if (a.verfuegbar_override != null && a.verfuegbar_override !== '') return { verfuegbar: a.verfuegbar_override, bestand };
-    const aktivAusgeliehen = ausleihen
-      .filter(al => al.ausruestung_id === ausruestungId && ['Reserviert', 'Ausgeliehen'].includes(al.status))
+    // Nur Ausleihen zählen, deren Zeitraum HEUTE läuft — zukünftige
+    // Reservierungen zeigen den Gegenstand nicht als ausgeliehen an.
+    const heuteAusgeliehen = ausleihen
+      .filter(al =>
+        al.ausruestung_id === ausruestungId &&
+        ['Reserviert', 'Ausgeliehen'].includes(al.status) &&
+        al.von_datum <= today && al.bis_datum >= today)
       .reduce((sum, al) => sum + (al.anzahl || 1), 0);
-    return { verfuegbar: Math.max(0, bestand - aktivAusgeliehen), bestand };
+    return { verfuegbar: Math.max(0, bestand - heuteAusgeliehen), bestand };
   };
 
   const getMitgliedName = (id) => {
@@ -159,6 +165,12 @@ export default function Inventar() {
           verantwortlicher_id: meinMitglied?.id || '',
         });
         setAusleihen(prev => [neu, ...prev]);
+        // Bestätigungsmail an den Ausleiher (Mitglied/extern), solange nicht zurückgegeben/abgesagt
+        if (['Reserviert', 'Ausgeliehen'].includes(neu.status)) {
+          base44.functions.invoke('sendeVerleihBestaetigung', { ausleihe_id: neu.id })
+            .then(r => { if (r.data?.sent) toast.success('Bestätigungsmail versendet.'); })
+            .catch(e => console.error('Bestätigungsmail fehlgeschlagen:', e));
+        }
       }
       setShowAusleiheForm(false);
       setEditAusleihe(null);
@@ -226,6 +238,13 @@ export default function Inventar() {
       setVerleihAnfragen(prev => prev.map(v => v.id === an.id ? aktualisiert : v));
       setAusleihen(prev => [neuAusleihe, ...prev]);
       setEntscheidung(null);
+      // Bestätigungsmail an den externen Anfrager
+      base44.functions.invoke('sendeVerleihBestaetigung', {
+        ausleihe_id: neuAusleihe.id,
+        email_override: an.email || '',
+        notiz: entscheidung.notiz || '',
+      }).then(r => { if (r.data?.sent) toast.success('Bestätigungsmail versendet.'); })
+        .catch(e => console.error('Bestätigungsmail fehlgeschlagen:', e));
     } catch (err) {
       console.error(err);
       setError('Fehler beim Genehmigen der Anfrage.');
@@ -344,6 +363,9 @@ export default function Inventar() {
               key={a.id}
               ausruestung={a}
               aktuelleAusleihe={getAktuelleAusleihe(a.id)}
+              kommendeAusleihe={ausleihen
+                .filter(al => al.ausruestung_id === a.id && ['Reserviert', 'Ausgeliehen'].includes(al.status) && al.von_datum > today)
+                .sort((x, y) => x.von_datum.localeCompare(y.von_datum))[0] || null}
               verfuegbar={verfuegbar}
               bestand={bestand}
               getMitgliedName={getMitgliedName}

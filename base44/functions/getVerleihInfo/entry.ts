@@ -25,6 +25,7 @@ Deno.serve(async (req) => {
       beschreibung: a.beschreibung || '',
       bild_url: a.bild_url || '',
       preis: a.verleih_preis || 0,
+      mitglied_preis: a.verleih_preis_mitglied ?? a.verleih_preis ?? 0,
       kaution: a.verleih_kaution || 0,
       notiz: a.verleih_notiz || '',
     });

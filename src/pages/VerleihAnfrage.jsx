@@ -111,6 +111,9 @@ export default function VerleihAnfrage() {
           <div className="mt-4 px-4 py-3 rounded-xl bg-black/30 border border-gray-800 text-xs text-gray-400 text-left space-y-1">
             <p><span className="text-gray-500">Zeitraum:</span> {form.von_datum} → {form.bis_datum}</p>
             {item?.preis > 0 && <p><span className="text-gray-500">Miete (ca.):</span> {tage()} Tag(e) × {euro(item.preis)} = {euro(tage() * item.preis)}</p>}
+            {item?.mitglied_preis != null && item?.preis > 0 && item.mitglied_preis < item.preis && (
+              <p><span className="text-gray-500">Mitglieder:</span> <span className="text-[#EA2525] font-semibold">{euro(item.mitglied_preis)} / Tag</span> — Buchung einfach über die App.</p>
+            )}
             {item?.kaution > 0 && <p><span className="text-gray-500">Kaution:</span> {euro(item.kaution)}</p>}
           </div>
         </div>

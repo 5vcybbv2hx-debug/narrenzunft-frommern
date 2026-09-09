@@ -75,6 +75,18 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
     : null;
 
   const gewaehlteAusruestung = ausruestungen.find(a => a.id === form.ausruestung_id);
+
+  // Verleih-Preis: Mitglied oder Extern (inkl. Rückgabetag gerechnet)
+  const istVerleihbar = !!gewaehlteAusruestung?.verleihbar;
+  const preisExtern = Number(gewaehlteAusruestung?.verleih_preis ?? 0);
+  const preisMitglied = gewaehlteAusruestung?.verleih_preis_mitglied != null && gewaehlteAusruestung.verleih_preis_mitglied !== ''
+    ? Number(gewaehlteAusruestung.verleih_preis_mitglied) : preisExtern;
+  const preisProTag = form.ausleiher_typ === 'extern' ? preisExtern : preisMitglied;
+  const tage = form.von_datum && form.bis_datum && form.bis_datum >= form.von_datum
+    ? Math.max(1, Math.round((new Date(form.bis_datum) - new Date(form.von_datum)) / 86400000) + 1)
+    : 0;
+  const gesamtPreis = preisProTag * tage;
+  const eur = (v) => Number(v || 0).toFixed(2).replace('.', ',') + ' €';
   const ausleiher = getMitglied(form.ausleiher_mitglied_id);
   const externPerson = getExternPerson(form.ausleiher_extern_id);
 
@@ -318,6 +330,31 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
                 className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
             </div>
           </div>
+
+          {/* Verleih-Preis */}
+          {istVerleihbar && (
+            <div className="px-3 py-2.5 rounded-lg bg-secondary/60 border border-border text-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">
+                  Miete pro Tag ({form.ausleiher_typ === 'extern' ? 'extern' : 'Mitglied'})
+                </span>
+                <span className="text-foreground font-semibold">{eur(preisProTag)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">
+                  {tage > 0 ? `${tage} Tag${tage > 1 ? 'e' : ''} (inkl. Rückgabetag)` : 'Zeitraum wählen'}
+                </span>
+                <span className={`font-semibold ${tage > 0 ? 'text-primary' : 'text-muted-foreground'}`}>
+                  {tage > 0 ? gesamtPreis.toFixed(2).replace('.', ',') + ' €' : '–'}
+                </span>
+              </div>
+              {form.ausleiher_typ !== 'extern' && preisMitglied !== preisExtern && (
+                <p className="text-[10px] text-muted-foreground">
+                  Mitgliederpreis · Extern: {eur(preisExtern)} / Tag
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Konflikt-Warnung */}
           {konflikt && (

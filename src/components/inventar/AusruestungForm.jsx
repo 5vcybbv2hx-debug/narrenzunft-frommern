@@ -17,7 +17,7 @@ export default function AusruestungForm({ ausruestung, mitglieder = [], onSave, 
     kennzeichen: '', baujahr: '', tuev_faellig: '',
     versicherungsnummer: '', versicherung_gueltig_bis: '',
     bestand: 1, verfuegbar_override: '',
-    verleihbar: false, verleih_preis: 0, verleih_kaution: 0,
+    verleihbar: false, verleih_preis: 0, verleih_preis_mitglied: '', verleih_kaution: 0,
     verleih_notiz: '', verleih_verantwortlicher_id: '',
     ...ausruestung,
   });
@@ -39,6 +39,8 @@ export default function AusruestungForm({ ausruestung, mitglieder = [], onSave, 
         verfuegbar_override: form.verfuegbar_override !== '' && form.verfuegbar_override != null ? Number(form.verfuegbar_override) : undefined,
         verleihbar: !!form.verleihbar,
         verleih_preis: Number(form.verleih_preis) || 0,
+        verleih_preis_mitglied: form.verleih_preis_mitglied === '' || form.verleih_preis_mitglied == null
+          ? form.verleih_preis : Number(form.verleih_preis_mitglied),
         verleih_kaution: Number(form.verleih_kaution) || 0,
       };
       await onSave(data);
@@ -187,9 +189,15 @@ export default function AusruestungForm({ ausruestung, mitglieder = [], onSave, 
               <div className="space-y-3 pl-1">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-muted-foreground font-medium block mb-1">Miete pro Tag (€)</label>
+                    <label className="text-xs text-muted-foreground font-medium block mb-1">Miete pro Tag – extern (€)</label>
                     <input type="number" min="0" step="0.5" value={form.verleih_preis ?? 0} onChange={e => set('verleih_preis', e.target.value)}
                       className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground font-medium block mb-1">Miete pro Tag – Mitglieder (€)</label>
+                    <input type="number" min="0" step="0.5" placeholder={String(form.verleih_preis ?? 0)} value={form.verleih_preis_mitglied ?? ''} onChange={e => set('verleih_preis_mitglied', e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+                    <p className="text-[10px] text-muted-foreground mt-1">Leer lassen = wie extern</p>
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground font-medium block mb-1">Kaution (€)</label>
