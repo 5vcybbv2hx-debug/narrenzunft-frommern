@@ -75,9 +75,9 @@ Deno.serve(async (req) => {
     }
 
     // Vorhandene Benachrichtigungen dieser Art holen (um Duplikate zu vermeiden)
+    // WICHTIG: unabhängig von gelesen-Status — sonst wird nach dem Lesen täglich neu erstellt
     const vorhandene = await base44.asServiceRole.entities.Benachrichtigung.filter({
       typ: 'Statuswechsel',
-      gelesen: false,
     });
     const bereitsGemeldetIds = new Set(
       vorhandene.map(b => {

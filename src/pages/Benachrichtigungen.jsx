@@ -38,14 +38,17 @@ export default function Benachrichtigungen() {
     setLoading(true);
     try {
       let data;
+      // Eigenes Mitglied ermitteln (für personalisierte Filterung)
+      const myM = (await base44.entities.Mitglied.filter({ user_id: user?.id }))?.[0] || null;
       if (isAdmin(user)) {
-        // Admins sehen alle
-        data = await base44.entities.Benachrichtigung.list('-created_date', 100);
+        // Admins sehen nur Admin-Benachrichtigungen (mitglied_id leer) UND ihre eigenen
+        // — nicht die persönlichen Benachrichtigungen anderer Mitglieder
+        const all = await base44.entities.Benachrichtigung.list('-created_date', 200);
+        data = all.filter(n => !n.mitglied_id || n.mitglied_id === myM?.id);
       } else {
         // Mitglieder sehen nur ihre eigenen
-        const myM = await base44.entities.Mitglied.filter({ user_id: user?.id });
-        if (myM[0]) {
-          data = await base44.entities.Benachrichtigung.filter({ mitglied_id: myM[0].id });
+        if (myM) {
+          data = await base44.entities.Benachrichtigung.filter({ mitglied_id: myM.id });
           data = data.sort((a, b) => new Date(b.created_date) - new Date(a.created_date)).slice(0, 100);
         } else {
           data = [];

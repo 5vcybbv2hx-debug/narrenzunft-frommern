@@ -168,7 +168,9 @@ export default function Layout() {
     try {
       let notifs;
       if (admin) {
-        notifs = await base44.entities.Benachrichtigung.filter({ gelesen: false });
+        // Admins sehen nur Admin-Benachrichtigungen (mitglied_id leer) UND ihre eigenen
+        const all = await base44.entities.Benachrichtigung.filter({ gelesen: false });
+        notifs = all.filter(n => !n.mitglied_id || n.mitglied_id === mitglied?.id);
       } else {
         notifs = mitglied
           ? await base44.entities.Benachrichtigung.filter({ mitglied_id: mitglied.id, gelesen: false })
