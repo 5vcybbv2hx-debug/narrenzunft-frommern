@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   ClipboardList, CheckSquare, FileText, Lock, Plus, X, Save,
   Trash2, ChevronRight, Circle, CheckCircle2, Clock, Users,
-  AlertTriangle, Calendar, MapPin, User as UserIcon, Gavel, Vote, Shield,
+  AlertTriangle, Calendar, MapPin, User as UserIcon, Gavel, Vote, Shield, ListPlus,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -70,6 +70,34 @@ export default function Ausschuss() {
   const [editAbstimmung, setEditAbstimmung] = useState(null);
   const [editAufgabe, setEditAufgabe] = useState(null);
   const [editBeschluss, setEditBeschluss] = useState(null);
+  const [topVerschieben, setTopVerschieben] = useState(null);
+  const [verschiebt, setVerschiebt] = useState(false);
+
+  // ── Offene Punkte → Tagesordnungspunkt verschieben ──
+  const handleInTopVerschieben = async () => {
+    const { aufgabe, termin_id, titel, beschreibung } = topVerschieben || {};
+    if (!termin_id || !titel) return;
+    setVerschiebt(true);
+    try {
+      const vorhandene = await base44.entities.Tagesordnungspunkt.filter({ termin_id });
+      await base44.entities.Tagesordnungspunkt.create({
+        termin_id,
+        titel,
+        beschreibung: beschreibung || '',
+        verantwortlicher_id: aufgabe.verantwortlicher_id || '',
+        reihenfolge: (vorhandene?.length || 0) + 1,
+        status: 'Offen',
+      });
+      await base44.entities.Ausschussaufgabe.delete(aufgabe.id);
+      setAufgaben(prev => prev.filter(x => x.id !== aufgabe.id));
+      setTopVerschieben(null);
+      toast.success('Als Tagesordnungspunkt verschoben');
+    } catch (e) {
+      console.error('TOP-Verschiebung:', e);
+      toast.error('Verschieben fehlgeschlagen');
+    }
+    setVerschiebt(false);
+  };
 
   const hatZugriff = kannAusschussSehn(user);
 
@@ -123,6 +151,7 @@ export default function Ausschuss() {
   const today = format(new Date(), 'yyyy-MM-dd');
   const kommendeSitzungen = termine.filter(t => t.datum >= today).slice(0, 5);
   const vergangeneSitzungen = termine.filter(t => t.datum < today).slice().reverse().slice(0, 10);
+  const naechsteSitzung = kommendeSitzungen[0] || vergangeneSitzungen[0] || null;
 
   const offeneAufgaben = aufgaben.filter(a => a.status !== 'Erledigt' && a.status !== 'Abgebrochen');
   const erledigteAufgaben = aufgaben.filter(a => a.status === 'Erledigt');
@@ -259,6 +288,18 @@ export default function Ausschuss() {
                   className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
                   <FileText size={14} />
                 </button>
+                {a.status !== 'Erledigt' && (
+                  <button onClick={() => setTopVerschieben({
+                    aufgabe: a,
+                    termin_id: naechsteSitzung?.id || '',
+                    titel: a.titel,
+                    beschreibung: a.beschreibung || '',
+                  })}
+                    title="Als Tagesordnungspunkt verschieben"
+                    className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
+                    <ListPlus size={14} />
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -311,6 +352,66 @@ export default function Ausschuss() {
       )}
 
       {/* Modals */}
+      {/* Offenen Punkt in Tagesordnung verschieben */}
+      {topVerschieben && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-white">In Tagesordnung verschieben</h3>
+              <button onClick={() => setTopVerschieben(null)} className="p-1.5 rounded-lg text-muted-foreground hover:text-white">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-muted-foreground font-medium block mb-1">Sitzung *</label>
+                <MobileSelect
+                  value={topVerschieben.termin_id}
+                  onChange={v => setTopVerschieben(p => ({ ...p, termin_id: v }))}
+                  options={[
+                    ...kommendeSitzungen.map(t => ({ label: `${t.titel} (${format(new Date(t.datum), 'dd.MM.yyyy', { locale: de })})`, value: t.id })),
+                    ...(vergangeneSitzungen.length > 0 ? [{ label: '── Vergangene ──', value: '' }].map(o => o) : []),
+                    ...vergangeneSitzungen.map(t => ({ label: `${t.titel} (${format(new Date(t.datum), 'dd.MM.yyyy', { locale: de })})`, value: t.id })),
+                  ]}
+                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground font-medium block mb-1">TOP-Titel *</label>
+                <input
+                  type="text" value={topVerschieben.titel}
+                  onChange={e => setTopVerschieben(p => ({ ...p, titel: e.target.value }))}
+                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground font-medium block mb-1">Beschreibung (optional)</label>
+                <textarea
+                  value={topVerschieben.beschreibung}
+                  onChange={e => setTopVerschieben(p => ({ ...p, beschreibung: e.target.value }))}
+                  rows={3}
+                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary resize-y"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Der offene Punkt wird als Tagesordnungspunkt in der gewählten Sitzung angelegt
+                und aus der Liste der offenen Punkte entfernt.
+              </p>
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => setTopVerschieben(null)}
+                  className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm border border-border">
+                  Abbrechen
+                </button>
+                <button onClick={handleInTopVerschieben} disabled={verschiebt || !topVerschieben.termin_id || !topVerschieben.titel}
+                  className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50">
+                  {verschiebt ? '...' : 'Verschieben'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showAufgabeModal && (
         <AufgabeModal
           aufgabe={editAufgabe}

@@ -106,9 +106,13 @@ export function kannMitgliedProfilSehn(user, myMitglied, zielMitglied, meineKind
 /**
  * Ausschuss-Zugang:
  * Vorstand, Stv. Vorstand, Spartenleiter und Admin haben automatisch Ausschusszugang.
+ * Ausschussmitglieder erhalten die Zusatz-Berechtigung 'ausschuss'
+ * (wird beim Hinzufügen/Entfernen im Ausschuss automatisch synchronisiert, s. lib/ausschussSync.js).
  */
 export function kannAusschussSehn(user) {
-  return ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'].includes(user?.role) || isDeveloper(user);
+  return ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'].includes(user?.role)
+    || (user?._mitglied?.zusatz_berechtigungen || []).includes('ausschuss')
+    || isDeveloper(user);
 }
 
 /** Darf Importe durchführen (nur Admin) */

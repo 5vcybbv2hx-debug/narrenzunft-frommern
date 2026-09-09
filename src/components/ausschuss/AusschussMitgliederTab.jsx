@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Users, Plus, X, Save, Trash2 } from 'lucide-react';
+import { syncAusschussZugang } from '@/lib/ausschussSync';
 
 const ROLLEN = ['Vorsitzender', 'Stellv. Vorsitzender', 'Schriftführer', 'Kassierer', 'Häswart', 'Beisitzer', 'Jugendleiter', 'Sonstiges'];
 
@@ -55,6 +56,8 @@ export default function AusschussMitgliederTab({ mitglieder, isAdmin }) {
     if (!form.mitglied_id) return;
     setSaving(true);
     const neu = await base44.entities.AusschussMitglied.create({ ...form, aktiv: true });
+    // Ausschuss-Zugang automatisch setzen (Zusatz-Berechtigung 'ausschuss')
+    try { await syncAusschussZugang(form.mitglied_id, true); } catch (e) { console.error('Sync fehlgeschlagen:', e); }
     setAusschussMitglieder(prev => [...prev, neu]);
     setForm({ mitglied_id: '', rolle: 'Beisitzer', notizen: '' });
     setSuche('');
@@ -68,8 +71,13 @@ export default function AusschussMitgliederTab({ mitglieder, isAdmin }) {
   };
 
   const handleRemove = async (amId) => {
-    if (!confirm('Mitglied aus dem Ausschuss entfernen?')) return;
+    const am = ausschussMitglieder.find(a => a.id === amId);
+    if (!confirm('Mitglied aus dem Ausschuss entfernen? Der Ausschuss-Zugang wird automatisch entzogen.')) return;
     await base44.entities.AusschussMitglied.delete(amId);
+    // Ausschuss-Zugang automatisch entziehen
+    if (am?.mitglied_id) {
+      try { await syncAusschussZugang(am.mitglied_id, false); } catch (e) { console.error('Sync fehlgeschlagen:', e); }
+    }
     setAusschussMitglieder(prev => prev.filter(a => a.id !== amId));
   };
 
