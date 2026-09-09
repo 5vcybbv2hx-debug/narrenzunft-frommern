@@ -253,55 +253,33 @@ export default function Beitraege() {
           })()}
         </div>
 
-        {/* Tabelle */}
+        {/* Liste (mobile-freundlich statt Tabelle) */}
         <div className="bg-card border border-border rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b border-border">
-                <tr>
-                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Mitglied</th>
-                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3 hidden sm:table-cell">Jahr</th>
-                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Betrag</th>
-                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Status</th>
-                  {isAdminUser && <th className="text-right text-xs font-medium text-muted-foreground px-4 py-3">Aktion</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {filteredBeitraege.map(b => {
-                  const m = getMitglied(b.mitglied_id);
-                  return (
-                    <tr key={b.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
-                      <td className="px-4 py-3">
-                        <p className="text-sm font-medium text-white">{m ? `${m.vorname} ${m.nachname}` : '–'}</p>
-                        <p className="text-xs text-muted-foreground">{b.mitgliedsstatus}</p>
-                      </td>
-                      <td className="px-4 py-3 hidden sm:table-cell">
-                        <span className="text-sm text-muted-foreground">{b.jahr}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm font-semibold text-white">{b.betrag} €</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[b.zahlungsstatus] || ''}`}>
-                          {b.zahlungsstatus}
-                        </span>
-                      </td>
-                      {isAdminUser && (
-                        <td className="px-4 py-3 text-right">
-                          {b.zahlungsstatus !== 'Bezahlt' && b.zahlungsstatus !== 'Erlassen' && (
-                            <button onClick={() => handleMarkBezahlt(b)}
-                              className="text-xs px-3 py-1.5 rounded-lg bg-green-900/20 text-green-400 hover:bg-green-900/30 transition-colors font-medium flex items-center gap-1 ml-auto">
-                              <Check size={12} /> Bezahlt
-                            </button>
-                          )}
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          {filteredBeitraege.map(b => {
+            const m = getMitglied(b.mitglied_id);
+            const istErledigt = b.zahlungsstatus === 'Bezahlt' || b.zahlungsstatus === 'Erlassen';
+            return (
+              <div key={b.id} className="flex items-center gap-3 px-4 py-3.5 min-h-[64px] border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-white truncate">{m ? `${m.vorname} ${m.nachname}` : '–'}</p>
+                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[b.zahlungsstatus] || ''}`}>
+                      {b.zahlungsstatus}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{b.mitgliedsstatus} · {b.jahr}</span>
+                  </div>
+                </div>
+                <span className="text-sm font-semibold text-white shrink-0">{b.betrag} €</span>
+                {isAdminUser && !istErledigt && (
+                  <button onClick={() => handleMarkBezahlt(b)}
+                    title="Als bezahlt markieren"
+                    className="shrink-0 w-11 h-11 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-green-900/20 text-green-400 hover:bg-green-900/30 active:bg-green-900/40 transition-colors">
+                    <Check size={18} />
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {showEinstellungen && (

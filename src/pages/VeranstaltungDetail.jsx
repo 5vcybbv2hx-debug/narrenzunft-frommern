@@ -44,7 +44,10 @@ export default function VeranstaltungDetail() {
   const [meineTeilnahme, setMeineTeilnahme] = useState(null);
   const [searchMember, setSearchMember] = useState('');
   const [myMitglied, setMyMitglied] = useState(null);
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'info');
+  const ORG_TABS = ['arbeitsdienste', 'dokumente', 'planung', 'nachbereitung'];
+  const initialTab = searchParams.get('tab') || 'info';
+  const [activeTab, setActiveTab] = useState(ORG_TABS.includes(initialTab) ? 'organisation' : (initialTab === 'check-in' ? 'teilnahmen' : initialTab));
+  const [orgTab, setOrgTab] = useState(ORG_TABS.includes(initialTab) ? initialTab : 'arbeitsdienste');
   const [busFilter, setBusFilter] = useState('alle');
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState(null);
@@ -290,14 +293,10 @@ export default function VeranstaltungDetail() {
       {!isNew && (
          <div className="flex gap-1.5 overflow-x-auto pb-1 mb-4 scrollbar-hide">
           {[
-            { id: 'info',          label: 'Info' },
-            { id: 'teilnahmen',    label: `Teilnahmen (${angemeldete.length})` },
-            { id: 'check-in',      label: 'Check-In' },
-            { id: 'bus',           label: `Bus (${teilnahmen.filter(t => t.bus).length})` },
-            { id: 'arbeitsdienste',label: 'Dienste' },
-            { id: 'dokumente',     label: 'Dokumente' },
-            { id: 'planung',       label: 'Planung' },
-            { id: 'nachbereitung',label: 'Nachbereitung' },
+            { id: 'info',        label: 'Info' },
+            { id: 'teilnahmen',  label: `Teilnahmen (${angemeldete.length})` },
+            { id: 'bus',         label: `Bus (${teilnahmen.filter(t => t.bus).length})` },
+            { id: 'organisation',label: 'Organisation' },
           ].map(tab => (
             <button
               key={tab.id}
@@ -567,6 +566,22 @@ export default function VeranstaltungDetail() {
       {/* Teilnahmen Tab */}
       {activeTab === 'teilnahmen' && !isNew && (
         <div>
+          {/* Check-in Statistik */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3 text-center">
+              <p className="text-2xl font-bold text-green-400">{anwesende.length}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Anwesend ✓</p>
+            </div>
+            <div className="bg-card border border-border rounded-xl p-3 text-center">
+              <p className="text-2xl font-bold text-foreground">{angemeldete.length - anwesende.length}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Nicht eingecheckt</p>
+            </div>
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-center">
+              <p className="text-2xl font-bold text-red-400">{abgesagte.length}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Abgesagt</p>
+            </div>
+          </div>
+
           <div className="relative mb-4">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -574,38 +589,57 @@ export default function VeranstaltungDetail() {
               placeholder="Name suchen..."
               value={searchMember}
               onChange={e => setSearchMember(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+              className="w-full pl-9 pr-4 py-2.5 min-h-[44px] rounded-xl bg-card border border-border text-base sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
             />
           </div>
+
+          {isAdmin && (
+            <p className="text-xs text-muted-foreground mb-3 text-center">
+              {kannCheckin ? 'Zum Ein-/Auschecken einfach antippen.' : 'Check-in ist nur am Veranstaltungstag möglich.'}
+            </p>
+          )}
+
+          {/* Liste: Tippen = ein-/auschecken */}
           <div className="space-y-2">
             {filteredTeilnahmen.map(t => (
-              <div key={t.id} className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3">
-                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs shrink-0">
-                  {getMitgliedName(t.mitglied_id)[0]}
+              <button
+                key={t.id}
+                onClick={() => kannCheckin && toggleAnwesenheit(t)}
+                disabled={!kannCheckin}
+                className={`w-full flex items-center gap-3 rounded-xl px-4 py-3.5 min-h-[60px] border transition-all ${
+                  t.status === 'Anwesend'
+                    ? 'bg-green-500/10 border-green-500/30'
+                    : t.status === 'Abgesagt' || t.status === 'Abgemeldet'
+                      ? 'bg-card border-border opacity-60'
+                      : 'bg-card border-border hover:border-primary/50'
+                } ${kannCheckin ? 'cursor-pointer active:scale-[0.98]' : 'cursor-default'}`}
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
+                  t.status === 'Anwesend' ? 'bg-green-500/20 text-green-400' : 'bg-primary/20 text-primary'
+                }`}>
+                  {t.status === 'Anwesend' ? <CheckCircle size={20} /> : getMitgliedName(t.mitglied_id)[0]}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">{getMitgliedName(t.mitglied_id)}</p>
-                  <div className="flex gap-2 mt-0.5">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      t.status === 'Anwesend' ? 'bg-green-500/20 text-green-400' :
-                      t.status === 'Abgesagt' ? 'bg-red-500/20 text-red-400' :
-                      'bg-blue-500/20 text-blue-400'
-                    }`}>{t.status}</span>
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="text-sm font-medium text-foreground truncate">{getMitgliedName(t.mitglied_id)}</p>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <span className={`text-xs font-medium ${
+                      t.status === 'Anwesend' ? 'text-green-400' :
+                      t.status === 'Abgesagt' || t.status === 'Abgemeldet' ? 'text-red-400' :
+                      'text-muted-foreground'
+                    }`}>
+                      {t.status === 'Anwesend' ? '✓ Anwesend bestätigt' : t.status}
+                    </span>
                     {t.bus && <span className="text-xs text-blue-400 flex items-center gap-0.5"><Bus size={10} /> Bus</span>}
                   </div>
                 </div>
-                {isAdmin && (
-                  <button
-                    onClick={() => toggleAnwesenheit(t)}
-                    title={t.status === 'Anwesend' ? 'Check-in zurücknehmen' : 'Einchecken'}
-                    className={`p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors ${
-                      t.status === 'Anwesend' ? 'bg-green-500/20 text-green-400' : 'bg-secondary text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    <Check size={16} />
-                  </button>
+                {kannCheckin && t.status !== 'Abgesagt' && t.status !== 'Abgemeldet' && (
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                    t.status === 'Anwesend' ? 'bg-green-500/30' : 'bg-secondary'
+                  }`}>
+                    <Check size={16} className={t.status === 'Anwesend' ? 'text-green-400' : 'text-muted-foreground'} />
+                  </div>
                 )}
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -691,27 +725,74 @@ export default function VeranstaltungDetail() {
       )}
 
       {/* Arbeitsdienste Tab */}
-      {activeTab === 'arbeitsdienste' && !isNew && (
-        <ArbeitsdienstTab veranstaltung={veranstaltung} isAdmin={isAdmin} />
+      {activeTab === 'organisation' && !isNew && (
+        <div>
+          <div className="flex gap-1.5 overflow-x-auto pb-1 mb-4 scrollbar-hide">
+            {[
+              { id: 'arbeitsdienste', label: 'Dienste' },
+              { id: 'dokumente', label: 'Dokumente' },
+              { id: 'planung', label: 'Planung' },
+              { id: 'nachbereitung', label: 'Nachbereitung' },
+            ].map(t => (
+              <button
+                key={t.id}
+                onClick={() => setOrgTab(t.id)}
+                className={`flex-shrink-0 px-4 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-all ${
+                  orgTab === t.id
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          {orgTab === 'arbeitsdienste' && <ArbeitsdienstTab veranstaltung={veranstaltung} isAdmin={isAdmin} />}
+          {orgTab === 'dokumente' && <DokumenteTab veranstaltung={veranstaltung} isAdmin={isAdmin} veranstaltungsName={veranstaltung.titel} />}
+          {orgTab === 'planung' && <PlanungTab veranstaltung={veranstaltung} isAdmin={isAdmin} />}
+          {orgTab === 'nachbereitung' && (
+            <NachbereitungTab
+              veranstaltung={veranstaltung}
+              isAdmin={isAdmin}
+              onVeranstaltungChange={(patch) => setVeranstaltung(prev => ({ ...prev, ...patch }))}
+            />
+          )}
+        </div>
       )}
 
-      {/* Dokumente Tab */}
-      {activeTab === 'dokumente' && !isNew && (
-        <DokumenteTab veranstaltung={veranstaltung} isAdmin={isAdmin} veranstaltungsName={veranstaltung.titel} />
-      )}
-
-      {/* Planung Tab – Bereiche & Listen */}
-      {activeTab === 'planung' && !isNew && (
-        <PlanungTab veranstaltung={veranstaltung} isAdmin={isAdmin} />
-      )}
-
-      {/* Nachbereitung Tab – Nachbesprechung */}
-      {activeTab === 'nachbereitung' && !isNew && (
-        <NachbereitungTab
-          veranstaltung={veranstaltung}
-          isAdmin={isAdmin}
-          onVeranstaltungChange={(patch) => setVeranstaltung(prev => ({ ...prev, ...patch }))}
-        />
+      {activeTab === 'organisation' && !isNew && (
+        <div>
+          <div className="flex gap-1.5 overflow-x-auto pb-1 mb-4 scrollbar-hide">
+            {[
+              { id: 'arbeitsdienste', label: 'Dienste' },
+              { id: 'dokumente', label: 'Dokumente' },
+              { id: 'planung', label: 'Planung' },
+              { id: 'nachbereitung', label: 'Nachbereitung' },
+            ].map(t => (
+              <button
+                key={t.id}
+                onClick={() => setOrgTab(t.id)}
+                className={`flex-shrink-0 px-4 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-all ${
+                  orgTab === t.id
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          {orgTab === 'arbeitsdienste' && <ArbeitsdienstTab veranstaltung={veranstaltung} isAdmin={isAdmin} />}
+          {orgTab === 'dokumente' && <DokumenteTab veranstaltung={veranstaltung} isAdmin={isAdmin} veranstaltungsName={veranstaltung.titel} />}
+          {orgTab === 'planung' && <PlanungTab veranstaltung={veranstaltung} isAdmin={isAdmin} />}
+          {orgTab === 'nachbereitung' && (
+            <NachbereitungTab
+              veranstaltung={veranstaltung}
+              isAdmin={isAdmin}
+              onVeranstaltungChange={(patch) => setVeranstaltung(prev => ({ ...prev, ...patch }))}
+            />
+          )}
+        </div>
       )}
 
       {/* Check-In Tab */}

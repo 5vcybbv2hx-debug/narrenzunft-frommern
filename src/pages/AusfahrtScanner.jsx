@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Html5Qrcode } from 'html5-qrcode';
 import { useParams, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -151,17 +152,7 @@ export default function AusfahrtScanner() {
 
   const startScanner = async () => {
     try {
-      if (!window.Html5Qrcode) {
-        await new Promise((resolve, reject) => {
-          const script = document.createElement('script');
-          script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
-          script.onload = resolve;
-          script.onerror = reject;
-          document.head.appendChild(script);
-        });
-      }
-
-      const html5QrCode = new window.Html5Qrcode('qr-reader');
+      const html5QrCode = new Html5Qrcode('qr-reader');
       html5QrCodeRef.current = html5QrCode;
 
       const screenWidth = window.innerWidth || 375;

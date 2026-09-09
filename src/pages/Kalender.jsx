@@ -494,7 +494,7 @@ export default function Kalender({ nur = 'alle' }) {
           <div className="grid grid-cols-7">
             {/* Lücke für Wochenstart */}
             {Array.from({ length: (new Date(format(startOfMonth(monat), 'yyyy-MM-dd')).getDay() + 6) % 7 }).map((_, i) => (
-              <div key={`empty-${i}`} className="h-14 border-b border-r border-border/50" />
+              <div key={`empty-${i}`} className="h-16 border-b border-r border-border/50" />
             ))}
             {tage.map(day => {
               const dayTermine = getTermineForDay(day);
@@ -504,16 +504,22 @@ export default function Kalender({ nur = 'alle' }) {
                 <button
                   key={day.toISOString()}
                   onClick={() => dayTermine.length > 0 && setSelectedTermin({ day, termine: dayTermine })}
-                  className={`h-14 border-b border-r border-border/50 p-1 text-left relative transition-colors ${heute ? 'bg-primary/10' : 'hover:bg-secondary/50'} ${!gleichesMonat ? 'opacity-30' : ''}`}
+                  title={dayTermine.length > 0 ? `${dayTermine.length} Termin(e) — Details anzeigen` : undefined}
+                  className={`h-16 border-b border-r border-border/50 p-1 text-left relative transition-colors ${
+                    selectedTermin && isSameDay(selectedTermin.day, day) ? 'bg-secondary ring-1 ring-inset ring-primary/60'
+                      : heute ? 'bg-primary/10 hover:bg-primary/15'
+                      : dayTermine.length > 0 ? 'hover:bg-secondary/50 active:bg-secondary'
+                      : ''
+                  } ${!gleichesMonat ? 'opacity-30' : ''}`}
                 >
                   <span className={`text-xs font-medium block text-center w-6 h-6 rounded-full flex items-center justify-center mx-auto mb-1 ${heute ? 'bg-primary text-white' : 'text-foreground'}`}>
                     {format(day, 'd')}
                   </span>
-                  <div className="flex flex-wrap gap-0.5 justify-center">
+                  <div className="flex flex-wrap gap-1 justify-center">
                     {dayTermine.slice(0, 3).map(t => (
-                      <span key={t.id} className={`w-1.5 h-1.5 rounded-full ${TERMINART_DOT[t.terminart] || 'bg-primary'}`} />
+                      <span key={t.id} className={`w-2 h-2 rounded-full ${TERMINART_DOT[t.terminart] || 'bg-primary'}`} />
                     ))}
-                    {dayTermine.length > 3 && <span className="text-[9px] text-muted-foreground">+{dayTermine.length - 3}</span>}
+                    {dayTermine.length > 3 && <span className="text-[10px] text-muted-foreground leading-none">+{dayTermine.length - 3}</span>}
                   </div>
                 </button>
               );
