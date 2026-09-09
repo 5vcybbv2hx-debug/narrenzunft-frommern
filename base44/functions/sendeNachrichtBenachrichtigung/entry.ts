@@ -7,6 +7,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
     const { nachricht_id } = await req.json();
 
     if (!nachricht_id) {
@@ -26,6 +29,11 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.Mitglied.filter({ id: msg.absender_mitglied_id }),
       base44.asServiceRole.entities.Mitglied.filter({ id: msg.empfaenger_mitglied_id }),
     ]);
+
+    // Nur der Absender der Nachricht darf die Benachrichtigung auslösen
+    if (!absender || absender.length === 0 || absender[0].user_id !== user.id) {
+      return Response.json({ error: 'Keine Berechtigung für diese Nachricht' }, { status: 403 });
+    }
 
     if (!empfaenger || empfaenger.length === 0 || !empfaenger[0].email) {
       return Response.json({ error: 'Empfänger oder Email nicht gefunden' }, { status: 400 });

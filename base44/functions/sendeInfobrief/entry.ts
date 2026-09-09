@@ -4,6 +4,9 @@ Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
   const user = await base44.auth.me();
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!['vorstand', 'stellv_vorstand', 'admin'].includes(user.role)) {
+    return Response.json({ error: 'Nur Vorstand und Admin dürfen Infobriefe versenden' }, { status: 403 });
+  }
 
   const { veranstaltung_id } = await req.json();
   if (!veranstaltung_id) return Response.json({ error: 'veranstaltung_id fehlt' }, { status: 400 });

@@ -40,16 +40,19 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    // Authentifizierung: entweder Admin-User oder Automation (kein User)
-    let isAutomation = false;
+    // Authentifizierung: Admin-User darf sensible Daten sehen;
+    // Automation (kein User) darf ausführen, bekommt aber KEINE Mitgliederdaten.
+    let isAdmin = false;
     try {
       const user = await base44.auth.me();
-      if (user && user.role !== 'admin') {
-        return Response.json({ error: 'Nur Admins dürfen diese Funktion aufrufen' }, { status: 403 });
+      if (user) {
+        if (user.role !== 'admin') {
+          return Response.json({ error: 'Nur Admins dürfen diese Funktion aufrufen' }, { status: 403 });
+        }
+        isAdmin = true;
       }
     } catch {
-      // Kein User = Automation
-      isAutomation = true;
+      // Kein User = Automation — darf ausführen, aber keine sensiblen Daten zurückgeben
     }
 
     const mitglieder = await base44.asServiceRole.entities.Mitglied.filter({ archiviert: false });
@@ -105,12 +108,18 @@ Deno.serve(async (req) => {
       neu++;
     }
 
-    return Response.json({
+    const result = {
       geprueft: mitglieder.length,
       zuAktualisieren: zuAktualisieren.length,
       neueBenachrichtigungen: neu,
-      eintraege: zuAktualisieren,
-    });
+    };
+
+    // Sensible Mitgliederdaten (Namen, Geburtsdaten) NUR an authentifizierte Admins
+    if (isAdmin) {
+      result.eintraege = zuAktualisieren;
+    }
+
+    return Response.json(result);
 
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

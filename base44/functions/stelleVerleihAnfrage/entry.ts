@@ -1,6 +1,19 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 
 /**
+ * HTML-Entity-Escaping für Benutzereingaben, die in E-Mail-Templates eingebettet werden.
+ * Verhindert HTML-Injektion / Content-Spoofing in versendeten E-Mails.
+ */
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
  * Öffentliche Verleih-Anfrage (aufgerufen von der QR-Seite /verleih/:id — KEINE Authentifizierung).
  * Legt eine VerleihAnfrage an, benachrichtigt den Zuständigen + Vorstand in der App und per E-Mail.
  * Validiert alle Eingaben serverseitig; Honeypot-Feld wehrt Spam-Bots ab.
@@ -70,9 +83,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    const zusammenfassung = `${n} möchte „${a.name}" vom ${von_datum} bis ${bis_datum} ausleihen.`;
+    const zusammenfassung = `${escapeHtml(n)} möchte „${escapeHtml(a.name)}" vom ${escapeHtml(von_datum)} bis ${escapeHtml(bis_datum)} ausleihen.`;
 
-    // E-Mail-Weiterleitung an Vorstand & Zuständige
+    // E-Mail-Weiterleitung an Vorstand & Zuständige (alle Benutzereingaben HTML-escaped)
     const emailHtml = `
       <div style="background:#0a0a0a;padding:24px;font-family:Arial,sans-serif;">
         <div style="max-width:560px;margin:0 auto;background:#141414;border:1px solid #2a2a2a;border-radius:12px;overflow:hidden;">
@@ -82,14 +95,14 @@ Deno.serve(async (req) => {
           <div style="padding:24px;">
             <p style="color:#e2e8f0;font-size:15px;margin:0 0 16px;">${zusammenfassung}</p>
             <table style="width:100%;color:#94a3b8;font-size:13px;border-collapse:collapse;">
-              <tr><td style="padding:6px 0;color:#6b7280;">Gegenstand</td><td style="padding:6px 0;color:#e2e8f0;text-align:right;">${a.name}</td></tr>
+              <tr><td style="padding:6px 0;color:#6b7280;">Gegenstand</td><td style="padding:6px 0;color:#e2e8f0;text-align:right;">${escapeHtml(a.name)}</td></tr>
               ${a.verleih_preis > 0 ? `<tr><td style="padding:6px 0;color:#6b7280;">Miete pro Tag</td><td style="padding:6px 0;color:#e2e8f0;text-align:right;">${Number(a.verleih_preis).toFixed(2).replace('.', ',')} €</td></tr>` : ''}
               ${a.verleih_kaution > 0 ? `<tr><td style="padding:6px 0;color:#6b7280;">Kaution</td><td style="padding:6px 0;color:#e2e8f0;text-align:right;">${Number(a.verleih_kaution).toFixed(2).replace('.', ',')} €</td></tr>` : ''}
-              <tr><td style="padding:6px 0;color:#6b7280;">Zeitraum</td><td style="padding:6px 0;color:#e2e8f0;text-align:right;">${von_datum} → ${bis_datum}</td></tr>
-              <tr><td style="padding:6px 0;color:#6b7280;">Anfrage von</td><td style="padding:6px 0;color:#e2e8f0;text-align:right;">${n}</td></tr>
-              <tr><td style="padding:6px 0;color:#6b7280;">Telefon</td><td style="padding:6px 0;color:#e2e8f0;text-align:right;">${tel}</td></tr>
-              ${em ? `<tr><td style="padding:6px 0;color:#6b7280;">E-Mail</td><td style="padding:6px 0;color:#e2e8f0;text-align:right;">${em}</td></tr>` : ''}
-              ${anfrage.zweck ? `<tr><td style="padding:6px 0;color:#6b7280;">Zweck</td><td style="padding:6px 0;color:#e2e8f0;text-align:right;">${anfrage.zweck}</td></tr>` : ''}
+              <tr><td style="padding:6px 0;color:#6b7280;">Zeitraum</td><td style="padding:6px 0;color:#e2e8f0;text-align:right;">${escapeHtml(von_datum)} → ${escapeHtml(bis_datum)}</td></tr>
+              <tr><td style="padding:6px 0;color:#6b7280;">Anfrage von</td><td style="padding:6px 0;color:#e2e8f0;text-align:right;">${escapeHtml(n)}</td></tr>
+              <tr><td style="padding:6px 0;color:#6b7280;">Telefon</td><td style="padding:6px 0;color:#e2e8f0;text-align:right;">${escapeHtml(tel)}</td></tr>
+              ${em ? `<tr><td style="padding:6px 0;color:#6b7280;">E-Mail</td><td style="padding:6px 0;color:#e2e8f0;text-align:right;">${escapeHtml(em)}</td></tr>` : ''}
+              ${anfrage.zweck ? `<tr><td style="padding:6px 0;color:#6b7280;">Zweck</td><td style="padding:6px 0;color:#e2e8f0;text-align:right;">${escapeHtml(anfrage.zweck)}</td></tr>` : ''}
             </table>
             <p style="color:#94a3b8;font-size:12px;margin:20px 0 0;padding-top:16px;border-top:1px solid #2a2a2a;">
               Anfrage in der App unter <span style="color:#EA2525;font-weight:600;">Inventar &amp; Verleih → Anfragen</span> genehmigen oder ablehnen.
