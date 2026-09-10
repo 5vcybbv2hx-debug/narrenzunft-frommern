@@ -121,7 +121,7 @@ export default function Profil() {
   return (
     <div ref={containerRef} className="px-4 lg:px-6 py-6 max-w-2xl mx-auto">
       <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
-      <h1 className="text-2xl font-bold font-oswald uppercase tracking-wide text-white mb-6">Mein Profil</h1>
+      <h1 className="text-2xl font-bold font-oswald uppercase tracking-wide text-foreground mb-6">Mein Profil</h1>
 
       {/* Error Banner */}
       {error && (
@@ -149,7 +149,7 @@ export default function Profil() {
             )}
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white font-oswald uppercase tracking-wide">{vollname || user?.full_name || 'Benutzer'}</h2>
+            <h2 className="text-xl font-bold text-foreground font-oswald uppercase tracking-wide">{vollname || user?.full_name || 'Benutzer'}</h2>
             <p className="text-sm text-muted-foreground">{user?.email}</p>
             {mitglied ? (
               <div className="flex flex-wrap gap-1.5 mt-1">
@@ -171,7 +171,7 @@ export default function Profil() {
         {mitglied && (
           <Link
             to={`/mitglieder/${mitglied.id}`}
-            className="flex items-center justify-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary text-sm text-white hover:bg-border border border-border transition-colors font-medium self-start sm:self-center"
+            className="flex items-center justify-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary text-sm text-foreground hover:bg-border border border-border transition-colors font-medium self-start sm:self-center"
           >
             <FileText size={15} /> Vollständige Akte
           </Link>
@@ -182,7 +182,7 @@ export default function Profil() {
       {!mitglied && (
         <div className="bg-card border border-border rounded-xl p-4 sm:p-6 text-center mb-4">
           <User size={36} className="text-muted-foreground/40 mx-auto mb-3" />
-          <p className="text-white font-medium">Kein Mitgliedsprofil gefunden</p>
+          <p className="text-foreground font-medium">Kein Mitgliedsprofil gefunden</p>
           <p className="text-sm text-muted-foreground mt-1">
             Dein Benutzerkonto ist nicht mit einem Mitglied verknüpft. Wende dich an einen Administrator.
           </p>
@@ -197,7 +197,7 @@ export default function Profil() {
             className={`px-4 py-2.5 min-h-[44px] text-sm font-oswald uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap ${
               activeTab === 'profil'
                 ? 'bg-primary text-white'
-                : 'bg-secondary text-muted-foreground hover:text-white'
+                : 'bg-secondary text-muted-foreground hover:text-foreground'
             }`}
           >
             Mein Profil
@@ -207,7 +207,7 @@ export default function Profil() {
             className={`px-4 py-2.5 min-h-[44px] text-sm font-oswald uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap ${
               activeTab === 'aktivitaet'
                 ? 'bg-primary text-white'
-                : 'bg-secondary text-muted-foreground hover:text-white'
+                : 'bg-secondary text-muted-foreground hover:text-foreground'
             }`}
           >
             Aktivität
@@ -217,7 +217,7 @@ export default function Profil() {
             className={`px-4 py-2.5 min-h-[44px] text-sm font-oswald uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap ${
               activeTab === 'dienste'
                 ? 'bg-primary text-white'
-                : 'bg-secondary text-muted-foreground hover:text-white'
+                : 'bg-secondary text-muted-foreground hover:text-foreground'
             }`}
           >
             Dienste
@@ -231,19 +231,19 @@ export default function Profil() {
           {/* Mitgliedsdaten */}
           <div className="bg-card border border-border rounded-xl p-5 mb-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold font-oswald uppercase tracking-wide text-white flex items-center gap-2">
+              <h3 className="font-semibold font-oswald uppercase tracking-wide text-foreground flex items-center gap-2">
                 <User size={16} className="text-primary" /> Meine Daten
               </h3>
               {!editing ? (
                 <button
                   onClick={handleEditStart}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-sm text-muted-foreground hover:text-white transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <Edit size={13} /> Bearbeiten
                 </button>
               ) : (
                 <div className="flex gap-2">
-                  <button onClick={() => setEditing(false)} className="p-1.5 rounded-lg text-muted-foreground hover:text-white hover:bg-secondary transition-colors">
+                  <button onClick={() => setEditing(false)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
                     <X size={15} />
                   </button>
                   <button
@@ -262,28 +262,28 @@ export default function Profil() {
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">Telefon</label>
                   <input value={editForm.telefon} onChange={e => setEditForm(p => ({ ...p, telefon: e.target.value }))}
-                    className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                    className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-colors" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">E-Mail</label>
                   <input type="email" value={editForm.email} onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))}
-                    className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                    className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-colors" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">Straße & Hausnummer</label>
                   <input value={editForm.strasse} onChange={e => setEditForm(p => ({ ...p, strasse: e.target.value }))}
-                    className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                    className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-colors" />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
                     <label className="text-xs text-muted-foreground font-medium block mb-1">PLZ</label>
                     <input value={editForm.plz} onChange={e => setEditForm(p => ({ ...p, plz: e.target.value }))}
-                      className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                      className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-colors" />
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground font-medium block mb-1">Ort</label>
                     <input value={editForm.ort} onChange={e => setEditForm(p => ({ ...p, ort: e.target.value }))}
-                      className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                      className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-colors" />
                   </div>
                 </div>
                 <div className="border-t border-border pt-3">
@@ -294,12 +294,12 @@ export default function Profil() {
                     <div>
                       <label className="text-xs text-muted-foreground font-medium block mb-1">Name</label>
                       <input value={editForm.notfallkontakt_name} onChange={e => setEditForm(p => ({ ...p, notfallkontakt_name: e.target.value }))}
-                        className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                        className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-colors" />
                     </div>
                     <div>
                       <label className="text-xs text-muted-foreground font-medium block mb-1">Telefon</label>
                       <input value={editForm.notfallkontakt_telefon} onChange={e => setEditForm(p => ({ ...p, notfallkontakt_telefon: e.target.value }))}
-                        className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                        className="w-full px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-colors" />
                     </div>
                   </div>
                 </div>
@@ -309,22 +309,22 @@ export default function Profil() {
                 {mitglied.telefon && (
                   <div className="flex items-center gap-3">
                     <Phone size={14} className="text-muted-foreground shrink-0" />
-                    <span className="text-sm text-white">{mitglied.telefon}</span>
+                    <span className="text-sm text-foreground">{mitglied.telefon}</span>
                   </div>
                 )}
                 {mitglied.email && (
                   <div className="flex items-center gap-3">
                     <Mail size={14} className="text-muted-foreground shrink-0" />
-                    <span className="text-sm text-white">{mitglied.email}</span>
+                    <span className="text-sm text-foreground">{mitglied.email}</span>
                   </div>
                 )}
                 {(mitglied.strasse || mitglied.ort) && (
                   <div className="flex items-start gap-3">
                     <MapPin size={14} className="text-muted-foreground shrink-0 mt-0.5" />
                     <div>
-                      {mitglied.strasse && <p className="text-sm text-white">{mitglied.strasse}</p>}
+                      {mitglied.strasse && <p className="text-sm text-foreground">{mitglied.strasse}</p>}
                       {(mitglied.plz || mitglied.ort) && (
-                        <p className="text-sm text-white">{[mitglied.plz, mitglied.ort].filter(Boolean).join(' ')}</p>
+                        <p className="text-sm text-foreground">{[mitglied.plz, mitglied.ort].filter(Boolean).join(' ')}</p>
                       )}
                     </div>
                   </div>
@@ -332,7 +332,7 @@ export default function Profil() {
                 {mitglied.geburtsdatum && (
                   <div className="flex items-center gap-3">
                     <Calendar size={14} className="text-muted-foreground shrink-0" />
-                    <span className="text-sm text-white">
+                    <span className="text-sm text-foreground">
                       {format(new Date(mitglied.geburtsdatum), 'dd.MM.yyyy')} ({alter} Jahre)
                     </span>
                   </div>
@@ -340,7 +340,7 @@ export default function Profil() {
                 {mitglied.eintrittsdatum && (
                   <div className="flex items-center gap-3">
                     <Calendar size={14} className="text-muted-foreground shrink-0" />
-                    <span className="text-sm text-white">
+                    <span className="text-sm text-foreground">
                       Mitglied seit {format(new Date(mitglied.eintrittsdatum), 'dd.MM.yyyy')}
                     </span>
                   </div>
@@ -350,8 +350,8 @@ export default function Profil() {
                     <AlertTriangle size={14} className="text-yellow-400 shrink-0 mt-0.5" />
                     <div>
                       <p className="text-xs text-muted-foreground">Notfallkontakt</p>
-                      {mitglied.notfallkontakt_name && <p className="text-sm text-white">{mitglied.notfallkontakt_name}</p>}
-                      {mitglied.notfallkontakt_telefon && <p className="text-sm text-white">{mitglied.notfallkontakt_telefon}</p>}
+                      {mitglied.notfallkontakt_name && <p className="text-sm text-foreground">{mitglied.notfallkontakt_name}</p>}
+                      {mitglied.notfallkontakt_telefon && <p className="text-sm text-foreground">{mitglied.notfallkontakt_telefon}</p>}
                     </div>
                   </div>
                 )}
@@ -367,14 +367,14 @@ export default function Profil() {
             <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
               <Flag size={20} className="text-primary shrink-0" />
               <div>
-                <p className="text-xl font-bold font-oswald text-white">{umzuegeGesamt}</p>
+                <p className="text-xl font-bold font-oswald text-foreground">{umzuegeGesamt}</p>
                 <p className="text-xs text-muted-foreground">Umzüge gesamt</p>
               </div>
             </div>
             <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
               <Award size={20} className="text-primary shrink-0" />
               <div>
-                <p className="text-xl font-bold font-oswald text-white">{verlieheneEhrungen}</p>
+                <p className="text-xl font-bold font-oswald text-foreground">{verlieheneEhrungen}</p>
                 <p className="text-xs text-muted-foreground">Ehrungen</p>
               </div>
             </div>
@@ -383,7 +383,7 @@ export default function Profil() {
           {/* Mein Häs */}
           {haes.length > 0 && (
             <div className="bg-card border border-border rounded-xl p-5 mb-4">
-              <h3 className="font-semibold font-oswald uppercase tracking-wide text-white mb-3 flex items-center gap-2">
+              <h3 className="font-semibold font-oswald uppercase tracking-wide text-foreground mb-3 flex items-center gap-2">
                 <Shirt size={16} className="text-primary" /> Mein Häs ({haes.length})
               </h3>
               {haes.map(h => (
@@ -401,13 +401,13 @@ export default function Profil() {
           {/* Meine Ehrungen */}
           {ehrungen.length > 0 && (
             <div className="bg-card border border-border rounded-xl p-5 mb-4">
-              <h3 className="font-semibold font-oswald uppercase tracking-wide text-white mb-3 flex items-center gap-2">
+              <h3 className="font-semibold font-oswald uppercase tracking-wide text-foreground mb-3 flex items-center gap-2">
                 <Award size={16} className="text-primary" /> Meine Ehrungen ({ehrungen.length})
               </h3>
               {ehrungen.map(e => (
                 <div key={e.id} className="flex items-center justify-between py-2.5 min-h-[44px] border-b border-border last:border-0">
                   <div>
-                    <p className="text-sm text-white">{e.typ}{e.wert ? ` – ${e.wert}` : ''}</p>
+                    <p className="text-sm text-foreground">{e.typ}{e.wert ? ` – ${e.wert}` : ''}</p>
                     {e.jahr && <p className="text-xs text-muted-foreground">Jahr {e.jahr}</p>}
                   </div>
                   <span className={`text-xs px-2 py-0.5 rounded-full ${
@@ -437,7 +437,7 @@ export default function Profil() {
             </AlertDialogTrigger>
             <AlertDialogContent className="bg-card border-border">
               <AlertDialogHeader>
-                <AlertDialogTitle className="font-oswald uppercase tracking-wide text-white">Account wirklich löschen?</AlertDialogTitle>
+                <AlertDialogTitle className="font-oswald uppercase tracking-wide text-foreground">Account wirklich löschen?</AlertDialogTitle>
                 <AlertDialogDescription>
                   Eine Löschungsanfrage wird an die Administratoren gesendet. Du wirst anschließend abgemeldet. Der Vorgang kann nicht rückgängig gemacht werden.
                 </AlertDialogDescription>
