@@ -6,7 +6,7 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 import { useAuth } from '@/lib/AuthContext';
 import {
-  Calendar, Users, Briefcase, Shirt, ArrowRight, ChevronRight,
+  Calendar, User, Users, Briefcase, Shirt, ArrowRight, ChevronRight,
   Shield, CheckCircle, AlertCircle, Clock, Baby, MapPin,
   Phone, MessageCircle, Bus,
 } from 'lucide-react';
