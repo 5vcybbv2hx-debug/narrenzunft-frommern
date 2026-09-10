@@ -1,5 +1,14 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
   const user = await base44.auth.me();
@@ -33,6 +42,7 @@ Deno.serve(async (req) => {
   const typEmoji = { Umzug: '🎪', Abendveranstaltung: '🎭', Fest: '🎉', Intern: '📋', Arbeitsdienst: '🔧' };
   const emoji = typEmoji[v.typ] || '📅';
   const datumFormatiert = v.datum ? new Date(v.datum).toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '';
+  const esc = (s) => escapeHtml(s);
 
   const mapsLink = (adresse) => adresse
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresse)}`
@@ -46,8 +56,8 @@ Deno.serve(async (req) => {
       detailsHtml += `
         <div style="background:#1a2744;border-left:4px solid #f97316;padding:12px 16px;border-radius:8px;margin-bottom:12px;">
           <p style="font-weight:700;color:#f97316;margin:0 0 6px;">🅿️ Busparkplatz</p>
-          ${v.busparkplatz_treffzeit ? `<p style="margin:0 0 4px;color:#e2e8f0;"><strong>Treffzeit:</strong> ${v.busparkplatz_treffzeit} Uhr</p>` : ''}
-          ${v.busparkplatz_adresse ? `<p style="margin:0 0 4px;color:#e2e8f0;"><strong>Adresse:</strong> ${v.busparkplatz_adresse}</p>` : ''}
+          ${v.busparkplatz_treffzeit ? `<p style="margin:0 0 4px;color:#e2e8f0;"><strong>Treffzeit:</strong> ${esc(v.busparkplatz_treffzeit)} Uhr</p>` : ''}
+          ${v.busparkplatz_adresse ? `<p style="margin:0 0 4px;color:#e2e8f0;"><strong>Adresse:</strong> ${esc(v.busparkplatz_adresse)}</p>` : ''}
           ${mapsLink(v.busparkplatz_adresse) ? `<a href="${mapsLink(v.busparkplatz_adresse)}" style="color:#60a5fa;font-size:13px;">📍 Navigation öffnen</a>` : ''}
         </div>`;
     }
@@ -55,8 +65,8 @@ Deno.serve(async (req) => {
       detailsHtml += `
         <div style="background:#1a2744;border-left:4px solid #60a5fa;padding:12px 16px;border-radius:8px;margin-bottom:12px;">
           <p style="font-weight:700;color:#60a5fa;margin:0 0 6px;">📋 Umzugsaufstellung</p>
-          ${v.umzugsaufstellung_zeit ? `<p style="margin:0 0 4px;color:#e2e8f0;"><strong>Zeit:</strong> ${v.umzugsaufstellung_zeit} Uhr</p>` : ''}
-          ${v.umzugsaufstellung_ort ? `<p style="margin:0 0 4px;color:#e2e8f0;"><strong>Ort:</strong> ${v.umzugsaufstellung_ort}</p>` : ''}
+          ${v.umzugsaufstellung_zeit ? `<p style="margin:0 0 4px;color:#e2e8f0;"><strong>Zeit:</strong> ${esc(v.umzugsaufstellung_zeit)} Uhr</p>` : ''}
+          ${v.umzugsaufstellung_ort ? `<p style="margin:0 0 4px;color:#e2e8f0;"><strong>Ort:</strong> ${esc(v.umzugsaufstellung_ort)}</p>` : ''}
           ${mapsLink(v.umzugsaufstellung_ort) ? `<a href="${mapsLink(v.umzugsaufstellung_ort)}" style="color:#60a5fa;font-size:13px;">📍 Navigation öffnen</a>` : ''}
         </div>`;
     }
@@ -64,9 +74,9 @@ Deno.serve(async (req) => {
       detailsHtml += `
         <div style="background:#1a2744;border-left:4px solid #a78bfa;padding:12px 16px;border-radius:8px;margin-bottom:12px;">
           <p style="font-weight:700;color:#a78bfa;margin:0 0 6px;">🎉 Festakt / Abschluss</p>
-          ${v.festakt_zeit ? `<p style="margin:0 0 4px;color:#e2e8f0;"><strong>Beginn:</strong> ${v.festakt_zeit} Uhr</p>` : ''}
-          ${v.festakt_ort ? `<p style="margin:0 0 4px;color:#e2e8f0;"><strong>Ort:</strong> ${v.festakt_ort}</p>` : ''}
-          ${v.festakt_adresse ? `<p style="margin:0 0 4px;color:#e2e8f0;"><strong>Adresse:</strong> ${v.festakt_adresse}</p>` : ''}
+          ${v.festakt_zeit ? `<p style="margin:0 0 4px;color:#e2e8f0;"><strong>Beginn:</strong> ${esc(v.festakt_zeit)} Uhr</p>` : ''}
+          ${v.festakt_ort ? `<p style="margin:0 0 4px;color:#e2e8f0;"><strong>Ort:</strong> ${esc(v.festakt_ort)}</p>` : ''}
+          ${v.festakt_adresse ? `<p style="margin:0 0 4px;color:#e2e8f0;"><strong>Adresse:</strong> ${esc(v.festakt_adresse)}</p>` : ''}
           ${mapsLink(v.festakt_adresse || v.festakt_ort) ? `<a href="${mapsLink(v.festakt_adresse || v.festakt_ort)}" style="color:#60a5fa;font-size:13px;">📍 Navigation öffnen</a>` : ''}
         </div>`;
     }
@@ -77,8 +87,8 @@ Deno.serve(async (req) => {
       detailsHtml += `
         <div style="background:#1a2744;border-left:4px solid #34d399;padding:12px 16px;border-radius:8px;margin-bottom:12px;">
           <p style="font-weight:700;color:#34d399;margin:0 0 6px;">📍 Veranstaltungsort</p>
-          ${v.ort ? `<p style="margin:0 0 4px;color:#e2e8f0;"><strong>${v.ort}</strong></p>` : ''}
-          <p style="margin:0 0 4px;color:#e2e8f0;">${v.veranstaltungsort_adresse}</p>
+          ${v.ort ? `<p style="margin:0 0 4px;color:#e2e8f0;"><strong>${esc(v.ort)}</strong></p>` : ''}
+          <p style="margin:0 0 4px;color:#e2e8f0;">${esc(v.veranstaltungsort_adresse)}</p>
           <a href="${mapsLink(v.veranstaltungsort_adresse)}" style="color:#60a5fa;font-size:13px;">📍 Navigation öffnen</a>
         </div>`;
     }
@@ -86,22 +96,22 @@ Deno.serve(async (req) => {
       detailsHtml += `
         <div style="background:#1a2744;border-left:4px solid #fbbf24;padding:12px 16px;border-radius:8px;margin-bottom:12px;">
           <p style="font-weight:700;color:#fbbf24;margin:0 0 6px;">🕐 Zeiten</p>
-          ${v.einlass_zeit ? `<p style="margin:0 0 4px;color:#e2e8f0;"><strong>Einlass:</strong> ${v.einlass_zeit} Uhr</p>` : ''}
-          ${v.beginn_zeit ? `<p style="margin:0 0 4px;color:#e2e8f0;"><strong>Beginn:</strong> ${v.beginn_zeit} Uhr</p>` : ''}
+          ${v.einlass_zeit ? `<p style="margin:0 0 4px;color:#e2e8f0;"><strong>Einlass:</strong> ${esc(v.einlass_zeit)} Uhr</p>` : ''}
+          ${v.beginn_zeit ? `<p style="margin:0 0 4px;color:#e2e8f0;"><strong>Beginn:</strong> ${esc(v.beginn_zeit)} Uhr</p>` : ''}
         </div>`;
     }
     if (v.programmablauf) {
       detailsHtml += `
         <div style="background:#1a2744;border-left:4px solid #60a5fa;padding:12px 16px;border-radius:8px;margin-bottom:12px;">
           <p style="font-weight:700;color:#60a5fa;margin:0 0 6px;">📋 Programmablauf</p>
-          <p style="color:#e2e8f0;white-space:pre-line;margin:0;">${v.programmablauf}</p>
+          <p style="color:#e2e8f0;white-space:pre-line;margin:0;">${esc(v.programmablauf)}</p>
         </div>`;
     }
     if (v.dresscode) {
       detailsHtml += `
         <div style="background:#1a2744;border-left:4px solid #f472b6;padding:12px 16px;border-radius:8px;margin-bottom:12px;">
           <p style="font-weight:700;color:#f472b6;margin:0 0 6px;">👗 Dresscode / Kleidung</p>
-          <p style="color:#e2e8f0;margin:0;">${v.dresscode}</p>
+          <p style="color:#e2e8f0;margin:0;">${esc(v.dresscode)}</p>
         </div>`;
     }
   }
@@ -110,7 +120,7 @@ Deno.serve(async (req) => {
     detailsHtml += `
       <div style="background:#1a2744;border-left:4px solid #94a3b8;padding:12px 16px;border-radius:8px;margin-bottom:12px;">
         <p style="font-weight:700;color:#94a3b8;margin:0 0 6px;">📝 Allgemeine Hinweise</p>
-        <p style="color:#e2e8f0;white-space:pre-line;margin:0;">${v.hinweise}</p>
+        <p style="color:#e2e8f0;white-space:pre-line;margin:0;">${esc(v.hinweise)}</p>
       </div>`;
   }
 
@@ -118,19 +128,19 @@ Deno.serve(async (req) => {
     detailsHtml += `
       <div style="background:#1a2744;border-left:4px solid #34d399;padding:12px 16px;border-radius:8px;margin-bottom:12px;">
         <p style="font-weight:700;color:#34d399;margin:0 0 6px;">📞 Ansprechpartner vor Ort</p>
-        <p style="color:#e2e8f0;margin:0;">${v.kontakt_vor_ort}</p>
+        <p style="color:#e2e8f0;margin:0;">${esc(v.kontakt_vor_ort)}</p>
       </div>`;
   }
 
-  const subject = `${emoji} Infobrief: ${v.titel} – ${datumFormatiert}`;
+  const subject = `${emoji} Infobrief: ${esc(v.titel)} – ${datumFormatiert}`;
 
   const bodyHtml = `
     <div style="font-family:Arial,sans-serif;background:#111827;color:#e2e8f0;padding:24px;border-radius:12px;max-width:600px;">
       <div style="text-align:center;margin-bottom:24px;">
         <p style="font-size:32px;margin:0;">${emoji}</p>
-        <h1 style="color:#f97316;margin:8px 0 4px;">${v.titel}</h1>
-        <p style="color:#94a3b8;margin:0;">${v.typ} · ${datumFormatiert}${v.uhrzeit ? ' · ' + v.uhrzeit + ' Uhr' : ''}</p>
-        ${v.ort ? `<p style="color:#94a3b8;margin:4px 0 0;">📍 ${v.ort}</p>` : ''}
+        <h1 style="color:#f97316;margin:8px 0 4px;">${esc(v.titel)}</h1>
+        <p style="color:#94a3b8;margin:0;">${esc(v.typ)} · ${datumFormatiert}${v.uhrzeit ? ' · ' + esc(v.uhrzeit) + ' Uhr' : ''}</p>
+        ${v.ort ? `<p style="color:#94a3b8;margin:4px 0 0;">📍 ${esc(v.ort)}</p>` : ''}
       </div>
 
       ${detailsHtml || '<p style="color:#94a3b8;text-align:center;">Weitere Details folgen.</p>'}

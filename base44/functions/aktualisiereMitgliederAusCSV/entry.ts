@@ -18,7 +18,8 @@ Deno.serve(async (req) => {
     if (!urlCheck.ok) return Response.json({ error: urlCheck.error }, { status: 400 });
 
     // ── CSV herunterladen und parsen ──
-    const csvRes = await fetch(csv_url);
+    // redirect: 'error' verhindert Redirect-Chain-SSRF-Angriffe
+    const csvRes = await fetch(csv_url, { redirect: 'error' });
     const csvText = await csvRes.text();
     const clean = csvText.replace(/^\ufeff/, '');
     const lines = clean.split('\n').filter(l => l.trim());
