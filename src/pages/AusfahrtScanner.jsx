@@ -67,6 +67,14 @@ export default function AusfahrtScanner() {
 
   const canScan = hasGeneralAccess || (isBusverantwortlicher && isAusfahrtTag());
 
+  // Namen aller für diese Ausfahrt eingetragenen Busverantwortlichen
+  const busverantwortlicheNamen = (ausfahrt?.bus_verantwortliche || [])
+    .map(vid => {
+      const m = mitglieder.find(m => m.id === vid);
+      return m ? `${m.vorname || ''} ${m.nachname || ''}`.trim() : null;
+    })
+    .filter(Boolean);
+
   const getMitgliedName = (mitgliedId) => {
     const m = mitglieder.find(m => m.id === mitgliedId);
     return m ? `${m.vorname || ''} ${m.nachname || ''}`.trim() : 'Unbekannt';
@@ -356,9 +364,18 @@ export default function AusfahrtScanner() {
             </div>
           </div>
           <p className="text-muted-foreground text-xs mt-2">{formatDisplayDate(ausfahrt.datum)}</p>
-          {isBusverantwortlicher && !hasGeneralAccess && (
-            <p className="text-primary text-xs mt-2 font-medium flex items-center gap-1">
-              <Users className="w-3.5 h-3.5" /> Du bist heute als Busverantwortlicher eingetragen
+          {(busverantwortlicheNamen.length > 0 || ausfahrt?.bus_verantwortliche?.length > 0) && (
+            <p className="text-muted-foreground text-xs mt-1.5 flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5 shrink-0" />
+              Busverantwortliche:{' '}
+              {busverantwortlicheNamen.length > 0
+                ? busverantwortlicheNamen.join(', ')
+                : `${ausfahrt.bus_verantwortliche.length} eingetragen`}
+            </p>
+          )}
+          {isBusverantwortlicher && (
+            <p className="text-primary text-xs mt-2 font-medium flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Du bist für diese Ausfahrt als Busverantwortlicher eingetragen
             </p>
           )}
         </div>
