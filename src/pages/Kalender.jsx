@@ -576,6 +576,16 @@ export default function Kalender({ nur = 'alle' }) {
                   onAnmelden={() => handleAnmelden(t)}
                   onEdit={admin ? () => { setEditTermin(t); setShowModal(true); } : null}
                   onEditVeranstaltung={admin ? (v) => { setEditVeranstaltung(v); setShowVeranstaltungModal(true); } : null}
+                  ausfahrtAnmeldung={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeStatus(t._ausfahrt_id) : null}
+                  ausfahrtAnmeldeCount={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeCount(t._ausfahrt_id) : 0}
+                  isAusfahrtOpen={t._quelle === 'ausfahrt' ? isAusfahrtRegistrationOpen(t) : false}
+                  canUnregisterAusfahrt={t._quelle === 'ausfahrt' ? canUnregisterAusfahrt(t) : false}
+                  onAusfahrtRegister={t._quelle === 'ausfahrt' ? () => handleAusfahrtRegister(t._ausfahrt_id) : null}
+                  onAusfahrtUnregister={t._quelle === 'ausfahrt' ? () => {
+                    const anm = getAusfahrtAnmeldeStatus(t._ausfahrt_id);
+                    if (anm) handleAusfahrtUnregister(anm.id, t._ausfahrt_id);
+                  } : null}
+                  submittingAusfahrt={submittingAusfahrtId}
                   compact
                 />
               ))}

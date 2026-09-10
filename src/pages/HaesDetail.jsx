@@ -113,9 +113,6 @@ export default function HaesDetail() {
         notiz: newZuweisung.notizen,
       });
 
-      // Eigentümer immer auf das zugewiesene Mitglied setzen
-      await base44.entities.Haes.update(id, { privat_eigentuemer_id: newZuweisung.mitglied_id });
-
       setNewZuweisung({ mitglied_id: '', von_datum: '', aktiv: true, notizen: '' });
       setShowAddMitglied(false);
       setConfirmDialog(null);
@@ -153,12 +150,7 @@ export default function HaesDetail() {
         haes_id: id,
         mitglied_id: neueAktion === 'verliehen' ? historie.mitglied_id : undefined,
         aktion: neueAktion,
-      });
-      // Bei Aktivierung auch Eigentümer auf dieses Mitglied setzen
-      if (neueAktion === 'verliehen' && historie.mitglied_id) {
-        await base44.entities.Haes.update(id, { privat_eigentuemer_id: historie.mitglied_id });
-      }
-      loadData();
+      });      loadData();
     } catch (e) {
       console.error('Status-Änderung fehlgeschlagen:', e);
       toast.error('Fehlgeschlagen: ' + (e?.response?.data?.error || e.message));

@@ -4,7 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, isDeveloper, kannCheckinDurchfuehren } from '@/lib/roles';
-import { ArrowLeft, ScanLine, CheckCircle2, XCircle, AlertTriangle, Users, QrCode, Calendar } from 'lucide-react';
+import { ArrowLeft, ScanLine, CheckCircle2, XCircle, AlertTriangle, Users, QrCode, Calendar, Search } from 'lucide-react';
 import { format, parseISO, isToday, isSameDay } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -20,6 +20,7 @@ export default function AusfahrtScanner() {
   const [scanResults, setScanResults] = useState([]);
   const [lastScan, setLastScan] = useState(null);
   const [error, setError] = useState(null);
+  const [manuellerFilter, setManuellerFilter] = useState('');
   const scannerRef = useRef(null);
   const html5QrCodeRef = useRef(null);
 
@@ -70,6 +71,14 @@ export default function AusfahrtScanner() {
   };
 
   const activeAnmeldungen = anmeldungen.filter(a => a.status !== 'Abgemeldet');
+  const gefilterteAnmeldungen = manuellerFilter.trim()
+    ? activeAnmeldungen.filter(r => {
+        const name = r.is_fremdangemeldet
+          ? (r.fremdname || 'Fremdperson')
+          : getMitgliedName(r.mitglied_id);
+        return name.toLowerCase().includes(manuellerFilter.trim().toLowerCase());
+      })
+    : activeAnmeldungen;
   const eingechecktCount = activeAnmeldungen.filter(a => a.status === 'Eingecheckt').length;
   const gesamtCount = activeAnmeldungen.length;
 
@@ -369,11 +378,30 @@ export default function AusfahrtScanner() {
             </h2>
             <span className="text-xs text-muted-foreground">{eingechecktCount} / {gesamtCount} eingecheckt</span>
           </div>
+          <div className="relative mb-3">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={manuellerFilter}
+              onChange={(e) => setManuellerFilter(e.target.value)}
+              placeholder="Name suchen…"
+              className="w-full pl-9 pr-8 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+            />
+            {manuellerFilter && (
+              <button
+                onClick={() => setManuellerFilter('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-muted-foreground hover:text-foreground"
+                title="Suche leeren"
+              >
+                <XCircle size={14} />
+              </button>
+            )}
+          </div>
           <div className="space-y-2 max-h-[500px] overflow-y-auto">
-            {activeAnmeldungen.length === 0 ? (
+            {gefilterteAnmeldungen.length === 0 ? (
               <p className="text-center text-muted-foreground py-6 text-sm">Keine aktiven Anmeldungen.</p>
             ) : (
-              activeAnmeldungen.map(reg => {
+              gefilterteAnmeldungen.map(reg => {
                 const name = reg.is_fremdangemeldet
                   ? (reg.fremdname || 'Fremdperson')
                   : getMitgliedName(reg.mitglied_id);

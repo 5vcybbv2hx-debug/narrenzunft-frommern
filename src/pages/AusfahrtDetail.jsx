@@ -740,7 +740,7 @@ export default function AusfahrtDetail() {
           </div>
 
           {/* Registration Section */}
-          <div className="space-y-6">
+          <div className="space-y-6 order-first lg:order-none">
             <div className="bg-card border border-border rounded-xl p-6">
               <h2 className="text-xl font-bold font-oswald uppercase tracking-wider border-b border-border pb-3 mb-4">
                 Anmeldung

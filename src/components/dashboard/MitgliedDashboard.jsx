@@ -260,7 +260,7 @@ export default function MitgliedDashboard() {
       )}
 
       {/* Meine Veranstaltungen */}
-      <Card title="Meine Anmeldungen" icon={Calendar} linkTo="/umzuege">
+      <Card title="Meine Anmeldungen" icon={Calendar} linkTo="/kalender">
         {meineAnmeldungen.length === 0 ? (
           <EmptyHint text="Keine bevorstehenden Anmeldungen" />
         ) : (
@@ -294,7 +294,7 @@ export default function MitgliedDashboard() {
 
       {/* Sparten-Termine */}
       {spartenTermine.length > 0 && (
-        <Card title="Meine Sparten-Termine" icon={Music} linkTo="/sparten">
+        <Card title="Meine Sparten-Termine" icon={Music} linkTo={meineSpartenGruppen.length === 1 ? `/sparte/${meineSpartenGruppen[0].id}` : '/sparten'}>
           <div className="space-y-2">
             {spartenTermine.map(t => {
               const gruppe = meineSpartenGruppen.find(g => g.id === t.haesgruppe_id);
@@ -394,7 +394,7 @@ export default function MitgliedDashboard() {
 
       {/* Schnellzugriff */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-        <Link to="/umzuege" className="flex flex-col items-center gap-2 bg-card border border-border rounded-xl p-4 hover:border-primary/50 transition-colors">
+        <Link to="/kalender" className="flex flex-col items-center gap-2 bg-card border border-border rounded-xl p-4 hover:border-primary/50 transition-colors">
           <Calendar size={22} className="text-primary" />
           <span className="text-xs font-semibold text-foreground">Termine</span>
         </Link>

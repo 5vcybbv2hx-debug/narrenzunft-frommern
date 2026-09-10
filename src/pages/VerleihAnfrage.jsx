@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { CheckCircle2, Loader2, AlertCircle, Phone, Mail, Snowflake, Truck, Tent, Plug, Package, Wine, CalendarDays, Euro, ArrowLeft } from 'lucide-react';
 import DateSelect from '../components/ui/DateSelect';
@@ -105,6 +105,12 @@ export default function VerleihAnfrage() {
         <div className="max-w-md w-full bg-red-900/20 border border-red-700/30 rounded-xl p-5 text-center">
           <AlertCircle size={28} className="text-red-400 mx-auto mb-2" />
           <p className="text-sm text-red-400">{fehler}</p>
+          <Link
+            to="/verleih"
+            className="inline-flex items-center justify-center mt-4 px-5 py-3 min-h-[44px] rounded-xl bg-[#EA2525] text-white font-semibold text-sm hover:bg-red-700 transition-colors"
+          >
+            Alle verfügbaren Leihgegenstände ansehen →
+          </Link>
         </div>
       )}
 

@@ -761,40 +761,6 @@ export default function VeranstaltungDetail() {
         </div>
       )}
 
-      {activeTab === 'organisation' && !isNew && (
-        <div>
-          <div className="flex gap-1.5 overflow-x-auto pb-1 mb-4 scrollbar-hide">
-            {[
-              { id: 'arbeitsdienste', label: 'Dienste' },
-              { id: 'dokumente', label: 'Dokumente' },
-              { id: 'planung', label: 'Planung' },
-              { id: 'nachbereitung', label: 'Nachbereitung' },
-            ].map(t => (
-              <button
-                key={t.id}
-                onClick={() => setOrgTab(t.id)}
-                className={`flex-shrink-0 px-4 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-all ${
-                  orgTab === t.id
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80'
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-          {orgTab === 'arbeitsdienste' && <ArbeitsdienstTab veranstaltung={veranstaltung} isAdmin={isAdmin} />}
-          {orgTab === 'dokumente' && <DokumenteTab veranstaltung={veranstaltung} isAdmin={isAdmin} veranstaltungsName={veranstaltung.titel} />}
-          {orgTab === 'planung' && <PlanungTab veranstaltung={veranstaltung} isAdmin={isAdmin} />}
-          {orgTab === 'nachbereitung' && (
-            <NachbereitungTab
-              veranstaltung={veranstaltung}
-              isAdmin={isAdmin}
-              onVeranstaltungChange={(patch) => setVeranstaltung(prev => ({ ...prev, ...patch }))}
-            />
-          )}
-        </div>
-      )}
 
       {/* Check-In Tab */}
       {activeTab === 'check-in' && !isNew && (
