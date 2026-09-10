@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay, isSameMonth } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, X } from 'lucide-react';
+
+const MAX_SICHTBAR = 2;
 
 export default function ArbeitsdienstKalender({ dienste, zuweisungen, onDienstClick }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState(null);
 
   const start = startOfMonth(currentMonth);
   const end = endOfMonth(currentMonth);
@@ -77,7 +80,7 @@ export default function ArbeitsdienstKalender({ dienste, zuweisungen, onDienstCl
                 {format(day, 'd')}
               </div>
               <div className="space-y-0.5">
-                {dayDienste.map(d => {
+                {dayDienste.slice(0, MAX_SICHTBAR).map(d => {
                   const count = getZuweisungCount(d.id);
                   const needed = d.benoetigte_personen;
                   const unterbesetzt = needed && count < needed;
@@ -96,11 +99,53 @@ export default function ArbeitsdienstKalender({ dienste, zuweisungen, onDienstCl
                     </button>
                   );
                 })}
+                {dayDienste.length > MAX_SICHTBAR && (
+                  <button
+                    onClick={() => setSelectedDay(day)}
+                    className="w-full text-left text-[9px] leading-tight px-1 py-0.5 rounded font-semibold text-muted-foreground hover:text-primary bg-secondary/60 transition-colors"
+                  >
+                    +{dayDienste.length - MAX_SICHTBAR} weitere
+                  </button>
+                )}
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* Tages-Detail: statt endlos stapelnder Zellen öffnet '+N weitere' diese Liste */}
+      {selectedDay && (() => {
+        const tagesDienste = getDiensteForDay(selectedDay);
+        return (
+          <div className="border-t border-border p-3 space-y-1.5">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-sm font-semibold text-foreground">
+                {format(selectedDay, 'EEEE, d. MMMM', { locale: de })} · {tagesDienste.length} Dienste
+              </p>
+              <button onClick={() => setSelectedDay(null)} className="p-1.5 rounded text-muted-foreground hover:text-foreground">
+                <X size={14} />
+              </button>
+            </div>
+            {tagesDienste.map(d => {
+              const count = getZuweisungCount(d.id);
+              const needed = d.benoetigte_personen;
+              const unterbesetzt = needed && count < needed;
+              return (
+                <button
+                  key={d.id}
+                  onClick={() => onDienstClick && onDienstClick(d)}
+                  className="w-full flex items-center justify-between gap-2 text-left px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary/60 hover:bg-secondary transition-colors"
+                >
+                  <span className="text-sm text-foreground truncate">{d.titel}{d.uhrzeit ? ` · ${d.uhrzeit}` : ''}</span>
+                  <span className={`text-xs font-medium shrink-0 px-2 py-0.5 rounded-full ${unterbesetzt ? 'bg-primary/30 text-primary' : 'bg-primary/20 text-primary'}`}>
+                    <Users size={10} className="inline mr-1 -mt-0.5" />{count}{needed ? `/${needed}` : ''}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {/* Legend */}
       <div className="flex items-center gap-4 px-4 py-2 border-t border-border text-[10px] text-muted-foreground">
