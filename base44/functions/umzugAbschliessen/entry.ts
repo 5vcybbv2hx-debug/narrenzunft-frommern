@@ -190,7 +190,8 @@ Deno.serve(async (req) => {
     }
 
     // 9. Ziel auf abgeschlossen setzen
-    const heute = new Date().toISOString().split('T')[0];
+    // Lokales Datum (Europe/Berlin) statt UTC für den Abschluss-Zeitstempel.
+    const heute = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date());
     if (veranstaltung) {
       await base44.asServiceRole.entities.Veranstaltung.update(veranstaltung.id, {
         status: 'Abgeschlossen',

@@ -51,7 +51,10 @@ Deno.serve(async (req) => {
 
     // Zeitfenster: Check-in nur am Tag der Ausfahrt.
     // Vorher: gar nicht. Nachher (Korrektur): nur Vorstand/Stellv./Spartenleiter/Admin.
-    const heute = new Date().toISOString().split('T')[0];
+    // Wichtig: Lokales Datum in der Vereins-Zeitzone (Europe/Berlin) verwenden, NICHT UTC —
+    // sonst denkt der Server z.B. um 01:35 Uhr Sommerzeit (=23:35 UTC Vortag), es sei noch
+    // der Vortag, und blockt den Check-in fälschlich am eigentlichen Ausfahrtstag.
+    const heute = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date());
     if (ausfahrt.datum && heute < ausfahrt.datum) {
       return Response.json({
         erfolg: false,

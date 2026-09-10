@@ -46,7 +46,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    const heute = new Date().toISOString().split('T')[0];
+    // Lokales Datum in der Vereins-Zeitzone (Europe/Berlin), NICHT UTC — sonst würden
+    // 'kommende Termine' in den frühen Morgenstunden am falschen Tag gefiltert.
+    const heute = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date());
 
     // Eigene Termine laden
     const alleAnmeldungen = await base44.asServiceRole.entities.KalenderAnmeldung.filter({
