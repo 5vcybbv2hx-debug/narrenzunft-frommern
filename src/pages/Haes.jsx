@@ -9,6 +9,7 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 import { isAdmin } from '@/lib/roles';
 import { toast } from 'sonner';
+import MobileSelect from '@/components/MobileSelect';
 
 const STATUS_COLORS = {
   'Aktiv': 'bg-green-500/20 text-green-400',
@@ -344,21 +345,17 @@ export default function Haes() {
                 onChange={e => setNewHaes(p => ({ ...p, bezeichnung: e.target.value }))}
                 className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
               />
-              <select
+              <MobileSelect
                 value={newHaes.haesgruppe_id}
-                onChange={e => setNewHaes(p => ({ ...p, haesgruppe_id: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
-              >
-                <option value="">Keine Gruppe</option>
-                {gruppen.filter(g => g.typ !== 'Tanzgruppe').map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-              </select>
-              <select
+                onChange={v => setNewHaes(p => ({ ...p, haesgruppe_id: v }))}
+                placeholder="Keine Gruppe"
+                options={[{ label: 'Keine Gruppe', value: '' }, ...gruppen.filter(g => g.typ !== 'Tanzgruppe').map(g => ({ label: g.name, value: g.id }))]}
+              />
+              <MobileSelect
                 value={newHaes.status}
-                onChange={e => setNewHaes(p => ({ ...p, status: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
-              >
-                {['Aktiv', 'Verliehen', 'Passiv', 'Stillgelegt'].map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
+                onChange={v => setNewHaes(p => ({ ...p, status: v }))}
+                options={['Aktiv', 'Verliehen', 'Passiv', 'Stillgelegt']}
+              />
             </div>
             <div className="flex gap-2 mt-4">
               <button onClick={() => setShowNewHaes(false)} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium">Abbrechen</button>

@@ -87,16 +87,16 @@ export default function VerleihAnfrage() {
       <div className="w-full max-w-md px-4 py-8">
       {/* Kopf */}
       <div className="text-center mb-6">
-        <div className="w-14 h-14 mx-auto rounded-xl bg-[#EA2525] flex items-center justify-center shadow-xl shadow-red-900/30">
+        <div className="w-14 h-14 mx-auto rounded-xl bg-primary flex items-center justify-center shadow-xl shadow-red-900/30">
           <span className="text-2xl">🎭</span>
         </div>
         <p className="font-oswald font-semibold text-white text-lg uppercase tracking-widest mt-2">Narrenzunft</p>
-        <p className="text-[#EA2525] text-[10px] font-semibold uppercase tracking-[0.3em]">Frommern</p>
+        <p className="text-primary text-[10px] font-semibold uppercase tracking-[0.3em]">Frommern</p>
       </div>
 
       {loading && (
         <div className="flex flex-col items-center gap-3 py-16">
-          <Loader2 size={28} className="animate-spin text-[#EA2525]" />
+          <Loader2 size={28} className="animate-spin text-primary" />
           <p className="text-sm text-muted-foreground">Wird geladen…</p>
         </div>
       )}
@@ -107,7 +107,7 @@ export default function VerleihAnfrage() {
           <p className="text-sm text-red-400">{fehler}</p>
           <Link
             to="/verleih"
-            className="inline-flex items-center justify-center mt-4 px-5 py-3 min-h-[44px] rounded-xl bg-[#EA2525] text-white font-semibold text-sm hover:bg-red-700 transition-colors"
+            className="inline-flex items-center justify-center mt-4 px-5 py-3 min-h-[44px] rounded-xl bg-primary text-white font-semibold text-sm hover:bg-red-700 transition-colors"
           >
             Alle verfügbaren Leihgegenstände ansehen →
           </Link>
@@ -129,7 +129,7 @@ export default function VerleihAnfrage() {
             <p><span className="text-muted-foreground">Zeitraum:</span> {form.von_datum} → {form.bis_datum}</p>
             {item?.preis > 0 && <p><span className="text-muted-foreground">Miete (ca.):</span> {tage()} Tag(e) × {euro(item.preis)} = {euro(tage() * item.preis)}</p>}
             {item?.mitglied_preis != null && item?.preis > 0 && item.mitglied_preis < item.preis && (
-              <p><span className="text-muted-foreground">Mitglieder:</span> <span className="text-[#EA2525] font-semibold">{euro(item.mitglied_preis)} / Tag</span> — Buchung einfach über die App.</p>
+              <p><span className="text-muted-foreground">Mitglieder:</span> <span className="text-primary font-semibold">{euro(item.mitglied_preis)} / Tag</span> — Buchung einfach über die App.</p>
             )}
             {item?.kaution > 0 && <p><span className="text-muted-foreground">Kaution:</span> {euro(item.kaution)}</p>}
           </div>
@@ -148,7 +148,7 @@ export default function VerleihAnfrage() {
               <div className="flex items-center gap-2.5">
                 {!item.bild_url && (
                   <div className="w-10 h-10 rounded-xl bg-black/40 flex items-center justify-center">
-                    <IconComponent size={20} className="text-[#EA2525]" />
+                    <IconComponent size={20} className="text-primary" />
                   </div>
                 )}
                 <div>
@@ -174,7 +174,7 @@ export default function VerleihAnfrage() {
               </div>
 
               {item.notiz && (
-                <div className="mt-3 px-3 py-2.5 rounded-xl bg-[#EA2525]/10 border border-[#EA2525]/25">
+                <div className="mt-3 px-3 py-2.5 rounded-xl bg-primary/10 border border-primary/25">
                   <p className="text-xs text-muted-foreground whitespace-pre-line">{item.notiz}</p>
                 </div>
               )}
@@ -184,27 +184,27 @@ export default function VerleihAnfrage() {
           {/* Anfrage-Formular */}
           <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
             <h2 className="font-oswald uppercase text-base text-white flex items-center gap-2">
-              <CalendarDays size={16} className="text-[#EA2525]" /> Ausleihanfrage stellen
+              <CalendarDays size={16} className="text-primary" /> Ausleihanfrage stellen
             </h2>
 
             <div>
               <label className="text-xs text-muted-foreground font-medium block mb-1">Name *</label>
               <input value={form.name} onChange={(e) => set('name', e.target.value)}
                 placeholder="Vor- und Nachname / Organisation"
-                className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-border text-sm text-white focus:outline-none focus:border-[#EA2525]" />
+                className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-border text-sm text-white focus:outline-none focus:border-primary" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-muted-foreground font-medium block mb-1 flex items-center gap-1"><Phone size={11} /> Telefon *</label>
                 <input value={form.telefon} onChange={(e) => set('telefon', e.target.value)}
                   placeholder="Für Rückfragen"
-                  className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-border text-sm text-white focus:outline-none focus:border-[#EA2525]" />
+                  className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-border text-sm text-white focus:outline-none focus:border-primary" />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground font-medium block mb-1 flex items-center gap-1"><Mail size={11} /> E-Mail (optional)</label>
                 <input value={form.email} onChange={(e) => set('email', e.target.value)}
                   placeholder="name@beispiel.de"
-                  className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-border text-sm text-white focus:outline-none focus:border-[#EA2525]" />
+                  className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-border text-sm text-white focus:outline-none focus:border-primary" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -225,7 +225,7 @@ export default function VerleihAnfrage() {
               <label className="text-xs text-muted-foreground font-medium block mb-1">Wofür? (optional)</label>
               <textarea value={form.zweck} onChange={(e) => set('zweck', e.target.value)} rows={2}
                 placeholder="z.B. Geburtstagsfeier, Vereinsfest…"
-                className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-border text-sm text-white focus:outline-none focus:border-[#EA2525] resize-none" />
+                className="w-full px-3 py-2.5 rounded-lg bg-black/40 border border-border text-sm text-white focus:outline-none focus:border-primary resize-none" />
             </div>
 
             {/* Spamschutz: unsichtbares Feld */}
@@ -240,7 +240,7 @@ export default function VerleihAnfrage() {
             )}
 
             <button onClick={submit} disabled={submitting || !form.name || !form.telefon || !form.von_datum || !form.bis_datum}
-              className="w-full py-3 min-h-[48px] rounded-xl bg-[#EA2525] text-white text-sm font-semibold uppercase tracking-wide hover:bg-red-700 transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
+              className="w-full py-3 min-h-[48px] rounded-xl bg-primary text-white text-sm font-semibold uppercase tracking-wide hover:bg-red-700 transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
               {submitting ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
               {submitting ? 'Wird gesendet…' : 'Anfrage abschicken'}
             </button>

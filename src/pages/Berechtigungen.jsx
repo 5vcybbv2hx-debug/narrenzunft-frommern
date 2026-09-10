@@ -309,7 +309,7 @@ function MitgliedBerechtigung({ mitglied, linkedUser, aktuelleRolle, zusatz, isS
                       checked={aktiv}
                       onChange={e => onZusatzChange(z.value, e.target.checked)}
                       disabled={isSaving}
-                      className="rounded accent-[#EA2525]"
+                      className="rounded accent-primary"
                     />
                     <Icon size={16} className="text-primary shrink-0" />
                     <div>

@@ -11,6 +11,7 @@ import InterneBestellModal from './InterneBestellModal';
 import InternerArtikelModal from './InternerArtikelModal';
 import BestellrundeModal from './BestellrundeModal';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
+import MobileSelect from '@/components/MobileSelect';
 
 const heuteISO = () => new Date().toISOString().split('T')[0];
 const formatDE = (iso) => iso ? new Date(iso + (iso.length === 10 ? 'T00:00:00' : '')).toLocaleDateString('de-DE') : '';
@@ -296,12 +297,8 @@ export default function InternerBedarf() {
                 ) : (
                   <>
                     <div className="flex flex-wrap items-center gap-2">
-                      <select value={uebersichtRunde?.id || ''} onChange={(e) => setUebersichtRundeId(e.target.value)}
-                        className="px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary">
-                        {runden.map((r) => (
-                          <option key={r.id} value={r.id}>{r.titel} ({formatDE(r.frist_datum)}){r.status !== 'Offen' ? ` – ${r.status}` : ''}</option>
-                        ))}
-                      </select>
+                      <MobileSelect value={uebersichtRunde?.id || ''} onChange={setUebersichtRundeId}
+                        options={runden.map((r) => ({ label: `${r.titel} (${formatDE(r.frist_datum)})${r.status !== 'Offen' ? ` – ${r.status}` : ''}`, value: r.id }))} />
                       <button onClick={exportCSV}
                         className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors ml-auto">
                         <Download size={14} /> Bestellliste (CSV)

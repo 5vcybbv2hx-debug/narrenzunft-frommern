@@ -47,11 +47,11 @@ export default function VerleihUebersicht() {
       <div className="w-full max-w-md px-4 py-8">
       {/* Kopf */}
       <div className="text-center mb-6">
-        <div className="w-14 h-14 mx-auto rounded-xl bg-[#EA2525] flex items-center justify-center shadow-xl shadow-red-900/30">
+        <div className="w-14 h-14 mx-auto rounded-xl bg-primary flex items-center justify-center shadow-xl shadow-red-900/30">
           <span className="text-2xl">🎭</span>
         </div>
         <p className="font-oswald font-semibold text-white text-lg uppercase tracking-widest mt-2">Narrenzunft</p>
-        <p className="text-[#EA2525] text-[10px] font-semibold uppercase tracking-[0.3em]">Frommern</p>
+        <p className="text-primary text-[10px] font-semibold uppercase tracking-[0.3em]">Frommern</p>
       </div>
 
       <div className="w-full max-w-md">
@@ -62,7 +62,7 @@ export default function VerleihUebersicht() {
 
         {loading && (
           <div className="flex flex-col items-center gap-3 py-16">
-            <Loader2 size={28} className="animate-spin text-[#EA2525]" />
+            <Loader2 size={28} className="animate-spin text-primary" />
             <p className="text-sm text-muted-foreground">Wird geladen…</p>
           </div>
         )}
@@ -89,14 +89,14 @@ export default function VerleihUebersicht() {
                 <button
                   key={item.id}
                   onClick={() => navigate(`/verleih/${item.id}`)}
-                  className="w-full bg-card border border-border rounded-2xl overflow-hidden hover:border-[#EA2525]/50 transition-colors text-left group"
+                  className="w-full bg-card border border-border rounded-2xl overflow-hidden hover:border-primary/50 transition-colors text-left group"
                 >
                   <div className="flex items-stretch">
                     {item.bild_url ? (
                       <img src={item.bild_url} alt={item.name} className="w-24 h-24 object-cover shrink-0" />
                     ) : (
                       <div className="w-24 h-24 shrink-0 bg-black/40 flex items-center justify-center">
-                        <Icon size={28} className="text-[#EA2525]" />
+                        <Icon size={28} className="text-primary" />
                       </div>
                     )}
                     <div className="flex-1 p-4 min-w-0">
@@ -105,7 +105,7 @@ export default function VerleihUebersicht() {
                           <h2 className="font-oswald uppercase text-base text-white leading-tight truncate">{item.name}</h2>
                           <p className="text-xs text-muted-foreground">{item.kategorie}</p>
                         </div>
-                        <ChevronRight size={16} className="text-muted-foreground group-hover:text-[#EA2525] shrink-0 mt-0.5 transition-colors" />
+                        <ChevronRight size={16} className="text-muted-foreground group-hover:text-primary shrink-0 mt-0.5 transition-colors" />
                       </div>
                       {item.beschreibung && (
                         <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{item.beschreibung}</p>

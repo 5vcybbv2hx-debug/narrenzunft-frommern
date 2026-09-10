@@ -167,7 +167,7 @@ export default function AusfahrtEditModal({ ausfahrt, sparten, onSave, onClose }
               <h3 className="text-sm font-oswald font-semibold text-foreground">Zeiten & Logistik</h3>
               <label className="flex items-center gap-2.5 cursor-pointer">
                 <input type="checkbox" name="bus_benoetigt" checked={formData.bus_benoetigt} onChange={handleChange}
-                  className="w-4 h-4 rounded accent-[#EA2525]" />
+                  className="w-4 h-4 rounded accent-primary" />
                 <span className="text-sm font-medium text-foreground">Bus benötigt</span>
               </label>
             </div>
@@ -214,7 +214,7 @@ export default function AusfahrtEditModal({ ausfahrt, sparten, onSave, onClose }
             </div>
             <div className="p-3 bg-secondary/30 border border-border rounded-lg">
               <label className="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" name="sparte_auftritt" checked={formData.sparte_auftritt} onChange={handleChange} className="w-4 h-4 rounded accent-[#EA2525]" />
+                <input type="checkbox" name="sparte_auftritt" checked={formData.sparte_auftritt} onChange={handleChange} className="w-4 h-4 rounded accent-primary" />
                 <span className="text-sm font-medium text-foreground">Sparte hat einen Auftritt</span>
               </label>
               {formData.sparte_auftritt && (

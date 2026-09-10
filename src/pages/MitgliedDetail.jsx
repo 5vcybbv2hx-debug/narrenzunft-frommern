@@ -21,6 +21,8 @@ import FamilieTab from '@/components/mitglied/FamilieTab';
 import AntragTab from '@/components/mitglied/AntragTab';
 import NeuEinladenModal from '@/components/mitglied/NeuEinladenModal';
 import { toast } from 'sonner';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
+import MobileSelect from '@/components/MobileSelect';
 
 const ALLE_STATUS = ['Aktiv', 'Passiv', 'Passiv mit Häs', 'Leihäs', 'Jugendliche 11-14', 'Jungaktive 15-17', 'Kinder 4-10', 'Kleinkind 0-3', 'Ehrenmitglied'];
 
@@ -75,13 +77,11 @@ function Field({ label, value, field, type = 'text', options, editing, mitglied,
       <label className="text-xs text-muted-foreground font-medium block mb-1">{label}</label>
       {editing ? (
         options ? (
-          <select
+          <MobileSelect
             value={rawVal || ''}
-            onChange={e => onChange(field, e.target.value)}
-            className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors"
-          >
-            {options.map(o => <option key={o} value={o}>{o}</option>)}
-          </select>
+            onChange={v => onChange(field, v)}
+            options={options}
+          />
         ) : (
           <input
             type={type}
@@ -238,6 +238,54 @@ export default function MitgliedDetail() {
   };
 
   const handleAppRolleChange = async (newRole) => {
+    const aktuelleRolle = mitglied.app_rolle || 'mitglied';
+    if (newRole === aktuelleRolle) return;
+
+    // Aktive Spartenleiter-Zuordnungen ermitteln (Array + Legacy-Single-Feld)
+    const spartenGruppenIds = mitglied.spartenleiter_haesgruppen_ids?.length
+      ? mitglied.spartenleiter_haesgruppen_ids
+      : (mitglied.spartenleiter_haesgruppe_id ? [mitglied.spartenleiter_haesgruppe_id] : []);
+
+    // Konsistenz-Schutz: Spartenleiter-Rolle entziehen, während Gruppen-Zuordnung aktiv ist
+    if (newRole !== 'spartenleiter' && spartenGruppenIds.length > 0) {
+      const gruppenNamen = spartenGruppenIds
+        .map(gid => haesgruppen.find(g => g.id === gid)?.name)
+        .filter(Boolean);
+      const ok = await confirmDialog(
+        `${mitglied.vorname} ${mitglied.nachname} ist noch als Spartenleiter für ${gruppenNamen.join(', ') || 'mind. eine Gruppe'} eingetragen. Mit der Rollen-Änderung werden alle Spartenleiter-Zuständigkeiten automatisch entfernt. Fortfahren?`
+      );
+      if (!ok) return;
+      let syncFehler = false;
+      for (const gid of spartenGruppenIds) {
+        const g = haesgruppen.find(x => x.id === gid);
+        const alteIds = g?.verantwortliche_ids?.length ? g.verantwortliche_ids : (g?.verantwortlicher_id ? [g.verantwortlicher_id] : []);
+        if (!alteIds.includes(mitglied.id)) continue;
+        try {
+          // Zentraler Sync: entfernt aus gruppe.verantwortliche_ids und
+          // aktualisiert app_rolle + Login-Rolle (falls letzte Gruppe)
+          await syncVerantwortliche({
+            gruppeId: gid,
+            alteIds,
+            neueIds: alteIds.filter(id => id !== mitglied.id),
+            mitglieder: [mitglied],
+          });
+        } catch (e) {
+          console.error('Spartenleiter-Gruppe entfernen:', e);
+          syncFehler = true;
+        }
+      }
+      if (syncFehler) toast.error('Mindestens eine Gruppe konnte nicht aktualisiert werden — bitte auf der Sparten-Seite prüfen.');
+      setMitglied(p => ({ ...p, spartenleiter_haesgruppen_ids: [], spartenleiter_haesgruppe_id: null }));
+    }
+
+    // Konsistenz-Hinweis: Spartenleiter-Rolle direkt ohne Gruppe
+    if (newRole === 'spartenleiter' && spartenGruppenIds.length === 0) {
+      const ok = await confirmDialog(
+        'Spartenleiter-Zuständigkeiten werden üblicherweise über die Gruppe zugewiesen (Sparten → Gruppe bearbeiten) — dann werden Rechte und Login-Rolle automatisch synchronisiert. Die Rolle trotzdem direkt ohne Gruppe setzen?'
+      );
+      if (!ok) return;
+    }
+
     setMitglied(p => ({ ...p, app_rolle: newRole }));
     try {
       await base44.entities.Mitglied.update(mitglied.id, { app_rolle: newRole });
@@ -614,15 +662,16 @@ export default function MitgliedDetail() {
                     ) : null;
                   })}
                 </div>
-                <select value="" onChange={e => {
-                  if (!e.target.value) return;
-                  const aktuell = mitglied.haesgruppen_ids || (mitglied.haesgruppe_id ? [mitglied.haesgruppe_id] : []);
-                  if (!aktuell.includes(e.target.value)) handleFieldChange('haesgruppen_ids', [...aktuell, e.target.value]);
-                }} className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors">
-                  <option value="">+ Gruppe hinzufügen…</option>
-                  {haesgruppen.filter(g => !(mitglied.haesgruppen_ids || [mitglied.haesgruppe_id]).includes(g.id))
-                    .map(g => <option key={g.id} value={g.id}>{g.name} {g.typ && g.typ !== 'Häsgruppe' ? `(${g.typ})` : ''}</option>)}
-                </select>
+                <MobileSelect value="" placeholder="+ Gruppe hinzufügen…"
+                  onChange={v => {
+                    if (!v) return;
+                    const aktuell = mitglied.haesgruppen_ids || (mitglied.haesgruppe_id ? [mitglied.haesgruppe_id] : []);
+                    if (!aktuell.includes(v)) handleFieldChange('haesgruppen_ids', [...aktuell, v]);
+                  }}
+                  options={haesgruppen
+                    .filter(g => !(mitglied.haesgruppen_ids || [mitglied.haesgruppe_id]).includes(g.id))
+                    .map(g => ({ label: `${g.name} ${g.typ && g.typ !== 'Häsgruppe' ? `(${g.typ})` : ''}`, value: g.id }))}
+                />
               </div>
             ) : (
               <p className="text-sm text-white py-1">
@@ -882,8 +931,8 @@ export default function MitgliedDetail() {
                     ) : null;
                   })}
                 </div>
-                <select value="" onChange={async (e) => {
-                  const gruppeId = e.target.value;
+                <MobileSelect value="" placeholder="+ Gruppe hinzufügen…"
+                  onChange={async (gruppeId) => {
                   if (!gruppeId) return;
                   const aktuell = mitglied.spartenleiter_haesgruppen_ids || (mitglied.spartenleiter_haesgruppe_id ? [mitglied.spartenleiter_haesgruppe_id] : []);
                   if (aktuell.includes(gruppeId)) return;
@@ -903,11 +952,11 @@ export default function MitgliedDetail() {
                     console.error('Spartenleiter-Gruppe aktualisieren:', e);
                     setError('Gruppe konnte nicht zugewiesen werden.');
                   }
-                }} className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors">
-                  <option value="">+ Gruppe hinzufügen…</option>
-                  {haesgruppen.filter(g => !(mitglied.spartenleiter_haesgruppen_ids || (mitglied.spartenleiter_haesgruppe_id ? [mitglied.spartenleiter_haesgruppe_id] : [])).includes(g.id))
-                    .map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-                </select>
+                }}
+                  options={haesgruppen
+                    .filter(g => !(mitglied.spartenleiter_haesgruppen_ids || (mitglied.spartenleiter_haesgruppe_id ? [mitglied.spartenleiter_haesgruppe_id] : [])).includes(g.id))
+                    .map(g => ({ label: g.name, value: g.id }))}
+                />
               </div>
 
               {/* Spartenleiter-Historie (Amtszeiten) */}

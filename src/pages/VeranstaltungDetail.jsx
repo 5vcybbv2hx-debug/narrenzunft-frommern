@@ -19,6 +19,7 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
+import MobileSelect from '@/components/MobileSelect';
 
 const TYPEN = ['Umzug', 'Abendveranstaltung', 'Intern', 'Arbeitsdienst', 'Fest'];
 const STATUS_LIST = ['Geplant', 'Aktiv', 'Abgeschlossen', 'Abgesagt'];
@@ -202,13 +203,11 @@ export default function VeranstaltungDetail() {
       <label className="text-xs text-muted-foreground font-medium block mb-1">{label}</label>
       {editing ? (
         options ? (
-          <select
+          <MobileSelect
             value={veranstaltung[field] || ''}
-            onChange={e => setVeranstaltung(p => ({ ...p, [field]: e.target.value }))}
-            className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
-          >
-            {options.map(o => <option key={o} value={o}>{o}</option>)}
-          </select>
+            onChange={v => setVeranstaltung(p => ({ ...p, [field]: v }))}
+            options={options}
+          />
         ) : type === 'checkbox' ? (
           <label className="flex items-center gap-2 cursor-pointer">
             <input

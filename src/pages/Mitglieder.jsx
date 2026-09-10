@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import MobileSelect from '@/components/MobileSelect';
 import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 import { Link, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
@@ -319,16 +320,7 @@ export default function Mitglieder() {
             className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-colors"
           />
         </div>
-        <div className="relative">
-          <select
-            value={sortBy}
-            onChange={e => setSortBy(e.target.value)}
-            className="appearance-none pl-3 pr-9 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground focus:outline-none focus:border-primary/60 transition-colors cursor-pointer"
-          >
-            {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
-          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-        </div>
+        <MobileSelect value={sortBy} onChange={setSortBy} options={SORT_OPTIONS} className="!py-2.5" />
       </div>
 
       {/* Status-Filter mit Zählern */}

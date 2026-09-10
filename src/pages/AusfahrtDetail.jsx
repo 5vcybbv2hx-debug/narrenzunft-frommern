@@ -844,7 +844,7 @@ export default function AusfahrtDetail() {
                                     type="checkbox"
                                     checked={ausgewaehlteFamilienmitglieder.includes(fm.id)}
                                     onChange={() => toggleFamilienmitglied(fm.id)}
-                                    className="w-4 h-4 rounded accent-[#EA2525]"
+                                    className="w-4 h-4 rounded accent-primary"
                                   />
                                   <div className="flex-1">
                                     <p className="text-sm text-white font-medium">{fm.name}</p>
@@ -1296,7 +1296,7 @@ export default function AusfahrtDetail() {
                       onChange={() => setSelectedBusVw(prev =>
                         prev.includes(m.id) ? prev.filter(x => x !== m.id) : [...prev, m.id]
                       )}
-                      className="w-4 h-4 accent-[#EA2525] shrink-0"
+                      className="w-4 h-4 accent-primary shrink-0"
                     />
                     <div className="flex-1 min-w-0">
                       <span className="text-sm text-white">{m.vorname || ''} {m.nachname || ''}</span>

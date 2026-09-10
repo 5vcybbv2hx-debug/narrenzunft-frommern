@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
+import MobileSelect from '@/components/MobileSelect';
 
 function formatPhoneForTel(phone) {
   if (!phone) return null;
@@ -1325,17 +1326,11 @@ export default function SpartenDashboard() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Typ</label>
-                  <select
+                  <MobileSelect
                     value={terminForm.typ}
-                    onChange={(e) => setTerminForm({ ...terminForm, typ: e.target.value })}
-                    className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
-                  >
-                    <option value="Probe">Probe</option>
-                    <option value="Auftritt">Auftritt</option>
-                    <option value="Besprechung">Besprechung</option>
-                    <option value="Ausflug">Ausflug</option>
-                    <option value="Sonstiges">Sonstiges</option>
-                  </select>
+                    onChange={(v) => setTerminForm({ ...terminForm, typ: v })}
+                    options={['Probe', 'Auftritt', 'Besprechung', 'Ausflug', 'Sonstiges']}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Datum *</label>
@@ -1408,15 +1403,15 @@ export default function SpartenDashboard() {
                   <div className="grid grid-cols-2 gap-4 bg-secondary/40 p-3 rounded-lg border border-border/80">
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Intervall</label>
-                      <select
+                      <MobileSelect
                         value={terminForm.intervall_typ}
-                        onChange={(e) => setTerminForm({ ...terminForm, intervall_typ: e.target.value })}
-                        className="w-full bg-background border border-border text-white text-xs rounded-lg px-2 py-1.5"
-                      >
-                        <option value="woechentlich">Wöchentlich</option>
-                        <option value="14taegig">14-tägig</option>
-                        <option value="monatlich">Monatlich</option>
-                      </select>
+                        onChange={(v) => setTerminForm({ ...terminForm, intervall_typ: v })}
+                        options={[
+                          { label: 'Wöchentlich', value: 'woechentlich' },
+                          { label: '14-tägig', value: '14taegig' },
+                          { label: 'Monatlich', value: 'monatlich' },
+                        ]}
+                      />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Enddatum</label>
@@ -1467,19 +1462,12 @@ export default function SpartenDashboard() {
             <form onSubmit={handleSaveAuslage} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Verauslagt von (Mitglied) *</label>
-                <select
-                  required
+                <MobileSelect
                   value={auslageForm.mitglied_id}
-                  onChange={(e) => setAuslageForm({ ...auslageForm, mitglied_id: e.target.value })}
-                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
-                >
-                  <option value="" disabled>Mitglied auswählen...</option>
-                  {mitglieder.map(m => (
-                    <option key={m.id} value={m.id}>
-                      {m.vorname} {m.nachname}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => setAuslageForm({ ...auslageForm, mitglied_id: v })}
+                  placeholder="Mitglied auswählen..."
+                  options={mitglieder.map(m => ({ label: `${m.vorname} ${m.nachname}`, value: m.id }))}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -1520,14 +1508,14 @@ export default function SpartenDashboard() {
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Typ</label>
-                <select
+                <MobileSelect
                   value={auslageForm.typ}
-                  onChange={(e) => setAuslageForm({ ...auslageForm, typ: e.target.value })}
-                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
-                >
-                  <option value="Einzelerstattung">Einzelerstattung (Verein zahlt zurück)</option>
-                  <option value="Umlage">Umlage (Mitglieder teilen sich Kosten)</option>
-                </select>
+                  onChange={(v) => setAuslageForm({ ...auslageForm, typ: v })}
+                  options={[
+                    { label: 'Einzelerstattung (Verein zahlt zurück)', value: 'Einzelerstattung' },
+                    { label: 'Umlage (Mitglieder teilen sich Kosten)', value: 'Umlage' },
+                  ]}
+                />
               </div>
 
               {auslageForm.typ === 'Umlage' && (
