@@ -127,14 +127,20 @@ export default function MitgliedDashboard() {
         setMeineSpartenGruppen(gruppen.flat().filter(Boolean));
       }
 
-      // Familienübersicht: alle mit Kind-Verwandtschaft zeigen Kinder an
+      // Familienübersicht: alle Verwandten anzeigen (Kinder, Ehepartner/in, Geschwister, etc.)
       if (mitglied?.id) {
         try {
-          const verwandte = await base44.entities.Verwandtschaft.filter({ mitglied_id: mitglied.id });
-          const kinder = verwandte.filter(v => v.beziehung === 'Kind');
-          if (kinder.length > 0) {
-            const kinderMitglieder = await Promise.all(kinder.map(k => base44.entities.Mitglied.get(k.verwandter_id)));
-            setFamilienMitglieder(kinderMitglieder.filter(Boolean));
+          const [vDirect, vReverse] = await Promise.all([
+            base44.entities.Verwandtschaft.filter({ mitglied_id: mitglied.id }),
+            base44.entities.Verwandtschaft.filter({ verwandter_id: mitglied.id }),
+          ]);
+          const alleVerwandten = [...vDirect, ...vReverse];
+          if (alleVerwandten.length > 0) {
+            const verwandteIds = [...new Set(alleVerwandten.map(v =>
+              v.mitglied_id === mitglied.id ? v.verwandter_id : v.mitglied_id
+            ).filter(Boolean))];
+            const verwandteMitglieder = await Promise.all(verwandteIds.map(id => base44.entities.Mitglied.get(id)));
+            setFamilienMitglieder(verwandteMitglieder.filter(Boolean));
           }
         } catch (e) {
           console.error('Familienübersicht:', e);
