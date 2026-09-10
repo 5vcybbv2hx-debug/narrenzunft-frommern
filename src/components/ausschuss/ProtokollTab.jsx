@@ -156,9 +156,9 @@ export default function ProtokollTab({ termine, mitglieder }) {
   );
 }
 
-function ProtokollModal({ protokoll, termine, mitglieder, ausschussIds, onClose, onSaved }) {
+export function ProtokollModal({ protokoll, prefill = {}, termine, mitglieder, ausschussIds, onClose, onSaved }) {
   const isNew = !protokoll;
-  const [form, setForm] = useState({ ...EMPTY_FORM, ...protokoll });
+  const [form, setForm] = useState({ ...EMPTY_FORM, ...prefill, ...protokoll });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [modus, setModus] = useState(protokoll?.datei_url ? 'datei' : 'text');

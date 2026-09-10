@@ -58,6 +58,7 @@ export default function Ausschuss() {
   const [aufgaben, setAufgaben] = useState([]);
   const [beschluesse, setBeschluesse] = useState([]);
   const [abstimmungen, setAbstimmungen] = useState([]);
+  const [protokolle, setProtokolle] = useState([]);
   const [mitglieder, setMitglieder] = useState([]);
   const [ausschussMitglieder, setAusschussMitglieder] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -117,8 +118,12 @@ export default function Ausschuss() {
       setBeschluesse(data.beschluesse || []);
       setMitglieder(data.mitglieder || []);
       setAusschussMitglieder(data.ausschussMitglieder || []);
-      const abs = await base44.entities.Abstimmung.list('-created_date', 200);
+      const [abs, prot] = await Promise.all([
+        base44.entities.Abstimmung.list('-created_date', 200),
+        base44.entities.Protokoll.list('-datum', 200).catch(() => []),
+      ]);
       setAbstimmungen(abs || []);
+      setProtokolle(prot || []);
     } catch (e) {
       console.error('Ausschuss laden:', e);
       setError('Ausschussdaten konnten nicht geladen werden.');
@@ -227,7 +232,7 @@ export default function Ausschuss() {
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Vergangene Sitzungen</h3>
               <div className="space-y-2 opacity-70">
                 {vergangeneSitzungen.map(t => (
-                  <SitzungsKarte key={t.id} termin={t} aufgaben={aufgaben.filter(a => a.termin_id === t.id)} vergangen />
+                  <SitzungsKarte key={t.id} termin={t} aufgaben={aufgaben.filter(a => a.termin_id === t.id)} vergangen hatProtokoll={protokolle.some(pr => pr.termin_id === t.id)} />
                 ))}
               </div>
             </div>
@@ -447,7 +452,7 @@ export default function Ausschuss() {
   );
 }
 
-function SitzungsKarte({ termin, aufgaben, vergangen }) {
+function SitzungsKarte({ termin, aufgaben, vergangen, hatProtokoll }) {
   const navigate = useNavigate();
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary/40 transition-colors">
@@ -462,6 +467,12 @@ function SitzungsKarte({ termin, aufgaben, vergangen }) {
             {termin.startzeit && <span className="flex items-center gap-1"><Clock size={10} /> {termin.startzeit}{termin.endzeit ? `–${termin.endzeit}` : ''}</span>}
             {termin.ort && <span className="flex items-center gap-1"><MapPin size={10} /> {termin.ort}</span>}
             {aufgaben.length > 0 && <span className="text-primary flex items-center gap-1"><ClipboardList size={10} /> {aufgaben.length} Aufgaben</span>}
+            {vergangen && hatProtokoll === false && (
+              <span className="text-yellow-400 flex items-center gap-1 font-medium">📝 Protokoll fehlt</span>
+            )}
+            {vergangen && hatProtokoll === true && (
+              <span className="text-green-400 flex items-center gap-1">📝 Protokoll ✓</span>
+            )}
           </div>
         </div>
         <ChevronRight size={15} className="text-muted-foreground shrink-0" />

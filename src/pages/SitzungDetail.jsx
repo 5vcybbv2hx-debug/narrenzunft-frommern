@@ -4,12 +4,14 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import {
   ArrowLeft, Plus, X, Save, Trash2, ChevronUp, ChevronDown,
-  Users, ClipboardList, Vote, CheckCircle2, Circle, Clock, Lock
+  Users, ClipboardList, Vote, CheckCircle2, Circle, Clock, Lock,
+  FileText, Eye, EyeOff, Edit, Download
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import MobileSelect from '@/components/MobileSelect';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
+import { ProtokollModal } from '@/components/ausschuss/ProtokollTab';
 
 const ANWESENHEIT_FARBEN = {
   'Anwesend':      'bg-green-500/20 text-green-400',
@@ -44,6 +46,7 @@ export default function SitzungDetail() {
   const [tops, setTops] = useState([]);
   const [abstimmungen, setAbstimmungen] = useState([]);
   const [stimmen, setStimmen] = useState([]);
+  const [protokolle, setProtokolle] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('anwesenheit');
 
@@ -51,7 +54,7 @@ export default function SitzungDetail() {
 
   const loadData = async () => {
     setLoading(true);
-    const [t, am, m, anw, tp, abs, st] = await Promise.all([
+    const [t, am, m, anw, tp, abs, st, prot] = await Promise.all([
       base44.entities.KalenderTermin.filter({ id }),
       base44.entities.AusschussMitglied.filter({ aktiv: true }),
       base44.entities.Mitglied.list('nachname', 500),
@@ -59,8 +62,10 @@ export default function SitzungDetail() {
       base44.entities.Tagesordnungspunkt.filter({ termin_id: id }),
       base44.entities.Abstimmung.filter({ termin_id: id }),
       base44.entities.AbstimmungsStimme.list('-created_date', 500),
+      base44.entities.Protokoll.filter({ termin_id: id }).catch(() => []),
     ]);
     setTermin(t[0] || null);
+    setProtokolle(prot || []);
     setAusschussMitglieder(am);
     setMitglieder(m);
     setAnwesenheiten(anw);
@@ -153,6 +158,7 @@ export default function SitzungDetail() {
           { id: 'anwesenheit', label: `👥 Anwesenheit` },
           { id: 'tops', label: `📋 TOP (${tops.length})` },
           { id: 'abstimmungen', label: `🗳️ Abstimmungen (${abstimmungen.length})` },
+          { id: 'protokoll', label: protokolle.length > 0 ? `📝 Protokoll ✓` : `📝 Protokoll` },
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}>
@@ -194,6 +200,116 @@ export default function SitzungDetail() {
           stimmen={stimmen}
           setStimmen={setStimmen}
           isAdmin={isAdmin}
+        />
+      )}
+
+      {/* PROTOKOLL */}
+      {activeTab === 'protokoll' && (
+        <SitzungsProtokollTab
+          termin={termin}
+          protokolle={protokolle}
+          mitglieder={mitglieder}
+          ausschussIds={ausschussMitglieder.map(a => a.mitglied_id)}
+          onSaved={loadData}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Protokoll Tab (direkt in der Sitzung) ─────────────────────────
+function SitzungsProtokollTab({ termin, protokolle, mitglieder, ausschussIds, onSaved }) {
+  const [showModal, setShowModal] = useState(false);
+  const [editP, setEditP] = useState(null);
+
+  const handleToggleVeroeffentlicht = async (p) => {
+    await base44.entities.Protokoll.update(p.id, { veroeffentlicht: !p.veroeffentlicht });
+    onSaved();
+  };
+
+  // Noch kein Protokoll → Leitaktion direkt anbieten
+  if (protokolle.length === 0) {
+    return (
+      <div className="text-center py-12 bg-card border border-border rounded-xl">
+        <FileText size={36} className="text-muted-foreground/40 mx-auto mb-3" />
+        <p className="text-foreground font-medium">Noch kein Protokoll</p>
+        <p className="text-sm text-muted-foreground mt-1 mb-5">Protokoll direkt aus der Sitzung heraus erstellen — Titel und Datum sind bereits ausgefüllt.</p>
+        <button
+          onClick={() => { setEditP(null); setShowModal(true); }}
+          className="inline-flex items-center gap-2 px-5 py-3 min-h-[44px] rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+        >
+          <Plus size={16} /> Protokoll erstellen
+        </button>
+        {showModal && (
+          <ProtokollModal
+            protokoll={null}
+            prefill={{ termin_id: termin.id, titel: termin.titel, datum: termin.datum }}
+            termine={[termin]}
+            mitglieder={mitglieder}
+            ausschussIds={ausschussIds}
+            onClose={() => setShowModal(false)}
+            onSaved={() => { setShowModal(false); onSaved(); }}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Bestehende(s) Protokoll(e) anzeigen — inline, ohne Umweg über den Ausschuss-Tab
+  return (
+    <div className="space-y-3">
+      {protokolle.map(p => (
+        <div key={p.id} className="bg-card border border-border rounded-xl p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <p className="text-sm font-semibold text-foreground">{p.titel}</p>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${p.veroeffentlicht ? 'bg-green-500/20 text-green-400' : 'bg-secondary text-muted-foreground'}`}>
+                  {p.veroeffentlicht ? '✓ Veröffentlicht' : 'Entwurf'}
+                </span>
+              </div>
+              {p.datei_name && (
+                <a
+                  href={p.datei_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 mt-1 text-xs text-primary hover:underline"
+                >
+                  <Download size={12} /> {p.datei_name}
+                </a>
+              )}
+            </div>
+            <div className="flex gap-1 shrink-0">
+              <button
+                onClick={() => handleToggleVeroeffentlicht(p)}
+                title={p.veroeffentlicht ? 'Als Entwurf markieren' : 'Veröffentlichen'}
+                className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+              >
+                {p.veroeffentlicht ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+              <button
+                onClick={() => { setEditP(p); setShowModal(true); }}
+                title="Bearbeiten"
+                className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+              >
+                <Edit size={15} />
+              </button>
+            </div>
+          </div>
+          {p.inhalt && !p.datei_url && (
+            <p className="text-sm text-foreground/90 mt-3 whitespace-pre-wrap leading-relaxed">{p.inhalt}</p>
+          )}
+        </div>
+      ))}
+
+      {showModal && (
+        <ProtokollModal
+          protokoll={editP}
+          termine={[termin]}
+          mitglieder={mitglieder}
+          ausschussIds={ausschussIds}
+          onClose={() => setShowModal(false)}
+          onSaved={() => { setShowModal(false); onSaved(); }}
         />
       )}
     </div>
