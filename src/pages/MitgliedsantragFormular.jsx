@@ -22,6 +22,7 @@ export default function MitgliedsantragFormular() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(null);
+  const [stepFehler, setStepFehler] = useState(null);
   const [eingereichtVon, setEingereichtVon] = useState(null);
 
   useEffect(() => {
@@ -31,7 +32,40 @@ export default function MitgliedsantragFormular() {
     // Mitglied des Users laden um ID zu ermitteln
   }, []);
 
-  const set = (f, v) => setForm(p => ({ ...p, [f]: v }));
+  const set = (f, v) => { setForm(p => ({ ...p, [f]: v })); setStepFehler(null); };
+
+  // IBAN-Prüfung: Format + Mod-97-Checksumme (leer = okay, SEPA ist optional)
+  const pruefeIban = (iban) => {
+    const n = (iban || '').replace(/\s/g, '').toUpperCase();
+    if (!n) return true;
+    if (n.length < 15 || n.length > 34 || !/^[A-Z]{2}\d{2}[A-Z0-9]+$/.test(n)) return false;
+    const umgestellt = n.slice(4) + n.slice(0, 4);
+    let rest = 0;
+    for (const zeichen of umgestellt) {
+      const wert = zeichen >= 'A' ? String(zeichen.charCodeAt(0) - 55) : zeichen;
+      for (const z of wert) rest = (rest * 10 + Number(z)) % 97;
+    }
+    return rest === 1;
+  };
+
+  const ibanUngueltig = !!form.sepa_iban && !pruefeIban(form.sepa_iban);
+
+  const validiereSchritt = (nr) => {
+    if (nr === 0) {
+      if (!form.geburtsdatum) return 'Bitte gib dein Geburtsdatum an — wichtig für Beitrag und Jugendordnung.';
+    }
+    if (nr === 1) {
+      if (!form.strasse || !form.plz || !form.ort) return 'Bitte Straße, PLZ und Ort angeben.';
+      if (!form.email && !form.telefon && !form.handy) return 'Bitte E-Mail oder Telefon angeben, damit wir dich erreichen können.';
+      if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return 'Die E-Mail-Adresse sieht ungültig aus.';
+    }
+    if (nr === 2) {
+      if (!form.sparte) return 'Bitte wähle eine Sparte.';
+      if (ibanUngueltig) return 'Die IBAN ist ungültig (Prüfsumme stimmt nicht). Bitte prüfen.';
+      if (form.sepa_iban && !form.sepa_kontoinhaber) return 'Bitte den Kontoinhaber zur IBAN angeben.';
+    }
+    return null;
+  };
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -121,7 +155,7 @@ export default function MitgliedsantragFormular() {
                 </div>
               </div>
               <div>
-                <label className="text-xs text-muted-foreground font-medium block mb-1">Geburtsdatum</label>
+                <label className="text-xs text-muted-foreground font-medium block mb-1">Geburtsdatum *</label>
                 <DateSelect value={form.geburtsdatum} onChange={e => set('geburtsdatum', e.target.value)}
                   className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
               </div>
@@ -138,18 +172,18 @@ export default function MitgliedsantragFormular() {
             <>
               <h2 className="font-bold text-foreground font-oswald uppercase tracking-wide">Adresse & Kontakt</h2>
               <div>
-                <label className="text-xs text-muted-foreground font-medium block mb-1">Straße</label>
+                <label className="text-xs text-muted-foreground font-medium block mb-1">Straße *</label>
                 <input value={form.strasse} onChange={e => set('strasse', e.target.value)}
                   className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
               </div>
               <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <label className="text-xs text-muted-foreground font-medium block mb-1">PLZ</label>
+                  <label className="text-xs text-muted-foreground font-medium block mb-1">PLZ *</label>
                   <input value={form.plz} onChange={e => set('plz', e.target.value)}
                     className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
                 </div>
                 <div className="col-span-2">
-                  <label className="text-xs text-muted-foreground font-medium block mb-1">Ort</label>
+                  <label className="text-xs text-muted-foreground font-medium block mb-1">Ort *</label>
                   <input value={form.ort} onChange={e => set('ort', e.target.value)}
                     className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
                 </div>
@@ -167,7 +201,7 @@ export default function MitgliedsantragFormular() {
                 </div>
               </div>
               <div>
-                <label className="text-xs text-muted-foreground font-medium block mb-1">E-Mail</label>
+                <label className="text-xs text-muted-foreground font-medium block mb-1">E-Mail * <span className="text-muted-foreground/60 font-normal">(oder Telefon)</span></label>
                 <input type="email" value={form.email} onChange={e => set('email', e.target.value)}
                   className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
               </div>
@@ -204,7 +238,10 @@ export default function MitgliedsantragFormular() {
                     <label className="text-xs text-muted-foreground font-medium block mb-1">IBAN</label>
                     <input value={form.sepa_iban} onChange={e => set('sepa_iban', e.target.value.toUpperCase())}
                       placeholder="DE00 0000 ..."
-                      className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary font-mono" />
+                      className={`w-full px-3 py-2.5 rounded-lg bg-secondary border text-sm text-foreground focus:outline-none font-mono ${ibanUngueltig ? 'border-red-500/60 focus:border-red-500' : 'border-border focus:border-primary'}`} />
+                    {ibanUngueltig && (
+                      <p className="text-[10px] text-red-400 mt-1">Prüfsumme ungültig — bitte IBAN kontrollieren</p>
+                    )}
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground font-medium block mb-1">BIC</label>
@@ -250,6 +287,9 @@ export default function MitgliedsantragFormular() {
           )}
 
           {error && <p className="text-xs text-red-400">{error}</p>}
+          {stepFehler && (
+            <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2.5">{stepFehler}</p>
+          )}
         </div>
 
         {/* Navigation */}
@@ -262,7 +302,12 @@ export default function MitgliedsantragFormular() {
           )}
           {step < STEPS.length - 1 ? (
             <button
-              onClick={() => setStep(s => s + 1)}
+              onClick={() => {
+                const fehler = validiereSchritt(step);
+                if (fehler) { setStepFehler(fehler); return; }
+                setStepFehler(null);
+                setStep(s => s + 1);
+              }}
               disabled={step === 0 && (!form.vorname || !form.nachname)}
               className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
@@ -270,7 +315,14 @@ export default function MitgliedsantragFormular() {
             </button>
           ) : (
             <button
-              onClick={handleSubmit}
+              onClick={() => {
+                for (let i = 0; i <= 2; i++) {
+                  const fehler = validiereSchritt(i);
+                  if (fehler) { setStepFehler(fehler); setStep(i); return; }
+                }
+                setStepFehler(null);
+                handleSubmit();
+              }}
               disabled={submitting || !form.vorname || !form.nachname}
               className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
