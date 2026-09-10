@@ -46,6 +46,7 @@ export default function Mitglieder() {
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'Alle');
+  const [gruppeFilter, setGruppeFilter] = useState('Alle');
   const [zeigeArchiviert, setZeigeArchiviert] = useState(false);
   const [sortBy, setSortBy] = useState('nachname');
   const [showAntragModal, setShowAntragModal] = useState(false);
@@ -86,6 +87,9 @@ export default function Mitglieder() {
   const queryError = data === undefined && !isLoading;
   const haesMap = data?.haesMap || {};
   const gruppenMap = data?.gruppenMap || {};
+  const gruppen = Object.entries(gruppenMap)
+    .map(([id, g]) => ({ id, ...g }))
+    .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
   const { pullDistance, refreshing, containerRef } = usePullToRefresh(useCallback(async () => {
     await refetch();
@@ -115,13 +119,18 @@ export default function Mitglieder() {
           `${m.vorname} ${m.nachname}`.toLowerCase().includes(s) ||
           m.email?.toLowerCase().includes(s) ||
           m.ort?.toLowerCase().includes(s) ||
-          m.mitgliedsnummer?.toString().includes(s)
+          m.mitgliedsnummer?.toString().includes(s) ||
+          haesMap[m.id]?.toString().includes(s)
         );
       }
     }
 
     if (statusFilter !== 'Alle') {
       result = result.filter(m => m.mitgliedsstatus === statusFilter);
+    }
+
+    if (gruppeFilter !== 'Alle') {
+      result = result.filter(m => m.haesgruppe_id === gruppeFilter || m.haesgruppen_ids?.includes(gruppeFilter));
     }
 
     // Sortierung
@@ -144,7 +153,7 @@ export default function Mitglieder() {
     });
 
     return result;
-  }, [mitglieder, search, statusFilter, zeigeArchiviert, sortBy, haesMap]);
+  }, [mitglieder, search, statusFilter, gruppeFilter, zeigeArchiviert, sortBy, haesMap]);
 
   const getAlter = (geb) => geb ? differenceInYears(new Date(), new Date(geb)) : null;
 
@@ -304,7 +313,7 @@ export default function Mitglieder() {
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Name, #Nr, E-Mail, Ort…"
+            placeholder="Name, #Nr, Häs-Nr., E-Mail, Ort…"
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-colors"
@@ -345,6 +354,40 @@ export default function Mitglieder() {
           ))}
         </div>
       </div>
+
+      {/* Häsgruppen-/Sparten-Filter */}
+      {gruppen.length > 0 && (
+        <div className="flex gap-1.5 overflow-x-auto pb-1 mb-3 scrollbar-hide items-center">
+          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide shrink-0 mr-0.5">Sparte:</span>
+          <button
+            onClick={() => setGruppeFilter('Alle')}
+            className={`flex-shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all ${
+              gruppeFilter === 'Alle'
+                ? 'bg-primary text-white'
+                : 'bg-card border border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
+            }`}
+          >
+            Alle
+          </button>
+          {gruppen.map(g => (
+            <button
+              key={g.id}
+              onClick={() => setGruppeFilter(g.id)}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all ${
+                gruppeFilter === g.id
+                  ? 'bg-primary text-white'
+                  : 'bg-card border border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
+              }`}
+            >
+              <span
+                className="w-2 h-2 rounded-full shrink-0"
+                style={{ backgroundColor: gruppeFilter === g.id ? '#ffffff' : (g.farbe || '#EA2525') }}
+              />
+              {g.name}
+            </button>
+          ))}
+        </div>
+      )}
       </div>
 
       {/* Info-Zeile */}
