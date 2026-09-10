@@ -102,9 +102,20 @@ Deno.serve(async (req) => {
       });
       const myTerminIds = new Set(myAnmeldungen.map(a => a.termin_id));
 
+      // Ausschuss-Zugang prüfen (Zusatz-Berechtigung 'ausschuss')
+      let zusatzBer = myMitglied?.zusatz_berechtigungen || [];
+      if (typeof zusatzBer === 'string') {
+        zusatzBer = zusatzBer.split(',').map(s => s.trim()).filter(Boolean);
+      }
+      const isAusschussMitglied = Array.isArray(zusatzBer) && zusatzBer.includes('ausschuss');
+
       gefilterteKalenderTermine = alleKalenderTermine.filter(t => {
         if (t.sichtbarkeit === 'admin') return false;
         if (myTerminIds.has(t.id)) return true;
+        // Sichtbarkeit 'alle': für alle Mitglieder sichtbar
+        if (t.sichtbarkeit === 'alle') return true;
+        // Sichtbarkeit 'ausschuss': für Ausschussmitglieder sichtbar
+        if (t.sichtbarkeit === 'ausschuss' && isAusschussMitglied) return true;
         return false;
       });
     }
