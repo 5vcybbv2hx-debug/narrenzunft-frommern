@@ -20,6 +20,7 @@ export default function AusfahrtScanner() {
   const [scanResults, setScanResults] = useState([]);
   const [lastScan, setLastScan] = useState(null);
   const [error, setError] = useState(null);
+  const [scannerError, setScannerError] = useState(null);
   const [manuellerFilter, setManuellerFilter] = useState('');
   const scannerRef = useRef(null);
   const html5QrCodeRef = useRef(null);
@@ -162,8 +163,21 @@ export default function AusfahrtScanner() {
   }, [user, mitglieder]);
 
   const startScanner = async () => {
+    setScannerError(null);
+
+    // Vorabprüfungen, bevor überhaupt ein Kamera-Zugriff versucht wird
+    if (!window.isSecureContext) {
+      setScannerError('Die Kamera funktioniert nur über eine sichere Verbindung (https). Bitte die Seite über https aufrufen.');
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setScannerError('Dieser Browser unterstützt keinen Kamera-Zugriff. Bitte einen aktuellen Browser (Chrome, Safari) verwenden oder die manuelle Liste unten nutzen.');
+      return;
+    }
+
+    let html5QrCode;
     try {
-      const html5QrCode = new Html5Qrcode('qr-reader');
+      html5QrCode = new Html5Qrcode('qr-reader');
       html5QrCodeRef.current = html5QrCode;
 
       const screenWidth = window.innerWidth || 375;
@@ -175,16 +189,47 @@ export default function AusfahrtScanner() {
         experimentalFeatures: { useBarCodeDetectorIfSupported: true }
       };
 
-      await html5QrCode.start(
-        { facingMode: 'environment' },
-        qrConfig,
-        (decodedText) => handleScanResult(decodedText),
-        undefined
-      );
+      try {
+        // Zuerst Rückkamera versuchen (Standard für Check-in)
+        await html5QrCode.start(
+          { facingMode: 'environment' },
+          qrConfig,
+          (decodedText) => handleScanResult(decodedText),
+          undefined
+        );
+      } catch (envErr) {
+        // Manche Geräte (z.B. Laptops, ältere Tablets) kennen 'environment' nicht — Fallback auf Standardkamera
+        console.warn('Rückkamera nicht verfügbar, versuche Standardkamera:', envErr);
+        await html5QrCode.start(
+          { facingMode: 'user' },
+          qrConfig,
+          (decodedText) => handleScanResult(decodedText),
+          undefined
+        );
+      }
       setScanning(true);
     } catch (err) {
       console.error('Scanner start error:', err);
-      setError('Kamera konnte nicht gestartet werden. Bitte Browser-Berechtigungen prüfen.');
+      const name = err?.name || '';
+      const msg = err?.message || '';
+      let text = 'Kamera konnte nicht gestartet werden.';
+      if (name === 'NotAllowedError' || /permission/i.test(msg)) {
+        text = 'Kamera-Zugriff wurde verweigert. Bitte in den Browser-Einstellungen die Kamera-Berechtigung für diese Seite erlauben und erneut versuchen.';
+      } else if (name === 'NotFoundError') {
+        text = 'Es wurde keine Kamera auf diesem Gerät gefunden. Bitte die manuelle Liste unten nutzen.';
+      } else if (name === 'NotReadableError') {
+        text = 'Die Kamera wird bereits von einer anderen App oder einem anderen Tab verwendet. Bitte diese schließen und erneut versuchen.';
+      } else if (name === 'OverconstrainedError') {
+        text = 'Die Kamera-Einstellungen werden von diesem Gerät nicht unterstützt.';
+      } else if (name === 'SecurityError') {
+        text = 'Kamera-Zugriff wurde aus Sicherheitsgründen blockiert (nur über https möglich).';
+      }
+      setScannerError(text);
+      setScanning(false);
+      if (html5QrCodeRef.current) {
+        try { await html5QrCodeRef.current.clear(); } catch { /* bereits verworfen */ }
+        html5QrCodeRef.current = null;
+      }
     }
   };
 
@@ -318,12 +363,23 @@ export default function AusfahrtScanner() {
 
         {/* Scanner */}
         <div className="bg-card border border-border rounded-xl p-6 mb-6">
+          {scannerError && (
+            <div className="mb-4 rounded-xl bg-red-950/30 border border-red-800/40 p-4">
+              <div className="flex items-start gap-2.5">
+                <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                <p className="text-sm text-red-400">{scannerError}</p>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Alternativ kannst du Teilnehmer weiterhin über die manuelle Liste unten einchecken.
+              </p>
+            </div>
+          )}
           {!scanning ? (
             <button
               onClick={startScanner}
               className="w-full bg-primary hover:bg-red-700 text-white font-semibold py-4 px-6 rounded-xl transition-colors flex items-center justify-center gap-3 text-base"
             >
-              <ScanLine className="w-6 h-6" /> Scanner starten
+              <ScanLine className="w-6 h-6" /> {scannerError ? 'Erneut versuchen' : 'Scanner starten'}
             </button>
           ) : (
             <div className="space-y-4">
