@@ -229,10 +229,20 @@ export default function Dashboard() {
     await refetch();
   }, [refetch]));
 
+  // Führungskräfte sind auch Mitglieder: Umschalter zwischen persönlicher
+  // Übersicht und Verwaltungs-Sicht. Wahl wird pro Gerät gespeichert.
+  const [leaderView, setLeaderView] = useState(() => {
+    try { return localStorage.getItem('nzf-dash-view') || 'meine'; } catch { return 'meine'; }
+  });
+  const handleViewChange = (v) => {
+    setLeaderView(v);
+    try { localStorage.setItem('nzf-dash-view', v); } catch {}
+  };
+
   // ── Reguläre Mitglieder: nur persönliches Dashboard ──
   if (istNurMitglied(user)) return <MitgliedDashboard />;
 
-  if (isError) return (
+  if (leaderView === 'verwaltung' && isError) return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
       <AlertCircle size={32} className="text-red-400" />
       <p className="text-sm text-muted-foreground">Dashboard konnte nicht geladen werden</p>
@@ -242,7 +252,7 @@ export default function Dashboard() {
     </div>
   );
 
-  if (isLoading) return (
+  if (leaderView === 'verwaltung' && isLoading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="flex flex-col items-center gap-3">
         <div className="w-9 h-9 border-[3px] border-border border-t-primary rounded-full animate-spin" />
@@ -254,6 +264,30 @@ export default function Dashboard() {
   return (
     <div ref={containerRef} className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-5xl mx-auto">
       <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
+
+      {/* Ansichts-Umschalter: Führungskräfte sind auch Mitglieder */}
+      <div className="flex gap-1 bg-secondary rounded-xl p-1 mb-5 max-w-xs">
+        <button
+          onClick={() => handleViewChange('meine')}
+          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-all ${
+            leaderView === 'meine' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <User size={15} /> Meine Übersicht
+        </button>
+        <button
+          onClick={() => handleViewChange('verwaltung')}
+          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-all ${
+            leaderView === 'verwaltung' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Shield size={15} /> Verwaltung
+        </button>
+      </div>
+
+      {leaderView === 'meine' && <MitgliedDashboard />}
+
+      {leaderView === 'verwaltung' && (<>
 
       {/* Header */}
       <div className="mb-6">
@@ -558,6 +592,7 @@ export default function Dashboard() {
         )}
 
       </div>
+      </>)}
     </div>
   );
 }
