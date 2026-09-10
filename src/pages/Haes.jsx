@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { Shirt, Plus, Search, ChevronRight, Calendar, Building, User } from 'lucide-react';
+import { Shirt, Plus, Search, ChevronRight, Calendar, Building, User, Lock } from 'lucide-react';
 import HaesGroupTokenModal from '@/components/haes/HaesGroupTokenModal';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
@@ -35,6 +35,15 @@ export default function Haes() {
   const [newHaes, setNewHaes] = useState({ haesnummer: '', haesgruppe_id: '', bezeichnung: '', status: 'Aktiv', vereinseigentum: true });
   const [selectedGruppeToken, setSelectedGruppeToken] = useState(null);
   const isAdminUser = isAdmin(user);
+
+  // Nur Vorstand, Stellv. Vorstand und Admin
+  if (!isAdminUser) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+      <Lock size={32} className="text-muted-foreground mb-3" />
+      <p className="font-oswald font-semibold text-foreground uppercase tracking-wide">Kein Zugriff</p>
+      <p className="text-sm text-muted-foreground mt-1">Die Häs-Verwaltung ist nur für den Vorstand zugänglich.</p>
+    </div>
+  );
 
   useEffect(() => {
     loadData();

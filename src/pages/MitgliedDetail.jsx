@@ -834,18 +834,24 @@ export default function MitgliedDetail() {
           {haes.length === 0 ? (
             <p className="text-sm text-muted-foreground">Noch kein Häs zugewiesen</p>
           ) : (
-            haes.map(h => (
-              <Link key={h.id} to={`/haes/${h.id}`} className="flex items-center justify-between py-2 border-b border-border last:border-0 hover:opacity-75 transition-opacity gap-2 min-w-0">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-white">Nr. {h.haesnummer}</p>
-                  <p className="text-xs text-muted-foreground">{h.bezeichnung}</p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${HAES_STATUS_COLORS[h.status] || 'bg-secondary text-muted-foreground'}`}>{h.status}</span>
-                  <ChevronRight size={14} className="text-muted-foreground" />
-                </div>
-              </Link>
-            ))
+            haes.map(h => {
+              const inhalt = (
+                <>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-white">Nr. {h.haesnummer}</p>
+                    <p className="text-xs text-muted-foreground">{h.bezeichnung}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${HAES_STATUS_COLORS[h.status] || 'bg-secondary text-muted-foreground'}`}>{h.status}</span>
+                    {admin && <ChevronRight size={14} className="text-muted-foreground" />}
+                  </div>
+                </>
+              );
+              // Häs-Detail nur für Vorstand, Stellv. Vorstand und Admin aufrufbar
+              return admin
+                ? <Link key={h.id} to={`/haes/${h.id}`} className="flex items-center justify-between py-2 border-b border-border last:border-0 hover:opacity-75 transition-opacity gap-2 min-w-0">{inhalt}</Link>
+                : <div key={h.id} className="flex items-center justify-between py-2 border-b border-border last:border-0 gap-2 min-w-0">{inhalt}</div>;
+            })
           )}
         </div>
       )}

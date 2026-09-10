@@ -2,8 +2,12 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { Search, Loader2, Users, Shirt, Briefcase, AlertCircle } from 'lucide-react';
+import { useAuth } from '@/lib/AuthContext';
+import { isAdmin } from '@/lib/roles';
 
 export default function SecureSearch({ initialQuery = '' }) {
+  const { user } = useAuth();
+  const admin = isAdmin(user);
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState({ mitglieder: [], haes: [], dienste: [] });
   const [loading, setLoading] = useState(false);
@@ -98,8 +102,8 @@ export default function SecureSearch({ initialQuery = '' }) {
             </>
           )}
 
-          {/* Häs */}
-          {results.haes.length > 0 && (
+          {/* Häs — nur für Vorstand & Admin sichtbar */}
+          {admin && results.haes.length > 0 && (
             <>
               <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase bg-secondary/30 border-b border-border flex items-center gap-2">
                 <Shirt size={12} /> Häs ({results.haes.length})

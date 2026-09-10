@@ -4,7 +4,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
-import { ArrowLeft, Shirt, Plus, Trash2, UserCheck, UserX, Save, X, Search, Edit, Upload } from 'lucide-react';
+import { ArrowLeft, Shirt, Plus, Trash2, UserCheck, UserX, Save, X, Search, Edit, Upload, Lock } from 'lucide-react';
 import HaesHistorieImportModal from '@/components/haes/HaesHistorieImportModal';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -23,6 +23,15 @@ export default function HaesDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const admin = isAdmin(user);
+
+  // Nur Vorstand, Stellv. Vorstand und Admin
+  if (!admin) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+      <Lock size={32} className="text-muted-foreground mb-3" />
+      <p className="font-oswald font-semibold text-foreground uppercase tracking-wide">Kein Zugriff</p>
+      <p className="text-sm text-muted-foreground mt-1">Die Häs-Verwaltung ist nur für den Vorstand zugänglich.</p>
+    </div>
+  );
 
   const [haes, setHaes] = useState(null);
   const [gruppen, setGruppen] = useState([]);

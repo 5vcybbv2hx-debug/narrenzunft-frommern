@@ -22,7 +22,6 @@ export const NAV_SECTIONS = [
     items: [
       { path: '/kalender',       label: 'Termine',            icon: Calendar,    roles: null },
       { path: '/sparten',        label: 'Sparten & Gruppen', icon: Users,       roles: null },
-      { path: '/haes',           label: 'Häs',                icon: Shirt,       roles: null },
       { path: '/shop',           label: 'Shop',               icon: ShoppingBag, roles: null },
       { path: '/arbeitsdienste', label: 'Arbeitsdienste',     icon: Briefcase,   roles: null },
     ],
@@ -34,6 +33,7 @@ export const NAV_SECTIONS = [
     roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter', 'admin'],
     items: [
       { path: '/mitglieder',     label: 'Mitglieder',         icon: Users,         roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter', 'admin'] },
+      { path: '/haes',           label: 'Häs',                icon: Shirt,         roles: ['vorstand', 'stellv_vorstand', 'admin'] },
       { path: '/beitraege',      label: 'Beiträge',           icon: CreditCard,    roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'] },
       { path: '/ehrungen',       label: 'Ehrungen',           icon: Award,         roles: ['vorstand', 'stellv_vorstand', 'admin'] },
       { path: '/vereine',        label: 'Vereine & Zünfte',  icon: Users,         roles: ['vorstand', 'stellv_vorstand', 'admin'] },
