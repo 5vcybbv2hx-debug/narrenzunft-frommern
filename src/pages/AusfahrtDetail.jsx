@@ -39,6 +39,7 @@ export default function AusfahrtDetail() {
   const [fremdAnzahlBegleitpersonen, setFremdAnzahlBegleitpersonen] = useState(0);
   const [fremdBegleitpersonen, setFremdBegleitpersonen] = useState([]);
   const [kindAnmeldungen, setKindAnmeldungen] = useState({}); // { kindId: { transport, angemeldet } }
+  const [checkinSuche, setCheckinSuche] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -306,42 +307,141 @@ export default function AusfahrtDetail() {
     }
   };
 
+  // Prüft das Check-in-Zeitfenster; gibt true/false und zeigt bei Missachtung einen Toast
+  const pruefeCheckinFenster = () => {
+    if (istVorDemTag) {
+      toast.error(`Check-in ist erst am ${(ausfahrt.datum || '').split('-').reverse().join('.')} möglich.`);
+      return false;
+    }
+    if (!istAmAusfahrtstag && !hatKorrekturRecht) {
+      toast.error('Nachträglicher Check-in nur für Vorstand und Spartenleiter möglich.');
+      return false;
+    }
+    return true;
+  };
+
+  // Optimistisches Lokal-Update ohne fetchData: kein Ladebildschirm, kein Scroll-Sprung
+  const applyAnmeldungPatch = (anmeldungId, patch) => {
+    setAnmeldungen(prev => prev.map(a => (a.id === anmeldungId ? { ...a, ...patch } : a)));
+  };
+
   const handleCheckIn = async (registration) => {
+    if (!pruefeCheckinFenster()) return;
+    const name = registration?.name || 'Person';
+    const nowIso = new Date().toISOString();
+    const vorher = anmeldungen.find(a => a.id === registration.id);
+    const patch = {
+      status: 'Eingecheckt',
+      eingecheckt_am: nowIso,
+      eingecheckt_von: user?.full_name || user?.email || 'Admin'
+    };
+    applyAnmeldungPatch(registration.id, patch);
     try {
-      const nowIso = new Date().toISOString();
-      await base44.entities.AusfahrtAnmeldung.update(registration.id, {
-          status: 'Eingecheckt',
-          eingecheckt_am: nowIso,
-          eingecheckt_von: user?.full_name || user?.email || 'Admin'
-        });
-      toast.success('Check-in erfolgreich');
-      fetchData();
+      await base44.entities.AusfahrtAnmeldung.update(registration.id, patch);
+      toast.success(`${name} eingecheckt`);
     } catch (err) {
       console.error('Error during check-in:', err);
+      applyAnmeldungPatch(registration.id, vorher || {});
       toast.error('Check-in fehlgeschlagen.');
     }
   };
 
-  const handleBegleitpersonCheckIn = async (parentId, begleitIndex) => {
+  // Check-in rückgängig machen (Korrektur) — am Tag für alle Berechtigten, danach nur Führung
+  const handleCheckOut = async (registration) => {
+    if (!istAmAusfahrtstag && !hatKorrekturRecht) {
+      toast.error('Korrektur nur für Vorstand und Spartenleiter möglich.');
+      return;
+    }
+    const name = registration?.name || 'Person';
+    const vorher = anmeldungen.find(a => a.id === registration.id);
+    const patch = { status: 'Angemeldet', eingecheckt_am: null, eingecheckt_von: null };
+    applyAnmeldungPatch(registration.id, patch);
     try {
-      const parent = anmeldungen.find(a => a.id === parentId);
-      if (!parent || !parent.begleitpersonen) return;
-      const updatedBp = [...parent.begleitpersonen];
-      if (!updatedBp[begleitIndex]) return;
-      updatedBp[begleitIndex] = {
-        ...updatedBp[begleitIndex],
-        eingecheckt: !updatedBp[begleitIndex].eingecheckt,
-        eingecheckt_am: new Date().toISOString(),
-        eingecheckt_von: user?.full_name || user?.email || 'Admin'
-      };
-      await base44.entities.AusfahrtAnmeldung.update(parentId, {
-        begleitpersonen: updatedBp
-      });
-      fetchData();
+      await base44.entities.AusfahrtAnmeldung.update(registration.id, patch);
+      toast.info(`${name} ausgecheckt`);
+    } catch (err) {
+      console.error('Error during check-out:', err);
+      applyAnmeldungPatch(registration.id, vorher || {});
+      toast.error('Auschecken fehlgeschlagen.');
+    }
+  };
+
+  const handleBegleitpersonCheckIn = async (parentId, begleitIndex) => {
+    const parent = anmeldungen.find(a => a.id === parentId);
+    if (!parent || !parent.begleitpersonen) return;
+    const bp = parent.begleitpersonen[begleitIndex];
+    if (!bp) return;
+    // Einschalten unterliegt dem Zeitfenster, Ausschalten (Korrektur) nicht
+    if (!bp.eingecheckt && !pruefeCheckinFenster()) return;
+    const updatedBp = [...parent.begleitpersonen];
+    updatedBp[begleitIndex] = {
+      ...updatedBp[begleitIndex],
+      eingecheckt: !updatedBp[begleitIndex].eingecheckt,
+      eingecheckt_am: updatedBp[begleitIndex].eingecheckt ? null : new Date().toISOString(),
+      eingecheckt_von: updatedBp[begleitIndex].eingecheckt ? null : (user?.full_name || user?.email || 'Admin')
+    };
+    applyAnmeldungPatch(parentId, { begleitpersonen: updatedBp });
+    try {
+      await base44.entities.AusfahrtAnmeldung.update(parentId, { begleitpersonen: updatedBp });
+      toast.success(`${updatedBp[begleitIndex].name || 'Begleitperson'} ${updatedBp[begleitIndex].eingecheckt ? 'eingecheckt' : 'ausgecheckt'}`);
     } catch (err) {
       console.error('Error during Begleitperson check-in:', err);
+      applyAnmeldungPatch(parentId, { begleitpersonen: parent.begleitpersonen });
       toast.error('Check-in fehlgeschlagen.');
     }
+  };
+
+  // Bulk-Check-in: mehrere Personen (Haupt + Begleitpersonen) ohne Ladebildschirm einchecken
+  const handleBulkCheckIn = async (entries) => {
+    if (!entries.length) return;
+    if (!pruefeCheckinFenster()) return;
+    if (!(await confirmDialog(`${entries.length} Personen wirklich einchecken?`))) return;
+    const nowIso = new Date().toISOString();
+    const von = user?.full_name || user?.email || 'Admin';
+    // Gruppieren: pro Anmelde-Datensatz (Hauptperson + deren Begleitpersonen)
+    const byParent = {};
+    entries.forEach(e => {
+      if (!byParent[e.parentId]) byParent[e.parentId] = { main: false, bps: [] };
+      if (e.isBegleitperson) byParent[e.parentId].bps.push(e.begleitIndex);
+      else byParent[e.parentId].main = true;
+    });
+    const parentIds = Object.keys(byParent);
+    const alteAnmeldungen = [...anmeldungen];
+    // Optimistisch lokal
+    setAnmeldungen(prev => prev.map(a => {
+      const grp = byParent[a.id];
+      if (!grp) return a;
+      return {
+        ...a,
+        status: grp.main ? 'Eingecheckt' : a.status,
+        eingecheckt_am: grp.main ? nowIso : a.eingecheckt_am,
+        eingecheckt_von: grp.main ? von : a.eingecheckt_von,
+        begleitpersonen: (a.begleitpersonen || []).map((bp, i) =>
+          grp.bps.includes(i) ? { ...bp, eingecheckt: true, eingecheckt_am: nowIso, eingecheckt_von: von } : bp
+        ),
+      };
+    }));
+    toast.success(`${entries.length} Personen eingecheckt`);
+    // Hintergrund-Sync in Chunks ohne Spinner; Fehler zählen
+    let fehler = 0;
+    const chunkGroesse = 8;
+    for (let i = 0; i < parentIds.length; i += chunkGroesse) {
+      const results = await Promise.allSettled(parentIds.slice(i, i + chunkGroesse).map(async pid => {
+        const grp = byParent[pid];
+        const original = alteAnmeldungen.find(a => a.id === pid);
+        if (!original) return;
+        const patch = {};
+        if (grp.main) Object.assign(patch, { status: 'Eingecheckt', eingecheckt_am: nowIso, eingecheckt_von: von });
+        if (grp.bps.length > 0 && Array.isArray(original.begleitpersonen)) {
+          patch.begleitpersonen = original.begleitpersonen.map((bp, idx) =>
+            grp.bps.includes(idx) ? { ...bp, eingecheckt: true, eingecheckt_am: nowIso, eingecheckt_von: von } : bp
+          );
+        }
+        await base44.entities.AusfahrtAnmeldung.update(pid, patch);
+      }));
+      fehler += results.filter(r => r.status === 'rejected').length;
+    }
+    if (fehler > 0) toast.error(`${fehler} Check-ins fehlgeschlagen — bitte Liste prüfen.`);
   };
 
   // Person jederzeit aus der Liste entfernen (z. B. bei anderweitiger Abmeldung)
@@ -356,19 +456,24 @@ export default function AusfahrtDetail() {
         const parent = anmeldungen.find(a => a.id === entry.parentId);
         if (!parent || !Array.isArray(parent.begleitpersonen)) return;
         const updatedBp = parent.begleitpersonen.filter((_, i) => i !== entry.begleitIndex);
+        setAnmeldungen(prev => prev.map(a => a.id === entry.parentId
+          ? { ...a, begleitpersonen: updatedBp, anzahl_begleitpersonen: updatedBp.length }
+          : a));
         await base44.entities.AusfahrtAnmeldung.update(parent.id, {
           begleitpersonen: updatedBp,
           anzahl_begleitpersonen: updatedBp.length,
         });
       } else {
         // Gesamte Anmeldung (Mitglied/Extern inkl. Begleitungen) auf 'Abgemeldet' setzen
+        setAnmeldungen(prev => prev.map(a => a.id === entry.parentId
+          ? { ...a, status: 'Abgemeldet', abgemeldet_am: todayStr }
+          : a));
         await base44.entities.AusfahrtAnmeldung.update(entry.parentId, {
           status: 'Abgemeldet',
           abgemeldet_am: todayStr,
         });
       }
       toast.success(`${name} entfernt`);
-      fetchData();
     } catch (err) {
       console.error('Error removing registration:', err);
       toast.error('Entfernen fehlgeschlagen.');
@@ -551,9 +656,34 @@ export default function AusfahrtDetail() {
     a.name.localeCompare(b.name, 'de')
   );
 
+  // Suchfilter für die Check-in-Liste (bei vielen Teilnehmern)
+  const angezeigteRegistrations = (() => {
+    const q = checkinSuche.trim().toLowerCase();
+    if (!q) return sortedRegistrations;
+    return sortedRegistrations.filter(e => e.name.toLowerCase().includes(q));
+  })();
+
+  // Bulk-Zähler (ungefiltert, über alle aktiven Anmeldungen)
+  const offeneZumEinchecken = sortedRegistrations.filter(e => e.status !== 'Eingecheckt');
+  const offeneBus = offeneZumEinchecken.filter(e => e.transport === 'Bus');
+  const offenePrivat = offeneZumEinchecken.filter(e => e.transport === 'Privat');
+
   const isDeregisterAvailable = myRegistration && (
     ausfahrt.datum ? differenceInDays(parseISO(ausfahrt.datum), new Date()) >= 3 : false
   );
+
+  // ── Check-in-Zeitfenster ──
+  const heuteStr = new Date().toISOString().split('T')[0];
+  const istAmAusfahrtstag = ausfahrt?.datum === heuteStr;
+  const istVorDemTag = ausfahrt?.datum && ausfahrt.datum > heuteStr;
+  const hatKorrekturRecht = ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'].includes(user?.role);
+  // Am Tag selbst: alle Berechtigten. Danach: nur Vorstand/Stellv./Spartenleiter/Admin (Korrektur).
+  const darfJetztChecken = !istVorDemTag && (istAmAusfahrtstag || hatKorrekturRecht);
+
+  // Eigene Familien-Anmeldungen (für QR-Anzeige)
+  const meineFamilienAnmeldungen = familienmitglieder
+    .map(fm => anmeldungen.find(a => a.mitglied_id === fm.id && a.status !== 'Abgemeldet'))
+    .filter(Boolean);
 
   return (
     <div className="min-h-[60vh] pb-12">
@@ -881,8 +1011,16 @@ export default function AusfahrtDetail() {
                       </div>
                     </>
                   )}
+                  {meineFamilienAnmeldungen.length > 0 && (
+                    <button
+                      onClick={() => setShowQR(true)}
+                      className="w-full bg-secondary hover:bg-border text-foreground border border-border font-semibold py-2.5 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
+                    >
+                      <QrCode className="w-4 h-4 text-primary" /> QR-Codes der angemeldeten Familie anzeigen
+                    </button>
+                  )}
                 </div>
-              )}
+              )}}
 
 
             </div>
@@ -1007,6 +1145,57 @@ export default function AusfahrtDetail() {
               </form>
             )}
 
+            {/* Check-in-Werkzeuge: Zeitfenster-Hinweis, Suche, Bulk-Check-in */}
+            <div className="mb-5 space-y-3">
+              {istVorDemTag && (
+                <p className="text-xs text-yellow-500 flex items-center gap-1.5">
+                  <Clock className="w-3 h-3 shrink-0" /> Check-in öffnet am {(ausfahrt.datum || '').split('-').reverse().join('.')}.
+                </p>
+              )}
+              {!istAmAusfahrtstag && !istVorDemTag && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <Clock className="w-3 h-3 shrink-0" /> Ausfahrt ist vorbei — nachträgliches Ein-/Auschecken für Vorstand & Spartenleiter möglich.
+                </p>
+              )}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative flex-1 min-w-[180px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={checkinSuche}
+                    onChange={e => setCheckinSuche(e.target.value)}
+                    placeholder="Teilnehmer suchen…"
+                    className="w-full bg-secondary border border-border rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors"
+                  />
+                </div>
+                {darfJetztChecken && offeneZumEinchecken.length > 0 && (
+                  <>
+                    <button
+                      onClick={() => handleBulkCheckIn(offeneZumEinchecken)}
+                      className="bg-primary hover:bg-red-700 text-white font-semibold px-3 py-2 rounded-lg text-xs transition-colors flex items-center gap-1.5 min-h-[38px]"
+                      title="Alle noch nicht Eingecheckten einchecken"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Alle einchecken ({offeneZumEinchecken.length})
+                    </button>
+                    <button
+                      onClick={() => handleBulkCheckIn(offeneBus)}
+                      className="bg-secondary hover:bg-border text-foreground border border-border font-semibold px-3 py-2 rounded-lg text-xs transition-colors min-h-[38px]"
+                      title="Nur Busfahrer einchecken"
+                    >
+                      🚌 Bus ({offeneBus.length})
+                    </button>
+                    <button
+                      onClick={() => handleBulkCheckIn(offenePrivat)}
+                      className="bg-secondary hover:bg-border text-foreground border border-border font-semibold px-3 py-2 rounded-lg text-xs transition-colors min-h-[38px]"
+                      title="Nur Privatfahrer einchecken"
+                    >
+                      🚗 Privat ({offenePrivat.length})
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
             {/* Registrations List / Table */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -1020,14 +1209,14 @@ export default function AusfahrtDetail() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border text-sm">
-                  {sortedRegistrations.length === 0 ? (
+                  {angezeigteRegistrations.length === 0 ? (
                     <tr>
                       <td colSpan="5" className="py-6 text-center text-muted-foreground">
-                        Keine aktiven Anmeldungen für diese Ausfahrt gefunden.
+                        {checkinSuche.trim() ? 'Keine Treffer für die Suche.' : 'Keine aktiven Anmeldungen für diese Ausfahrt gefunden.'}
                       </td>
                     </tr>
                   ) : (
-                    sortedRegistrations.map((entry) => {
+                    angezeigteRegistrations.map((entry) => {
                       return (
                         <tr key={entry.id} className="hover:bg-secondary/30 transition-colors">
                           <td className="py-3.5 px-4 font-medium text-white">
@@ -1078,18 +1267,19 @@ export default function AusfahrtDetail() {
                                 <button
                                   onClick={() => entry.isBegleitperson
                                     ? handleBegleitpersonCheckIn(entry.parentId, entry.begleitIndex)
-                                    : null}
-                                  disabled={!entry.isBegleitperson}
-                                  className={`${entry.isBegleitperson ? 'bg-transparent hover:bg-secondary text-yellow-500 border border-yellow-500/40' : 'bg-secondary text-muted-foreground border border-border cursor-not-allowed'} font-semibold px-3 py-1.5 rounded-lg text-xs transition-colors`}
+                                    : handleCheckOut({ id: entry.parentId, name: entry.name })}
+                                  className="bg-transparent hover:bg-secondary text-yellow-500 border border-yellow-500/40 font-semibold px-3 py-1.5 rounded-lg text-xs transition-colors"
                                 >
-                                  {entry.isBegleitperson ? 'Auschecken' : '✓ Eingecheckt'}
+                                  Auschecken
                                 </button>
                               ) : (
                                 <button
                                   onClick={() => entry.isBegleitperson
                                     ? handleBegleitpersonCheckIn(entry.parentId, entry.begleitIndex)
-                                    : handleCheckIn({ id: entry.parentId })}
-                                  className="bg-primary hover:bg-red-700 text-white font-semibold px-3 py-1.5 rounded-lg text-xs transition-colors"
+                                    : handleCheckIn({ id: entry.parentId, name: entry.name })}
+                                  disabled={!darfJetztChecken}
+                                  className={`${darfJetztChecken ? 'bg-primary hover:bg-red-700 text-white' : 'bg-secondary text-muted-foreground border border-border cursor-not-allowed'} font-semibold px-3 py-1.5 rounded-lg text-xs transition-colors`}
+                                  title={!darfJetztChecken ? 'Check-in erst am Tag der Ausfahrt' : ''}
                                 >
                                   Einchecken
                                 </button>
@@ -1111,9 +1301,9 @@ export default function AusfahrtDetail() {
               </table>
             </div>
             <div className="md:hidden space-y-2">
-              {sortedRegistrations.length === 0 ? (
-                <p className="py-6 text-center text-muted-foreground text-sm">Keine aktiven Anmeldungen.</p>
-              ) : sortedRegistrations.map((entry) => (
+              {angezeigteRegistrations.length === 0 ? (
+                <p className="py-6 text-center text-muted-foreground text-sm">{checkinSuche.trim() ? 'Keine Treffer für die Suche.' : 'Keine aktiven Anmeldungen.'}</p>
+              ) : angezeigteRegistrations.map((entry) => (
                 <div key={entry.id} className="bg-secondary/30 border border-border rounded-xl p-3 space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-medium text-white truncate flex-1">{entry.name}</p>
@@ -1129,8 +1319,17 @@ export default function AusfahrtDetail() {
                       <span className="text-xs text-muted-foreground">{entry.transport === 'Bus' ? '🚌' : '🚗'}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      {entry.status !== 'Eingecheckt' && (
-                        <button onClick={() => entry.isBegleitperson ? handleBegleitpersonCheckIn(entry.parentId, entry.begleitIndex) : handleCheckIn({ id: entry.parentId })} className="bg-primary text-white font-semibold px-3 py-1.5 rounded-lg text-xs">Einchecken</button>
+                      {entry.status !== 'Eingecheckt' ? (
+                        <button
+                          onClick={() => entry.isBegleitperson ? handleBegleitpersonCheckIn(entry.parentId, entry.begleitIndex) : handleCheckIn({ id: entry.parentId, name: entry.name })}
+                          disabled={!darfJetztChecken}
+                          className={`${darfJetztChecken ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground border border-border'} font-semibold px-3 py-1.5 rounded-lg text-xs`}
+                        >Einchecken</button>
+                      ) : (
+                        <button
+                          onClick={() => entry.isBegleitperson ? handleBegleitpersonCheckIn(entry.parentId, entry.begleitIndex) : handleCheckOut({ id: entry.parentId, name: entry.name })}
+                          className="border border-yellow-500/40 text-yellow-500 font-semibold px-3 py-1.5 rounded-lg text-xs"
+                        >Auschecken</button>
                       )}
                       <button
                         onClick={() => handleRemoveRegistration(entry)}
@@ -1187,7 +1386,7 @@ export default function AusfahrtDetail() {
       </div>
 
       {/* QR Code Modal */}
-      {showQR && myRegistration && (
+      {showQR && (myRegistration || meineFamilienAnmeldungen.length > 0) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setShowQR(false)}>
           <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
@@ -1199,18 +1398,45 @@ export default function AusfahrtDetail() {
             <p className="text-xs text-muted-foreground mb-4 text-center">
               Zeige diesen Code dem Busverantwortlichen beim Einsteigen.
             </p>
-            <div className="flex justify-center mb-4">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&bgcolor=ffffff&data=${encodeURIComponent(myRegistration.id)}`}
-                alt="QR Code"
-                className="rounded-xl w-[200px] h-[200px] sm:w-[250px] sm:h-[250px] max-w-full"
-              />
-            </div>
-            <p className="text-center text-sm text-muted-foreground font-medium">{getMitgliedName(myRegistration.mitglied_id)}</p>
-            {myRegistration.transport && (
-              <p className="text-center text-xs text-muted-foreground mt-1">
-                {myRegistration.transport === 'Bus' ? '🚌 Bus' : '🚗 Privat'}
-              </p>
+            {myRegistration && (
+              <>
+                <div className="flex justify-center mb-4">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&bgcolor=ffffff&data=${encodeURIComponent(myRegistration.id)}`}
+                    alt="QR Code"
+                    className="rounded-xl w-[200px] h-[200px] sm:w-[250px] sm:h-[250px] max-w-full"
+                  />
+                </div>
+                <p className="text-center text-sm text-muted-foreground font-medium">{getMitgliedName(myRegistration.mitglied_id)}</p>
+                {myRegistration.transport && (
+                  <p className="text-center text-xs text-muted-foreground mt-1">
+                    {myRegistration.transport === 'Bus' ? '🚌 Bus' : '🚗 Privat'}
+                  </p>
+                )}
+              </>
+            )}
+            {/* QR-Codes der angemeldeten Familienmitglieder */}
+            {meineFamilienAnmeldungen.length > 0 && (
+              <div className={myRegistration ? 'border-t border-border mt-5 pt-4' : ''}>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide text-center mb-3">
+                  Familienmitglieder
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {meineFamilienAnmeldungen.map(reg => (
+                    <div key={reg.id} className="bg-secondary/40 border border-border rounded-xl p-3 flex flex-col items-center gap-2">
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&bgcolor=ffffff&data=${encodeURIComponent(reg.id)}`}
+                        alt={`QR ${getMitgliedName(reg.mitglied_id)}`}
+                        className="rounded-lg w-[110px] h-[110px] sm:w-[130px] sm:h-[130px] max-w-full"
+                      />
+                      <div className="text-center min-w-0 w-full">
+                        <p className="text-xs font-medium text-white truncate">{getMitgliedName(reg.mitglied_id)}</p>
+                        <p className="text-[10px] text-muted-foreground">{reg.transport === 'Bus' ? '🚌 Bus' : '🚗 Privat'}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         </div>

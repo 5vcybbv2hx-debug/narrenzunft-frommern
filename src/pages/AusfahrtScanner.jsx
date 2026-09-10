@@ -91,6 +91,7 @@ export default function AusfahrtScanner() {
     try {
       const response = await base44.functions.invoke('checkinAusfahrt', {
         anmeldung_id: decodedText,
+        erwartete_ausfahrt_id: id,
         eingeloggter_name: user?.full_name || user?.email || 'Busverantwortlicher'
       });
       const result = response.data || response;
@@ -133,6 +134,7 @@ export default function AusfahrtScanner() {
     try {
       const response = await base44.functions.invoke('checkinAusfahrt', {
         anmeldung_id: reg.id,
+        erwartete_ausfahrt_id: id,
         eingeloggter_name: user?.full_name || user?.email || 'Busverantwortlicher'
       });
       const result = response.data || response;

@@ -8,6 +8,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const anmeldungId = body?.anmeldung_id;
+    const erwarteteAusfahrtId = body?.erwartete_ausfahrt_id || null;
     const eingeloggterName = body?.eingeloggter_name || user?.full_name || user?.email || 'Busverantwortlicher';
 
     if (!anmeldungId) {
@@ -37,6 +38,33 @@ Deno.serve(async (req) => {
 
     if (!hasGeneralAccess && !isBusverantwortlich) {
       return Response.json({ erfolg: false, fehler: 'Keine Berechtigung für den Check-in.' }, { status: 403 });
+    }
+
+    // QR-Code gehört zu einer anderen Ausfahrt? (Manipulationsschutz)
+    if (erwarteteAusfahrtId && anmeldung.ausfahrt_id !== erwarteteAusfahrtId) {
+      return Response.json({
+        erfolg: false,
+        fehler: 'Dieser QR-Code gehört zu einer anderen Ausfahrt.',
+        anmeldung
+      }, { status: 200 });
+    }
+
+    // Zeitfenster: Check-in nur am Tag der Ausfahrt.
+    // Vorher: gar nicht. Nachher (Korrektur): nur Vorstand/Stellv./Spartenleiter/Admin.
+    const heute = new Date().toISOString().split('T')[0];
+    if (ausfahrt.datum && heute < ausfahrt.datum) {
+      return Response.json({
+        erfolg: false,
+        fehler: `Check-in ist erst am ${ausfahrt.datum.split('-').reverse().join('.')} möglich.`,
+        anmeldung
+      }, { status: 200 });
+    }
+    if (ausfahrt.datum && heute > ausfahrt.datum && !hasGeneralAccess) {
+      return Response.json({
+        erfolg: false,
+        fehler: 'Nachträglicher Check-in nur für Vorstand und Spartenleiter möglich.',
+        anmeldung
+      }, { status: 200 });
     }
 
     // Bereits eingecheckt?
