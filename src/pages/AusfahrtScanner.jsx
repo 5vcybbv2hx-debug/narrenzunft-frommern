@@ -21,6 +21,7 @@ export default function AusfahrtScanner() {
   const [lastScan, setLastScan] = useState(null);
   const [error, setError] = useState(null);
   const [scannerError, setScannerError] = useState(null);
+  const [startPending, setStartPending] = useState(false);
   const [manuellerFilter, setManuellerFilter] = useState('');
   const scannerRef = useRef(null);
   const html5QrCodeRef = useRef(null);
@@ -162,10 +163,10 @@ export default function AusfahrtScanner() {
     }
   }, [user, mitglieder]);
 
-  const startScanner = async () => {
+  const startScanner = () => {
     setScannerError(null);
 
-    // Vorabprüfungen, bevor überhaupt ein Kamera-Zugriff versucht wird
+    // Vorabprüfungen, bevor der Container gerendert und die Kamera angefragt wird
     if (!window.isSecureContext) {
       setScannerError('Die Kamera funktioniert nur über eine sichere Verbindung (https). Bitte die Seite über https aufrufen.');
       return;
@@ -175,63 +176,80 @@ export default function AusfahrtScanner() {
       return;
     }
 
-    let html5QrCode;
-    try {
-      html5QrCode = new Html5Qrcode('qr-reader');
-      html5QrCodeRef.current = html5QrCode;
-
-      const screenWidth = window.innerWidth || 375;
-      const qrboxSize = Math.min(250, Math.floor(screenWidth * 0.7));
-      const qrConfig = {
-        fps: 10,
-        qrbox: { width: qrboxSize, height: qrboxSize },
-        aspectRatio: 1.0,
-        experimentalFeatures: { useBarCodeDetectorIfSupported: true }
-      };
-
-      try {
-        // Zuerst Rückkamera versuchen (Standard für Check-in)
-        await html5QrCode.start(
-          { facingMode: 'environment' },
-          qrConfig,
-          (decodedText) => handleScanResult(decodedText),
-          undefined
-        );
-      } catch (envErr) {
-        // Manche Geräte (z.B. Laptops, ältere Tablets) kennen 'environment' nicht — Fallback auf Standardkamera
-        console.warn('Rückkamera nicht verfügbar, versuche Standardkamera:', envErr);
-        await html5QrCode.start(
-          { facingMode: 'user' },
-          qrConfig,
-          (decodedText) => handleScanResult(decodedText),
-          undefined
-        );
-      }
-      setScanning(true);
-    } catch (err) {
-      console.error('Scanner start error:', err);
-      const name = err?.name || '';
-      const msg = err?.message || '';
-      let text = 'Kamera konnte nicht gestartet werden.';
-      if (name === 'NotAllowedError' || /permission/i.test(msg)) {
-        text = 'Kamera-Zugriff wurde verweigert. Bitte in den Browser-Einstellungen die Kamera-Berechtigung für diese Seite erlauben und erneut versuchen.';
-      } else if (name === 'NotFoundError') {
-        text = 'Es wurde keine Kamera auf diesem Gerät gefunden. Bitte die manuelle Liste unten nutzen.';
-      } else if (name === 'NotReadableError') {
-        text = 'Die Kamera wird bereits von einer anderen App oder einem anderen Tab verwendet. Bitte diese schließen und erneut versuchen.';
-      } else if (name === 'OverconstrainedError') {
-        text = 'Die Kamera-Einstellungen werden von diesem Gerät nicht unterstützt.';
-      } else if (name === 'SecurityError') {
-        text = 'Kamera-Zugriff wurde aus Sicherheitsgründen blockiert (nur über https möglich).';
-      }
-      setScannerError(text);
-      setScanning(false);
-      if (html5QrCodeRef.current) {
-        try { await html5QrCodeRef.current.clear(); } catch { /* bereits verworfen */ }
-        html5QrCodeRef.current = null;
-      }
-    }
+    // scanning=true rendert den #qr-reader-Container; der Effect startet die Kamera,
+    // sobald das Element im DOM existiert
+    setScanning(true);
+    setStartPending(true);
   };
+
+  // Kamera-Start — läuft erst, nachdem React den #qr-reader-Container gerendert hat.
+  // (Html5Qrcode benötigt das Element bei new Html5Qrcode(...) im DOM, sonst crasht es,
+  // bevor überhaupt die Browser-Kamera-Berechtigung angefragt wird.)
+  useEffect(() => {
+    if (!startPending) return;
+    setStartPending(false);
+
+    let cancelled = false;
+    (async () => {
+      let html5QrCode;
+      try {
+        html5QrCode = new Html5Qrcode('qr-reader');
+        html5QrCodeRef.current = html5QrCode;
+
+        const screenWidth = window.innerWidth || 375;
+        const qrboxSize = Math.min(250, Math.floor(screenWidth * 0.7));
+        const qrConfig = {
+          fps: 10,
+          qrbox: { width: qrboxSize, height: qrboxSize },
+          experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+        };
+
+        try {
+          // Zuerst Rückkamera versuchen (Standard für QR-Check-in)
+          await html5QrCode.start(
+            { facingMode: 'environment' },
+            qrConfig,
+            (decodedText) => handleScanResult(decodedText),
+            undefined
+          );
+        } catch (envErr) {
+          // Manche Geräte (z.B. Laptops) kennen 'environment' nicht — Fallback Standardkamera
+          console.warn('Rückkamera nicht verfügbar, versuche Standardkamera:', envErr);
+          await html5QrCode.start(
+            { facingMode: 'user' },
+            qrConfig,
+            (decodedText) => handleScanResult(decodedText),
+            undefined
+          );
+        }
+      } catch (err) {
+        if (cancelled) return;
+        console.error('Scanner start error:', err);
+        const name = err?.name || '';
+        const msg = err?.message || '';
+        let text = 'Kamera konnte nicht gestartet werden.';
+        if (name === 'NotAllowedError' || /permission/i.test(msg)) {
+          text = 'Kamera-Zugriff wurde verweigert. Bitte in den Browser-Einstellungen die Kamera-Berechtigung für diese Seite erlauben und erneut versuchen.';
+        } else if (name === 'NotFoundError') {
+          text = 'Es wurde keine Kamera auf diesem Gerät gefunden. Bitte die manuelle Liste unten nutzen.';
+        } else if (name === 'NotReadableError') {
+          text = 'Die Kamera wird bereits von einer anderen App oder einem anderen Tab verwendet. Bitte diese schließen und erneut versuchen.';
+        } else if (name === 'OverconstrainedError') {
+          text = 'Die Kamera-Einstellungen werden von diesem Gerät nicht unterstützt.';
+        } else if (name === 'SecurityError') {
+          text = 'Kamera-Zugriff wurde aus Sicherheitsgründen blockiert (nur über https möglich).';
+        }
+        setScannerError(text);
+        setScanning(false);
+        if (html5QrCodeRef.current) {
+          try { await html5QrCodeRef.current.clear(); } catch { /* bereits verworfen */ }
+          html5QrCodeRef.current = null;
+        }
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [startPending, handleScanResult]);
 
   const stopScanner = async () => {
     if (html5QrCodeRef.current) {
