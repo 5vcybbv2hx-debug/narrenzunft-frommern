@@ -40,6 +40,7 @@ export default function AusfahrtDetail() {
   const [fremdBegleitpersonen, setFremdBegleitpersonen] = useState([]);
   const [kindAnmeldungen, setKindAnmeldungen] = useState({}); // { kindId: { transport, angemeldet } }
   const [checkinSuche, setCheckinSuche] = useState('');
+  const [umzugAbschlussLaeuft, setUmzugAbschlussLaeuft] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -478,6 +479,31 @@ export default function AusfahrtDetail() {
       console.error('Error removing registration:', err);
       toast.error('Entfernen fehlgeschlagen.');
     }
+  };
+
+  // Umzug abschließen & Umzugsteilnahmen für die Ehrungs-Zählung erfassen
+  const handleUmzugAbschliessen = async () => {
+    if (!(await confirmDialog(
+      `Umzug "${ausfahrt.titel}" abschließen und Umzugsteilnahmen zählen?\n\nAlle Eingecheckten werden für die Ehrungs-Zählung (3 Jugend-Umzüge / 5 / 10 / 25 Umzüge) berücksichtigt.`
+    ))) return;
+    setUmzugAbschlussLaeuft(true);
+    try {
+      const res = await base44.functions.invoke('umzugAbschliessen', { ausfahrt_id: ausfahrt.id });
+      const d = res?.data || res;
+      if (d?.erfolg) {
+        setAusfahrt(prev => ({ ...prev, status: 'Abgeschlossen' }));
+        toast.success(
+          `Umzug abgeschlossen — ${d.statistik.anwesendBestaetigt} Teilnahme(n) gezählt` +
+          (d.neueFaelligeEhrungen > 0 ? `, ${d.neueFaelligeEhrungen} neue Ehrung(en) fällig` : '')
+        );
+      } else {
+        toast.error(d?.error || 'Abschließen fehlgeschlagen.');
+      }
+    } catch (err) {
+      console.error('UmzugAbschliessen:', err);
+      toast.error('Abschließen fehlgeschlagen.');
+    }
+    setUmzugAbschlussLaeuft(false);
   };
 
   const handleExportCSV = () => {
@@ -1053,6 +1079,17 @@ export default function AusfahrtDetail() {
                 >
                   <Download className="w-4 h-4" /> CSV Export
                 </button>
+                {ausfahrt.typ === 'Umzug' && isAdmin(user) && (
+                  <button
+                    onClick={handleUmzugAbschliessen}
+                    disabled={umzugAbschlussLaeuft}
+                    className="bg-green-600 hover:bg-green-500 disabled:opacity-60 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2"
+                    title="Eingecheckte als Umzugsteilnahmen für die Ehrungs-Zählung erfassen"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    {umzugAbschlussLaeuft ? 'Zähle…' : ausfahrt.status === 'Abgeschlossen' ? 'Umzugszählung aktualisieren' : 'Umzug abschließen & zählen'}
+                  </button>
+                )}
               </div>
             </div>
 
