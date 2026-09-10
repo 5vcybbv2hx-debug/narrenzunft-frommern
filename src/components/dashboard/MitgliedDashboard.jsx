@@ -75,12 +75,13 @@ export default function MitgliedDashboard() {
       setMyMitglied(mitglied);
 
       // Parallele Abfragen
-      const [teilnahmen, zuweisungen, beitraege, notifs, alleAufgaben] = await Promise.all([
+      const [teilnahmen, zuweisungen, beitraege, notifs, alleAufgaben, ausfahrtAnmeldungen] = await Promise.all([
         base44.entities.Teilnahme.filter({ mitglied_id: mitglied.id }),
         base44.entities.ArbeitsdienstZuweisung.filter({ mitglied_id: mitglied.id }),
         base44.entities.Beitrag.filter({ mitglied_id: mitglied.id }),
         base44.entities.Benachrichtigung.filter({ mitglied_id: mitglied.id }),
         base44.entities.Todo.list('-created_date', 500).catch(() => []),
+        base44.entities.AusfahrtAnmeldung.filter({ mitglied_id: mitglied.id }).catch(() => []),
       ]);
 
       // Eigene offene Aufgaben: überfällig zuerst, dann Priorität, dann Fälligkeit
@@ -104,6 +105,12 @@ export default function MitgliedDashboard() {
       const veranstaltungIds = [...new Set(teilnahmen.map(t => t.veranstaltung_id).filter(Boolean))];
       const events = veranstaltungIds.length > 0
         ? (await Promise.all(veranstaltungIds.map(id => base44.entities.Veranstaltung.filter({ id })))).flat()
+        : [];
+
+      // Ausfahrten nur für aktive Anmeldungen laden (Status !== 'Abgemeldet')
+      const ausfahrtIds = [...new Set((ausfahrtAnmeldungen || []).filter(a => a.status !== 'Abgemeldet').map(a => a.ausfahrt_id).filter(Boolean))];
+      const ausfahrtenListe = ausfahrtIds.length > 0
+        ? (await Promise.all(ausfahrtIds.map(id => base44.entities.Ausfahrt.filter({ id }).catch(() => [])))).flat()
         : [];
 
       // Arbeitsdienste nur für zugewiesene IDs laden
@@ -150,15 +157,24 @@ export default function MitgliedDashboard() {
       setVeranstaltungen(events);
       setArbeitsdienste(dienste);
 
-      // Kommende Anmeldungen
-      const kommendeTeilnahmen = teilnahmen
+      // Kommende Anmeldungen: Veranstaltungen + Ausfahrten chronologisch gemischt
+      const kommendeVeranstaltungen = teilnahmen
         .filter(t => ['Angemeldet', 'Bestätigt', 'Anwesend'].includes(t.status))
-        .filter(t => {
+        .map(t => {
           const ev = events.find(e => e.id === t.veranstaltung_id);
-          return ev && ev.datum >= today;
+          if (!ev || ev.datum < today) return null;
+          return { key: `v-${t.id}`, typ: 'veranstaltung', datum: ev.datum, titel: ev.titel, uhrzeit: ev.uhrzeit, ort: ev.ort, bus: t.bus, link: `/veranstaltungen/${ev.id}` };
         })
-        .slice(0, 5);
-      setMeineAnmeldungen(kommendeTeilnahmen);
+        .filter(Boolean);
+      const kommendeAusfahrten = (ausfahrtAnmeldungen || [])
+        .filter(a => a.status !== 'Abgemeldet')
+        .map(a => {
+          const f = ausfahrtenListe.find(x => x.id === a.ausfahrt_id);
+          if (!f || f.datum < today) return null;
+          return { key: `a-${a.id}`, typ: 'ausfahrt', datum: f.datum, titel: f.titel, uhrzeit: f.abfahrt_zeit || f.veranstaltungsbeginn, ort: f.ort, bus: a.transport === 'Bus', transport: a.transport, link: `/ausfahrten/${f.id}` };
+        })
+        .filter(Boolean);
+      setMeineAnmeldungen([...kommendeVeranstaltungen, ...kommendeAusfahrten].sort((a, b) => a.datum.localeCompare(b.datum)).slice(0, 6));
 
       // Offene Arbeitsdienste
       const offeneDienste = zuweisungen
@@ -180,7 +196,6 @@ export default function MitgliedDashboard() {
     setLoading(false);
   };
 
-  const getVeranstaltung = (id) => veranstaltungen.find(v => v.id === id);
   const getArbeitsdienst = (id) => arbeitsdienste.find(d => d.id === id);
 
   if (loading) return (
@@ -271,29 +286,30 @@ export default function MitgliedDashboard() {
           <EmptyHint text="Keine bevorstehenden Anmeldungen" />
         ) : (
           <div className="space-y-3">
-            {meineAnmeldungen.map(t => {
-              const ev = getVeranstaltung(t.veranstaltung_id);
-              if (!ev) return null;
-              return (
-                <Link key={t.id} to={`/veranstaltungen/${ev.id}`} className="flex items-center gap-3 group">
-                  <div className="w-11 h-11 rounded-xl bg-primary/10 flex flex-col items-center justify-center shrink-0">
-                    <span className="text-[9px] text-muted-foreground">{format(new Date(ev.datum), 'MMM', { locale: de })}</span>
-                    <span className="text-sm font-bold text-primary">{format(new Date(ev.datum), 'd')}</span>
+            {meineAnmeldungen.map(t => (
+              <Link key={t.key} to={t.link} className="flex items-center gap-3 group">
+                <div className="w-11 h-11 rounded-xl bg-primary/10 flex flex-col items-center justify-center shrink-0">
+                  <span className="text-[9px] text-muted-foreground">{format(new Date(t.datum), 'MMM', { locale: de })}</span>
+                  <span className="text-sm font-bold text-primary">{format(new Date(t.datum), 'd')}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                    {t.typ === 'ausfahrt' && <Bus size={11} className="inline mr-1 -mt-0.5 text-blue-400" />}
+                    {t.titel}
+                  </p>
+                  <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                    {t.uhrzeit && <span className="flex items-center gap-1"><Clock size={10} /> {t.uhrzeit}</span>}
+                    {t.ort && <span className="flex items-center gap-1 truncate"><MapPin size={10} /> {t.ort}</span>}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">{ev.titel}</p>
-                    <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
-                      {ev.uhrzeit && <span className="flex items-center gap-1"><Clock size={10} /> {ev.uhrzeit}</span>}
-                      {ev.ort && <span className="flex items-center gap-1 truncate"><MapPin size={10} /> {ev.ort}</span>}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    {t.bus && <Bus size={12} className="text-blue-400" />}
-                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400">✓</span>
-                  </div>
-                </Link>
-              );
-            })}
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  {t.typ === 'ausfahrt'
+                    ? <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400">{t.transport || 'Bus'}</span>
+                    : t.bus && <Bus size={12} className="text-blue-400" />}
+                  <span className="text-xs px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400">✓</span>
+                </div>
+              </Link>
+            ))}
           </div>
         )}
       </Card>
