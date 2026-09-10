@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannArbeitsdiensteVerwalten } from '@/lib/roles';
-import { Briefcase, Plus, Calendar, MapPin, Users, Edit, X, ChevronDown, ChevronUp, LayoutTemplate, List } from 'lucide-react';
+import { Briefcase, Plus, Calendar, MapPin, Users, User, Edit, X, ChevronDown, ChevronUp, LayoutTemplate, List } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import ArbeitsdienstEditModal from '@/components/arbeitsdienst/ArbeitsdienstEditModal';
@@ -41,6 +41,7 @@ export default function Arbeitsdienste() {
   const [expandedEvents, setExpandedEvents] = useState({});
   const [showVorlagen, setShowVorlagen] = useState(false);
   const [ansicht, setAnsicht] = useState('liste'); // 'liste' | 'kalender'
+  const [nurMeine, setNurMeine] = useState(false);
   const kannVerwalten = kannArbeitsdiensteVerwalten(user);
   const today = new Date().toISOString().split('T')[0];
 
@@ -94,6 +95,7 @@ export default function Arbeitsdienste() {
       if (filter === 'Vergangen') return d.datum < today;
       return d.status === filter;
     })
+    .filter(d => !nurMeine || (myMitglied && zuweisungen.some(z => z.arbeitsdienst_id === d.id && z.mitglied_id === myMitglied.id)))
     .sort((a, b) => {
       const aKey = `${a.datum || ''}T${a.uhrzeit || '00:00'}`;
       const bKey = `${b.datum || ''}T${b.uhrzeit || '00:00'}`;
@@ -199,6 +201,9 @@ export default function Arbeitsdienste() {
             'Kommend':      dienste.filter(d => d.datum >= today).length,
             'Vergangen':    dienste.filter(d => d.datum < today).length,
           };
+          const meineCount = myMitglied
+            ? dienste.filter(d => zuweisungen.some(z => z.arbeitsdienst_id === d.id && z.mitglied_id === myMitglied.id)).length
+            : 0;
           return (
             <div className="flex gap-2 overflow-x-auto pb-1 mb-4 scrollbar-hide">
               {['Alle', 'Kommend', 'Vergangen'].map(f => (
@@ -215,6 +220,17 @@ export default function Arbeitsdienste() {
                   </span>
                 </button>
               ))}
+              <button
+                onClick={() => setNurMeine(v => !v)}
+                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
+                  nurMeine ? 'bg-primary text-white border-primary' : 'bg-card border-border text-muted-foreground hover:border-primary/50'
+                }`}
+              >
+                <User size={11} /> Nur meine
+                <span className={`text-[10px] font-bold px-1 rounded-full ${nurMeine ? 'bg-white/20' : 'bg-secondary'}`}>
+                  {meineCount}
+                </span>
+              </button>
             </div>
           );
         })()}
@@ -387,10 +403,12 @@ export default function Arbeitsdienste() {
             <Briefcase size={36} className="text-muted-foreground/40 mx-auto mb-3" />
             <p className="text-foreground font-medium">Keine Arbeitsdienste</p>
             <p className="text-sm text-muted-foreground mt-1">
-              {filter !== 'Alle' ? `Keine Einträge für Filter „${filter}"` : 'Noch keine Arbeitsdienste angelegt'}
+              {nurMeine
+                ? 'Du bist aktuell für keinen Arbeitsdienst eingeteilt.'
+                : filter !== 'Alle' ? `Keine Einträge für Filter „${filter}"` : 'Noch keine Arbeitsdienste angelegt'}
             </p>
-            {filter !== 'Alle' && (
-              <button onClick={() => setFilter('Alle')} className="mt-3 text-xs text-primary hover:underline">
+            {(filter !== 'Alle' || nurMeine) && (
+              <button onClick={() => { setFilter('Alle'); setNurMeine(false); }} className="mt-3 text-xs text-primary hover:underline">
                 Filter zurücksetzen
               </button>
             )}

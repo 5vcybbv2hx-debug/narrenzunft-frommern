@@ -2,7 +2,7 @@ import TimeSelect from '../ui/TimeSelect';
 import DateSelect from '../ui/DateSelect';
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { X, Save, Trash2, Search, Bookmark, GripVertical, AlertTriangle } from 'lucide-react';
+import { X, Save, Trash2, Search, Bookmark, UserPlus, AlertTriangle } from 'lucide-react';
 import MobileSelect from '../MobileSelect';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
@@ -27,7 +27,6 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
   const [selectedVorlage, setSelectedVorlage] = useState('');
   const [vorlageSaving, setVorlageSaving] = useState(false);
   const [vorlageSaved, setVorlageSaved] = useState(false);
-  const [draggedId, setDraggedId] = useState(null);
   const [alleZuweisungen, setAlleZuweisungen] = useState([]); // alle Zuweisungen am selben Tag
   const [alleDienste, setAlleDienste] = useState([]);
   const [konfliktWarnung, setKonfliktWarnung] = useState(null); // { name, schicht }
@@ -60,16 +59,6 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
     (suche.length === 0 || `${m.vorname} ${m.nachname}`.toLowerCase().includes(suche.toLowerCase()))
   );
 
-  const handleDragStart = (e, mitgliedId) => {
-    setDraggedId(mitgliedId);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
   const pruefeKonflikt = (mitgliedId) => {
     const konfliktZuweisung = alleZuweisungen.find(z => z.mitglied_id === mitgliedId);
     if (!konfliktZuweisung) return null;
@@ -77,50 +66,28 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
     return konfliktDienst ? konfliktDienst.titel : 'andere Schicht';
   };
 
-  const handleDropEingeteilt = async (e) => {
-    e.preventDefault();
-    if (!draggedId) return;
-    
-    if (zugewieseneIds.has(draggedId)) {
-      setDraggedId(null);
-      return;
-    }
+  const handleZuweisen = async (mitgliedId) => {
+    if (!mitgliedId || zugewieseneIds.has(mitgliedId) || adding) return;
 
-    // Konflikt prüfen
-    const konfliktSchicht = pruefeKonflikt(draggedId);
+    // Konflikt prüfen (gleiche Zeit, andere Schicht)
+    const konfliktSchicht = pruefeKonflikt(mitgliedId);
     if (konfliktSchicht) {
-      const m = mitglieder.find(m => m.id === draggedId);
+      const m = mitglieder.find(m => m.id === mitgliedId);
       setKonfliktWarnung({ name: `${m?.vorname} ${m?.nachname}`, schicht: konfliktSchicht });
-      setDraggedId(null);
       setTimeout(() => setKonfliktWarnung(null), 5000);
       return;
     }
-    
+
     setAdding(true);
     try {
       const neu = await base44.entities.ArbeitsdienstZuweisung.create({
         arbeitsdienst_id: dienst.id,
-        mitglied_id: draggedId,
+        mitglied_id: mitgliedId,
         status: 'Offen',
       });
       setZuweisungen(prev => [...prev, neu]);
     } catch (e) { console.error('Error:', e); }
     setAdding(false);
-    setDraggedId(null);
-  };
-
-  const handleDropVerfuegbar = async (e) => {
-    e.preventDefault();
-    if (!draggedId) return;
-    
-    const zuweisung = zuweisungen.find(z => z.mitglied_id === draggedId);
-    if (zuweisung) {
-      try {
-        await base44.entities.ArbeitsdienstZuweisung.delete(zuweisung.id);
-        setZuweisungen(prev => prev.filter(z => z.id !== zuweisung.id));
-      } catch (e) { console.error('Error:', e); }
-    }
-    setDraggedId(null);
   };
 
   const handleRemove = async (zuweisungId) => {
@@ -262,32 +229,26 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
                     className="w-full pl-7 pr-3 py-2 rounded-lg bg-secondary border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
                   />
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-2">💡 Ziehe Mitglieder nach rechts</p>
+                <p className="text-[10px] text-muted-foreground mt-2">💡 Tippe ein Mitglied an, um es zuzuweisen</p>
               </div>
-              <div 
-                className="flex-1 overflow-y-auto px-2 pb-2 min-h-0"
-                onDragOver={handleDragOver}
-                onDrop={handleDropVerfuegbar}
-              >
+              <div className="flex-1 overflow-y-auto px-2 pb-2 min-h-0">
                 {verfuegbar.length === 0 && (
                   <p className="text-xs text-muted-foreground text-center mt-4">Alle eingeteilt</p>
                 )}
                 {verfuegbar.map(m => {
                   const hatKonflikt = !!pruefeKonflikt(m.id);
                   return (
-                    <div
+                    <button
                       key={m.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, m.id)}
-                      onDragEnd={() => setDraggedId(null)}
-                      title={hatKonflikt ? `⚠ Bereits in anderer Schicht eingeteilt` : ''}
-                      className={`flex items-center gap-2 px-2 py-2 rounded-lg mb-0.5 cursor-move border transition-all ${
-                        draggedId === m.id ? 'opacity-50 bg-secondary border-border' :
+                      onClick={() => handleZuweisen(m.id)}
+                      disabled={adding}
+                      title={hatKonflikt ? '⚠ Bereits in anderer Schicht eingeteilt' : 'Zuweisen'}
+                      className={`w-full text-left flex items-center gap-2 px-2 py-2.5 rounded-lg mb-0.5 border transition-all disabled:opacity-60 ${
                         hatKonflikt ? 'bg-primary/10 border-primary/40/30 hover:bg-primary/15' :
-                        'hover:bg-secondary bg-secondary/30 border-border/50'
+                        'hover:bg-secondary hover:border-primary/40 bg-secondary/30 border-border/50'
                       }`}
                     >
-                      <GripVertical size={12} className="text-muted-foreground shrink-0" />
+                      <UserPlus size={14} className="text-muted-foreground shrink-0" />
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${hatKonflikt ? 'bg-primary/20 text-primary' : 'bg-primary/20 text-primary'}`}>
                         {m.vorname?.[0]}{m.nachname?.[0]}
                       </div>
@@ -297,7 +258,7 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
                           {hatKonflikt ? <span className="text-primary">⚠ Zeitkonflikt</span> : m.mitgliedsstatus}
                         </p>
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -309,7 +270,7 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
                   Eingeteilt ({zuweisungen.length}{form.benoetigte_personen ? `/${form.benoetigte_personen}` : ''})
                 </p>
-                <p className="text-[10px] text-muted-foreground">💡 Ziehe zurück nach links</p>
+                <p className="text-[10px] text-muted-foreground">💡 Mit ✕ wieder entfernen</p>
                 {konfliktWarnung && (
                   <div className="mt-2 flex items-start gap-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-xs text-red-400">
                     <AlertTriangle size={13} className="shrink-0 mt-0.5" />
@@ -317,25 +278,15 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
                   </div>
                 )}
               </div>
-              <div 
-                className="flex-1 overflow-y-auto px-2 pb-2 min-h-0 bg-primary/5 rounded-lg"
-                onDragOver={handleDragOver}
-                onDrop={handleDropEingeteilt}
-              >
+              <div className="flex-1 overflow-y-auto px-2 pb-2 min-h-0 bg-primary/5 rounded-lg">
                 {zuweisungen.length === 0 && (
                   <p className="text-xs text-muted-foreground text-center mt-4">Noch niemand eingeteilt</p>
                 )}
                 {zuweisungen.map(z => {
                   const m = mitglieder.find(m => m.id === z.mitglied_id);
                   return (
-                    <div key={z.id} className={`rounded-lg mb-1 border transition-all ${draggedId === z.mitglied_id ? 'opacity-50 border-primary/20' : 'border-primary/20'}`}>
-                      <div
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, z.mitglied_id)}
-                        onDragEnd={() => setDraggedId(null)}
-                        className="flex items-center gap-2 px-2 py-2 group cursor-move hover:bg-secondary/50 rounded-t-lg bg-card"
-                      >
-                        <GripVertical size={12} className="text-muted-foreground shrink-0" />
+                    <div key={z.id} className="rounded-lg mb-1 border border-primary/20">
+                      <div className="flex items-center gap-2 px-2 py-2 group hover:bg-secondary/50 rounded-t-lg bg-card">
                         <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-[10px] shrink-0">
                           {m?.vorname?.[0]}{m?.nachname?.[0]}
                         </div>
@@ -345,12 +296,12 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
                             {z.status}
                           </span>
                         </div>
-                        <div className="shrink-0 w-24" onDragStart={e => e.stopPropagation()}>
+                        <div className="shrink-0 w-24">
                           <MobileSelect value={z.status} onChange={v => handleZuweisungStatus(z, v)}
                             options={ZUWEISUNG_STATUS}
                             className="!min-h-0 !py-1 !px-1.5 !text-[10px]" />
                         </div>
-                        <button onClick={() => handleRemove(z.id)} className="p-1 rounded text-muted-foreground hover:text-destructive transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 shrink-0">
+                        <button onClick={() => handleRemove(z.id)} className="p-1.5 rounded text-muted-foreground hover:text-destructive transition-colors shrink-0">
                           <X size={12} />
                         </button>
                       </div>
@@ -364,8 +315,7 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
                           }
                         }}
                         className="w-full px-2 py-1 bg-secondary/30 border-t border-border/50 text-[10px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:bg-secondary/50 rounded-b-lg"
-                        onDragStart={e => e.stopPropagation()}
-                      />
+ />
                     </div>
                   );
                 })}
