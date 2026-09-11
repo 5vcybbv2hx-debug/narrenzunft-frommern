@@ -83,6 +83,10 @@ export default function AusfahrtScanner() {
     flashTimerRef.current = setTimeout(() => setFlash(null), 1600);
   };
   const [manuellerFilter, setManuellerFilter] = useState('');
+  const [spontanSuche, setSpontanSuche] = useState('');
+  const [spontanExternName, setSpontanExternName] = useState('');
+  const [spontanModus, setSpontanModus] = useState('mitglied');
+  const [spontanLaeuft, setSpontanLaeuft] = useState(false);
   const scannerRef = useRef(null);
   const html5QrCodeRef = useRef(null);
 
@@ -141,6 +145,14 @@ export default function AusfahrtScanner() {
   };
 
   const activeAnmeldungen = anmeldungen.filter(a => a.status !== 'Abgemeldet');
+  const busCount = activeAnmeldungen.filter(a => a.transport === 'Bus').length;
+  const angemeldeteMitgliedIds = new Set(activeAnmeldungen.filter(a => a.mitglied_id).map(a => a.mitglied_id));
+  const spontanTreffer = spontanSuche.trim()
+    ? mitglieder
+        .filter(m => !angemeldeteMitgliedIds.has(m.id))
+        .filter(m => `${m.vorname || ''} ${m.nachname || ''}`.toLowerCase().includes(spontanSuche.trim().toLowerCase()))
+        .slice(0, 8)
+    : [];
   const gefilterteAnmeldungen = manuellerFilter.trim()
     ? activeAnmeldungen.filter(r => {
         const name = r.is_fremdangemeldet
@@ -239,6 +251,98 @@ export default function AusfahrtScanner() {
       }, ...prev].slice(0, 30));
     }
   }, [user, mitglieder, soundAn]);
+
+  // Spontan-Anmeldung: Jemand ist unangemeldet mitgekommen — direkt als Bus-Anmeldung
+  // anlegen und sofort über die reguläre Check-in-Function einchecken (Datumsgate und
+  // Berechtigungsprüfung greifen dabei exakt wie beim QR-Scan).
+  const handleSpontanMitglied = async (m) => {
+    if (spontanLaeuft) return;
+    setSpontanLaeuft(true);
+    const name = `${m.vorname || ''} ${m.nachname || ''}`.trim();
+    try {
+      const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date());
+      const created = await base44.entities.AusfahrtAnmeldung.create({
+        ausfahrt_id: id,
+        mitglied_id: m.id,
+        transport: 'Bus',
+        status: 'Angemeldet',
+        angemeldet_am: todayStr,
+        anzahl_begleitpersonen: 0,
+        begleitpersonen: [],
+        is_fremdangemeldet: false,
+        durch_admin_angemeldet: true,
+        durch_admin_name: user?.full_name || user?.email || 'Busverantwortlicher'
+      });
+      const response = await base44.functions.invoke('checkinAusfahrt', {
+        anmeldung_id: created?.id,
+        erwartete_ausfahrt_id: id,
+        eingeloggter_name: user?.full_name || user?.email || 'Busverantwortlicher'
+      });
+      const result = response.data || response;
+      playBeep(!!result.erfolg);
+      showFlash(!!result.erfolg, name);
+      setScanResults(prev => [{
+        id: created?.id || name,
+        name,
+        erfolg: !!result.erfolg,
+        fehler: result.erfolg ? null : (result.fehler || 'Angemeldet, Check-in nicht möglich'),
+        timestamp: new Date().toLocaleTimeString('de-DE')
+      }, ...prev].slice(0, 30));
+      setSpontanSuche('');
+      await fetchData();
+    } catch (err) {
+      console.error('Spontan-Anmeldung fehlgeschlagen:', err);
+      playBeep(false);
+      showFlash(false, 'Fehler beim Hinzufügen');
+    } finally {
+      setSpontanLaeuft(false);
+    }
+  };
+
+  const handleSpontanExtern = async () => {
+    if (spontanLaeuft || !spontanExternName.trim()) return;
+    setSpontanLaeuft(true);
+    const name = spontanExternName.trim();
+    try {
+      const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date());
+      const created = await base44.entities.AusfahrtAnmeldung.create({
+        ausfahrt_id: id,
+        mitglied_id: null,
+        transport: 'Bus',
+        status: 'Angemeldet',
+        angemeldet_am: todayStr,
+        anzahl_begleitpersonen: 0,
+        begleitpersonen: [],
+        is_fremdangemeldet: true,
+        fremdname: name,
+        durch_admin_angemeldet: true,
+        durch_admin_name: user?.full_name || user?.email || 'Busverantwortlicher'
+      });
+      const response = await base44.functions.invoke('checkinAusfahrt', {
+        anmeldung_id: created?.id,
+        erwartete_ausfahrt_id: id,
+        eingeloggter_name: user?.full_name || user?.email || 'Busverantwortlicher'
+      });
+      const result = response.data || response;
+      playBeep(!!result.erfolg);
+      showFlash(!!result.erfolg, name);
+      setScanResults(prev => [{
+        id: created?.id || name,
+        name,
+        erfolg: !!result.erfolg,
+        fehler: result.erfolg ? null : (result.fehler || 'Angemeldet, Check-in nicht möglich'),
+        timestamp: new Date().toLocaleTimeString('de-DE')
+      }, ...prev].slice(0, 30));
+      setSpontanExternName('');
+      await fetchData();
+    } catch (err) {
+      console.error('Spontan-Fremdanmeldung fehlgeschlagen:', err);
+      playBeep(false);
+      showFlash(false, 'Fehler beim Hinzufügen');
+    } finally {
+      setSpontanLaeuft(false);
+    }
+  };
 
   const startScanner = () => {
     setScannerError(null);
@@ -571,6 +675,89 @@ export default function AusfahrtScanner() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Spontan-Anmeldung: unregistrierte Personen vor Ort mitnehmen */}
+        {canScan && (
+          <div className="bg-card border border-border rounded-xl p-5 mt-6">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-sm font-bold font-oswald uppercase tracking-wider text-white">
+                Spontan mitnehmen
+              </h2>
+              <span className="text-xs text-muted-foreground shrink-0">🚌 {busCount} im Bus</span>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">
+              Jemand ist unangemeldet mitgekommen? Hier direkt als Bus-Teilnehmer anlegen und sofort einchecken.
+            </p>
+            <div className="flex gap-2 mb-3">
+              <button
+                onClick={() => setSpontanModus('mitglied')}
+                className={`px-3 py-2 rounded-lg text-xs font-semibold min-h-[40px] transition-colors ${spontanModus === 'mitglied' ? 'bg-primary text-white' : 'bg-secondary border border-border text-muted-foreground'}`}
+              >
+                Mitglied
+              </button>
+              <button
+                onClick={() => setSpontanModus('extern')}
+                className={`px-3 py-2 rounded-lg text-xs font-semibold min-h-[40px] transition-colors ${spontanModus === 'extern' ? 'bg-primary text-white' : 'bg-secondary border border-border text-muted-foreground'}`}
+              >
+                Externe Person
+              </button>
+            </div>
+            {spontanModus === 'mitglied' ? (
+              <div>
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={spontanSuche}
+                    onChange={(e) => setSpontanSuche(e.target.value)}
+                    placeholder="Mitglied nach Name suchen…"
+                    className="w-full pl-9 pr-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                  />
+                </div>
+                {spontanSuche.trim() && (
+                  <div className="mt-2 space-y-1.5 max-h-64 overflow-y-auto">
+                    {spontanTreffer.length === 0 ? (
+                      <p className="text-xs text-muted-foreground py-2">
+                        Kein passendes, noch nicht angemeldetes Mitglied gefunden.
+                      </p>
+                    ) : spontanTreffer.map(m => (
+                      <button
+                        key={m.id}
+                        onClick={() => handleSpontanMitglied(m)}
+                        disabled={spontanLaeuft}
+                        className="w-full flex items-center justify-between gap-2 bg-secondary/50 hover:bg-secondary border border-border rounded-lg px-3 py-2.5 min-h-[44px] text-left transition-colors disabled:opacity-50"
+                      >
+                        <span className="text-sm text-white truncate">
+                          {m.vorname} {m.nachname}
+                        </span>
+                        <span className="text-xs text-primary font-semibold shrink-0">
+                          {spontanLaeuft ? 'Bitte warten…' : '+ Anmelden & einchecken'}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={spontanExternName}
+                  onChange={(e) => setSpontanExternName(e.target.value)}
+                  placeholder="Name der externen Person…"
+                  className="flex-1 px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                />
+                <button
+                  onClick={handleSpontanExtern}
+                  disabled={spontanLaeuft || !spontanExternName.trim()}
+                  className="bg-primary hover:bg-red-700 disabled:opacity-50 text-white font-semibold px-4 py-2.5 min-h-[44px] rounded-lg text-xs transition-colors shrink-0"
+                >
+                  {spontanLaeuft ? 'Bitte warten…' : '+ Mitnehmen'}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
