@@ -26,6 +26,13 @@ export default function AusfahrtScanner() {
   const [soundAn, setSoundAn] = useState(true);
   const audioCtxRef = useRef(null);
   const flashTimerRef = useRef(null);
+  // Synchrone Scan-Sperre: Die Kamera liefert bis zu 10 Frames/Sekunde. Ein
+  // State-basierter Check (lastScan) reagiert zu langsam, weil React State-Updates
+  // asynchron sind — dadurch kommen mehrere Frames des GLEICHEN Codes durch, bevor
+  // der State aktualisiert ist, und jeder löst einen eigenen Beep + Backend-Call aus.
+  // Ein Ref ist sofort (synchron) sichtbar für den nächsten Frame und blockiert das zuverlässig.
+  const scanSperreRef = useRef(false);
+  const resumeTimerRef = useRef(null);
 
   // Akustisches + haptisches Feedback: Wer abspannt, muss während der Busfahrt
   // NICHT aufs Display oder die grüne Leuchte schauen — Erfolg/Fehler ist hörbar,
@@ -165,10 +172,14 @@ export default function AusfahrtScanner() {
   const gesamtCount = activeAnmeldungen.length;
 
   const handleScanResult = useCallback(async (decodedText) => {
-    if (lastScan && lastScan.id === decodedText && Date.now() - lastScan.timestamp < 3000) {
-      return;
-    }
+    // Sofort sperren (synchron) — blockiert alle weiteren Frames, bis dieser Scan fertig ist.
+    if (scanSperreRef.current) return;
+    scanSperreRef.current = true;
     setLastScan({ id: decodedText, timestamp: Date.now() });
+
+    // Kamera-Erkennung pausieren: verhindert, dass der noch im Bild sichtbare
+    // QR-Code während der Verarbeitung erneut erkannt wird.
+    try { html5QrCodeRef.current?.pause(true); } catch { /* Scanner evtl. schon gestoppt */ }
 
     try {
       const response = await base44.functions.invoke('checkinAusfahrt', {
@@ -209,8 +220,16 @@ export default function AusfahrtScanner() {
         fehler: 'Netzwerkfehler beim Check-in',
         timestamp: new Date().toLocaleTimeString('de-DE')
       }, ...prev].slice(0, 30));
+    } finally {
+      // 1,5s Pause vor Wiederaufnahme — genug Zeit, den QR aus dem Bild zu nehmen,
+      // bevor die Kamera wieder scannt. Verhindert den Mehrfach-Ton-Stress komplett.
+      if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+      resumeTimerRef.current = setTimeout(() => {
+        try { html5QrCodeRef.current?.resume(); } catch { /* Scanner evtl. schon gestoppt */ }
+        scanSperreRef.current = false;
+      }, 1500);
     }
-  }, [lastScan, user, mitglieder, soundAn]);
+  }, [user, mitglieder, soundAn]);
 
   const handleManualCheckin = useCallback(async (reg) => {
     const prevStatus = reg.status;
@@ -346,6 +365,7 @@ export default function AusfahrtScanner() {
 
   const startScanner = () => {
     setScannerError(null);
+    scanSperreRef.current = false;
 
     // AudioContext beim Button-Tap anlegen/entsperren — iOS erlaubt Ton nur nach Nutzer-Geste
     try {
@@ -442,6 +462,8 @@ export default function AusfahrtScanner() {
   }, [startPending, handleScanResult]);
 
   const stopScanner = async () => {
+    if (resumeTimerRef.current) { clearTimeout(resumeTimerRef.current); resumeTimerRef.current = null; }
+    scanSperreRef.current = false;
     if (html5QrCodeRef.current) {
       try {
         await html5QrCodeRef.current.stop();
@@ -458,6 +480,7 @@ export default function AusfahrtScanner() {
         html5QrCodeRef.current.stop().catch(() => { /* scanner already stopped */ });
       }
       if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+      if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
     };
   }, []);
 
