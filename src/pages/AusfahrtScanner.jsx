@@ -4,7 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, isDeveloper, kannCheckinDurchfuehren } from '@/lib/roles';
-import { ArrowLeft, ScanLine, CheckCircle2, XCircle, AlertTriangle, Users, QrCode, Calendar, Search } from 'lucide-react';
+import { ArrowLeft, ScanLine, CheckCircle2, XCircle, AlertTriangle, Users, QrCode, Calendar, Search, Volume2, VolumeX } from 'lucide-react';
 import { format, parseISO, isToday, isSameDay } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -22,6 +22,66 @@ export default function AusfahrtScanner() {
   const [error, setError] = useState(null);
   const [scannerError, setScannerError] = useState(null);
   const [startPending, setStartPending] = useState(false);
+  const [flash, setFlash] = useState(null);
+  const [soundAn, setSoundAn] = useState(true);
+  const audioCtxRef = useRef(null);
+  const flashTimerRef = useRef(null);
+
+  // Akustisches + haptisches Feedback: Wer abspannt, muss während der Busfahrt
+  // NICHT aufs Display oder die grüne Leuchte schauen — Erfolg/Fehler ist hörbar,
+  // fühlbar (Vibration) und als kurzes großes Banner sichtbar.
+  const playBeep = (erfolg) => {
+    if (soundAn) {
+      try {
+        if (!audioCtxRef.current) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return;
+          audioCtxRef.current = new AC();
+        }
+        const ctx = audioCtxRef.current;
+        if (ctx.state === 'suspended') ctx.resume();
+        const now = ctx.currentTime;
+        if (erfolg) {
+          // Aufsteigender Doppel-Beep = Bestätigung
+          [[880, now, 0.09], [1318.5, now + 0.1, 0.14]].forEach(([freq, start, dur]) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.0001, start);
+            gain.gain.exponentialRampToValueAtTime(0.3, start + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(start);
+            osc.stop(start + dur + 0.02);
+          });
+        } else {
+          // Tiefer, langer Brummton = Fehler/Warnung
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.value = 196;
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.exponentialRampToValueAtTime(0.25, now + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.4);
+        }
+      } catch { /* Ton ist Nice-to-have */ }
+    }
+    try {
+      if (navigator.vibrate) navigator.vibrate(erfolg ? 90 : [150, 80, 150]);
+    } catch { /* nicht überall unterstützt (z.B. iOS) */ }
+  };
+
+  const showFlash = (erfolg, name) => {
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    setFlash({ erfolg, name });
+    flashTimerRef.current = setTimeout(() => setFlash(null), 1600);
+  };
   const [manuellerFilter, setManuellerFilter] = useState('');
   const scannerRef = useRef(null);
   const html5QrCodeRef = useRef(null);
@@ -119,6 +179,8 @@ export default function AusfahrtScanner() {
       };
 
       setScanResults(prev => [newEntry, ...prev].slice(0, 30));
+      playBeep(!!result.erfolg);
+      showFlash(!!result.erfolg, newEntry.name);
 
       if (result.erfolg) {
         // Lokales Update statt vollständigem Neuladen – fühlt sich instant an
@@ -126,6 +188,8 @@ export default function AusfahrtScanner() {
       }
     } catch (err) {
       console.error('Check-in API error:', err);
+      playBeep(false);
+      showFlash(false, 'Netzwerkfehler');
       setScanResults(prev => [{
         id: decodedText,
         name: 'Fehler',
@@ -134,7 +198,7 @@ export default function AusfahrtScanner() {
         timestamp: new Date().toLocaleTimeString('de-DE')
       }, ...prev].slice(0, 30));
     }
-  }, [lastScan, user, mitglieder]);
+  }, [lastScan, user, mitglieder, soundAn]);
 
   const handleManualCheckin = useCallback(async (reg) => {
     const prevStatus = reg.status;
@@ -148,9 +212,12 @@ export default function AusfahrtScanner() {
         eingeloggter_name: user?.full_name || user?.email || 'Busverantwortlicher'
       });
       const result = response.data || response;
+      const name = reg.is_fremdangemeldet ? (reg.fremdname || 'Fremdperson') : getMitgliedName(reg.mitglied_id);
+      playBeep(!!result.erfolg);
+      showFlash(!!result.erfolg, name);
       setScanResults(prev => [{
         id: reg.id,
-        name: reg.is_fremdangemeldet ? (reg.fremdname || 'Fremdperson') : getMitgliedName(reg.mitglied_id),
+        name,
         erfolg: !!result.erfolg,
         fehler: result.fehler,
         timestamp: new Date().toLocaleTimeString('de-DE')
@@ -161,6 +228,8 @@ export default function AusfahrtScanner() {
       }
     } catch (err) {
       setAnmeldungen(prev => prev.map(a => a.id === reg.id ? { ...a, status: prevStatus } : a));
+      playBeep(false);
+      showFlash(false, 'Netzwerkfehler');
       setScanResults(prev => [{
         id: reg.id,
         name: reg.is_fremdangemeldet ? (reg.fremdname || 'Fremdperson') : getMitgliedName(reg.mitglied_id),
@@ -169,10 +238,19 @@ export default function AusfahrtScanner() {
         timestamp: new Date().toLocaleTimeString('de-DE')
       }, ...prev].slice(0, 30));
     }
-  }, [user, mitglieder]);
+  }, [user, mitglieder, soundAn]);
 
   const startScanner = () => {
     setScannerError(null);
+
+    // AudioContext beim Button-Tap anlegen/entsperren — iOS erlaubt Ton nur nach Nutzer-Geste
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) {
+        if (!audioCtxRef.current) audioCtxRef.current = new AC();
+        if (audioCtxRef.current.state === 'suspended') audioCtxRef.current.resume();
+      }
+    } catch { /* ignoriert */ }
 
     // Vorabprüfungen, bevor der Container gerendert und die Kamera angefragt wird
     if (!window.isSecureContext) {
@@ -275,6 +353,7 @@ export default function AusfahrtScanner() {
       if (html5QrCodeRef.current) {
         html5QrCodeRef.current.stop().catch(() => { /* scanner already stopped */ });
       }
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
     };
   }, []);
 
@@ -344,6 +423,23 @@ export default function AusfahrtScanner() {
 
   return (
     <div className="min-h-[60vh] pb-12">
+      {/* Großes Feedback-Banner: kurz sichtbar nach jedem Scan — auch aus dem Augenwinkel.
+          Blockiert nichts (pointer-events-none), Kamera läuft darunter weiter. */}
+      {flash && (
+        <div className="fixed top-0 left-0 right-0 z-[60] pointer-events-none px-4 pt-4">
+          <div className={`max-w-md mx-auto rounded-xl border p-4 flex items-center gap-3 shadow-2xl ${
+            flash.erfolg ? 'bg-green-600 border-green-300' : 'bg-red-600 border-red-300'
+          }`}>
+            {flash.erfolg
+              ? <CheckCircle2 className="w-7 h-7 shrink-0 text-white" />
+              : <XCircle className="w-7 h-7 shrink-0 text-white" />}
+            <div className="min-w-0">
+              <p className="font-oswald uppercase font-bold text-lg leading-tight text-white truncate">{flash.name}</p>
+              <p className="text-sm text-white/80">{flash.erfolg ? 'Eingecheckt' : 'Nicht eingecheckt'}</p>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="max-w-2xl mx-auto px-4 pt-8">
         <Link to={`/ausfahrten/${id}`} className="inline-flex items-center text-muted-foreground hover:text-white mb-6 transition-colors">
           <ArrowLeft className="w-4 h-4 mr-2" /> Zurück zur Ausfahrt
@@ -410,12 +506,27 @@ export default function AusfahrtScanner() {
             </div>
           )}
           {!scanning ? (
+            <>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                {soundAn ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+                Ton- & Vibrations-Feedback {soundAn ? 'an' : 'aus'} — du musst nicht aufs Display schauen
+              </p>
+              <button
+                onClick={() => setSoundAn(!soundAn)}
+                className="text-xs text-muted-foreground hover:text-foreground border border-border rounded-lg px-2.5 py-1.5 transition-colors shrink-0"
+                title={soundAn ? 'Feedback stummschalten' : 'Feedback einschalten'}
+              >
+                {soundAn ? 'Stumm' : 'Ton an'}
+              </button>
+            </div>
             <button
               onClick={startScanner}
               className="w-full bg-primary hover:bg-red-700 text-white font-semibold py-4 px-6 rounded-xl transition-colors flex items-center justify-center gap-3 text-base"
             >
               <ScanLine className="w-6 h-6" /> {scannerError ? 'Erneut versuchen' : 'Scanner starten'}
             </button>
+            </>
           ) : (
             <div className="space-y-4">
               <div id="qr-reader" className="w-full max-w-sm mx-auto rounded-xl overflow-hidden bg-black aspect-square" ref={scannerRef} />

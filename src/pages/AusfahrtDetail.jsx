@@ -1055,10 +1055,10 @@ export default function AusfahrtDetail() {
 
         {/* Mitgliederverwaltung: Vorstand & Ausschuss */}
         {kannAusschussSehn(user) && (
-          <div className="bg-card border border-border rounded-xl p-6 mt-8">
-            <div className="flex flex-wrap items-center justify-between border-b border-border pb-4 mb-6 gap-4">
+          <div className="bg-card border border-border rounded-xl p-4 sm:p-6 mt-6 sm:mt-8">
+            <div className="flex flex-col md:flex-row md:flex-wrap md:items-center justify-between border-b border-border pb-4 mb-5 sm:mb-6 gap-4">
               <div>
-                <h2 className="text-2xl font-bold font-oswald uppercase tracking-wider text-white">
+                <h2 className="text-xl sm:text-2xl font-bold font-oswald uppercase tracking-wider text-white">
                   Mitgliederverwaltung & Check-in
                 </h2>
                 <p className="text-muted-foreground text-xs mt-1">
@@ -1066,16 +1066,16 @@ export default function AusfahrtDetail() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto">
                 <button
                   onClick={() => setShowFremdForm(!showFremdForm)}
-                  className="bg-secondary hover:bg-border text-foreground border border-border font-semibold px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2"
+                  className="bg-secondary hover:bg-border text-foreground border border-border font-semibold px-4 py-2.5 rounded-lg text-sm transition-colors flex items-center justify-center gap-2 w-full sm:w-auto min-h-[44px]"
                 >
                   <UserPlus className="w-4 h-4" /> Fremdperson anmelden
                 </button>
                 <button
                   onClick={handleExportCSV}
-                  className="bg-primary hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2"
+                  className="bg-primary hover:bg-red-700 text-white font-semibold px-4 py-2.5 rounded-lg text-sm transition-colors flex items-center justify-center gap-2 w-full sm:w-auto min-h-[44px]"
                 >
                   <Download className="w-4 h-4" /> CSV Export
                 </button>
@@ -1083,7 +1083,7 @@ export default function AusfahrtDetail() {
                   <button
                     onClick={handleUmzugAbschliessen}
                     disabled={umzugAbschlussLaeuft}
-                    className="bg-green-600 hover:bg-green-500 disabled:opacity-60 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2"
+                    className="bg-green-600 hover:bg-green-500 disabled:opacity-60 text-white font-semibold px-4 py-2.5 rounded-lg text-sm transition-colors flex items-center justify-center gap-2 w-full sm:w-auto min-h-[44px]"
                     title="Eingecheckte als Umzugsteilnahmen für die Ehrungs-Zählung erfassen"
                   >
                     <CheckCircle2 className="w-4 h-4" />
@@ -1202,28 +1202,28 @@ export default function AusfahrtDetail() {
                     value={checkinSuche}
                     onChange={e => setCheckinSuche(e.target.value)}
                     placeholder="Teilnehmer suchen…"
-                    className="w-full bg-secondary border border-border rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors"
+                    className="w-full bg-secondary border border-border rounded-lg pl-9 pr-3 py-2.5 min-h-[44px] text-sm text-white placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors"
                   />
                 </div>
                 {darfJetztChecken && offeneZumEinchecken.length > 0 && (
                   <>
                     <button
                       onClick={() => handleBulkCheckIn(offeneZumEinchecken)}
-                      className="bg-primary hover:bg-red-700 text-white font-semibold px-3 py-2 rounded-lg text-xs transition-colors flex items-center gap-1.5 min-h-[38px]"
+                      className="bg-primary hover:bg-red-700 text-white font-semibold px-3 py-2 rounded-lg text-xs transition-colors flex items-center gap-1.5 justify-center flex-1 sm:flex-none min-h-[44px]"
                       title="Alle noch nicht Eingecheckten einchecken"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" /> Alle einchecken ({offeneZumEinchecken.length})
                     </button>
                     <button
                       onClick={() => handleBulkCheckIn(offeneBus)}
-                      className="bg-secondary hover:bg-border text-foreground border border-border font-semibold px-3 py-2 rounded-lg text-xs transition-colors min-h-[38px]"
+                      className="bg-secondary hover:bg-border text-foreground border border-border font-semibold px-3 py-2 rounded-lg text-xs transition-colors justify-center flex-1 sm:flex-none min-h-[44px]"
                       title="Nur Busfahrer einchecken"
                     >
                       🚌 Bus ({offeneBus.length})
                     </button>
                     <button
                       onClick={() => handleBulkCheckIn(offenePrivat)}
-                      className="bg-secondary hover:bg-border text-foreground border border-border font-semibold px-3 py-2 rounded-lg text-xs transition-colors min-h-[38px]"
+                      className="bg-secondary hover:bg-border text-foreground border border-border font-semibold px-3 py-2 rounded-lg text-xs transition-colors justify-center flex-1 sm:flex-none min-h-[44px]"
                       title="Nur Privatfahrer einchecken"
                     >
                       🚗 Privat ({offenePrivat.length})
@@ -1360,12 +1360,12 @@ export default function AusfahrtDetail() {
                         <button
                           onClick={() => entry.isBegleitperson ? handleBegleitpersonCheckIn(entry.parentId, entry.begleitIndex) : handleCheckIn({ id: entry.parentId, name: entry.name })}
                           disabled={!darfJetztChecken}
-                          className={`${darfJetztChecken ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground border border-border'} font-semibold px-3 py-1.5 rounded-lg text-xs`}
+                          className={`${darfJetztChecken ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground border border-border'} font-semibold px-4 py-2.5 rounded-lg text-xs min-h-[44px]`}
                         >Einchecken</button>
                       ) : (
                         <button
                           onClick={() => entry.isBegleitperson ? handleBegleitpersonCheckIn(entry.parentId, entry.begleitIndex) : handleCheckOut({ id: entry.parentId, name: entry.name })}
-                          className="border border-yellow-500/40 text-yellow-500 font-semibold px-3 py-1.5 rounded-lg text-xs"
+                          className="border border-yellow-500/40 text-yellow-500 font-semibold px-4 py-2.5 rounded-lg text-xs min-h-[44px]"
                         >Auschecken</button>
                       )}
                       <button
