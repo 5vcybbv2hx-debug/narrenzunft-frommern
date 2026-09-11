@@ -36,15 +36,6 @@ export default function Haes() {
   const [selectedGruppeToken, setSelectedGruppeToken] = useState(null);
   const isAdminUser = isAdmin(user);
 
-  // Nur Vorstand, Stellv. Vorstand und Admin
-  if (!isAdminUser) return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
-      <Lock size={32} className="text-muted-foreground mb-3" />
-      <p className="font-oswald font-semibold text-foreground uppercase tracking-wide">Kein Zugriff</p>
-      <p className="text-sm text-muted-foreground mt-1">Die Häs-Verwaltung ist nur für den Vorstand zugänglich.</p>
-    </div>
-  );
-
   useEffect(() => {
     loadData();
   }, []);
@@ -79,6 +70,15 @@ export default function Haes() {
   }, []);
 
   const { pullDistance, refreshing, containerRef } = usePullToRefresh(loadData);
+
+  // Nur Vorstand, Stellv. Vorstand und Admin (nach allen Hooks)
+  if (!isAdminUser) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+      <Lock size={32} className="text-muted-foreground mb-3" />
+      <p className="font-oswald font-semibold text-foreground uppercase tracking-wide">Kein Zugriff</p>
+      <p className="text-sm text-muted-foreground mt-1">Die Häs-Verwaltung ist nur für den Vorstand zugänglich.</p>
+    </div>
+  );
 
   const getMitgliedName = (id, h) => {
     if (h?.besitzer_name) return h.besitzer_name;

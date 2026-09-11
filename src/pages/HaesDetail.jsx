@@ -24,15 +24,6 @@ export default function HaesDetail() {
   const { user } = useAuth();
   const admin = isAdmin(user);
 
-  // Nur Vorstand, Stellv. Vorstand und Admin
-  if (!admin) return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
-      <Lock size={32} className="text-muted-foreground mb-3" />
-      <p className="font-oswald font-semibold text-foreground uppercase tracking-wide">Kein Zugriff</p>
-      <p className="text-sm text-muted-foreground mt-1">Die Häs-Verwaltung ist nur für den Vorstand zugänglich.</p>
-    </div>
-  );
-
   const [haes, setHaes] = useState(null);
   const [gruppen, setGruppen] = useState([]);
 
@@ -81,6 +72,15 @@ export default function HaesDetail() {
     }
     setLoading(false);
   };
+
+  // Nur Vorstand, Stellv. Vorstand und Admin (nach allen Hooks)
+  if (!admin) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+      <Lock size={32} className="text-muted-foreground mb-3" />
+      <p className="font-oswald font-semibold text-foreground uppercase tracking-wide">Kein Zugriff</p>
+      <p className="text-sm text-muted-foreground mt-1">Die Häs-Verwaltung ist nur für den Vorstand zugänglich.</p>
+    </div>
+  );
 
   const getMitgliedName = (mitgliedId) => {
     const m = mitglieder.find(m => m.id === mitgliedId);
