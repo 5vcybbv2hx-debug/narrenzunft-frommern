@@ -14,6 +14,7 @@ import {
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import AusschussMitgliederTab from '@/components/ausschuss/AusschussMitgliederTab';
+import Mitgliedsantraege from '@/pages/Mitgliedsantraege';
 import AbstimmungenTab from '@/components/ausschuss/AbstimmungenTab';
 import ProtokollTab from '@/components/ausschuss/ProtokollTab';
 import MitgliedLiveSuche from '@/components/MitgliedLiveSuche';
@@ -44,6 +45,7 @@ const TABS = [
   { id: 'sitzungen', label: 'Sitzungen', icon: ClipboardList },
   { id: 'aufgaben', label: 'Offene Punkte', icon: CheckSquare },
   { id: 'beschluesse', label: 'Beschlüsse', icon: Gavel },
+  { id: 'antraege', label: 'Mitgliedsanträge', icon: FileText },
   { id: 'abstimmungen', label: 'Abstimmungen', icon: Vote },
   { id: 'protokolle', label: 'Protokolle', icon: FileText },
   { id: 'mitglieder', label: 'Ausschuss', icon: Users },
@@ -415,6 +417,11 @@ export default function Ausschuss() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* MITGLIEDSANTRÄGE */}
+      {activeTab === 'antraege' && isAdmin && (
+        <Mitgliedsantraege embedded />
       )}
 
       {showAufgabeModal && (

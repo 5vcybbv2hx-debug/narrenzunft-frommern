@@ -22,7 +22,7 @@ const STATUS_ICONS = {
   'Abgelehnt': <X size={13} className="text-red-400" />,
 };
 
-export default function Mitgliedsantraege() {
+export default function Mitgliedsantraege({ embedded = false }) {
   const { user } = useAuth();
   const admin = isAdmin(user);
   const [antraege, setAntraege] = useState([]);
@@ -88,7 +88,7 @@ export default function Mitgliedsantraege() {
       <div className="flex items-center justify-center min-h-[60vh] px-4 text-center">
         <div>
           <FileText size={40} className="text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">Nur Admins können Mitgliedsanträge verwalten.</p>
+          <p className="text-muted-foreground">Nur Vorstand und Admins können Mitgliedsanträge verwalten.</p>
         </div>
       </div>
     );
@@ -101,8 +101,9 @@ export default function Mitgliedsantraege() {
   );
 
   return (
-    <div className="px-4 lg:px-6 py-6 max-w-3xl mx-auto">
-      {/* Header */}
+    <div className={embedded ? '' : 'px-4 lg:px-6 py-6 max-w-3xl mx-auto'}>
+      {/* Header — nur bei direktem Seitenaufruf, nicht eingebettet im Ausschuss-Tab */}
+      {!embedded && (
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2 font-oswald uppercase tracking-wide">
@@ -120,6 +121,7 @@ export default function Mitgliedsantraege() {
           <ExternalLink size={14} /> Formular öffnen
         </a>
       </div>
+      )}
 
       {/* Status Filter */}
       <div className="flex gap-2 overflow-x-auto pb-2 mb-4">

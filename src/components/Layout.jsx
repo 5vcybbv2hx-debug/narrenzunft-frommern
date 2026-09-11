@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Shirt, Calendar, Briefcase,
   Award, CreditCard, Bell, ChevronDown,
   LogOut, Shield, ClipboardList,
-  AlertTriangle, Lock, CheckSquare, Package, FileText, ShoppingBag,
+  AlertTriangle, Lock, CheckSquare, Package, ShoppingBag,
   ArrowLeft, LayoutGrid,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -58,7 +58,6 @@ export const NAV_SECTIONS = [
     items: [
       { path: '/datenqualitaet',  label: 'Datenqualität',     icon: AlertTriangle, roles: ['vorstand', 'stellv_vorstand', 'admin'] },
       { path: '/berechtigungen',  label: 'Berechtigungen',    icon: Shield,        roles: ['admin', 'vorstand', 'stellv_vorstand'] },
-      { path: '/mitgliedsantraege', label: 'Mitgliedsanträge', icon: FileText,    roles: ['vorstand', 'stellv_vorstand', 'admin'] },
     ],
   },
   {
