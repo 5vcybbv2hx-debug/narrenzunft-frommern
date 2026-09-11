@@ -66,7 +66,7 @@ export default function Ehrungen() {
     setError(null);
     try {
       const [m, t, v, e] = await Promise.all([
-        base44.entities.Mitglied.list('nachname', 300),
+        base44.entities.Mitglied.list('nachname', 1000),
         base44.entities.Teilnahme.list('-created_date', 1000),
         base44.entities.Veranstaltung.list('datum', 200),
         base44.entities.Ehrung.list('-created_date', 800),

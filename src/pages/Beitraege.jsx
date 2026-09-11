@@ -51,7 +51,7 @@ export default function Beitraege() {
       if (isAdminUser) {
         const [bData, m] = await Promise.all([
           base44.entities.Beitrag.list('-jahr', 500),
-          base44.entities.Mitglied.list('nachname', 300),
+          base44.entities.Mitglied.list('nachname', 1000),
         ]);
         setBeitraege(bData || []);
         setMitglieder(m || []);
