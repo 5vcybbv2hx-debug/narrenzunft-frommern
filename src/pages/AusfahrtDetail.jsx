@@ -63,22 +63,40 @@ export default function AusfahrtDetail() {
         currentMitgliedData = mitgliedRes[0] || null;
       }
 
+      // Verwandtschaft des aktuellen Mitglieds — BEIDE Richtungen
+      // (Beziehung kann auch vom Kind aus als 'Elternteil' eingetragen sein)
+      let verwandt = [];
+      if (currentMitgliedData) {
+        try {
+          const [direkt, umgekehrt] = await Promise.all([
+            base44.entities.Verwandtschaft.filter({ mitglied_id: currentMitgliedData.id }),
+            base44.entities.Verwandtschaft.filter({ verwandter_id: currentMitgliedData.id }),
+          ]);
+          verwandt = [...(direkt || []), ...(umgekehrt || [])];
+        } catch (e) {
+          console.error('Verwandtschaft laden:', e);
+        }
+      }
+
       // Load all mitglieder for Ausschuss/Vorstand (needed for check-in, names, etc.)
       let mitgliederRes = [];
       if (kannAusschussSehn(user)) {
         mitgliederRes = await base44.entities.Mitglied.list('-nachname', 500);
       } else if (currentMitgliedData) {
-        // For non-admins: only load self + family members
+        // For non-admins: load self + family member records.
+        // Ohne das zeigte die 'Familienmitglieder'-Sektion für reguläre Nutzer
+        // jeden Verwandten als 'Unbekannt' (Owner-Report: Holgers Kinder).
         mitgliederRes = [currentMitgliedData];
-      }
-
-      // Verwandtschaft: only for current member
-      let verwandt = [];
-      if (currentMitgliedData) {
-        try {
-          verwandt = await base44.entities.Verwandtschaft.filter({ mitglied_id: currentMitgliedData.id });
-        } catch (e) {
-          console.error('Verwandtschaft laden:', e);
+        const famIds = [...new Set(
+          verwandt.map(v => v.mitglied_id === currentMitgliedData.id ? v.verwandter_id : v.mitglied_id).filter(Boolean)
+        )];
+        if (famIds.length > 0) {
+          try {
+            const famRes = await Promise.all(famIds.map(fid => base44.entities.Mitglied.filter({ id: fid })));
+            mitgliederRes = [...mitgliederRes, ...famRes.flat()];
+          } catch (e) {
+            console.error('Familienmitglieder laden:', e);
+          }
         }
       }
 
@@ -124,15 +142,25 @@ export default function AusfahrtDetail() {
   const kannScannen = isAdmin(user) || isBusverantwortlicher;
 
   // Familienmitglieder des aktuellen Mitglieds (nur Ehepartner/in und Kind)
+  // Normalisiert auf die Sicht des Mitglieds: Beziehungen können in beide
+  // Richtungen eingetragen sein (Kind→Elternteil gespiegelt), Dedupe pro Person.
   const familienmitglieder = currentMitglied
     ? verwandtschaften
-        .filter(v => v.mitglied_id === currentMitglied.id && ['Ehepartner/in', 'Kind'].includes(v.beziehung))
         .map(v => {
-          const verwandtesMitglied = mitglieder.find(m => m.id === v.verwandter_id);
+          if (v.mitglied_id === currentMitglied.id) {
+            return { andererId: v.verwandter_id, beziehung: v.beziehung };
+          }
+          const gespiegelt = { 'Kind': 'Elternteil', 'Elternteil': 'Kind' }[v.beziehung] || v.beziehung;
+          return { andererId: v.mitglied_id, beziehung: gespiegelt };
+        })
+        .filter(b => b.andererId && ['Ehepartner/in', 'Kind'].includes(b.beziehung))
+        .filter((b, i, arr) => arr.findIndex(x => x.andererId === b.andererId) === i)
+        .map(b => {
+          const verwandtesMitglied = mitglieder.find(m => m.id === b.andererId);
           return {
-            id: v.verwandter_id,
+            id: b.andererId,
             name: verwandtesMitglied ? `${verwandtesMitglied.vorname || ''} ${verwandtesMitglied.nachname || ''}`.trim() : 'Unbekannt',
-            beziehung: v.beziehung,
+            beziehung: b.beziehung,
             alter: verwandtesMitglied?.geburtsdatum ? (() => {
               try {
                 const bd = new Date(verwandtesMitglied.geburtsdatum);
