@@ -319,6 +319,16 @@ export default function MitgliedDetail() {
       if (isNew) {
         await base44.entities.Mitglied.create(mitglied);
         navigate('/mitglieder');
+      } else if (!admin && istKindVonMir) {
+        // Eltern bearbeiten das Profil ihres Kindes: Die Mitglied-RLS erlaubt
+        // direkte Updates nur für admin/vorstand/den eigenen Datensatz — daher
+        // läuft das Speichern über die gesicherte Backend-Function
+        // 'aktualisiereKindSicher' (Eltern-Verifikation + Feld-Whitelist).
+        await base44.functions.invoke('aktualisiereKindSicher', {
+          kind_id: mitglied.id,
+          updates: mitglied,
+        });
+        setEditing(false);
       } else {
         await base44.entities.Mitglied.update(mitglied.id, mitglied);
         setEditing(false);
@@ -797,7 +807,7 @@ export default function MitgliedDetail() {
       {/* Notizen */}
       <div className="bg-card border border-border rounded-xl p-5 mb-4">
         <h2 className="font-semibold text-white mb-4 font-oswald uppercase tracking-wide">Notizen</h2>
-        {editing ? (
+        {admin && editing ? (
           <textarea value={mitglied.notizen || ''} onChange={e => setMitglied(p => ({ ...p, notizen: e.target.value }))} rows={4}
             className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary resize-none transition-colors" />
         ) : (
