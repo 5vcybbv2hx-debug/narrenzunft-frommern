@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannArbeitsdiensteVerwalten } from '@/lib/roles';
-import { Briefcase, Plus, Calendar, MapPin, Users, User, Edit, X, ChevronDown, ChevronUp, LayoutTemplate, List } from 'lucide-react';
+import { Briefcase, Plus, Calendar, MapPin, Users, User, Edit, X, ChevronDown, ChevronUp, LayoutTemplate, List, FileDown } from 'lucide-react';
+import { jsPDF } from 'jspdf';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import ArbeitsdienstEditModal from '@/components/arbeitsdienst/ArbeitsdienstEditModal';
@@ -120,6 +121,132 @@ export default function Arbeitsdienste() {
     return aDate.localeCompare(bDate);
   });
 
+  // PDF-Export der aktuell gefilterten Ansicht (respektiert Kommend/Vergangen/Alle + 'Nur meine')
+  const exportierePdf = () => {
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const SEITENBREITE = 210;
+    const RAND = 15;
+    const INHALT = SEITENBREITE - 2 * RAND;
+    let y = 0;
+
+    const filterLabel = filter === 'Kommend' ? 'Kommende Dienste' : filter === 'Vergangen' ? 'Vergangene Dienste' : 'Alle Dienste';
+    const heute = format(new Date(), 'dd.MM.yyyy', { locale: de });
+
+    const neueSeite = () => {
+      doc.addPage();
+      y = 20;
+    };
+    const sicher = (platz) => {
+      if (y + platz > 282) neueSeite();
+    };
+
+    // Kopfzeile auf jeder Seite
+    const kopf = () => {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.setTextColor(234, 37, 37); // #EA2525
+      doc.text('NARRENZUNFT FROMMERN', RAND, 12);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80, 80, 80);
+      doc.text(`Arbeitsdienste - ${filterLabel}${nurMeine ? ' (nur meine)' : ''}`, RAND, 18);
+      doc.setDrawColor(234, 37, 37);
+      doc.setLineWidth(0.6);
+      doc.line(RAND, 21, SEITENBREITE - RAND, 21);
+    };
+
+    kopf();
+    y = 28;
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text(`Erstellt am ${heute}`, RAND, y);
+    y += 4;
+
+    if (filtered.length === 0) {
+      y += 6;
+      doc.setFontSize(11);
+      doc.setTextColor(100, 100, 100);
+      doc.text('Keine Arbeitsdienste in dieser Ansicht.', RAND, y);
+    }
+
+    const mitgliedName = (id) => {
+      const m = mitglieder.find(x => x.id === id);
+      return m ? `${m.vorname || ''} ${m.nachname || ''}`.trim() : 'Unbekannt';
+    };
+    const statusLabel = { 'Offen': '(offen)', 'Bestätigt': '(bestätigt)', 'Abgesagt': '(abgesagt)', 'Erledigt': '(erledigt)', 'Nicht erledigt': '(nicht erledigt)' };
+
+    sortedKeys.forEach(eventKey => {
+      const dienste_event = grouped[eventKey];
+      const event = eventKey === '_keine' ? null : veranstaltungen.find(v => v.id === eventKey);
+
+      sicher(24);
+      // Veranstaltungs-Überschrift
+      doc.setFillColor(245, 245, 245);
+      doc.rect(RAND, y - 4, INHALT, 9, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(30, 30, 30);
+      const eventTitel = event ? event.titel : 'Keine Veranstaltung zugeordnet';
+      const eventDatum = event ? ` - ${format(new Date(event.datum), 'dd.MM.yyyy', { locale: de })}` : '';
+      doc.text(`${eventTitel}${eventDatum}`.slice(0, 75), RAND + 2, y + 2);
+      y += 11;
+
+      dienste_event.forEach(d => {
+        const zuws = getZuweisungen(d.id).filter(z => z.status !== 'Abgesagt');
+        sicher(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(234, 37, 37);
+        const datumStr = format(new Date(d.datum), 'dd.MM.yyyy', { locale: de });
+        const titel = d.titel.length > 60 ? d.titel.slice(0, 57) + '...' : d.titel;
+        doc.text(`${datumStr}${d.uhrzeit ? '  ' + d.uhrzeit + ' Uhr' : ''}  ${titel}`, RAND + 2, y);
+        y += 5;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(90, 90, 90);
+        if (d.ort) {
+          sicher(5);
+          doc.text(`Ort: ${d.ort}`.slice(0, 90), RAND + 5, y);
+          y += 4.5;
+        }
+        if (d.beschreibung) {
+          sicher(5);
+          doc.text(`Hinweis: ${d.beschreibung}`.slice(0, 90), RAND + 5, y);
+          y += 4.5;
+        }
+        sicher(5 + Math.max(1, Math.ceil(zuws.length / 2)) * 5);
+        doc.setFontSize(9);
+        doc.setTextColor(60, 60, 60);
+        if (zuws.length === 0) {
+          doc.text('Noch niemand eingeteilt', RAND + 5, y);
+          y += 5;
+        } else {
+          // Zwei Namen pro Zeile (Platz sparen)
+          for (let i = 0; i < zuws.length; i += 2) {
+            const pairs = zuws.slice(i, i + 2).map(z => `${mitgliedName(z.mitglied_id)} ${statusLabel[z.status] || ''}`.trim());
+            doc.text(pairs.join('     |     ').slice(0, 110), RAND + 5, y);
+            y += 5;
+          }
+        }
+        y += 3;
+      });
+      y += 2;
+    });
+
+    // Fußzeilen mit Seitenzahlen
+    const seiten = doc.getNumberOfPages();
+    for (let i = 1; i <= seiten; i++) {
+      doc.setPage(i);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(150, 150, 150);
+      doc.text(`Seite ${i} von ${seiten}`, SEITENBREITE / 2, 291, { align: 'center' });
+    }
+
+    doc.save(`Arbeitsdienste_${filterLabel.replace(/ /g, '-')}_${heute.replace(/\./g, '-')}.pdf`);
+  };
+
   if (!loading && loadError) return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-4">
       <p className="text-sm text-muted-foreground">Arbeitsdienste konnten nicht geladen werden</p>
@@ -146,8 +273,17 @@ export default function Arbeitsdienste() {
           <h1 className="text-2xl font-oswald font-semibold text-foreground tracking-wide">Arbeitsdienste</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{dienste.length} gesamt</p>
         </div>
-        {kannVerwalten && (
-          <div className="flex flex-wrap gap-1.5 sm:gap-2">
+        <div className="flex flex-wrap gap-1.5 sm:gap-2">
+          <button
+            onClick={exportierePdf}
+            className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-secondary text-muted-foreground text-sm font-medium hover:bg-border hover:text-foreground transition-colors"
+            title="Aktuelle Ansicht als PDF exportieren"
+          >
+            <FileDown size={16} />
+            <span className="hidden sm:inline">PDF</span>
+          </button>
+          {kannVerwalten && (
+            <>
             <button
               onClick={() => setShowVorlagen(true)}
               className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-secondary text-muted-foreground text-sm font-medium hover:bg-border hover:text-foreground transition-colors"
@@ -163,8 +299,9 @@ export default function Arbeitsdienste() {
               <Plus size={16} />
               <span className="hidden sm:inline">Neuer Dienst</span>
             </Link>
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Ansicht-Toggle */}
