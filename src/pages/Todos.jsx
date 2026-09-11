@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { kannAusschussSehn, isAdmin } from '@/lib/roles';
-import { CheckSquare, Plus, Circle, Clock, CheckCircle2, AlertCircle, Calendar, User as UserIcon, Search, ChevronDown, ListChecks } from 'lucide-react';
+import { CheckSquare, Plus, Circle, Clock, CheckCircle2, AlertCircle, Calendar, User as UserIcon, Search, ChevronDown, ListChecks, AlertTriangle } from 'lucide-react';
 import { format, differenceInCalendarDays } from 'date-fns';
 import { de } from 'date-fns/locale';
 import TodoForm from '@/components/todos/TodoForm';
@@ -32,6 +32,8 @@ export default function Todos() {
   const [filter, setFilter] = useState('Aktiv');   // 'Aktiv' | 'Überfällig' | 'Meine' | 'Erledigt' | 'Alle'
   const [suche, setSuche] = useState('');
   const [showErledigt, setShowErledigt] = useState(false);
+  // Bestätigungsdialog: Abhaken soll nicht versehentlich passieren (z. B. Fehltipp)
+  const [bestaetigeTodo, setBestaetigeTodo] = useState(null);
   const [error, setError] = useState(null);
 
   // Letzten Nicht-Erledigt-Status merken, damit beim Abhaken zurückgesprungen werden kann
@@ -179,13 +181,23 @@ export default function Todos() {
     }
   };
 
-  // Smart-Checkbox: haken = erledigt, aufheben = zurück zum letzten Status
+  // Smart-Checkbox: haken = erledigt (mit Bestätigung), aufheben = zurück zum letzten Status
   const handleErledigtToggle = async (todo) => {
-    const neuerStatus = todo.status === 'Erledigt'
-      ? (letzteStatus.current[todo.id] || 'Offen')
-      : 'Erledigt';
-    if (todo.status !== 'Erledigt') letzteStatus.current[todo.id] = todo.status;
-    await setStatus(todo, neuerStatus);
+    if (todo.status === 'Erledigt') {
+      // Aufheben darf ohne Rückfrage passieren — schadet nie
+      const neuerStatus = letzteStatus.current[todo.id] || 'Offen';
+      await setStatus(todo, neuerStatus);
+      return;
+    }
+    // Abhaken: erst sicherstellen, dass die Aufgabe wirklich erledigt ist
+    setBestaetigeTodo(todo);
+  };
+
+  const bestaetigeErledigt = async () => {
+    if (!bestaetigeTodo) return;
+    letzteStatus.current[bestaetigeTodo.id] = bestaetigeTodo.status;
+    await setStatus(bestaetigeTodo, 'Erledigt');
+    setBestaetigeTodo(null);
   };
 
   // Status-Chip: wechselt zwischen Offen und In Bearbeitung
@@ -436,6 +448,40 @@ export default function Todos() {
               {gefilterteTodos.erledigt.map(renderTodo)}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Bestätigung: Aufgabe wirklich erledigt? */}
+      {bestaetigeTodo && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setBestaetigeTodo(null)}>
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-green-900/30 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-5 h-5 text-green-400" />
+              </div>
+              <h3 className="font-oswald font-semibold text-foreground text-lg">Aufgabe erledigt?</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-1">
+              Ist <strong className="text-foreground">„{bestaetigeTodo.titel}"</strong> wirklich abgeschlossen?
+            </p>
+            <p className="text-xs text-muted-foreground mb-5">
+              Danach lässt sie sich jederzeit wieder öffnen — einfach den Haken erneut antippen.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setBestaetigeTodo(null)}
+                className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium hover:text-foreground transition-colors min-h-[44px]"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={bestaetigeErledigt}
+                className="flex-1 py-2.5 rounded-lg bg-green-600 hover:bg-green-500 text-white text-sm font-semibold transition-colors min-h-[44px]"
+              >
+                Ja, erledigt
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
