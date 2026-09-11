@@ -128,7 +128,7 @@ export default function MitgliedDashboard() {
         ]);
         const meineTermine = alleTermineArr.flat()
           .filter(t => t.datum >= today)
-          .sort((a, b) => a.datum.localeCompare(b.datum))
+          .sort((a, b) => a.datum.localeCompare(b.datum) || (a.uhrzeit || '').localeCompare(b.uhrzeit || ''))
           .slice(0, 5);
         setSpartenTermine(meineTermine);
         setMeineSpartenGruppen(gruppen.flat().filter(Boolean));
@@ -174,7 +174,7 @@ export default function MitgliedDashboard() {
           return { key: `a-${a.id}`, typ: 'ausfahrt', datum: f.datum, titel: f.titel, uhrzeit: f.abfahrt_zeit || f.veranstaltungsbeginn, ort: f.ort, bus: a.transport === 'Bus', transport: a.transport, link: `/ausfahrten/${f.id}` };
         })
         .filter(Boolean);
-      setMeineAnmeldungen([...kommendeVeranstaltungen, ...kommendeAusfahrten].sort((a, b) => a.datum.localeCompare(b.datum)).slice(0, 6));
+      setMeineAnmeldungen([...kommendeVeranstaltungen, ...kommendeAusfahrten].sort((a, b) => a.datum.localeCompare(b.datum) || (a.uhrzeit || '').localeCompare(b.uhrzeit || '')).slice(0, 6));
 
       // Offene Arbeitsdienste
       const offeneDienste = zuweisungen

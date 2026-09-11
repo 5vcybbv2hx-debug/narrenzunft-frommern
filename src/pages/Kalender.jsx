@@ -173,7 +173,8 @@ export default function Kalender({ nur = 'alle' }) {
       const q = suche.trim().toLowerCase();
       list = list.filter(t => (t.titel || '').toLowerCase().includes(q) || (t.ort || '').toLowerCase().includes(q));
     }
-    return list.sort((a, b) => (a.datum || '').localeCompare(b.datum || ''));
+    // Chronologisch: Datum zuerst, bei gleichem Datum nach Startzeit (Uhrzeit)
+    return list.sort((a, b) => (a.datum || '').localeCompare(b.datum || '') || (a.startzeit || '').localeCompare(b.startzeit || ''));
   }, [termine, ausfahrten, filterArt, quelle, suche]);
 
   const termineImMonat = useMemo(() => {

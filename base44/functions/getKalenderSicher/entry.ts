@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
       const veranstaltungTermine = veranstaltungen.map(normalisiereVeranstaltung);
       const ausfahrtTermine = ausfahrten.map(normalisiereAusfahrt);
       const alleTermine = [...kalenderTermine, ...veranstaltungTermine, ...ausfahrtTermine]
-        .sort((a, b) => (a.datum || '').localeCompare(b.datum || ''));
+        .sort((a, b) => (a.datum || '').localeCompare(b.datum || '') || (a.startzeit || '').localeCompare(b.startzeit || ''));
 
       return Response.json({
         erfolg: true,
@@ -124,7 +124,7 @@ Deno.serve(async (req) => {
     const ausfahrtTermine = ausfahrten.map(normalisiereAusfahrt);
 
     const alleTermine = [...gefilterteKalenderTermine, ...veranstaltungTermine, ...ausfahrtTermine]
-      .sort((a, b) => (a.datum || '').localeCompare(b.datum || ''));
+      .sort((a, b) => (a.datum || '').localeCompare(b.datum || '') || (a.startzeit || '').localeCompare(b.startzeit || ''));
 
     return Response.json({
       erfolg: true,
