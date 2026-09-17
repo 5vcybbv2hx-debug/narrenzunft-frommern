@@ -414,24 +414,46 @@ export default function AusfahrtScanner() {
           experimentalFeatures: { useBarCodeDetectorIfSupported: true }
         };
 
+        // Android-robuste Kamerawahl: facingMode-Strings ('environment') schlagen auf
+        // vielen Android-Geräten fehl (OverconstrainedError / keine Kamera-Auswahl),
+        // obwohl iOS damit problemlos arbeitet. Der zuverlässige Weg ist die Geräte-
+        // Enumeration: Rückkamera per Label/Position identifizieren und über ihre
+        // deviceId gezielt starten. facingMode bleibt als Fallback-Kaskade.
+        const onScan = (decodedText) => handleScanResult(decodedText);
+
+        // 1) Kameras des Geräts aufzählen (fragt keine Berechtigung an)
+        let cameras = [];
         try {
-          // Zuerst Rückkamera versuchen (Standard für QR-Check-in)
-          await html5QrCode.start(
-            { facingMode: 'environment' },
-            qrConfig,
-            (decodedText) => handleScanResult(decodedText),
-            undefined
-          );
-        } catch (envErr) {
-          // Manche Geräte (z.B. Laptops) kennen 'environment' nicht — Fallback Standardkamera
-          console.warn('Rückkamera nicht verfügbar, versuche Standardkamera:', envErr);
-          await html5QrCode.start(
-            { facingMode: 'user' },
-            qrConfig,
-            (decodedText) => handleScanResult(decodedText),
-            undefined
-          );
+          cameras = await Html5Qrcode.getCamerasFromDevice();
+        } catch (enumErr) {
+          console.warn('Kamera-Enumeration fehlgeschlagen, nutze facingMode:', enumErr);
         }
+
+        // Rückkamera bevorzugen: Label-Heuristik (back/environment/rück), sonst Kamera 0
+        // (auf Android-Smartphones ist devices[0] üblicherweise die Rückkamera)
+        let backCamera = cameras.find(c => /back|environment|ruck|rück|rear/gi.test(c.label || ''))
+          || cameras.find(c => /front|user|vorder|frontkamera/gi.test(c.label || '') === false)
+          || null;
+        if (!backCamera && cameras.length > 0) backCamera = cameras[0];
+
+        const versuche = [];
+        if (backCamera?.id) versuche.push({ deviceId: { exact: backCamera.id } });
+        versuche.push({ facingMode: 'environment' });
+        versuche.push({ facingMode: 'user' });
+
+        let gestartet = false;
+        let letzterFehler = null;
+        for (const config of versuche) {
+          try {
+            await html5QrCode.start(config, qrConfig, onScan, undefined);
+            gestartet = true;
+            break;
+          } catch (err) {
+            letzterFehler = err;
+            console.warn('Kamera-Start fehlgeschlagen für', JSON.stringify(config), err?.name, err?.message);
+          }
+        }
+        if (!gestartet) throw letzterFehler || new Error('Keine Kamera startbar');
       } catch (err) {
         if (cancelled) return;
         console.error('Scanner start error:', err);
@@ -439,7 +461,7 @@ export default function AusfahrtScanner() {
         const msg = err?.message || '';
         let text = 'Kamera konnte nicht gestartet werden.';
         if (name === 'NotAllowedError' || /permission/i.test(msg)) {
-          text = 'Kamera-Zugriff wurde verweigert. Bitte in den Browser-Einstellungen die Kamera-Berechtigung für diese Seite erlauben und erneut versuchen.';
+          text = 'Kamera-Zugriff wurde verweigert. Auf Android: Schloss-Symbol in der Adressleiste antippen (oder Website-Einstellungen im Browser-Menü) \u2192 Berechtigungen \u2192 Kamera \u2192 Zulassen, danach Seite neu laden und erneut versuchen. Wurde die Berechtigung vorher einmal abgelehnt, fragt Chrome nicht mehr nach und blockiert still.';
         } else if (name === 'NotFoundError') {
           text = 'Es wurde keine Kamera auf diesem Gerät gefunden. Bitte die manuelle Liste unten nutzen.';
         } else if (name === 'NotReadableError') {
@@ -448,6 +470,8 @@ export default function AusfahrtScanner() {
           text = 'Die Kamera-Einstellungen werden von diesem Gerät nicht unterstützt.';
         } else if (name === 'SecurityError') {
           text = 'Kamera-Zugriff wurde aus Sicherheitsgründen blockiert (nur über https möglich).';
+        } else if (msg) {
+          text = `Kamera konnte nicht gestartet werden (${name || 'Fehler'}: ${msg.slice(0, 120)}). Bitte die manuelle Liste unten nutzen.`;
         }
         setScannerError(text);
         setScanning(false);
