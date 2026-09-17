@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, isDeveloper, getRollenLabel } from '@/lib/roles';
 import {
   LayoutDashboard, Users, Shirt, Calendar, Briefcase,
-  Award, CreditCard, Bell, ChevronDown,
+  Award, CreditCard, ChevronDown,
   LogOut, Shield, ClipboardList,
   AlertTriangle, Lock, CheckSquare, Package, ShoppingBag,
   ArrowLeft, LayoutGrid,
@@ -125,7 +125,6 @@ export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState(0);
   const [mitglied, setMitglied] = useState(null);
   const admin = isAdmin(user);
   const displayName = mitglied ? `${mitglied.vorname || ''} ${mitglied.nachname || ''}`.trim() : (user?.full_name || 'Benutzer');
@@ -155,27 +154,10 @@ export default function Layout() {
   }
 
   useEffect(() => { loadCurrentMitglied(); }, []);
-  useEffect(() => { loadNotifications(); }, [mitglied]);
   const loadCurrentMitglied = async () => {
     try {
             const myM = await base44.entities.Mitglied.filter({ user_id: user?.id });
       if (myM[0]) setMitglied(myM[0]);
-    } catch (e) { console.error('Error:', e); }
-  };
-
-  const loadNotifications = async () => {
-    try {
-      let notifs;
-      if (admin) {
-        // Admins sehen nur Admin-Benachrichtigungen (mitglied_id leer) UND ihre eigenen
-        const all = await base44.entities.Benachrichtigung.filter({ gelesen: false });
-        notifs = all.filter(n => !n.mitglied_id || n.mitglied_id === mitglied?.id);
-      } else {
-        notifs = mitglied
-          ? await base44.entities.Benachrichtigung.filter({ mitglied_id: mitglied.id, gelesen: false })
-          : [];
-      }
-      setNotifications(notifs.length);
     } catch (e) { console.error('Error:', e); }
   };
 
@@ -337,13 +319,6 @@ export default function Layout() {
           </div>
 
           <div className="flex items-center gap-1.5 ml-auto">
-            <Link to="/benachrichtigungen"
-              className="relative p-2.5 rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0">
-              <Bell size={20} />
-              {notifications > 0 && (
-                <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-primary rounded-full text-white text-[10px] font-bold shadow-sm shadow-primary/50">{notifications > 99 ? '99+' : notifications}</span>
-              )}
-            </Link>
             <Link to="/profil"
               className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm hover:bg-red-700 transition-colors shadow-sm shadow-primary/30 shrink-0">
               {displayInitials}

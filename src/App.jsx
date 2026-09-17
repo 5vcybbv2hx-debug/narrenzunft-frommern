@@ -25,7 +25,6 @@ import Haes from './pages/Haes';
 import HaesDetail from './pages/HaesDetail';
 import Umzuege from './pages/Umzuege';
 import Profil from './pages/Profil';
-import Benachrichtigungen from './pages/Benachrichtigungen';
 import Suche from './pages/Suche';
 import Mehr from './pages/Mehr';
 
@@ -106,7 +105,6 @@ const AuthenticatedApp = () => {
         <Route path="/sparten" element={<Sparten />} />
         <Route path="/sparte/:id" element={<SpartenDashboard />} />
         <Route path="/profil" element={<Profil />} />
-        <Route path="/benachrichtigungen" element={<Benachrichtigungen />} />
         <Route path="/suche" element={<Suche />} />
         <Route path="/mehr" element={<Mehr />} />
         <Route path="/nachrichten" element={<Nachrichten />} />

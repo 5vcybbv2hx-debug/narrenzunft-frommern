@@ -1,12 +1,12 @@
 /**
  * Persönliches Dashboard für normale Mitglieder und Elternkonten.
- * Zeigt eigene Veranstaltungsanmeldungen, Arbeitsdienste, Beiträge und Benachrichtigungen.
+ * Zeigt eigene Veranstaltungsanmeldungen, Arbeitsdienste und Beiträge.
  */
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { Calendar, Briefcase, CreditCard, Bell, ChevronRight, Bus, Check, Clock, MapPin, Music, CheckSquare, AlertCircle, Circle } from 'lucide-react';
+import { Calendar, Briefcase, CreditCard, ChevronRight, Bus, Check, Clock, MapPin, Music, CheckSquare, AlertCircle, Circle } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -50,7 +50,6 @@ export default function MitgliedDashboard() {
   const [meineArbeitsdienste, setMeineArbeitsdienste] = useState([]);
   const [meineBeitraege, setMeineBeitraege] = useState([]);
   const [meineAufgaben, setMeineAufgaben] = useState([]);
-  const [ungeleseneNotifs, setUngeleseneNotifs] = useState([]);
   const [veranstaltungen, setVeranstaltungen] = useState([]);
   const [arbeitsdienste, setArbeitsdienste] = useState([]);
   const [spartenTermine, setSpartenTermine] = useState([]);
@@ -75,11 +74,10 @@ export default function MitgliedDashboard() {
       setMyMitglied(mitglied);
 
       // Parallele Abfragen
-      const [teilnahmen, zuweisungen, beitraege, notifs, alleAufgaben, ausfahrtAnmeldungen] = await Promise.all([
+      const [teilnahmen, zuweisungen, beitraege, alleAufgaben, ausfahrtAnmeldungen] = await Promise.all([
         base44.entities.Teilnahme.filter({ mitglied_id: mitglied.id }),
         base44.entities.ArbeitsdienstZuweisung.filter({ mitglied_id: mitglied.id }),
         base44.entities.Beitrag.filter({ mitglied_id: mitglied.id }),
-        base44.entities.Benachrichtigung.filter({ mitglied_id: mitglied.id }),
         base44.entities.Todo.list('-created_date', 500).catch(() => []),
         base44.entities.AusfahrtAnmeldung.filter({ mitglied_id: mitglied.id }).catch(() => []),
       ]);
@@ -189,9 +187,6 @@ export default function MitgliedDashboard() {
       // Offene Beiträge
       setMeineBeitraege(beitraege.filter(b => ['Offen', 'Überfällig'].includes(b.zahlungsstatus)));
 
-      // Ungelesene Benachrichtigungen
-      setUngeleseneNotifs(notifs.filter(n => !n.gelesen).slice(0, 5));
-
     } catch (e) { console.error('Error:', e); }
     setLoading(false);
   };
@@ -222,23 +217,6 @@ export default function MitgliedDashboard() {
           {format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}
         </p>
       </div>
-
-      {/* Benachrichtigungen – nur wenn ungelesen */}
-      {ungeleseneNotifs.length > 0 && (
-        <Card title={`${ungeleseneNotifs.length} neue Benachrichtigungen`} icon={Bell} linkTo="/benachrichtigungen">
-          <div className="space-y-2">
-            {ungeleseneNotifs.slice(0, 3).map(n => (
-              <div key={n.id} className="flex items-start gap-2 py-1">
-                <span className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0" />
-                <p className="text-sm text-foreground">{n.titel}</p>
-              </div>
-            ))}
-            {ungeleseneNotifs.length > 3 && (
-              <p className="text-xs text-muted-foreground">+ {ungeleseneNotifs.length - 3} weitere</p>
-            )}
-          </div>
-        </Card>
-      )}
 
       {/* Meine Aufgaben */}
       {meineAufgaben.length > 0 && (
