@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { toast } from 'sonner';
-import { User, Mail, Phone, MapPin, Calendar, LogOut, Award, Shirt, Trash2, Flag, Edit, Save, X, AlertTriangle, Check, FileText } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, LogOut, Award, Shirt, Trash2, Flag, Edit, Save, X, AlertTriangle, Check, FileText, Sun, Moon } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -15,6 +15,7 @@ import AktivitaetTab from '@/components/mitglied/AktivitaetTab';
 import ArbeitsdiensteMitgliedTab from '@/components/mitglied/ArbeitsdiensteMitgliedTab';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
+import { getTheme, setTheme } from '@/lib/theme';
 
 export default function Profil() {
   const { user } = useAuth();
@@ -30,6 +31,12 @@ export default function Profil() {
   const [error, setError] = useState(null);
   const [saved, setSaved] = useState(false);
   const [activeTab, setActiveTab] = useState('profil');
+  const [theme, setThemeState] = useState(getTheme());
+
+  const toggleTheme = (t) => {
+    setTheme(t);
+    setThemeState(t);
+  };
 
   useEffect(() => {
     loadData();
@@ -228,6 +235,40 @@ export default function Profil() {
       {/* Tab Contents */}
       {mitglied && activeTab === 'profil' && (
         <>
+          {/* Erscheinungsbild: Hell / Dunkel */}
+          <div className="bg-card border border-border rounded-xl p-5 mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold font-oswald uppercase tracking-wide text-foreground flex items-center gap-2">
+                <Sun size={16} className="text-primary" /> Erscheinungsbild
+              </h3>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => toggleTheme('dark')}
+                className={`flex items-center justify-center gap-2 py-3 rounded-lg border text-sm font-medium transition-colors ${
+                  theme === 'dark'
+                    ? 'bg-primary text-white border-primary'
+                    : 'bg-secondary text-secondary-foreground border-border hover:bg-secondary/70'
+                }`}
+              >
+                <Moon size={15} /> Dunkel
+              </button>
+              <button
+                onClick={() => toggleTheme('light')}
+                className={`flex items-center justify-center gap-2 py-3 rounded-lg border text-sm font-medium transition-colors ${
+                  theme === 'light'
+                    ? 'bg-primary text-white border-primary'
+                    : 'bg-secondary text-secondary-foreground border-border hover:bg-secondary/70'
+                }`}
+              >
+                <Sun size={15} /> Hell
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              Standard ist der dunkle Look. Die Einstellung gilt für dieses Gerät.
+            </p>
+          </div>
+
           {/* Mitgliedsdaten */}
           <div className="bg-card border border-border rounded-xl p-5 mb-4">
             <div className="flex items-center justify-between mb-4">

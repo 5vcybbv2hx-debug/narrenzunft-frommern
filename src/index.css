@@ -43,10 +43,51 @@
     --font-oswald: 'Oswald', sans-serif;
   }
 
-  /* KEIN Light-Mode: Das Design-System der Narrenzunft ist fix dunkel (#080808, rote Akzente).
-     Ohne diesen Block würde ein hell gestelltes System die Tokens auf Weiß kippen, während
-     hunderte text-white-Elemente hartkodiert sind -> weiße Schrift auf weißem Grund.
-     Die App ist bewusst Dark-Only (Vereins-Branding). */
+}
+
+/* ── Light-Mode (Opt-in, Toggle im Profil) ─────────────────────────────────
+   Standard bleibt Dunkel (Vereins-Branding). html.light wird nur gesetzt,
+   wenn der Nutzer im Profil explizit auf Hell schaltet. Primärfarbe (Rot),
+   Radius, Charts und Status-Badges bleiben in beiden Themes identisch. */
+@layer base {
+  html.light {
+    color-scheme: light;
+    --background: 30 25% 97%;
+    --foreground: 220 15% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 12%;
+    --secondary: 220 14% 92%;
+    --secondary-foreground: 220 10% 30%;
+    --muted: 220 14% 94%;
+    --muted-foreground: 220 8% 42%;
+    --border: 220 13% 87%;
+    --input: 220 13% 91%;
+    --sidebar-background: 30 25% 95%;
+    --sidebar-foreground: 220 10% 28%;
+    --sidebar-accent: 220 14% 90%;
+    --sidebar-accent-foreground: 220 12% 16%;
+    --sidebar-border: 220 13% 88%;
+  }
+
+  :root {
+    color-scheme: dark;
+  }
+}
+
+/* Sicherheitsnetz für Light-Mode: Im Code existieren hunderte hartkodierte
+   text-white-Klassen (historisch gewachsen). Weiß auf neutralen Flächen
+   (bg-card, bg-muted, bg-secondary, bg-popover, bg-background) wäre im
+   Light-Mode unsichtbar. Diese Regeln korrigieren genau diese Fälle,
+   ohne weiße Schrift auf farbigen Flächen (Buttons, Badges) anzutasten:
+   - Elemente MIT eigener bg-Klasse behalten ihr Weiß (farbige Fläche).
+   - Elemente ohne eigene bg-Klasse erben die Vordergrundfarbe der Fläche. */
+html.light :is(.bg-card, .bg-muted, .bg-secondary, .bg-popover, .bg-background) .text-white:not([class*="bg-"]) {
+  color: hsl(var(--foreground));
+}
+html.light :is(.bg-card, .bg-muted, .bg-secondary, .bg-popover).text-white {
+  color: hsl(var(--card-foreground));
 }
 
 @layer base {
