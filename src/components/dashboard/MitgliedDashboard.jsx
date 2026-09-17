@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { Calendar, Briefcase, CreditCard, ChevronRight, Bus, Check, Clock, MapPin, Music, CheckSquare, AlertCircle, Circle } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { useBegruessung } from '@/lib/begruessung';
 
 function Card({ title, icon: Icon, children, linkTo, linkLabel, accent }) {
   return (
@@ -54,6 +55,9 @@ export default function MitgliedDashboard() {
   const [arbeitsdienste, setArbeitsdienste] = useState([]);
   const [spartenTermine, setSpartenTermine] = useState([]);
   const [meineSpartenGruppen, setMeineSpartenGruppen] = useState([]);
+
+  // Einheitliche, tageszeitaktuelle Begrüßung — identisch zur Verwaltungs-Ansicht
+  const begruessung = useBegruessung(myMitglied ? `${myMitglied.vorname || ''} ${myMitglied.nachname || ''}`.trim() : '');
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -211,7 +215,7 @@ export default function MitgliedDashboard() {
       {/* Begrüßung */}
       <div className="mb-2">
         <h1 className="text-2xl font-bold text-foreground">
-          Hallo, {myMitglied.vorname} 🎭
+          {begruessung}
         </h1>
         <p className="text-muted-foreground text-sm mt-0.5">
           {format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}

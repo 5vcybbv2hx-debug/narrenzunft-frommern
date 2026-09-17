@@ -14,18 +14,11 @@ import { format, addDays } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { isAdmin, kannArbeitsdiensteVerwalten, istNurMitglied, getRollenLabel } from '@/lib/roles';
 import MitgliedDashboard from '@/components/dashboard/MitgliedDashboard';
+import { useBegruessung } from '@/lib/begruessung';
 import StatuswechselWidget from '@/components/vorstand/StatuswechselWidget';
 import VerleihAnfragenWidget from '@/components/dashboard/VerleihAnfragenWidget';
 
 // ── Hilfsfunktionen ──────────────────────────────────────────────────────────
-
-function getBegruessung(name) {
-  const h = new Date().getHours();
-  const vorname = name?.split(' ')[0] || 'Narr';
-  if (h < 11) return `Guten Morgen, ${vorname} 👋`;
-  if (h < 18) return `Guten Tag, ${vorname} 🎭`;
-  return `Guten Abend, ${vorname} 🌙`;
-}
 
 function formatPhoneForTel(phone) {
   if (!phone) return null;
@@ -225,6 +218,8 @@ export default function Dashboard() {
     return { stats, naechsteTermine, naechsteGeburtstage, unterbesetzte, offeneDienste, verfuegbareHaes, anzeigename };
   }, [dashData, today, user]);
 
+  const begruessung = useBegruessung(anzeigename || user?.full_name);
+
   const { pullDistance, refreshing, containerRef } = usePullToRefresh(useCallback(async () => {
     await refetch();
   }, [refetch]));
@@ -292,7 +287,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-oswald font-semibold text-foreground tracking-wide">
-          {getBegruessung(anzeigename || user?.full_name)}
+          {begruessung}
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
           {getRollenLabel(user?.role)} · {format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}
