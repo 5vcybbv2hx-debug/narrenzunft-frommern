@@ -501,7 +501,7 @@ function TopsTab({ terminId, tops, setTops, mitglieder, isAdmin }) {
 // ─── Abstimmungen Tab ───────────────────────────────────────────────
 function AbstimmungenTab({ terminId, abstimmungen, setAbstimmungen, ausschussMitglieder, getMitgliedName, stimmen, setStimmen, isAdmin }) {
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ titel: '', beschreibung: '', angenommen_ab: 50 });
+  const [form, setForm] = useState({ titel: '', beschreibung: '', angenommen_ab: 51 });
   const [saving, setSaving] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
 
