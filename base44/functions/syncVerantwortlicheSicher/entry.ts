@@ -77,6 +77,7 @@ export default async function(req) {
     const mitgliederById = new Map((betroffen || []).map((m) => [m.id, m]));
 
     const roleChanges = [];
+    const userSyncList = [];
     const bulkPayload = [];
 
     for (const id of changedIds) {
@@ -84,6 +85,7 @@ export default async function(req) {
       if (!m) continue;
       const currentSplatIds = m.spartenleiter_haesgruppen_ids || (m.spartenleiter_haesgruppe_id ? [m.spartenleiter_haesgruppe_id] : []);
       const isNow = sauberNeu.includes(m.id);
+
       const updatedSplatIds = isNow
         ? [...new Set([...currentSplatIds, gruppeId])]
         : currentSplatIds.filter((gId) => gId !== gruppeId);
@@ -104,6 +106,13 @@ export default async function(req) {
 
       if (neueRolle !== aktuelleRolle) {
         roleChanges.push({ mitglied: m, neueRolle });
+      }
+      // User.role immer synchronisieren, wenn Mitglied (weiterhin) Spartenleiter ist
+      // – auch wenn app_rolle bereits spartenleiter war (z. B. manuell gesetzt)
+      if (isNow && neueRolle === 'spartenleiter') {
+        userSyncList.push({ mitglied: m, neueRolle });
+      } else if (!isNow && neueRolle === 'mitglied') {
+        userSyncList.push({ mitglied: m, neueRolle });
       }
     }
 
@@ -126,7 +135,7 @@ export default async function(req) {
     }
 
     // ── 4) Verknüpfte Login-Rollen synchronisieren ──
-    await Promise.all(roleChanges.map(async ({ mitglied, neueRolle }) => {
+    await Promise.all(userSyncList.map(async ({ mitglied, neueRolle }) => {
       if (!mitglied.user_id) return;
       try {
         const users = await srv.entities.User.filter({ id: mitglied.user_id });

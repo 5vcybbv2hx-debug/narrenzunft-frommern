@@ -177,9 +177,26 @@ export default function MitgliedDetail() {
         base44.entities.Ehrung.filter({ mitglied_id: id }),
       ]);
       if (m[0]) {
+        // Prüfe ob aktuelles Mitglied ein Kind des eingeloggten Nutzers ist (für alle Rollen).
+        // Wird VOR dem Access-Check benötigt, damit Eltern (role=mitglied/user) ihre Kinder
+        // sehen dürfen — kannMitgliedProfilSehn braucht dafür die meineKinder-Liste.
+        let meineKinderIds = [];
+        if (user?.id) {
+          try {
+            const meinMitglied = await base44.entities.Mitglied.filter({ user_id: user.id });
+            if (meinMitglied && meinMitglied.length > 0) {
+              const meineVerwandten = await base44.entities.Verwandtschaft.filter({ mitglied_id: meinMitglied[0].id });
+              meineKinderIds = meineVerwandten.filter(v => v.beziehung === 'Kind').map(v => v.verwandter_id);
+              istMeinKind = meineKinderIds.includes(m[0].id);
+              setIstKindVonMir(istMeinKind);
+            }
+          } catch (verr) {
+            console.error('Verwandtschaft-Check:', verr);
+          }
+        }
         if (istNurMitglied(user)) {
           const myM = await base44.entities.Mitglied.filter({ user_id: user?.id });
-          if (!kannMitgliedProfilSehn(user, myM[0], m[0])) {
+          if (!kannMitgliedProfilSehn(user, myM[0], m[0], meineKinderIds)) {
             setAccessDenied(true);
             setLoading(false);
             return;
@@ -194,21 +211,6 @@ export default function MitgliedDetail() {
       }
       setHaes(h || []);
       setEhrungen(e || []);
-
-      // Prüfe ob aktuelles Mitglied ein Kind des eingeloggten Nutzers ist (für alle Rollen)
-      if (m[0] && user?.id) {
-        try {
-          // Finde das Mitgliedsprofil des eingeloggten Nutzers
-          const meinMitglied = await base44.entities.Mitglied.filter({ user_id: user.id });
-          if (meinMitglied && meinMitglied.length > 0) {
-            const meineVerwandten = await base44.entities.Verwandtschaft.filter({ mitglied_id: meinMitglied[0].id });
-            istMeinKind = meineVerwandten.some(v => v.verwandter_id === m[0].id && v.beziehung === 'Kind');
-            setIstKindVonMir(istMeinKind);
-          }
-        } catch (verr) {
-          console.error('Verwandtschaft-Check:', verr);
-        }
-      }
     } catch (e) {
       console.error('Mitglied laden:', e);
       setError('Mitglied konnte nicht geladen werden.');
