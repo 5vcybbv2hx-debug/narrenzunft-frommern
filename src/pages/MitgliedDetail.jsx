@@ -1,17 +1,16 @@
 import { useState, useEffect } from 'react';
 import DateSelect from '../components/ui/DateSelect';
-import TimeSelect from '../components/ui/TimeSelect';
 import { useParams, useNavigate, useLocation, Link, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import {
-  ArrowLeft, Edit, Save, X, Phone, Mail, MapPin, Calendar,
-  User, Shirt, Award, CreditCard, Trash2, AlertTriangle, Shield, Send, ChevronRight, Plus, Search, MessageCircle,
-  Archive, RotateCcw, Lock, Check, Users, ClipboardList, Wallet, Crown, AlertCircle, Heart, LogOut
+  ArrowLeft, Edit, Save, X, Phone, Mail, MapPin,
+  User, Shirt, CreditCard, AlertTriangle, Shield, Send, ChevronRight, Plus, Search, MessageCircle,
+  Archive, RotateCcw, Lock, Check, ClipboardList, Wallet, Crown, AlertCircle, Heart, LogOut
 } from 'lucide-react';
 import { format, differenceInYears } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { isAdmin, kannBankdatenSehn, ROLLEN_LABELS, istNurMitglied, kannMitgliedProfilSehn } from '@/lib/roles';
+import { isAdmin, kannBankdatenSehn, istNurMitglied, kannMitgliedProfilSehn } from '@/lib/roles';
 import { syncVerantwortliche } from '@/lib/spartenSync';
 import EhrungsStatus from '@/components/mitglied/EhrungsStatus';
 import AdresseAutocomplete from '@/components/AdresseAutocomplete';
@@ -20,6 +19,9 @@ import ArbeitsdiensteMitgliedTab from '@/components/mitglied/ArbeitsdiensteMitgl
 import FamilieTab from '@/components/mitglied/FamilieTab';
 import AntragTab from '@/components/mitglied/AntragTab';
 import NeuEinladenModal from '@/components/mitglied/NeuEinladenModal';
+import MitgliedVerlauf from '@/components/mitglied/MitgliedVerlauf';
+import MitgliedDokumente from '@/components/mitglied/MitgliedDokumente';
+import { SelbstpflegeAntrag } from '@/components/mitglied/Aenderungsantraege';
 import { toast } from 'sonner';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import MobileSelect from '@/components/MobileSelect';
@@ -460,6 +462,9 @@ export default function MitgliedDetail() {
 
   const alter = mitglied.geburtsdatum ? differenceInYears(new Date(), new Date(mitglied.geburtsdatum)) : null;
 
+  const altersStatusVorschlag = alter === null ? null : alter < 4 ? 'Kleinkind 0-3' : alter < 11 ? 'Kinder 4-10' : alter < 15 ? 'Jugendliche 11-14' : alter < 18 ? 'Jungaktive 15-17' : null;
+  const statusPruefung = altersStatusVorschlag && mitglied.mitgliedsstatus !== altersStatusVorschlag
+    && ['Kleinkind 0-3', 'Kinder 4-10', 'Jugendliche 11-14', 'Jungaktive 15-17'].includes(mitglied.mitgliedsstatus);
   const statusAltersWarnung = (() => {
     if (!mitglied.geburtsdatum || !mitglied.mitgliedsstatus || alter === null) return null;
     const s = mitglied.mitgliedsstatus;
@@ -517,6 +522,7 @@ export default function MitgliedDetail() {
             {isNew ? 'Neues Mitglied' : `${mitglied.vorname} ${mitglied.nachname}`}
           </h1>
           {alter !== null && <p className="text-sm text-muted-foreground">{alter} Jahre alt</p>}
+          {!isNew && <p className="text-xs text-muted-foreground">{mitglied.mitgliedsnummer ? `#${mitglied.mitgliedsnummer} · ` : ''}{mitglied.user_id ? 'App-Zugang vorhanden' : 'Kein verknüpfter App-Zugang'}{mitglied.familie_id ? ' · Familie zugeordnet' : ''}</p>}
         </div>
         {(admin || istKindVonMir) && !editing && (
           <button onClick={() => setEditing(true)}
@@ -554,6 +560,16 @@ export default function MitgliedDetail() {
         </div>
       )}
 
+      {statusPruefung && ['admin', 'vorstand'].includes(user?.role) && <button type="button" className="mb-4 rounded-lg bg-primary px-3 py-2 text-sm text-white"
+        onClick={async () => {
+          if (!(await confirmDialog(`Status für ${mitglied.vorname} ${mitglied.nachname} auf „${altersStatusVorschlag}“ setzen?`))) return;
+          try {
+            const res = await base44.functions.invoke('mitgliederBulkSicher', { aktion: 'status_setzen', mitglied_ids: [mitglied.id], mitgliedsstatus: altersStatusVorschlag });
+            if (res.data?.ok !== 1) throw new Error(res.data?.results?.[0]?.fehler || 'Statuswechsel fehlgeschlagen');
+            setMitglied(prev => ({ ...prev, mitgliedsstatus: altersStatusVorschlag }));
+            toast.success('Statuswechsel dokumentiert.');
+          } catch (e) { console.error('Statusvorschlag:', e); toast.error('Statuswechsel fehlgeschlagen.'); }
+        }}>Vorschlag: {altersStatusVorschlag} übernehmen</button>}
       {/* Avatar */}
       {!isNew && (
         <div className="flex items-center gap-4 mb-4 bg-card border border-border rounded-xl p-5 overflow-hidden">
@@ -567,6 +583,8 @@ export default function MitgliedDetail() {
           <div className="flex-1 min-w-0">
             <p className="font-bold text-white text-lg">{mitglied.vorname} {mitglied.nachname}</p>
             {alter !== null && <p className="text-sm text-muted-foreground">{alter} Jahre alt</p>}
+            {mitglied.mitgliedsnummer && <p className="text-xs text-muted-foreground">Mitglied #{mitglied.mitgliedsnummer}</p>}
+            {haes.length > 0 && <p className="text-xs text-muted-foreground">Häs: {haes.map(h => h.haesnummer).filter(Boolean).join(', ')}</p>}
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               {mitglied.archiviert && (
                 <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-900/20 text-yellow-400 border border-yellow-700/30 font-medium flex items-center gap-1">
@@ -604,6 +622,8 @@ export default function MitgliedDetail() {
             { id: 'profil', label: 'Profil' }, { id: 'antrag', label: 'Antrag' },
             { id: 'familie', label: 'Familie' }, { id: 'aktivitaet', label: 'Aktivität' },
             { id: 'arbeitsdienste', label: 'Dienste' }, { id: 'ehrungen', label: 'Ehrungen' },
+            ...(admin ? [{ id: 'verlauf', label: 'Verlauf' }] : []),
+            ...(['admin', 'vorstand'].includes(user?.role) ? [{ id: 'dokumente', label: 'Dokumente' }] : []),
           ].map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -615,6 +635,8 @@ export default function MitgliedDetail() {
         </div>
       )}
 
+      {activeTab === 'verlauf' && admin && !isNew && <MitgliedVerlauf mitglied={mitglied} />}
+      {activeTab === 'dokumente' && ['admin', 'vorstand'].includes(user?.role) && !isNew && <MitgliedDokumente mitglied={mitglied} canDelete />}
       {/* Tab: Antrag */}
       {activeTab === 'antrag' && !isNew && <AntragTab mitglied={mitglied} isAdmin={admin} />}
 
@@ -626,6 +648,7 @@ export default function MitgliedDetail() {
       {/* Tab: Aktivität */}
       {activeTab === 'aktivitaet' && !isNew && <AktivitaetTab mitgliedId={mitglied.id} />}
 
+      {istKindVonMir && !admin && !isNew && activeTab === 'profil' && !editing && <SelbstpflegeAntrag mitglied={mitglied} />}
       {/* Tab: Arbeitsdienste */}
       {activeTab === 'arbeitsdienste' && !isNew && <ArbeitsdiensteMitgliedTab mitgliedId={mitglied.id} />}
 
@@ -646,8 +669,8 @@ export default function MitgliedDetail() {
           <Field label="Mitgliedsstatus" field="mitgliedsstatus" options={getVerfuegbareStatus(mitglied.geburtsdatum)} editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
           {editing && (
             <>
-              <Field label="E-Mail" field="email" type="email" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
-              <Field label="Telefon" field="telefon" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+              <Field label="E-Mail" field="email" type="email" editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
+              <Field label="Telefon" field="telefon" editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
             </>
           )}
           <Field label="Eintrittsdatum" field="eintrittsdatum" type="date" editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
@@ -755,7 +778,7 @@ export default function MitgliedDetail() {
       {/* Adresse */}
       <div className="bg-card border border-border rounded-xl p-5 mb-4">
         <h2 className="font-semibold text-white mb-4 flex items-center gap-2 font-oswald uppercase tracking-wide"><MapPin size={16} className="text-primary" /> Adresse</h2>
-        {editing ? (
+        {admin && editing ? (
           <div className="space-y-3">
             <div>
               <label className="text-xs text-muted-foreground font-medium block mb-1">Adresse suchen</label>
@@ -768,10 +791,10 @@ export default function MitgliedDetail() {
                 }
               }} />
             </div>
-            <Field label="Straße" field="strasse" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+            <Field label="Straße" field="strasse" editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
             <div className="grid grid-cols-2 gap-3">
-              <Field label="PLZ" field="plz" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
-              <Field label="Ort" field="ort" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+              <Field label="PLZ" field="plz" editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
+              <Field label="Ort" field="ort" editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
             </div>
           </div>
         ) : (
@@ -794,9 +817,9 @@ export default function MitgliedDetail() {
       <div className="bg-card border border-border rounded-xl p-5 mb-4">
         <h2 className="font-semibold text-white mb-4 flex items-center gap-2 font-oswald uppercase tracking-wide"><AlertTriangle size={16} className="text-red-400" /> Notfallkontakt</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Name" field="notfallkontakt_name" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+          <Field label="Name" field="notfallkontakt_name" editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
           <div>
-            <Field label="Telefon" field="notfallkontakt_telefon" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
+            <Field label="Telefon" field="notfallkontakt_telefon" editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
             {!editing && mitglied.notfallkontakt_telefon && (
               <a href={`tel:${mitglied.notfallkontakt_telefon}`} className="inline-flex items-center gap-1 mt-1 text-xs text-primary hover:text-primary/70 transition-colors">
                 <Phone size={11} /> Anrufen

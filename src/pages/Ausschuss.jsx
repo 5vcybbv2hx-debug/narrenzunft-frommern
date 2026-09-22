@@ -5,7 +5,7 @@ import DateSelect from '../components/ui/DateSelect';
 import TimeSelect from '../components/ui/TimeSelect';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ClipboardList, CheckSquare, FileText, Lock, Plus, X, Save,
   Trash2, ChevronRight, Circle, CheckCircle2, Clock, Users,
@@ -62,7 +62,8 @@ const TABS = [
 export default function Ausschuss() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('sitzungen');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() => TABS.some(t => t.id === searchParams.get('tab')) ? searchParams.get('tab') : 'sitzungen');
   const isAdmin = kannAusschussSehn(user);
   const [termine, setTermine] = useState([]);
   const [aufgaben, setAufgaben] = useState([]);

@@ -1,18 +1,20 @@
-import { useState, useCallback, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import MobileSelect from '@/components/MobileSelect';
 import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannMitgliederlisteSehn, kannAusschussSehn } from '@/lib/roles';
-import { Search, Plus, User, ChevronRight, Archive, Download, ArrowUpDown, Shirt, FileText, FolderOpen, ChevronDown, Send } from 'lucide-react';
+import { Search, Plus, User, ChevronRight, Archive, Download, Shirt, FileText, FolderOpen, Send } from 'lucide-react';
 import NeuerAntragModal from '@/components/mitglied/NeuerAntragModal';
 import BulkEinladenModal from '@/components/mitglied/BulkEinladenModal';
 import MitgliederStatistik from '@/components/mitglieder/MitgliederStatistik';
+import MitgliederCockpit from '@/components/mitglieder/MitgliederCockpit';
+import { AenderungsantraegeVerwaltung } from '@/components/mitglied/Aenderungsantraege';
+import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import { format, differenceInYears } from 'date-fns';
-import { de } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 
@@ -44,17 +46,32 @@ const SORT_OPTIONS = [
 
 export default function Mitglieder() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'Alle');
-  const [gruppeFilter, setGruppeFilter] = useState('Alle');
-  const [zeigeArchiviert, setZeigeArchiviert] = useState(false);
-  const [sortBy, setSortBy] = useState('nachname');
+  const navigate = useNavigate();
+  const stateKey = `mitglieder-filter:${user?.id || 'anon'}`;
+  const saved = (() => { try { return JSON.parse(sessionStorage.getItem(stateKey) || '{}'); } catch { return {}; } })();
+  const [search, setSearch] = useState(saved.search || '');
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || saved.statusFilter || 'Alle');
+  const [gruppeFilter, setGruppeFilter] = useState(saved.gruppeFilter || 'Alle');
+  const [zeigeArchiviert, setZeigeArchiviert] = useState(saved.zeigeArchiviert || false);
+  const [sortBy, setSortBy] = useState(saved.sortBy || 'nachname');
+  const [selected, setSelected] = useState([]);
+  const [bulkStatus, setBulkStatus] = useState('');
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [draft, setDraft] = useState(null);
+  const [viewName, setViewName] = useState('');
+  const viewKey = `mitglieder-ansichten:${user?.id || 'anon'}`;
+  const [views, setViews] = useState(() => { try { return JSON.parse(localStorage.getItem(viewKey) || '[]'); } catch { return []; } });
   const [showAntragModal, setShowAntragModal] = useState(false);
   const [showBulkEinladen, setShowBulkEinladen] = useState(false);
   const isAdminUser = isAdmin(user);
   const kannListe = kannMitgliederlisteSehn(user);
   const kannStatistik = kannAusschussSehn(user);
+  const darfVerwalten = ['admin', 'vorstand', 'stellv_vorstand'].includes(user?.role);
+  const darfEntscheiden = ['admin', 'vorstand'].includes(user?.role);
+  useEffect(() => { sessionStorage.setItem(stateKey, JSON.stringify({ search, statusFilter, gruppeFilter, zeigeArchiviert, sortBy })); }, [stateKey, search, statusFilter, gruppeFilter, zeigeArchiviert, sortBy]);
+  useEffect(() => { localStorage.setItem(viewKey, JSON.stringify(views)); }, [viewKey, views]);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['mitglieder', kannListe],
@@ -158,7 +175,7 @@ export default function Mitglieder() {
 
   const getAlter = (geb) => geb ? differenceInYears(new Date(), new Date(geb)) : null;
 
-  const handleExport = async () => {
+  const handleExport = async (selectedOnly = false) => {
     // Häs-Gruppen für Export laden
     let gruppenMap = {};
     try {
@@ -166,8 +183,7 @@ export default function Mitglieder() {
       gruppen.forEach(g => { gruppenMap[g.id] = g.name; });
     } catch (e) { console.error('Error:', e); }
 
-    const rows = mitglieder
-      .filter(m => !m.archiviert)
+    const rows = (selectedOnly ? mitglieder.filter(m => selected.includes(m.id)) : mitglieder.filter(m => !m.archiviert))
       .map(m => ({
         'Mitgliedsnummer':     m.mitgliedsnummer || '',
         'Vorname':             m.vorname || '',
@@ -194,6 +210,9 @@ export default function Mitglieder() {
         'Notizen':             m.notizen || '',
       }));
 
+    // The new selected export intentionally excludes payment and mandate information.
+    if (selectedOnly) rows.forEach(row => { for (const k of ['Kontoinhaber', 'Bank', 'IBAN', 'Mandatnummer', 'Mandatdatum']) delete row[k]; });
+    if (!rows.length) { toast.error('Keine Mitglieder zum Export ausgewählt.'); return; }
     const ws = XLSX.utils.json_to_sheet(rows);
     // Spaltenbreiten
     ws['!cols'] = Object.keys(rows[0] || {}).map((k) => ({ wch: Math.max(k.length, 12) }));
@@ -201,6 +220,26 @@ export default function Mitglieder() {
     XLSX.utils.book_append_sheet(wb, ws, 'Mitglieder');
     XLSX.writeFile(wb, `Mitgliederliste_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
+
+  async function bulkAction(aktion) {
+    if (!selected.length || !darfEntscheiden) return;
+    if (aktion === 'status_setzen' && !bulkStatus) return toast.error('Bitte einen Status auswählen.');
+    if (aktion === 'status_setzen' && !(await confirmDialog(`Status für ${selected.length} ausgewählte Mitglieder auf „${bulkStatus}“ setzen?`))) return;
+    setBulkBusy(true);
+    try {
+      const res = await base44.functions.invoke('mitgliederBulkSicher', { aktion, mitglied_ids: selected, ...(aktion === 'status_setzen' ? { mitgliedsstatus: bulkStatus } : {}) });
+      if (aktion === 'einladung_entwurf') setDraft(res.data?.entwurf || null);
+      else { toast.success(`${res.data?.ok || 0} von ${selected.length} Mitgliedern aktualisiert.`); setSelected([]); await refetch(); await queryClient.invalidateQueries({ queryKey: ['mitglieder', 'handlungsbedarf'] }); }
+    } catch (e) { console.error('Sammelaktion:', e); toast.error('Sammelaktion fehlgeschlagen.'); }
+    finally { setBulkBusy(false); }
+  }
+  function saveView() {
+    const name = viewName.trim().slice(0, 40);
+    if (!name) return;
+    setViews(prev => [...prev.filter(v => v.name !== name), { name, statusFilter, gruppeFilter, zeigeArchiviert, sortBy }].slice(-8));
+    setViewName('');
+  }
+  function applyView(view) { setSearch(''); setStatusFilter(view.statusFilter || 'Alle'); setGruppeFilter(view.gruppeFilter || 'Alle'); setZeigeArchiviert(!!view.zeigeArchiviert); setSortBy(view.sortBy || 'nachname'); setSelected([]); }
 
   if (!isLoading && !data) return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-4">
@@ -261,6 +300,9 @@ export default function Mitglieder() {
           </div>
         )}
       </div>
+
+      {darfVerwalten && <MitgliederCockpit onMemberSelect={id => navigate(`/mitglieder/${id}`)} />}
+      {darfEntscheiden && <AenderungsantraegeVerwaltung />}
 
       {/* Statistik (nur Ausschuss & Spartenleiter) */}
       {kannStatistik && (
@@ -382,6 +424,13 @@ export default function Mitglieder() {
       )}
       </div>
 
+      {isAdminUser && <div className="mb-3 flex items-center gap-2 flex-wrap text-xs">
+        <span className="text-muted-foreground">Ansichten:</span>
+        {views.map(v => <button type="button" key={v.name} onClick={() => applyView(v)} className="rounded-md border border-border bg-card px-2 py-1 text-foreground">{v.name}</button>)}
+        <input aria-label="Name der Filteransicht" placeholder="Ansicht speichern…" value={viewName} onChange={e => setViewName(e.target.value)} maxLength={40} className="rounded-md border border-border bg-card px-2 py-1 text-foreground" />
+        <button type="button" onClick={saveView} disabled={!viewName.trim()} className="text-primary disabled:opacity-50">Speichern</button>
+      </div>}
+
       {/* Info-Zeile */}
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs text-muted-foreground">
@@ -402,6 +451,16 @@ export default function Mitglieder() {
         )}
       </div>
 
+      {darfEntscheiden && <div className="mb-3 rounded-lg border border-border bg-card p-3 flex flex-wrap items-center gap-2 text-xs">
+        <label className="flex items-center gap-2 text-foreground"><input type="checkbox" checked={filtered.length > 0 && filtered.every(m => selected.includes(m.id))} onChange={e => setSelected(e.target.checked ? [...new Set([...selected, ...filtered.map(m => m.id)])] : selected.filter(id => !filtered.some(m => m.id === id)))} /> Sichtbare auswählen</label>
+        <span className="text-muted-foreground">{selected.length} ausgewählt</span>
+        {selected.length > 0 && <><button type="button" onClick={() => handleExport(true)} className="text-primary">Auswahl exportieren</button>
+          <button type="button" onClick={() => bulkAction('einladung_entwurf')} disabled={bulkBusy} className="text-primary">Nachrichtentwurf</button>
+          <MobileSelect value={bulkStatus} onChange={setBulkStatus} options={ALLE_STATUS.filter(s => s !== 'Alle' && s !== 'Verstorben').map(s => ({ label: s, value: s }))} className="!py-1" />
+          <button type="button" onClick={() => bulkAction('status_setzen')} disabled={bulkBusy || !bulkStatus} className="text-primary disabled:opacity-50">Status bestätigen</button>
+          <button type="button" onClick={() => setSelected([])} className="text-muted-foreground">Auswahl löschen</button></>}
+      </div>}
+      {draft && <div className="mb-3 rounded-lg border border-border bg-card p-4 text-sm text-foreground"><div className="flex justify-between"><strong>Nachrichtentwurf, kein Versand</strong><button onClick={() => setDraft(null)} aria-label="Entwurf schließen">Schließen</button></div><p className="text-xs text-muted-foreground mt-2">{draft.empfaenger?.length || 0} ausgewählt, {draft.mitEmail || 0} mit E-Mail. Es wird nichts versendet.</p><input aria-label="Betreff" value={draft.betreff || ''} onChange={e => setDraft(p => ({ ...p, betreff: e.target.value }))} className="mt-2 w-full rounded-md border border-border bg-background p-2 text-foreground" /><textarea aria-label="Nachrichtentext" value={draft.text || ''} onChange={e => setDraft(p => ({ ...p, text: e.target.value }))} rows={6} className="mt-2 w-full rounded-md border border-border bg-background p-2 text-foreground" /></div>}
       {/* Liste */}
       <div className="space-y-1.5">
         {filtered.map(m => {
@@ -412,10 +471,11 @@ export default function Mitglieder() {
           const eintrittsJahr = m.eintrittsdatum ? format(new Date(m.eintrittsdatum), 'yyyy') : null;
 
           return (
+            <div key={m.id} className="flex items-center gap-2">
+            {darfEntscheiden && <input aria-label={`${m.vorname} ${m.nachname} auswählen`} type="checkbox" checked={selected.includes(m.id)} onChange={e => setSelected(prev => e.target.checked ? [...prev, m.id] : prev.filter(id => id !== m.id))} />}
             <Link
-              key={m.id}
               to={`/mitglieder/${m.id}`}
-              className="flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-3 hover:border-primary/50 hover:bg-card/80 transition-all group min-w-0"
+              className="flex-1 flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-3 hover:border-primary/50 hover:bg-card/80 transition-all group min-w-0"
             >
               {/* Avatar */}
               <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs shrink-0 overflow-hidden">
@@ -484,6 +544,7 @@ export default function Mitglieder() {
 
               <ChevronRight size={15} className="text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
             </Link>
+            </div>
           );
         })}
       </div>

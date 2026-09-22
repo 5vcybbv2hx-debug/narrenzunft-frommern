@@ -38,6 +38,7 @@ const BEZIEHUNG_FARBEN = {
 export default function FamilieTab({ mitglied, isAdmin }) {
   const [verwandtschaften, setVerwandtschaften] = useState([]);
   const [alleMitglieder, setAlleMitglieder] = useState([]);
+  const [gruppenMap, setGruppenMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -57,8 +58,18 @@ export default function FamilieTab({ mitglied, isAdmin }) {
         base44.entities.Verwandtschaft.filter({ mitglied_id: mitglied.id }),
         base44.entities.Verwandtschaft.filter({ verwandter_id: mitglied.id }),
       ]);
-      const alleVerwandtschaften = [...v, ...vUmgekehrt];
+      const unique = new Map();
+      // Mirror entries describe the same relationship; only one card per connected member.
+      for (const rel of [...v, ...vUmgekehrt]) {
+        const otherId = rel.mitglied_id === mitglied.id ? rel.verwandter_id : rel.mitglied_id;
+        if (otherId && !unique.has(otherId)) unique.set(otherId, rel);
+      }
+      const alleVerwandtschaften = [...unique.values()];
       setVerwandtschaften(alleVerwandtschaften);
+      if (isAdmin) {
+        const gruppen = await base44.entities.Haesgruppe.list('name', 200).catch(() => []);
+        setGruppenMap(Object.fromEntries((gruppen || []).map(g => [g.id, g.name])));
+      }
 
       // Nur die verknüpften Mitglieder laden (für Anzeige)
       const ids = [...new Set(alleVerwandtschaften.map(x =>
@@ -188,6 +199,7 @@ export default function FamilieTab({ mitglied, isAdmin }) {
                         {m.vorname} {m.nachname}
                       </Link>
                       {alter !== null && <span className="text-xs text-muted-foreground">{alter} J.</span>}
+                      {m.mitgliedsstatus && <span className="text-xs text-muted-foreground">{m.mitgliedsstatus}</span>}
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${BEZIEHUNG_FARBEN[beziehungLabel] || 'bg-gray-500/20 text-muted-foreground'}`}>
                         {beziehungLabel}
                       </span>
@@ -204,6 +216,7 @@ export default function FamilieTab({ mitglied, isAdmin }) {
                         </a>
                       )}
                     </div>
+                    {isAdmin && <p className="text-xs text-muted-foreground mt-1">{[...(m.haesgruppen_ids || []), ...(m.haesgruppe_id ? [m.haesgruppe_id] : [])].filter((id, i, arr) => arr.indexOf(id) === i).map(id => gruppenMap[id]).filter(Boolean).join(', ') ? `${[...(m.haesgruppen_ids || []), ...(m.haesgruppe_id ? [m.haesgruppe_id] : [])].filter((id, i, arr) => arr.indexOf(id) === i).map(id => gruppenMap[id]).filter(Boolean).join(', ')} · ` : ''}{m.user_id ? 'App-Zugang vorhanden' : 'Kein verknüpfter App-Zugang'}</p>}
                     {v.notizen && <p className="text-xs text-muted-foreground mt-0.5 italic">{v.notizen}</p>}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">

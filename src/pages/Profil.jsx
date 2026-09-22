@@ -82,14 +82,16 @@ export default function Profil() {
   const handleEditSave = async () => {
     setSaving(true);
     try {
-      await base44.entities.Mitglied.update(mitglied.id, editForm);
-      setMitglied(prev => ({ ...prev, ...editForm }));
+      const felder = Object.entries(editForm).filter(([key, value]) => (value || '') !== (mitglied[key] || '')).map(([feld, neu]) => ({ feld, neu }));
+      if (!felder.length) { setEditing(false); setSaving(false); return; }
+      await base44.functions.invoke('aenderungsantragVerwalten', { aktion: 'anlegen', ziel_mitglied_id: mitglied.id, felder });
       setEditing(false);
       setSaved(true);
+      toast.success('Änderung eingereicht. Die Profildaten bleiben bis zur Freigabe unverändert.');
       setTimeout(() => setSaved(false), 3000);
     } catch (e) {
       console.error('Profil speichern:', e);
-      setError('Speichern fehlgeschlagen. Bitte erneut versuchen.');
+      setError('Änderung konnte nicht eingereicht werden. Bitte erneut versuchen.');
     }
     setSaving(false);
   };
@@ -292,7 +294,7 @@ export default function Profil() {
                     disabled={saving}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-sm font-medium disabled:opacity-50 hover:bg-red-700 transition-colors"
                   >
-                    <Save size={13} /> {saving ? '…' : 'Speichern'}
+                    <Save size={13} /> {saving ? '…' : 'Zur Prüfung einreichen'}
                   </button>
                 </div>
               )}
