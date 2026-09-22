@@ -536,6 +536,14 @@ function TopsTab({ terminId, tops, setTops, mitglieder, isAdmin, onAenderung }) 
                       className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/15 text-primary text-xs font-semibold hover:bg-primary/25 transition-colors"><ListPlus size={12} /> Aufgabe</button>
                   </div>
                 )}
+                {isAdmin && (
+                  <div className="flex gap-1.5 flex-wrap">
+                    <button onClick={() => abstimmungAnlegen(top)} disabled={busy === top.id + '-abs'}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/15 text-primary text-xs font-semibold hover:bg-primary/25 transition-colors"><Vote size={12} /> Abstimmung</button>
+                    <button onClick={() => aufgabeErzeugen(top)} disabled={busy === top.id + '-auf'}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/15 text-primary text-xs font-semibold hover:bg-primary/25 transition-colors"><ListPlus size={12} /> Aufgabe</button>
+                  </div>
+                )}
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">Protokollnotiz</label>
                   <textarea
