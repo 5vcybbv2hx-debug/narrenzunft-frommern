@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   ClipboardList, CheckSquare, FileText, Lock, Plus, X, Save,
   Trash2, ChevronRight, Circle, CheckCircle2, Clock, Users,
-  AlertTriangle, Calendar, MapPin, User as UserIcon, Gavel, Vote, Shield, ListPlus,
+  AlertTriangle, Calendar, MapPin, User as UserIcon, Gavel, Vote, Shield, ListPlus, Pencil,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -75,9 +75,12 @@ export default function Ausschuss() {
   const [auditLogs, setAuditLogs] = useState([]);
   const [tops, setTops] = useState([]);
   const [stimmen, setStimmen] = useState([]);
+  const [antraege, setAntraege] = useState([]);
+  const [veranstaltungen, setVeranstaltungen] = useState([]);
   const [currentMitgliedId, setCurrentMitgliedId] = useState(null);
   const [canManage, setCanManage] = useState(false);
   const [aufgabenFilter, setAufgabenFilter] = useState('Alle');
+  const [beschlussJahr, setBeschlussJahr] = useState('Alle');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -190,6 +193,9 @@ export default function Ausschuss() {
   }, [aufgaben, aufgabenFilter, currentMitgliedId, offeneAufgaben, erledigteAufgaben]);
 
   const AUFGABEN_FILTER = ['Alle', 'Meine', 'Überfällig', 'Ohne', 'Offen', 'Erledigt'];
+
+  const beschlussJahre = ['Alle', ...Array.from(new Set((beschluesse || []).map(b => b.jahr).filter(Boolean))).sort((a, b) => b - a)];
+  const gefilterteBeschluesse = (beschluesse || []).filter(b => beschlussJahr === 'Alle' || b.jahr === Number(beschlussJahr) || (beschlussJahr === 'Ohne' && !b.jahr));
 
   return (
     <div className="px-4 lg:px-6 py-6 max-w-3xl mx-auto">
@@ -324,11 +330,19 @@ export default function Ausschuss() {
             </div>
             <button onClick={() => { setEditAufgabe(null); setShowAufgabeModal(true); }}
               className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-red-700 transition-colors">
-              <Plus size={15} /> Offener Punkt
+              <Plus size={15} /> Aufgabe
             </button>
           </div>
+          <div className="flex gap-1.5 mb-3 overflow-x-auto pb-1">
+            {AUFGABEN_FILTER.map(f => (
+              <button key={f} onClick={() => setAufgabenFilter(f)}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${aufgabenFilter === f ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
+                {f === 'Ohne' ? 'Ohne Verantw.' : f}
+              </button>
+            ))}
+          </div>
           <div className="space-y-2">
-            {aufgaben.map(a => (
+            {gefilterteAufgaben.map(a => (
               <div key={a.id} className={`bg-card border border-border rounded-xl px-4 py-3 flex items-center gap-3 ${a.status === 'Erledigt' ? 'opacity-50' : ''}`}>
                 <div className="shrink-0">{STATUS_ICONS[a.status] || STATUS_ICONS['Offen']}</div>
                 <div className="flex-1 min-w-0">
@@ -341,7 +355,7 @@ export default function Ausschuss() {
                 </div>
                 <button onClick={() => { setEditAufgabe(a); setShowAufgabeModal(true); }}
                   className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
-                  <FileText size={14} />
+                  <Pencil size={14} />
                 </button>
                 {a.status !== 'Erledigt' && (
                   <button onClick={() => setTopVerschieben({
@@ -350,7 +364,7 @@ export default function Ausschuss() {
                     titel: a.titel,
                     beschreibung: a.beschreibung || '',
                   })}
-                    title="Als Tagesordnungspunkt verschieben"
+                    title="Als Tagesordnungspunkt übernehmen"
                     className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
                     <ListPlus size={14} />
                   </button>
@@ -358,10 +372,10 @@ export default function Ausschuss() {
               </div>
             ))}
           </div>
-          {aufgaben.length === 0 && (
+          {gefilterteAufgaben.length === 0 && (
             <div className="text-center py-12 bg-card border border-border rounded-xl">
               <CheckSquare size={32} className="text-muted-foreground/40 mx-auto mb-2" />
-              <p className="text-sm text-white">Noch keine offenen Punkte</p>
+              <p className="text-sm text-foreground">Keine Aufgaben in diesem Filter</p>
             </div>
           )}
         </div>
@@ -370,37 +384,50 @@ export default function Ausschuss() {
       {/* BESCHLÜSSE */}
       {activeTab === 'beschluesse' && (
         <div>
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-end mb-3">
             <button onClick={() => { setEditBeschluss(null); setShowBeschlussModal(true); }}
               className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-red-700 transition-colors">
               <Plus size={15} /> Beschluss
             </button>
           </div>
+          {beschlussJahre.length > 2 && (
+            <div className="flex gap-1.5 mb-3 overflow-x-auto pb-1">
+              {beschlussJahre.map(j => (
+                <button key={j} onClick={() => setBeschlussJahr(j)}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${beschlussJahr === j ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
+                  {j === 'Alle' ? 'Alle' : j}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="space-y-2">
-            {beschluesse.map(b => (
+            {gefilterteBeschluesse.map(b => (
               <div key={b.id} className="bg-card border border-border rounded-xl p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <p className="text-sm font-semibold text-white">{b.titel}</p>
+                      {b.beschlussnummer && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary font-mono font-semibold">{b.beschlussnummer}</span>}
+                      <p className="text-sm font-semibold text-foreground">{b.titel}</p>
                       {b.vertraulich && <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-900/20 text-red-400 border border-red-700/30 flex items-center gap-1"><Lock size={9} /> Vertraulich</span>}
                       <span className={`text-[10px] px-2 py-0.5 rounded-full ${BESCHLUSS_STATUS_FARBEN[b.status] || ''}`}>{b.status}</span>
+                      {b.kategorie && <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">{b.kategorie}</span>}
                     </div>
-                    <p className="text-xs text-muted-foreground">{format(new Date(b.datum), 'dd.MM.yyyy', { locale: de })}</p>
+                    <p className="text-xs text-muted-foreground">{format(new Date(b.datum), 'dd.MM.yyyy', { locale: de })}{b.beschlussorgan ? ` · ${b.beschlussorgan}` : ''}</p>
                     {b.inhalt && <p className="text-sm text-muted-foreground mt-2 whitespace-pre-wrap">{b.inhalt}</p>}
+                    {b.faellig_am && <p className="text-xs text-muted-foreground mt-1">Umsetzungsfrist: {format(new Date(b.faellig_am), 'dd.MM.yyyy', { locale: de })}</p>}
                   </div>
                   <button onClick={() => { setEditBeschluss(b); setShowBeschlussModal(true); }}
                     className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
-                    <FileText size={14} />
+                    <Pencil size={14} />
                   </button>
                 </div>
               </div>
             ))}
           </div>
-          {beschluesse.length === 0 && (
+          {gefilterteBeschluesse.length === 0 && (
             <div className="text-center py-12 bg-card border border-border rounded-xl">
               <Gavel size={32} className="text-muted-foreground/40 mx-auto mb-2" />
-              <p className="text-sm text-white">Noch keine Beschlüsse erfasst</p>
+              <p className="text-sm text-foreground">Keine Beschlüsse in diesem Filter</p>
             </div>
           )}
         </div>
@@ -499,6 +526,7 @@ export default function Ausschuss() {
         <BeschlussModal
           beschluss={editBeschluss}
           termine={termine}
+          mitglieder={mitglieder}
           onClose={() => { setShowBeschlussModal(false); setEditBeschluss(null); }}
           onSaved={() => { setShowBeschlussModal(false); setEditBeschluss(null); loadData(); }}
         />
@@ -828,11 +856,12 @@ function SitzungModal({ onClose, onSaved }) {
   );
 }
 
-function BeschlussModal({ beschluss, termine, onClose, onSaved }) {
+function BeschlussModal({ beschluss, termine, mitglieder, onClose, onSaved }) {
   const isNew = !beschluss;
   const [form, setForm] = useState({
     titel: '', inhalt: '', datum: format(new Date(), 'yyyy-MM-dd'),
     status: 'Offen', vertraulich: false, termin_id: '', notizen: '',
+    kategorie: '', beschlussorgan: 'Ausschuss', verantwortlicher_id: '', faellig_am: '',
     ...beschluss,
   });
   const [saving, setSaving] = useState(false);
@@ -844,8 +873,22 @@ function BeschlussModal({ beschluss, termine, onClose, onSaved }) {
     if (!form.titel || !form.datum) return;
     setSaving(true);
     try {
-      if (isNew) await base44.entities.Beschluss.create(form);
-      else await base44.entities.Beschluss.update(beschluss.id, form);
+      if (isNew) {
+        // Über sichere Backend-Action: erzeugt automatisch beschlussnummer + jahr
+        await ausschussAktion('beschluss_anlegen', {
+          titel: form.titel, inhalt: form.inhalt, datum: form.datum,
+          termin_id: form.termin_id, kategorie: form.kategorie,
+          beschlussorgan: form.beschlussorgan, verantwortlicher_id: form.verantwortlicher_id,
+          faellig_am: form.faellig_am, vertraulich: form.vertraulich, notizen: form.notizen,
+        });
+      } else {
+        await ausschussAktion('beschluss_update', {
+          beschluss_id: beschluss.id, titel: form.titel, inhalt: form.inhalt,
+          status: form.status, kategorie: form.kategorie, beschlussorgan: form.beschlussorgan,
+          verantwortlicher_id: form.verantwortlicher_id, faellig_am: form.faellig_am,
+          vertraulich: form.vertraulich, notizen: form.notizen,
+        });
+      }
       onSaved();
     } catch (e) {
       console.error('Beschluss speichern:', e);
@@ -856,7 +899,7 @@ function BeschlussModal({ beschluss, termine, onClose, onSaved }) {
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      await base44.entities.Beschluss.delete(beschluss.id);
+      await ausschussAktion('beschluss_loeschen', { beschluss_id: beschluss.id });
       onSaved();
     } catch (e) {
       console.error('Beschluss löschen:', e);
@@ -868,9 +911,15 @@ function BeschlussModal({ beschluss, termine, onClose, onSaved }) {
     <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
       <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold font-oswald uppercase tracking-wide text-white">{isNew ? 'Neuer Beschluss' : 'Beschluss bearbeiten'}</h3>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-white"><X size={16} /></button>
+          <h3 className="font-bold font-oswald uppercase tracking-wide text-foreground">{isNew ? 'Neuer Beschluss' : 'Beschluss bearbeiten'}</h3>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"><X size={16} /></button>
         </div>
+        {beschluss?.beschlussnummer && (
+          <div className="mb-3 text-xs text-primary font-mono font-semibold flex items-center gap-1.5">
+            <GavelIcon size={12} /> {beschluss.beschlussnummer}
+            {beschluss.jahr && <span className="text-muted-foreground">· {beschluss.jahr}</span>}
+          </div>
+        )}
         <div className="space-y-3">
           <input type="text" placeholder="Titel *" value={form.titel} onChange={e => set('titel', e.target.value)} className={inputCls} />
           <textarea placeholder="Inhalt / Beschlusstext" value={form.inhalt || ''} onChange={e => set('inhalt', e.target.value)} rows={4} className={`${inputCls} resize-none`} />
@@ -881,14 +930,43 @@ function BeschlussModal({ beschluss, termine, onClose, onSaved }) {
             </div>
             <div>
               <label className={labelCls}>Status</label>
-              <MobileSelect value={form.status} onChange={v => set('status', v)} options={['Offen','Umgesetzt','Verworfen']} className={selectCls} />
+              <MobileSelect value={form.status} onChange={v => set('status', v)} options={['Offen','Umgesetzt','Verworfen','Aufgehoben']} className={selectCls} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelCls}>Kategorie</label>
+              <input type="text" placeholder="z.B. Finanzen" value={form.kategorie || ''} onChange={e => set('kategorie', e.target.value)} className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>Beschlussorgan</label>
+              <input type="text" placeholder="Ausschuss" value={form.beschlussorgan || ''} onChange={e => set('beschlussorgan', e.target.value)} className={inputCls} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelCls}>Fällig am</label>
+              <DateSelect value={form.faellig_am || ''} onChange={e => set('faellig_am', e.target.value)} className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>Zugehörige Sitzung</label>
+              <MobileSelect value={form.termin_id || ''} onChange={v => set('termin_id', v)} placeholder="–" options={[{label:'–', value:''}, ...termine.map(t => ({label:`${t.titel} (${t.datum})`, value:t.id}))]} className={selectCls} />
             </div>
           </div>
           <div>
-            <label className={labelCls}>Zugehörige Sitzung</label>
-            <MobileSelect value={form.termin_id || ''} onChange={v => set('termin_id', v)} placeholder="–" options={[{label:'–', value:''}, ...termine.map(t => ({label:`${t.titel} (${t.datum})`, value:t.id}))]} className={selectCls} />
+            <label className={labelCls}>Verantwortlich (Umsetzung)</label>
+            {mitglieder && (
+              <MitgliedLiveSuche
+                mitglieder={mitglieder}
+                value={(() => { const m = mitglieder.find(x => x.id === form.verantwortlicher_id); return m ? `${m.vorname} ${m.nachname}` : ''; })()}
+                onSelect={(m) => set('verantwortlicher_id', m.id)}
+                onClear={() => set('verantwortlicher_id', '')}
+                placeholder="Verantwortlichen suchen…"
+              />
+            )}
           </div>
-          <label className="flex items-center gap-2 cursor-pointer text-sm text-white">
+          <textarea placeholder="Notizen" value={form.notizen || ''} onChange={e => set('notizen', e.target.value)} rows={2} className={`${inputCls} resize-none`} />
+          <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground">
             <input type="checkbox" checked={form.vertraulich} onChange={e => set('vertraulich', e.target.checked)} className="rounded" />
             <Lock size={12} className="text-red-400" /> Vertraulich
           </label>
@@ -896,7 +974,7 @@ function BeschlussModal({ beschluss, termine, onClose, onSaved }) {
         {confirmDelete && <div className="mt-3"><DeleteBar show={true} onConfirm={handleDelete} onCancel={() => setConfirmDelete(false)} deleting={deleting} /></div>}
         <div className="flex gap-2 mt-4">
           {!isNew && !confirmDelete && <button onClick={() => setConfirmDelete(true)} className="p-2.5 rounded-lg bg-red-900/20 text-red-400 hover:bg-red-900/30 transition-colors"><Trash2 size={16} /></button>}
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-neutral-800 text-muted-foreground text-sm hover:text-white transition-colors">Abbrechen</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-neutral-800 text-muted-foreground text-sm hover:text-foreground transition-colors">Abbrechen</button>
           <button onClick={handleSave} disabled={saving || !form.titel}
             className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 hover:bg-red-700 transition-colors">
             {saving ? '…' : 'Speichern'}

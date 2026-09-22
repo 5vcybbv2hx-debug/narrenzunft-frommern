@@ -5,13 +5,16 @@ import { useAuth } from '@/lib/AuthContext';
 import {
   ArrowLeft, Plus, X, Save, Trash2, ChevronUp, ChevronDown,
   Users, ClipboardList, Vote, CheckCircle2, Circle, Clock, Lock,
-  FileText, Eye, EyeOff, Edit, Download
+  FileText, Eye, EyeOff, Edit, Download, Gavel, ListPlus, Zap, Send, ShieldCheck, ArrowRight
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import MobileSelect from '@/components/MobileSelect';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import { ProtokollModal } from '@/components/ausschuss/ProtokollTab';
+import { ausschussAktion } from '@/lib/ausschussAktionen';
+import DateienAnhang from '@/components/ausschuss/DateienAnhang';
+import toast from 'react-hot-toast';
 
 const ANWESENHEIT_FARBEN = {
   'Anwesend':      'bg-green-500/20 text-green-400',
@@ -151,6 +154,26 @@ export default function SitzungDetail() {
           <span className="ml-auto text-xs text-yellow-400 font-semibold">⚠ Nicht beschlussfähig</span>
         )}
       </div>
+
+      {/* Sitzungs-Lifecycle */}
+      {hatZugriff && (
+        <SitzungsLifecycle termin={termin} isAdmin={hatZugriff} onAenderung={loadData} />
+      )}
+
+      {/* Live-Modus Toggle */}
+      {hatZugriff && (
+        <div className="mb-4">
+          <button onClick={() => setLiveModus(l => !l)}
+            className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${liveModus ? 'bg-primary text-white' : 'bg-card border border-border text-foreground hover:border-primary/40'}`}>
+            <Zap size={15} /> {liveModus ? 'Live-Modus aktiv — Tippe zum Beenden' : 'Live-Modus starten'}
+          </button>
+        </div>
+      )}
+
+      {/* Live-Modus Ansicht */}
+      {liveModus && hatZugriff && (
+        <LiveModus termin={termin} tops={tops} abstimmungen={abstimmungen} stimmen={stimmen} ausschussMitglieder={ausschussMitglieder} getMitgliedName={getMitgliedName} isAdmin={hatZugriff} onAenderung={loadData} />
+      )}
 
       {/* Tabs */}
       <div className="flex gap-1 bg-secondary rounded-xl p-1 mb-5 overflow-x-auto">
