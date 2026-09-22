@@ -44,8 +44,8 @@
       "enum": [
         "Aktiv",
         "Passiv",
-        "Passiv mit H\u00e4s",
-        "Leih\u00e4s",
+        "Passiv mit Häs",
+        "Leihäs",
         "Jugendliche 11-14",
         "Jungaktive 15-17",
         "Kinder 4-10",
@@ -71,18 +71,18 @@
         "vorstand"
       ],
       "default": "mitglied",
-      "description": "Gew\u00fcnschte App-Rolle \u2013 wird beim ersten Login automatisch gesetzt"
+      "description": "Gewünschte App-Rolle – wird beim ersten Login automatisch gesetzt"
     },
     "zusatz_berechtigungen": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "description": "Zus\u00e4tzliche Berechtigungen unabh\u00e4ngig von der Hauptrolle, z.B. ['inventar', 'ausschuss']"
+      "description": "Zusätzliche Berechtigungen unabhängig von der Hauptrolle, z.B. ['inventar', 'ausschuss']"
     },
     "haesgruppe_id": {
       "type": "string",
-      "description": "Prim\u00e4re Gruppe (Legacy-Feld)"
+      "description": "Primäre Gruppe (Legacy-Feld)"
     },
     "haesgruppen_ids": {
       "type": "array",
@@ -93,14 +93,14 @@
     },
     "spartenleiter_haesgruppe_id": {
       "type": "string",
-      "description": "Legacy \u2013 prim\u00e4re Spartenleiter-Gruppe"
+      "description": "Legacy – primäre Spartenleiter-Gruppe"
     },
     "spartenleiter_haesgruppen_ids": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "description": "IDs aller Gruppen, f\u00fcr die dieses Mitglied Spartenleiter ist"
+      "description": "IDs aller Gruppen, für die dieses Mitglied Spartenleiter ist"
     },
     "einladung_gesendet_am": {
       "type": "string",
@@ -172,7 +172,7 @@
       "items": {
         "type": "string"
       },
-      "description": "IDs aller H\u00e4s, die diesem Mitglied aktuell zugeordnet sind (R\u00fcckverweis zu Haes.aktueller_besitzer_id)"
+      "description": "IDs aller Häs, die diesem Mitglied aktuell zugeordnet sind (Rückverweis zu Haes.aktueller_besitzer_id)"
     }
   },
   "required": [
@@ -198,12 +198,6 @@
     "update": {
       "$or": [
         {
-          "data.user_id": "{{user.id}}"
-        },
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
           "user_condition": {
             "role": "admin"
           }
@@ -211,6 +205,11 @@
         {
           "user_condition": {
             "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
           }
         }
       ]

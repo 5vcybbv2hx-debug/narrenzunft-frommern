@@ -35,11 +35,11 @@
     },
     "quelle_typ": {
       "type": "string",
-      "description": "Quell-Entit\u00e4t bei Migration (z.B. Mitglied, SpartenleiterHistorie). Leer bei neuen Ereignissen."
+      "description": "Quell-Entität bei Migration (z.B. Mitglied, SpartenleiterHistorie). Leer bei neuen Ereignissen."
     },
     "quelle_id": {
       "type": "string",
-      "description": "ID der Quell-Entit\u00e4t"
+      "description": "ID der Quell-Entität"
     },
     "alt_wert": {
       "type": "string",
@@ -51,7 +51,7 @@
     },
     "erstellt_von_id": {
       "type": "string",
-      "description": "Mitglied-ID des Ausf\u00fchrenden"
+      "description": "Mitglied-ID des Ausführenden"
     }
   },
   "required": [
@@ -80,7 +80,25 @@
         }
       ]
     },
-    "read": null,
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
     "update": {
       "$or": [
         {

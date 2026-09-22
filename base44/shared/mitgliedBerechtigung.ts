@@ -27,7 +27,7 @@ export async function loeseMeinMitglied(base44, user) {
   if (user.email) {
     try {
       const byEmail = await base44.asServiceRole.entities.Mitglied.filter({ email: user.email });
-      if (byEmail && byEmail.length > 0) return byEmail[0];
+      if (byEmail?.length === 1 && (!byEmail[0].user_id || byEmail[0].user_id === user.id)) return byEmail[0];
     } catch (e) { console.error("loeseMeinMitglied byEmail:", e); }
   }
   return null;
@@ -45,8 +45,12 @@ export function istVorstand(user) {
 export async function istElternVon(base44, elternMitgliedId, kindMitgliedId) {
   if (!elternMitgliedId || !kindMitgliedId) return false;
   try {
-    const rels = await base44.asServiceRole.entities.Verwandtschaft.filter({ mitglied_id: elternMitgliedId });
-    return (rels || []).some(v => v.verwandter_id === kindMitgliedId && v.beziehung === "Kind");
+    const [direkt, umgekehrt] = await Promise.all([
+      base44.asServiceRole.entities.Verwandtschaft.filter({ mitglied_id: elternMitgliedId }),
+      base44.asServiceRole.entities.Verwandtschaft.filter({ mitglied_id: kindMitgliedId }),
+    ]);
+    return (direkt || []).some(v => v.verwandter_id === kindMitgliedId && v.beziehung === "Kind")
+      || (umgekehrt || []).some(v => v.verwandter_id === elternMitgliedId && v.beziehung === "Elternteil");
   } catch (e) {
     console.error("istElternVon:", e);
     return false;
