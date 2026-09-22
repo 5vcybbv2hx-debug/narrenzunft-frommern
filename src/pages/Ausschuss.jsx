@@ -139,6 +139,8 @@ export default function Ausschuss() {
       setAuditLogs(data.auditLogs || []);
       setTops(data.tops || []);
       setStimmen(data.stimmen || []);
+      setAntraege(data.antraege || []);
+      setVeranstaltungen(data.veranstaltungen || []);
       setCurrentMitgliedId(data.currentMitgliedId || null);
       setCanManage(!!data.canManage);
     } catch (e) {
@@ -180,8 +182,7 @@ export default function Ausschuss() {
 
   const tabBadges = { aufgaben: offeneAufgaben.length };
 
-  const gefilterteAufgaben = useMemo(() => {
-    const today = format(new Date(), 'yyyy-MM-dd');
+  const gefilterteAufgaben = (() => {
     switch (aufgabenFilter) {
       case 'Meine': return aufgaben.filter(a => a.verantwortlicher_id === currentMitgliedId && a.status !== 'Erledigt' && a.status !== 'Abgebrochen');
       case 'Überfällig': return aufgaben.filter(a => a.status !== 'Erledigt' && a.status !== 'Abgebrochen' && a.faellig_am && a.faellig_am < today);
@@ -190,7 +191,7 @@ export default function Ausschuss() {
       case 'Erledigt': return erledigteAufgaben;
       default: return aufgaben;
     }
-  }, [aufgaben, aufgabenFilter, currentMitgliedId, offeneAufgaben, erledigteAufgaben]);
+  })();
 
   const AUFGABEN_FILTER = ['Alle', 'Meine', 'Überfällig', 'Ohne', 'Offen', 'Erledigt'];
 

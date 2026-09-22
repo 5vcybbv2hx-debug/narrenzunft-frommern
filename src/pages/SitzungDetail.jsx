@@ -52,6 +52,7 @@ export default function SitzungDetail() {
   const [protokolle, setProtokolle] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('anwesenheit');
+  const [liveModus, setLiveModus] = useState(false);
 
   useEffect(() => { loadData(); }, [id]);
 
@@ -209,6 +210,7 @@ export default function SitzungDetail() {
           setTops={setTops}
           mitglieder={mitglieder}
           isAdmin={isAdmin}
+          onAenderung={loadData}
         />
       )}
 
@@ -252,17 +254,32 @@ function SitzungsProtokollTab({ termin, protokolle, mitglieder, ausschussIds, on
 
   // Noch kein Protokoll → Leitaktion direkt anbieten
   if (protokolle.length === 0) {
-    return (
-      <div className="text-center py-12 bg-card border border-border rounded-xl">
-        <FileText size={36} className="text-muted-foreground/40 mx-auto mb-3" />
-        <p className="text-foreground font-medium">Noch kein Protokoll</p>
-        <p className="text-sm text-muted-foreground mt-1 mb-5">Protokoll direkt aus der Sitzung heraus erstellen — Titel und Datum sind bereits ausgefüllt.</p>
-        <button
-          onClick={() => { setEditP(null); setShowModal(true); }}
-          className="inline-flex items-center gap-2 px-5 py-3 min-h-[44px] rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
-        >
-          <Plus size={16} /> Protokoll erstellen
-        </button>
+  const handleEntwurf = async () => {
+  try {
+  await ausschussAktion('protokoll_entwurf', { termin_id: termin.id });
+  toast.success('Protokoll-Entwurf vorbereitet');
+  onSaved();
+  } catch (e) { toast.error(e.message || 'Entwurf fehlgeschlagen'); }
+  };
+  return (
+  <div className="text-center py-12 bg-card border border-border rounded-xl">
+  <FileText size={36} className="text-muted-foreground/40 mx-auto mb-3" />
+  <p className="text-foreground font-medium">Noch kein Protokoll</p>
+  <p className="text-sm text-muted-foreground mt-1 mb-5">Protokoll direkt aus der Sitzung heraus erstellen — Titel und Datum sind bereits ausgefüllt.</p>
+  <div className="flex flex-col sm:flex-row gap-2 justify-center">
+    <button
+      onClick={handleEntwurf}
+      className="inline-flex items-center gap-2 px-5 py-3 min-h-[44px] rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+    >
+      <FileText size={16} /> Entwurf vorbereiten
+    </button>
+    <button
+      onClick={() => { setEditP(null); setShowModal(true); }}
+      className="inline-flex items-center gap-2 px-5 py-3 min-h-[44px] rounded-xl bg-secondary text-foreground text-sm font-semibold border border-border hover:border-primary/40 transition-colors"
+    >
+      <Plus size={16} /> Leeres Protokoll
+    </button>
+  </div>
         {showModal && (
           <ProtokollModal
             protokoll={null}
@@ -387,12 +404,34 @@ function AnwesenheitTab({ ausschussMitglieder, getMitgliedName, getAnwesenheit, 
 }
 
 // ─── TOPs Tab ───────────────────────────────────────────────────────
-function TopsTab({ terminId, tops, setTops, mitglieder, isAdmin }) {
+function TopsTab({ terminId, tops, setTops, mitglieder, isAdmin, onAenderung }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ titel: '', beschreibung: '', verantwortlicher_id: '' });
   const [saving, setSaving] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
   const [editNotizen, setEditNotizen] = useState({});
+  const [busy, setBusy] = useState(null);
+
+  const abstimmungAnlegen = async (top) => {
+    const titel = window.prompt('Titel der Abstimmung?', top.titel);
+    if (!titel) return;
+    setBusy(top.id + '-abs');
+    try {
+      await ausschussAktion('top_abstimmung_anlegen', { top_id: top.id, titel });
+      toast.success('Abstimmung angelegt');
+      onAenderung();
+    } catch (e) { toast.error(e.message); }
+    setBusy(null);
+  };
+  const aufgabeErzeugen = async (top) => {
+    setBusy(top.id + '-auf');
+    try {
+      await ausschussAktion('aufgabe_anlegen', { top_id: top.id, titel: `Aufgabe zu: ${top.titel}`, termin_id: terminId });
+      toast.success('Aufgabe angelegt');
+      onAenderung();
+    } catch (e) { toast.error(e.message); }
+    setBusy(null);
+  };
 
   const handleCreate = async () => {
     if (!form.titel) return;
@@ -487,6 +526,14 @@ function TopsTab({ terminId, tops, setTops, mitglieder, isAdmin }) {
                         {s}
                       </button>
                     ))}
+                  </div>
+                )}
+                {isAdmin && (
+                  <div className="flex gap-1.5 flex-wrap">
+                    <button onClick={() => abstimmungAnlegen(top)} disabled={busy === top.id + '-abs'}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/15 text-primary text-xs font-semibold hover:bg-primary/25 transition-colors"><Vote size={12} /> Abstimmung</button>
+                    <button onClick={() => aufgabeErzeugen(top)} disabled={busy === top.id + '-auf'}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/15 text-primary text-xs font-semibold hover:bg-primary/25 transition-colors"><ListPlus size={12} /> Aufgabe</button>
                   </div>
                 )}
                 <div>
@@ -678,11 +725,209 @@ function AbstimmungenTab({ terminId, abstimmungen, setAbstimmungen, ausschussMit
                     </button>
                   )}
                 </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+                )}
+                </div>
+                );
+                })}
+                </div>
+                </div>
+                );
+                }
+
+                // ─── Sitzungs-Lifecycle ────────────────────────────────────────────
+                const SITZUNGS_PHASEN = ['Entwurf', 'Eingeladen', 'Läuft', 'Nachbereitung', 'Abgeschlossen', 'Abgesagt'];
+
+                function SitzungsLifecycle({ termin, isAdmin, onAenderung }) {
+                const [busy, setBusy] = useState(null);
+                const status = termin?.sitzungs_status || 'Entwurf';
+
+                const aendere = async (neu) => {
+                setBusy(neu);
+                try {
+                await ausschussAktion('sitzung_status', { termin_id: termin.id, sitzungs_status: neu });
+                toast.success(`Status: ${neu}`);
+                onAenderung();
+                } catch (e) { toast.error(e.message || 'Statusänderung fehlgeschlagen'); }
+                setBusy(null);
+                };
+
+                const einladen = async () => {
+                setBusy('Eingeladen');
+                try {
+                await ausschussAktion('sitzung_einladen', { termin_id: termin.id });
+                toast.success('Einladung markiert als gesendet');
+                onAenderung();
+                } catch (e) { toast.error(e.message || 'Einladen fehlgeschlagen'); }
+                setBusy(null);
+                };
+
+                const sperren = async () => {
+                setBusy('sperren');
+                try {
+                await ausschussAktion('tops_sperren', { termin_id: termin.id, tops_gesperrt: !termin.tops_gesperrt });
+                onAenderung();
+                } catch (e) { toast.error(e.message || 'Sperren fehlgeschlagen'); }
+                setBusy(null);
+                };
+
+                if (!isAdmin) return null;
+
+                return (
+                <div className="bg-card border border-border rounded-xl p-3 mb-4">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <ShieldCheck size={14} className="text-primary shrink-0" />
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Sitzungs-Phase</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary font-semibold">{status}</span>
+                {termin.tops_gesperrt && <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-500">Agenda gesperrt</span>}
+                </div>
+                <div className="flex gap-1.5 overflow-x-auto pb-1">
+                {SITZUNGS_PHASEN.map(p => (
+                <button key={p} onClick={() => aendere(p)} disabled={busy === p || status === p}
+                className={`flex-shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${status === p ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:text-foreground disabled:opacity-40'}`}>
+                {busy === p ? '…' : p}
+                </button>
+                ))}
+                </div>
+                <div className="flex gap-2 mt-2">
+                <button onClick={einladen} disabled={busy === 'Eingeladen'}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-foreground text-xs font-semibold hover:bg-primary/20 transition-colors">
+                <Send size={12} /> Einladung gesendet
+                </button>
+                <button onClick={sperren} disabled={busy === 'sperren'}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-foreground text-xs font-semibold hover:bg-primary/20 transition-colors">
+                <Lock size={12} /> {termin.tops_gesperrt ? 'Agenda entsperren' : 'Agenda sperren'}
+                </button>
+                </div>
+                </div>
+                );
+                }
+
+                // ─── Live-Modus ────────────────────────────────────────────────────
+                function LiveModus({ termin, tops, abstimmungen, stimmen, ausschussMitglieder, getMitgliedName, isAdmin, onAenderung }) {
+                const [idx, setIdx] = useState(0);
+                const [busy, setBusy] = useState(null);
+                const aktiverTop = tops[idx];
+                const offen = tops.filter(t => t.status === 'Offen');
+                const fortschritt = tops.length > 0 ? Math.round((tops.filter(t => t.status !== 'Offen').length / tops.length) * 100) : 0;
+
+                const anwesend = 0; // vereinfacht im Live-Modus
+                const quorum = ausschussMitglieder.length > 0 ? Math.ceil(ausschussMitglieder.length / 2) : 0;
+
+                const topAbs = aktiverTop ? abstimmungen.filter(a => a.top_id === aktiverTop.id) : [];
+
+                const setTopStatus = async (status) => {
+                setBusy(status);
+                try {
+                await ausschussAktion('top_status', { top_id: aktiverTop.id, status });
+                onAenderung();
+                } catch (e) { toast.error(e.message); }
+                setBusy(null);
+                };
+
+                const abstimmungAnlegen = async () => {
+                const titel = window.prompt('Titel der Abstimmung?', aktiverTop?.titel || '');
+                if (!titel) return;
+                setBusy('abstimmung');
+                try {
+                await ausschussAktion('top_abstimmung_anlegen', { top_id: aktiverTop.id, titel });
+                toast.success('Abstimmung angelegt');
+                onAenderung();
+                } catch (e) { toast.error(e.message); }
+                setBusy(null);
+                };
+
+                const beschlussErzeugen = async (abs) => {
+                if (abs.ergebnis !== 'Angenommen') { toast.error('Nur angenommene Abstimmungen werden Beschluss'); return; }
+                setBusy('beschluss');
+                try {
+                await ausschussAktion('beschluss_aus_abstimmung', { abstimmung_id: abs.id });
+                toast.success('Beschluss erzeugt');
+                onAenderung();
+                } catch (e) { toast.error(e.message); }
+                setBusy(null);
+                };
+
+                const aufgabeErzeugen = async () => {
+                setBusy('aufgabe');
+                try {
+                await ausschussAktion('aufgabe_anlegen', { top_id: aktiverTop.id, titel: `Aufgabe zu: ${aktiverTop.titel}`, termin_id: termin.id });
+                toast.success('Aufgabe angelegt');
+                onAenderung();
+                } catch (e) { toast.error(e.message); }
+                setBusy(null);
+                };
+
+                return (
+                <div className="bg-card border border-primary/40 rounded-xl p-4 mb-4 space-y-3">
+                <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                <Zap size={16} className="text-primary" />
+                <span className="font-oswald uppercase tracking-wide text-foreground">Live-Modus</span>
+                </div>
+                <div className="text-xs text-muted-foreground">{anwesend}/{ausschussMitglieder.length} anwesend · Quorum {quorum}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Fortschritt</span>
+                <div className="flex-1 bg-secondary rounded-full h-2 overflow-hidden">
+                <div className="bg-primary h-full transition-all" style={{ width: `${fortschritt}%` }} />
+                </div>
+                <span className="text-xs text-muted-foreground tabular-nums">{fortschritt}%</span>
+                </div>
+                {tops.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">Keine TOPs — zuerst Tagesordnung anlegen.</p>
+                ) : (
+                <>
+                <div className="flex items-center justify-between gap-2">
+                <button onClick={() => setIdx(i => Math.max(0, i - 1))} disabled={idx === 0}
+                className="p-2 rounded-lg bg-secondary text-foreground disabled:opacity-40 hover:bg-primary/20 transition-colors"><ChevronUp size={16} /></button>
+                <span className="text-xs text-muted-foreground">TOP {idx + 1} / {tops.length} · {offen.length} offen</span>
+                <button onClick={() => setIdx(i => Math.min(tops.length - 1, i + 1))} disabled={idx === tops.length - 1}
+                className="p-2 rounded-lg bg-secondary text-foreground disabled:opacity-40 hover:bg-primary/20 transition-colors"><ChevronDown size={16} /></button>
+                </div>
+
+                {aktiverTop && (
+                <div className="border border-border rounded-lg p-3 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-foreground">{aktiverTop.titel}</p>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full ${TOP_STATUS_FARBEN[aktiverTop.status]}`}>{aktiverTop.status}</span>
+                </div>
+                {aktiverTop.beschreibung && <p className="text-xs text-muted-foreground">{aktiverTop.beschreibung}</p>}
+
+                {isAdmin && (
+                <div className="flex gap-1.5 flex-wrap">
+                 <button onClick={() => setTopStatus('Besprochen')} disabled={busy === 'Besprochen'}
+                   className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-green-600/20 text-green-400 text-xs font-semibold hover:bg-green-600/30 transition-colors"><CheckCircle2 size={12} /> Besprochen</button>
+                 <button onClick={() => setTopStatus('Vertagt')} disabled={busy === 'Vertagt'}
+                   className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-secondary text-muted-foreground text-xs font-semibold hover:text-foreground transition-colors">Vertagen</button>
+                 <button onClick={abstimmungAnlegen} disabled={busy === 'abstimmung'}
+                   className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/15 text-primary text-xs font-semibold hover:bg-primary/25 transition-colors"><Vote size={12} /> Abstimmung</button>
+                 <button onClick={aufgabeErzeugen} disabled={busy === 'aufgabe'}
+                   className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/15 text-primary text-xs font-semibold hover:bg-primary/25 transition-colors"><ListPlus size={12} /> Aufgabe</button>
+                </div>
+                )}
+
+                {topAbs.length > 0 && (
+                <div className="border-t border-border pt-2 space-y-1.5">
+                 {topAbs.map(a => {
+                   const ja = stimmen.filter(s => s.abstimmung_id === a.id && s.stimme === 'Ja').length;
+                   const nein = stimmen.filter(s => s.abstimmung_id === a.id && s.stimme === 'Nein').length;
+                   return (
+                     <div key={a.id} className="flex items-center justify-between gap-2 text-xs">
+                       <span className="text-foreground truncate">{a.titel}</span>
+                       <span className="text-muted-foreground shrink-0">✓{ja} ✗{nein} {a.ergebnis ? `→ ${a.ergebnis}` : ''}</span>
+                       {isAdmin && a.ergebnis === 'Angenommen' && (
+                         <button onClick={() => beschlussErzeugen(a)} disabled={busy === 'beschluss'}
+                           className="flex items-center gap-1 px-2 py-1 rounded bg-primary text-white text-[10px] font-semibold hover:bg-primary/90 transition-colors"><Gavel size={10} /> Beschluss</button>
+                       )}
+                     </div>
+                   );
+                 })}
+                </div>
+                )}
+                </div>
+                )}
+                </>
+                )}
+                </div>
+                );
+                }
