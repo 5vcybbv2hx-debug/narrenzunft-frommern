@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { erstelleNachbesprechungsTops } from '@/lib/nachbereitung';
 import toast from 'react-hot-toast';
 import DateSelect from '../components/ui/DateSelect';
@@ -20,6 +20,12 @@ import ProtokollTab from '@/components/ausschuss/ProtokollTab';
 import MitgliedLiveSuche from '@/components/MitgliedLiveSuche';
 import MobileSelect from '@/components/MobileSelect';
 import { kannAusschussSehn } from '@/lib/roles';
+import CockpitTab from '@/components/ausschuss/CockpitTab';
+import JahresplanungTab from '@/components/ausschuss/JahresplanungTab';
+import AuditLogListe from '@/components/ausschuss/AuditLogListe';
+import { ausschussAktion } from '@/lib/ausschussAktionen';
+import { Gavel as GavelIcon } from 'lucide-react';
+import { LayoutDashboard, Repeat } from 'lucide-react';
 
 const PRIO_FARBEN = {
   'Niedrig':  'bg-neutral-700 text-neutral-300',
@@ -42,12 +48,14 @@ const BESCHLUSS_STATUS_FARBEN = {
 };
 
 const TABS = [
+  { id: 'cockpit', label: 'Cockpit', icon: LayoutDashboard },
   { id: 'sitzungen', label: 'Sitzungen', icon: ClipboardList },
-  { id: 'aufgaben', label: 'Offene Punkte', icon: CheckSquare },
+  { id: 'aufgaben', label: 'Aufgaben', icon: CheckSquare },
   { id: 'beschluesse', label: 'Beschlüsse', icon: Gavel },
   { id: 'antraege', label: 'Mitgliedsanträge', icon: FileText },
   { id: 'abstimmungen', label: 'Abstimmungen', icon: Vote },
   { id: 'protokolle', label: 'Protokolle', icon: FileText },
+  { id: 'jahresplanung', label: 'Jahresplanung', icon: Repeat },
   { id: 'mitglieder', label: 'Ausschuss', icon: Users },
 ];
 
@@ -63,6 +71,13 @@ export default function Ausschuss() {
   const [protokolle, setProtokolle] = useState([]);
   const [mitglieder, setMitglieder] = useState([]);
   const [ausschussMitglieder, setAusschussMitglieder] = useState([]);
+  const [jahresplaene, setJahresplaene] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [tops, setTops] = useState([]);
+  const [stimmen, setStimmen] = useState([]);
+  const [currentMitgliedId, setCurrentMitgliedId] = useState(null);
+  const [canManage, setCanManage] = useState(false);
+  const [aufgabenFilter, setAufgabenFilter] = useState('Alle');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -82,22 +97,17 @@ export default function Ausschuss() {
     if (!termin_id || !titel) return;
     setVerschiebt(true);
     try {
-      const vorhandene = await base44.entities.Tagesordnungspunkt.filter({ termin_id });
-      await base44.entities.Tagesordnungspunkt.create({
-        termin_id,
-        titel,
-        beschreibung: beschreibung || '',
-        verantwortlicher_id: aufgabe.verantwortlicher_id || '',
-        reihenfolge: (vorhandene?.length || 0) + 1,
-        status: 'Offen',
+      // WICHTIG: Aufgabe wird NICHT gelöscht — über sichere Backend-Action
+      // wird ein TOP mit quell_aufgabe_id angelegt und die Aufgabe verknüpft.
+      await ausschussAktion('aufgabe_in_top', {
+        aufgabe_id: aufgabe.id, termin_id, titel, beschreibung,
       });
-      await base44.entities.Ausschussaufgabe.delete(aufgabe.id);
-      setAufgaben(prev => prev.filter(x => x.id !== aufgabe.id));
       setTopVerschieben(null);
-      toast.success('Als Tagesordnungspunkt verschoben');
+      toast.success('Als Tagesordnungspunkt übernommen (Aufgabe bleibt verknüpft)');
+      loadData();
     } catch (e) {
       console.error('TOP-Verschiebung:', e);
-      toast.error('Verschieben fehlgeschlagen');
+      toast.error(e.message || 'Verschieben fehlgeschlagen');
     }
     setVerschiebt(false);
   };
@@ -120,12 +130,14 @@ export default function Ausschuss() {
       setBeschluesse(data.beschluesse || []);
       setMitglieder(data.mitglieder || []);
       setAusschussMitglieder(data.ausschussMitglieder || []);
-      const [abs, prot] = await Promise.all([
-        base44.entities.Abstimmung.list('-created_date', 200),
-        base44.entities.Protokoll.list('-datum', 200).catch(() => []),
-      ]);
-      setAbstimmungen(abs || []);
-      setProtokolle(prot || []);
+      setAbstimmungen(data.abstimmungen || []);
+      setProtokolle(data.protokolle || []);
+      setJahresplaene(data.jahresplaene || []);
+      setAuditLogs(data.auditLogs || []);
+      setTops(data.tops || []);
+      setStimmen(data.stimmen || []);
+      setCurrentMitgliedId(data.currentMitgliedId || null);
+      setCanManage(!!data.canManage);
     } catch (e) {
       console.error('Ausschuss laden:', e);
       setError('Ausschussdaten konnten nicht geladen werden.');
@@ -165,6 +177,20 @@ export default function Ausschuss() {
 
   const tabBadges = { aufgaben: offeneAufgaben.length };
 
+  const gefilterteAufgaben = useMemo(() => {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    switch (aufgabenFilter) {
+      case 'Meine': return aufgaben.filter(a => a.verantwortlicher_id === currentMitgliedId && a.status !== 'Erledigt' && a.status !== 'Abgebrochen');
+      case 'Überfällig': return aufgaben.filter(a => a.status !== 'Erledigt' && a.status !== 'Abgebrochen' && a.faellig_am && a.faellig_am < today);
+      case 'Ohne': return aufgaben.filter(a => !a.verantwortlicher_id && a.status !== 'Erledigt' && a.status !== 'Abgebrochen');
+      case 'Offen': return offeneAufgaben;
+      case 'Erledigt': return erledigteAufgaben;
+      default: return aufgaben;
+    }
+  }, [aufgaben, aufgabenFilter, currentMitgliedId, offeneAufgaben, erledigteAufgaben]);
+
+  const AUFGABEN_FILTER = ['Alle', 'Meine', 'Überfällig', 'Ohne', 'Offen', 'Erledigt'];
+
   return (
     <div className="px-4 lg:px-6 py-6 max-w-3xl mx-auto">
       {/* Header */}
@@ -202,6 +228,23 @@ export default function Ausschuss() {
           );
         })}
       </div>
+
+      {/* COCKPIT */}
+      {activeTab === 'cockpit' && (
+        <div className="space-y-4">
+          <CockpitTab
+            data={{ termine, aufgaben, beschluesse, protokolle, antraege, veranstaltungen, tops, abstimmungen, currentMitgliedId, mitglieder }}
+            onNavigate={(t) => setActiveTab(t)}
+            onOpenSitzung={(sid) => navigate(`/ausschuss/sitzung/${sid}`)}
+            onFilterAufgaben={(f) => { setAufgabenFilter(f === 'meine' ? 'Meine' : 'Überfällig'); setActiveTab('aufgaben'); }}
+          />
+          {auditLogs.length > 0 && (
+            <div className="bg-card border border-border rounded-xl p-4">
+              <AuditLogListe logs={auditLogs} mitglieder={mitglieder} />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* SITZUNGEN */}
       {activeTab === 'sitzungen' && (
@@ -264,6 +307,11 @@ export default function Ausschuss() {
       {/* AUSSCHUSSMITGLIEDER */}
       {activeTab === 'mitglieder' && (
         <AusschussMitgliederTab mitglieder={mitglieder} isAdmin={isAdmin} />
+      )}
+
+      {/* JAHRESPLANUNG */}
+      {activeTab === 'jahresplanung' && (
+        <JahresplanungTab plaene={jahresplaene} mitglieder={mitglieder} canManage={canManage} onSaved={loadData} />
       )}
 
       {/* AUFGABEN */}
