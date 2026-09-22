@@ -1,0 +1,128 @@
+{
+  "name": "MitgliedDokument",
+  "type": "object",
+  "properties": {
+    "mitglied_id": {
+      "type": "string",
+      "description": "ID des Mitglieds, zu dem dieses Dokument geh\u00f6rt"
+    },
+    "typ": {
+      "type": "string",
+      "enum": [
+        "Antrag",
+        "Einverst\u00e4ndnis",
+        "Bescheinigung",
+        "Austritt",
+        "Sonstiges"
+      ],
+      "default": "Sonstiges",
+      "description": "Art des Vereinsdokuments"
+    },
+    "name": {
+      "type": "string",
+      "description": "Anzeigename / Dateiname"
+    },
+    "beschreibung": {
+      "type": "string"
+    },
+    "file_uri": {
+      "type": "string",
+      "description": "Private Storage-URI (UploadPrivateFile) \u2013 NICHT \u00f6ffentlich. Download nur via signierter URL durch authentifizierte Backend-Function."
+    },
+    "datei_groesse": {
+      "type": "number"
+    },
+    "datum": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum des Dokuments (z.B. Einreichungs-/Ausstellungsdatum)"
+    },
+    "hochgeladen_von_id": {
+      "type": "string",
+      "description": "Mitglied-ID des Hochladenden"
+    },
+    "ist_legacy_public": {
+      "type": "boolean",
+      "default": false,
+      "description": "true f\u00fcr alte antrag_pdf_url-Eintr\u00e4ge (\u00f6ffentliche URL, r\u00fcckw\u00e4rtskompatibel angezeigt)"
+    }
+  },
+  "required": [
+    "mitglied_id",
+    "typ",
+    "name"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    }
+  }
+}

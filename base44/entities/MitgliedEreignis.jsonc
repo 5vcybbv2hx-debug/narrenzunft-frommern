@@ -1,0 +1,113 @@
+{
+  "name": "MitgliedEreignis",
+  "type": "object",
+  "properties": {
+    "mitglied_id": {
+      "type": "string",
+      "description": "Betroffenes Mitglied"
+    },
+    "typ": {
+      "type": "string",
+      "enum": [
+        "Eintritt",
+        "Austritt",
+        "Todesfall",
+        "Statuswechsel",
+        "Spartenzuordnung",
+        "Spartenleiter",
+        "Antrag",
+        "Notiz"
+      ],
+      "description": "Art des Lebensereignisses"
+    },
+    "datum": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum des Ereignisses"
+    },
+    "titel": {
+      "type": "string",
+      "description": "Kurze Bezeichnung"
+    },
+    "beschreibung": {
+      "type": "string",
+      "description": "Leserliche Detailbeschreibung"
+    },
+    "quelle_typ": {
+      "type": "string",
+      "description": "Quell-Entit\u00e4t bei Migration (z.B. Mitglied, SpartenleiterHistorie). Leer bei neuen Ereignissen."
+    },
+    "quelle_id": {
+      "type": "string",
+      "description": "ID der Quell-Entit\u00e4t"
+    },
+    "alt_wert": {
+      "type": "string",
+      "description": "Vorheriger Wert (bei Statuswechsel/Spartenzuordnung)"
+    },
+    "neu_wert": {
+      "type": "string",
+      "description": "Neuer Wert"
+    },
+    "erstellt_von_id": {
+      "type": "string",
+      "description": "Mitglied-ID des Ausf\u00fchrenden"
+    }
+  },
+  "required": [
+    "mitglied_id",
+    "typ",
+    "datum",
+    "titel"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "read": null,
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    }
+  }
+}

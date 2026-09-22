@@ -8,6 +8,10 @@
     "nachname": {
       "type": "string"
     },
+    "mitgliedsnummer": {
+      "type": "string",
+      "description": "Fortlaufende Vereins-Mitgliedsnummer (optional, legacy/manuelles Feld)"
+    },
     "strasse": {
       "type": "string"
     },

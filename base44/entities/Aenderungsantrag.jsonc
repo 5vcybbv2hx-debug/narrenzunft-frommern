@@ -1,0 +1,149 @@
+{
+  "name": "Aenderungsantrag",
+  "type": "object",
+  "properties": {
+    "mitglied_id": {
+      "type": "string",
+      "description": "Mitglied, das den Antrag stellt (Antragsteller)"
+    },
+    "ziel_mitglied_id": {
+      "type": "string",
+      "description": "Mitglied, dessen Daten ge\u00e4ndert werden sollen (Selbst oder Kind)"
+    },
+    "ziel_familie_id": {
+      "type": "string",
+      "description": "Familie des Ziels (f\u00fcr Haushalts-Kontext, optional)"
+    },
+    "felder": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "feld": {
+            "type": "string",
+            "description": "z.B. strasse, plz, ort, telefon, email, notfallkontakt_name, notfallkontakt_telefon"
+          },
+          "alt": {
+            "type": "string"
+          },
+          "neu": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "feld",
+          "neu"
+        ]
+      },
+      "description": "Liste der angefragten Feld\u00e4nderungen. Bank-/IBAN-/SEPA-Felder sind nicht erlaubt."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Offen",
+        "Genehmigt",
+        "Abgelehnt"
+      ],
+      "default": "Offen"
+    },
+    "entschieden_von_id": {
+      "type": "string",
+      "description": "Mitglied-ID des entscheidenden Vorstands/Admins"
+    },
+    "entschieden_am": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notiz": {
+      "type": "string",
+      "description": "Begr\u00fcndung / Hinweis bei Entscheidung"
+    }
+  },
+  "required": [
+    "mitglied_id",
+    "ziel_mitglied_id",
+    "felder"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    }
+  }
+}
