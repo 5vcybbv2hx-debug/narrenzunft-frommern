@@ -67,6 +67,10 @@ Deno.serve(async (req) => {
       protokolle,
       antraege,
       veranstaltungen,
+      jahresplaene,
+      auditLogs,
+      tops,
+      stimmen,
     ] = await Promise.all([
       base44.asServiceRole.entities.KalenderTermin.list("datum", 250),
       base44.asServiceRole.entities.Ausschussaufgabe.list("-created_date", 500),
@@ -77,6 +81,10 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.Protokoll.list("-datum", 500),
       base44.asServiceRole.entities.Mitgliedsantrag.list("-created_date", 500),
       base44.asServiceRole.entities.Veranstaltung.list("-datum", 500),
+      base44.asServiceRole.entities.AusschussJahresplan.list("titel", 200).catch(() => []),
+      base44.asServiceRole.entities.AusschussAuditLog.list("-zeitpunkt", 300).catch(() => []),
+      base44.asServiceRole.entities.Tagesordnungspunkt.list("reihenfolge", 1000).catch(() => []),
+      base44.asServiceRole.entities.AbstimmungsStimme.list("-created_date", 1000).catch(() => []),
     ]);
 
     const sitzungen = termine.filter((x) =>
@@ -93,6 +101,10 @@ Deno.serve(async (req) => {
       protokolle,
       antraege,
       veranstaltungen,
+      jahresplaene: jahresplaene || [],
+      auditLogs: auditLogs || [],
+      tops: tops || [],
+      stimmen: stimmen || [],
       currentMitgliedId: mitglied?.id || null,
       canManage: ["vorstand", "stellv_vorstand", "admin"].includes(user.role),
     });
