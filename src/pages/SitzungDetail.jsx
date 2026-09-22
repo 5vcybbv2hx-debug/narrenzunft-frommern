@@ -536,14 +536,6 @@ function TopsTab({ terminId, tops, setTops, mitglieder, isAdmin, onAenderung }) 
                       className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/15 text-primary text-xs font-semibold hover:bg-primary/25 transition-colors"><ListPlus size={12} /> Aufgabe</button>
                   </div>
                 )}
-                {isAdmin && (
-                  <div className="flex gap-1.5 flex-wrap">
-                    <button onClick={() => abstimmungAnlegen(top)} disabled={busy === top.id + '-abs'}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/15 text-primary text-xs font-semibold hover:bg-primary/25 transition-colors"><Vote size={12} /> Abstimmung</button>
-                    <button onClick={() => aufgabeErzeugen(top)} disabled={busy === top.id + '-auf'}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/15 text-primary text-xs font-semibold hover:bg-primary/25 transition-colors"><ListPlus size={12} /> Aufgabe</button>
-                  </div>
-                )}
                 <div>
                   <label className="text-xs text-muted-foreground font-medium block mb-1">Protokollnotiz</label>
                   <textarea
@@ -622,6 +614,17 @@ function AbstimmungenTab({ terminId, abstimmungen, setAbstimmungen, ausschussMit
     setAbstimmungen(prev => prev.filter(a => a.id !== absId));
   };
 
+  const [busyBeschluss, setBusyBeschluss] = useState(null);
+  const handleBeschlussErzeugen = async (abs) => {
+    setBusyBeschluss(abs.id);
+    try {
+      await ausschussAktion('beschluss_aus_abstimmung', { abstimmung_id: abs.id });
+      toast.success('Beschluss erzeugt');
+      setAbstimmungen(prev => prev.map(a => a.id === abs.id ? { ...a, beschluss_id: 'erzeugt' } : a));
+    } catch (e) { toast.error(e.message || 'Beschluss konnte nicht erzeugt werden'); }
+    setBusyBeschluss(null);
+  };
+
   return (
     <div>
       {isAdmin && (
@@ -685,6 +688,15 @@ function AbstimmungenTab({ terminId, abstimmungen, setAbstimmungen, ausschussMit
                     )}
                   </div>
                 </div>
+                {abgeschlossen && abs.ergebnis === 'Angenommen' && !abs.beschluss_id && isAdmin && (
+                  <button onClick={() => handleBeschlussErzeugen(abs)} disabled={busyBeschluss === abs.id}
+                    className="text-xs px-2.5 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors font-semibold shrink-0 flex items-center gap-1">
+                    <Gavel size={12} /> {busyBeschluss === abs.id ? '…' : 'Beschluss'}
+                  </button>
+                )}
+                {abgeschlossen && abs.beschluss_id && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary shrink-0 flex items-center gap-1"><Gavel size={10} /> Beschluss</span>
+                )}
                 {!abgeschlossen && isAdmin && (
                   <button onClick={() => handleAbschliessen(abs)}
                     className="text-xs px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-semibold shrink-0">
