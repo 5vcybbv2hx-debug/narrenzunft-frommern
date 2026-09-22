@@ -35,6 +35,75 @@
     "veranstaltung_id": {
       "type": "string",
       "description": "ID der verkn\u00fcpften Veranstaltung (optional, f\u00fcr Veranstaltungs-TOPs)"
+    },
+    "quell_aufgabe_id": {
+      "type": "string",
+      "description": "ID der Ausschussaufgabe, aus der dieser TOP hervorgegangen ist (Aufgabe wird NICHT gel\u00f6scht)"
+    },
+    "beantragt_von_id": {
+      "type": "string",
+      "description": "Mitglied, das den TOP eingereicht hat"
+    },
+    "kategorie": {
+      "type": "string",
+      "description": "Freie Kategorie/Themenbereich"
+    },
+    "dauer_minuten": {
+      "type": "number",
+      "default": 15,
+      "description": "Geplantes Zeitbudget f\u00fcr diesen TOP"
+    },
+    "vertraulich": {
+      "type": "boolean",
+      "default": false
+    },
+    "abstimmung_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs der aus diesem TOP erzeugten Abstimmungen"
+    },
+    "beschluss_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs der aus diesem TOP gefassten Beschl\u00fcsse"
+    },
+    "aufgabe_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs der aus diesem TOP entstandenen Aufgaben"
+    },
+    "dateien": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "typ": {
+            "type": "string"
+          },
+          "groesse": {
+            "type": "number"
+          },
+          "datum": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "hochgeladen_von_id": {
+            "type": "string"
+          }
+        }
+      }
     }
   },
   "required": [

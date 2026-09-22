@@ -15,11 +15,11 @@
     },
     "datei_url": {
       "type": "string",
-      "description": "URL einer hochgeladenen Protokolldatei"
+      "description": "URL einer hochgeladenen Protokolldatei (Legacy)"
     },
     "datei_name": {
       "type": "string",
-      "description": "Dateiname der hochgeladenen Datei"
+      "description": "Dateiname der hochgeladenen Datei (Legacy)"
     },
     "autor_mitglied_id": {
       "type": "string",
@@ -32,7 +32,48 @@
     "veroeffentlicht": {
       "type": "boolean",
       "default": false,
-      "description": "Ob das Protokoll f\u00fcr alle Ausschussmitglieder sichtbar ist"
+      "description": "Legacy-Feld; wird r\u00fcckw\u00e4rtskompatibel weitergef\u00fchrt (entspricht Freigegeben/Ver\u00f6ffentlicht)"
+    },
+    "freigabestatus": {
+      "type": "string",
+      "enum": [
+        "Entwurf",
+        "In Pr\u00fcfung",
+        "Freigegeben",
+        "Ver\u00f6ffentlicht"
+      ],
+      "default": "Entwurf"
+    },
+    "freigegeben_am": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "dateien": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "typ": {
+            "type": "string"
+          },
+          "groesse": {
+            "type": "number"
+          },
+          "datum": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "hochgeladen_von_id": {
+            "type": "string"
+          }
+        }
+      }
     }
   },
   "required": [

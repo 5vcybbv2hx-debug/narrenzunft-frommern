@@ -13,6 +13,7 @@
       "enum": [
         "Offen",
         "In Bearbeitung",
+        "Wartet",
         "Erledigt",
         "Abgebrochen"
       ],
@@ -41,6 +42,61 @@
     },
     "notizen": {
       "type": "string"
+    },
+    "top_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpfter Tagesordnungspunkt"
+    },
+    "beschluss_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpfter Beschluss"
+    },
+    "veranstaltung_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpfte Veranstaltung"
+    },
+    "quell_aufgabe_id": {
+      "type": "string",
+      "description": "Bei wiederkehrenden Aufgaben: ID der Vorlage/Aufgabe"
+    },
+    "fortschritt_notiz": {
+      "type": "string",
+      "description": "Aktuelle Fortschrittsnotiz"
+    },
+    "abgeschlossen_am": {
+      "type": "string",
+      "format": "date"
+    },
+    "wiederholung": {
+      "type": "string",
+      "description": "Wiederholungsregel (z.B. J\u00e4hrlich)"
+    },
+    "dateien": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "typ": {
+            "type": "string"
+          },
+          "groesse": {
+            "type": "number"
+          },
+          "datum": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "hochgeladen_von_id": {
+            "type": "string"
+          }
+        }
+      }
     }
   },
   "required": [

@@ -99,6 +99,73 @@
     "veranstaltung_id": {
       "type": "string",
       "description": "Verkn\u00fcpfte Veranstaltungs-ID (f\u00fcr automatische Sync)"
+    },
+    "sitzungs_status": {
+      "type": "string",
+      "enum": [
+        "Entwurf",
+        "Eingeladen",
+        "L\u00e4uft",
+        "Nachbereitung",
+        "Abgeschlossen",
+        "Abgesagt"
+      ],
+      "default": "Entwurf",
+      "description": "Lifecycle-Phase einer Ausschusssitzung"
+    },
+    "top_einreichungsfrist": {
+      "type": "string",
+      "format": "date",
+      "description": "Frist f\u00fcr die TOP-Einreichung"
+    },
+    "einladung_gesendet_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Wann wurde die Einladung/Tagesordnung versendet"
+    },
+    "tops_gesperrt": {
+      "type": "boolean",
+      "default": false,
+      "description": "Agenda ist gesperrt (keine TOP-\u00c4nderungen mehr)"
+    },
+    "protokoll_status": {
+      "type": "string",
+      "enum": [
+        "Ausstehend",
+        "Entwurf",
+        "In Pr\u00fcfung",
+        "Freigegeben",
+        "Ver\u00f6ffentlicht"
+      ],
+      "default": "Ausstehend"
+    },
+    "dateien": {
+      "type": "array",
+      "description": "Anh\u00e4nge (Metadaten, keine eigene Dokument-Entit\u00e4t)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "typ": {
+            "type": "string"
+          },
+          "groesse": {
+            "type": "number"
+          },
+          "datum": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "hochgeladen_von_id": {
+            "type": "string"
+          }
+        }
+      }
     }
   },
   "required": [

@@ -6,7 +6,8 @@
       "type": "string"
     },
     "inhalt": {
-      "type": "string"
+      "type": "string",
+      "description": "Beschlusstext"
     },
     "datum": {
       "type": "string",
@@ -21,7 +22,8 @@
       "enum": [
         "Offen",
         "Umgesetzt",
-        "Verworfen"
+        "Verworfen",
+        "Aufgehoben"
       ],
       "default": "Offen"
     },
@@ -31,6 +33,83 @@
     },
     "notizen": {
       "type": "string"
+    },
+    "beschlussnummer": {
+      "type": "string",
+      "description": "Fortlaufende Nummer B-YYYY-NNN"
+    },
+    "jahr": {
+      "type": "number",
+      "description": "Jahr des Beschlusses (f\u00fcr Nummerierung/Filter)"
+    },
+    "kategorie": {
+      "type": "string",
+      "description": "Kategorie (z.B. Finanzen, Personal, Organisation)"
+    },
+    "beschlussorgan": {
+      "type": "string",
+      "description": "Organ das den Beschluss gefasst hat (z.B. Ausschuss, Vorstand)"
+    },
+    "top_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpfter Tagesordnungspunkt"
+    },
+    "abstimmung_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpfte Abstimmung"
+    },
+    "verantwortlicher_id": {
+      "type": "string",
+      "description": "Verantwortlich f\u00fcr die Umsetzung"
+    },
+    "faellig_am": {
+      "type": "string",
+      "format": "date",
+      "description": "Umsetzungsfrist"
+    },
+    "umgesetzt_am": {
+      "type": "string",
+      "format": "date"
+    },
+    "umsetzungsnachweis": {
+      "type": "string",
+      "description": "Nachweis/Beschreibung der Umsetzung"
+    },
+    "gueltig_bis": {
+      "type": "string",
+      "format": "date",
+      "description": "G\u00fcltigkeitsende (leer = unbefristet)"
+    },
+    "aufgehoben_durch_id": {
+      "type": "string",
+      "description": "ID eines Beschlusses, der diesen aufhebt"
+    },
+    "dateien": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "typ": {
+            "type": "string"
+          },
+          "groesse": {
+            "type": "number"
+          },
+          "datum": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "hochgeladen_von_id": {
+            "type": "string"
+          }
+        }
+      }
     }
   },
   "required": [

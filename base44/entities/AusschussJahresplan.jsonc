@@ -1,0 +1,119 @@
+{
+  "name": "AusschussJahresplan",
+  "type": "object",
+  "properties": {
+    "titel": {
+      "type": "string",
+      "description": "Titel des wiederkehrenden Punkts"
+    },
+    "beschreibung": {
+      "type": "string"
+    },
+    "monat": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 12,
+      "description": "Monat (1-12) der F\u00e4lligkeit"
+    },
+    "tag": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 31,
+      "description": "Tag (1-31) der F\u00e4lligkeit"
+    },
+    "verantwortlicher_id": {
+      "type": "string"
+    },
+    "prioritaet": {
+      "type": "string",
+      "enum": [
+        "Niedrig",
+        "Mittel",
+        "Hoch",
+        "Dringend"
+      ],
+      "default": "Mittel"
+    },
+    "aktiv": {
+      "type": "boolean",
+      "default": true
+    },
+    "wiederholung": {
+      "type": "string",
+      "enum": [
+        "J\u00e4hrlich",
+        "Einmalig"
+      ],
+      "default": "J\u00e4hrlich"
+    },
+    "jahr": {
+      "type": "number",
+      "description": "Nur bei Einmalig: Zielfahr"
+    },
+    "zuletzt_generiert_jahr": {
+      "type": "number",
+      "description": "Jahr, f\u00fcr das bereits Aufgaben generiert wurden (Duplikatschutz)"
+    },
+    "kategorie": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "titel"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "read": null,
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -45,6 +45,37 @@
         "type": "string"
       },
       "description": "Vorgegebene Antwortoptionen (leer = Standard Ja/Nein/Enthaltung)"
+    },
+    "beschluss_id": {
+      "type": "string",
+      "description": "ID des aus dieser Abstimmung erzeugten Beschlusses"
+    },
+    "dateien": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "typ": {
+            "type": "string"
+          },
+          "groesse": {
+            "type": "number"
+          },
+          "datum": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "hochgeladen_von_id": {
+            "type": "string"
+          }
+        }
+      }
     }
   },
   "required": [

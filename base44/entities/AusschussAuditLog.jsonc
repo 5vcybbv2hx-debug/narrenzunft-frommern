@@ -1,0 +1,84 @@
+{
+  "name": "AusschussAuditLog",
+  "type": "object",
+  "properties": {
+    "objekt_typ": {
+      "type": "string",
+      "description": "Sitzung|TOP|Abstimmung|Beschluss|Aufgabe|Protokoll|Jahresplan"
+    },
+    "objekt_id": {
+      "type": "string"
+    },
+    "aktion": {
+      "type": "string",
+      "description": "Kurzbezeichnung der Aktion"
+    },
+    "details": {
+      "type": "string",
+      "description": "Lesbare Beschreibung / JSON-Details"
+    },
+    "mitglied_id": {
+      "type": "string",
+      "description": "Ausf\u00fchrendes Mitglied"
+    },
+    "zeitpunkt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "objekt_typ",
+    "objekt_id",
+    "aktion"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "read": null,
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    }
+  }
+}
