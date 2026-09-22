@@ -39,12 +39,12 @@ Deno.serve(async (req) => {
     let selbst = null;
     try {
       const byUserId = await base44.asServiceRole.entities.Mitglied.filter({ user_id: user.id });
-      if (byUserId && byUserId.length > 0) selbst = byUserId[0];
+      if (byUserId?.length === 1) selbst = byUserId[0];
     } catch (e) { console.error('Mitglied by user_id:', e); }
     if (!selbst) {
       try {
         const byEmail = await base44.asServiceRole.entities.Mitglied.filter({ email: user.email });
-        if (byEmail && byEmail.length > 0) selbst = byEmail[0];
+        if (byEmail?.length === 1 && (!byEmail[0].user_id || byEmail[0].user_id === user.id)) selbst = byEmail[0];
       } catch (e) { console.error('Mitglied by email:', e); }
     }
     if (!selbst) {
@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
     }
 
     // Kind-Profil laden
-    const kind = await base44.asServiceRole.entities.Mitglied.get(kindId);
+    const kind = await base44.asServiceRole.entities.Mitglied.get(kindId).catch(() => null);
     if (!kind) {
       return Response.json({ erfolg: false, fehler: 'Kind nicht gefunden.' }, { status: 404 });
     }
