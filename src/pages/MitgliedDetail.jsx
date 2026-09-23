@@ -638,7 +638,7 @@ export default function MitgliedDetail() {
       {activeTab === 'verlauf' && admin && !isNew && <MitgliedVerlauf mitglied={mitglied} />}
       {activeTab === 'dokumente' && ['admin', 'vorstand'].includes(user?.role) && !isNew && <MitgliedDokumente mitglied={mitglied} canDelete />}
       {/* Tab: Antrag */}
-      {activeTab === 'antrag' && !isNew && <AntragTab mitglied={mitglied} isAdmin={admin} />}
+      {activeTab === 'antrag' && !isNew && <AntragTab mitglied={mitglied} isAdmin={['admin', 'vorstand'].includes(user?.role)} onOpenDokumente={() => setActiveTab('dokumente')} />}
 
       {/* Tab: Familie */}
       {activeTab === 'familie' && !isNew && (

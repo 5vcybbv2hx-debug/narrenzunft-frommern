@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Upload, FileText, Download, Trash2, X, CheckCircle2 } from 'lucide-react';
+import { Upload, FileText, Download, Trash2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
@@ -8,7 +8,7 @@ import { confirmDialog } from '@/components/ui/ConfirmProvider';
  * Tab im Mitgliedsprofil für den ausgefüllten Mitgliedsantrag (PDF-Upload)
  * und Anzeige digitaler Anträge die diesem Mitglied zugeordnet sind.
  */
-export default function AntragTab({ mitglied, isAdmin }) {
+export default function AntragTab({ mitglied, isAdmin, onOpenDokumente }) {
   const [antragPdfUrl, setAntragPdfUrl] = useState(mitglied.antrag_pdf_url || null);
   const [antragPdfName, setAntragPdfName] = useState(mitglied.antrag_pdf_name || null);
   const [uploading, setUploading] = useState(false);
@@ -37,16 +37,16 @@ export default function AntragTab({ mitglied, isAdmin }) {
     if (!file) return;
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setAntragPdfUrl(file_url);
-      setAntragPdfName(file.name);
-      // Automatisch am Mitglied speichern
-      setSaving(true);
-      await base44.entities.Mitglied.update(mitglied.id, {
-        antrag_pdf_url: file_url,
-        antrag_pdf_name: file.name,
+      if (file.size > 15 * 1024 * 1024) throw new Error('Maximal 15 MB pro Datei.');
+      // Neue Anträge niemals über das alte öffentliche antrag_pdf_url hochladen.
+      const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
+      if (!file_uri) throw new Error('Keine private Datei-URI erhalten');
+      await base44.functions.invoke('mitgliedDokumentSicher', {
+        aktion: 'anlegen', mitglied_id: mitglied.id, typ: 'Antrag',
+        name: file.name, datei_groesse: file.size, file_uri,
       });
-      setSaving(false);
+      toast.success('Antrag privat gespeichert.');
+      onOpenDokumente?.();
     } catch (err) {
       toast.error('Upload fehlgeschlagen: ' + err.message);
     }
@@ -73,7 +73,7 @@ export default function AntragTab({ mitglied, isAdmin }) {
           <FileText size={16} className="text-primary" /> Ausgefüllter Mitgliedsantrag (PDF)
         </h3>
         <p className="text-xs text-muted-foreground mb-4">
-          Hier kann der unterschriebene, eingescannte Antrag hochgeladen werden.
+          Neue Anträge werden privat gespeichert. Ältere Anträge bleiben unter dem bisherigen Link abrufbar.
         </p>
 
         {antragPdfUrl ? (
@@ -106,7 +106,7 @@ export default function AntragTab({ mitglied, isAdmin }) {
                 ) : (
                   <>
                     <Upload size={24} />
-                    <span className="text-sm font-medium">PDF oder Scan hochladen</span>
+                    <span className="text-sm font-medium">Antrag privat hochladen</span>
                     <span className="text-xs">.pdf, .png, .jpg</span>
                   </>
                 )}

@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
-const TYPEN = ['Mitgliedsantrag', 'Einverständnis', 'Bescheinigung', 'Sonstiges'];
+const TYPEN = ['Antrag', 'Einverständnis', 'Bescheinigung', 'Austritt', 'Sonstiges'];
 export default function MitgliedDokumente({ mitglied, canDelete = false }) {
   const [docs, setDocs] = useState([]);
   const [error, setError] = useState('');

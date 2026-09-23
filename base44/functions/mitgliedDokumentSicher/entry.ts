@@ -17,6 +17,7 @@ import { istVorstand, loeseMeinMitglied } from "../../shared/mitgliedBerechtigun
  * neue Dokumente gehen ausschließlich über diesen privaten Pfad.
  */
 const heuteISO = () => new Date().toISOString().split("T")[0];
+const DOKUMENT_TYPEN = new Set(["Antrag", "Einverständnis", "Bescheinigung", "Austritt", "Sonstiges"]);
 
 export default async function (req) {
   try {
@@ -46,15 +47,31 @@ export default async function (req) {
         if (!mitglied_id || !typ || !name || !file_uri) {
           return Response.json({ error: "Pflichtfelder fehlen (mitglied_id, typ, name, file_uri)" }, { status: 400 });
         }
-        // Sicherstellen, dass file_uri kein http(s):// public-URL ist (nur private storage-uri)
-        if (/^https?:\/\//i.test(file_uri)) {
-          return Response.json({ error: "file_uri muss private Storage-URI sein, keine öffentliche URL" }, { status: 400 });
+        if (!DOKUMENT_TYPEN.has(typ) || typeof name !== "string" || !name.trim() || name.length > 180) {
+          return Response.json({ error: "Ungültiger Dokumenttyp oder Dateiname" }, { status: 400 });
+        }
+        if (typeof file_uri !== "string" || !file_uri.trim() || /^https?:\/\//i.test(file_uri)) {
+          return Response.json({ error: "file_uri muss eine gültige private Storage-URI sein" }, { status: 400 });
+        }
+        const groesse = Number(datei_groesse || 0);
+        if (!Number.isFinite(groesse) || groesse < 0 || groesse > 15 * 1024 * 1024) {
+          return Response.json({ error: "Ungültige Dateigröße (max. 15 MB)" }, { status: 400 });
+        }
+        const ziel = await S.Mitglied.get(mitglied_id).catch(() => null);
+        if (!ziel) return Response.json({ error: "Mitglied nicht gefunden" }, { status: 404 });
+        // Nur registrieren, wenn der private Speicher diese Datei tatsächlich signieren kann.
+        // Ein frei erfundener String darf keinen defekten Dokumenteintrag erzeugen.
+        try {
+          const probe = await I.CreateFileSignedUrl({ file_uri, expires_in: 60 });
+          if (!(probe?.signed_url || probe?.data?.signed_url)) throw new Error("No signed URL");
+        } catch {
+          return Response.json({ error: "Private Datei nicht gefunden oder URI ungültig" }, { status: 400 });
         }
         const doc = await S.MitgliedDokument.create({
           mitglied_id, typ, name,
           beschreibung: beschreibung || "",
           file_uri,
-          datei_groesse: datei_groesse || 0,
+          datei_groesse: groesse,
           datum: datum || heuteISO(),
           hochgeladen_von_id: meinMitglied?.id || "",
           ist_legacy_public: false,
@@ -75,7 +92,12 @@ export default async function (req) {
         if (!doc.file_uri || /^https?:\/\//i.test(doc.file_uri)) {
           return Response.json({ error: "Keine private Datei-URI vorhanden" }, { status: 400 });
         }
-        const res = await I.CreateFileSignedUrl({ file_uri: doc.file_uri, expires_in: 300 });
+        let res;
+        try {
+          res = await I.CreateFileSignedUrl({ file_uri: doc.file_uri, expires_in: 300 });
+        } catch {
+          return Response.json({ error: "Private Datei nicht mehr abrufbar" }, { status: 404 });
+        }
         const signed_url = res?.signed_url || res?.data?.signed_url;
         if (!signed_url) return Response.json({ error: "Signierte URL konnte nicht erzeugt werden" }, { status: 500 });
         return Response.json({ signed_url, name: doc.name });

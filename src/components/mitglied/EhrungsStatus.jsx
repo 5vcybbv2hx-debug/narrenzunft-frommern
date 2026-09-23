@@ -7,8 +7,7 @@ import { base44 } from '@/api/base44Client';
 import {
   berechneEhrungsstatusGesamt,
 } from '@/lib/ehrungsLogik';
-import { Award, AlertTriangle, Star, TrendingUp, Users } from 'lucide-react';
-import { format } from 'date-fns';
+import { Award, AlertTriangle, Star, TrendingUp } from 'lucide-react';
 
 function InfoRow({ label, value, highlight }) {
   return (
