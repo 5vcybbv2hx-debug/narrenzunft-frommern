@@ -99,7 +99,9 @@ export function canSeeSection(section, user) {
   if (!section.roles) return true;
   if (isDeveloper(user)) return true;
   if (section.roles.includes(user?.role)) return true;
-  return false;
+  // Einzelne Zusatzrechte (z. B. "ausschuss") müssen auch die übergeordnete
+  // Navigation öffnen, sonst ist die erlaubte Seite im Menü nicht erreichbar.
+  return section.items.some(item => canSeeItem(item, user));
 }
 
 // Finde welche Sektion zur aktuellen Route gehört
