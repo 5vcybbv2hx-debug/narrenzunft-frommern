@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { useAuth } from '@/lib/AuthContext';
 import {
   ArrowLeft, Plus, Save, Trash2, ChevronUp, ChevronDown,
   Users, ClipboardList, Vote, CheckCircle2, Lock,
@@ -36,10 +35,10 @@ const STIMME_FARBEN = {
 export default function SitzungDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  // Zugriffsschutz: nur vorstand, stellv_vorstand, admin – NICHT spartenleiter
-  const hatZugriff = ['vorstand', 'stellv_vorstand', 'admin'].includes(user?.role);
-  const isAdmin = hatZugriff;
+  // Sichtbarkeit kommt ausschließlich aus der serverseitig geprüften Ausschuss-Funktion.
+  const [hatZugriff, setHatZugriff] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [ladeFehler, setLadeFehler] = useState('');
 
   const [termin, setTermin] = useState(null);
   const [ausschussMitglieder, setAusschussMitglieder] = useState([]);
@@ -57,25 +56,34 @@ export default function SitzungDetail() {
 
   const loadData = async () => {
     setLoading(true);
-    const [t, am, m, anw, tp, abs, st, prot] = await Promise.all([
-      base44.entities.KalenderTermin.filter({ id }),
-      base44.entities.AusschussMitglied.filter({ aktiv: true }),
-      base44.entities.Mitglied.list('nachname', 500),
-      base44.entities.SitzungsAnwesenheit.filter({ termin_id: id }),
-      base44.entities.Tagesordnungspunkt.filter({ termin_id: id }),
-      base44.entities.Abstimmung.filter({ termin_id: id }),
-      base44.entities.AbstimmungsStimme.list('-created_date', 500),
-      base44.entities.Protokoll.filter({ termin_id: id }).catch(() => []),
-    ]);
-    setTermin(t[0] || null);
-    setProtokolle(prot || []);
-    setAusschussMitglieder(am);
-    setMitglieder(m);
-    setAnwesenheiten(anw);
-    setTops(tp.sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)));
-    setAbstimmungen(abs);
-    setStimmen(st);
-    setLoading(false);
+    setLadeFehler('');
+    try {
+      const res = await base44.functions.invoke('getAusschussDataSicher', {});
+      const data = res.data || {};
+      if (data.error) throw new Error(data.message || data.error);
+      const t = (data.termine || []).find(x => x.id === id);
+      // Anwesenheit ist für angemeldete Mitglieder lesbar; die Ausschussprüfung
+      // läuft zuerst über das Backend und verhindert den Zugriff auf andere Termine.
+      const anw = t ? await base44.entities.SitzungsAnwesenheit.filter({ termin_id: id }) : [];
+      const abs = (data.abstimmungen || []).filter(a => a.termin_id === id);
+      const absIds = new Set(abs.map(a => a.id));
+      setTermin(t || null);
+      setAusschussMitglieder(data.ausschussMitglieder || []);
+      setMitglieder(data.mitglieder || []);
+      setAnwesenheiten(anw || []);
+      setTops((data.tops || []).filter(x => x.termin_id === id).sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)));
+      setAbstimmungen(abs);
+      setStimmen((data.stimmen || []).filter(v => absIds.has(v.abstimmung_id)));
+      setProtokolle((data.protokolle || []).filter(p => p.termin_id === id));
+      setIsAdmin(!!data.canManage);
+      setHatZugriff(true);
+    } catch (e) {
+      setHatZugriff(false);
+      setLadeFehler(e?.response?.status === 403 ? 'Kein Zugriff' : 'Sitzungsdaten konnten nicht geladen werden');
+      console.error('Sitzung laden:', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getMitgliedName = (id) => {
@@ -99,21 +107,21 @@ export default function SitzungDetail() {
   const anwesend = anwesenheiten.filter(a => a.status === 'Anwesend').length;
   const quorum = ausschussMitglieder.length > 0 ? Math.ceil(ausschussMitglieder.length / 2) : 0;
 
-  if (!hatZugriff) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
-        <Lock size={40} className="text-muted-foreground mb-3" />
-        <h2 className="text-xl font-bold text-foreground mb-2 font-oswald uppercase tracking-wide">Kein Zugriff</h2>
-        <p className="text-sm text-muted-foreground">Dieser Bereich ist nur für Vorstand und Ausschuss zugänglich.</p>
-      </div>
-    );
-  }
-
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="w-9 h-9 border-[3px] border-border border-t-primary rounded-full animate-spin" />
     </div>
   );
+
+  if (!hatZugriff) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+        <Lock size={40} className="text-muted-foreground mb-3" />
+        <h2 className="text-xl font-bold text-foreground mb-2 font-oswald uppercase tracking-wide">{ladeFehler || 'Kein Zugriff'}</h2>
+        <p className="text-sm text-muted-foreground">Dieser Bereich ist nur für Vorstand und Ausschuss zugänglich.</p>
+      </div>
+    );
+  }
 
   if (!termin) return (
     <div className="flex flex-col items-center justify-center min-h-[60vh]">
@@ -154,12 +162,12 @@ export default function SitzungDetail() {
       </div>
 
       {/* Sitzungs-Lifecycle */}
-      {hatZugriff && (
-        <SitzungsLifecycle termin={termin} isAdmin={hatZugriff} onAenderung={loadData} />
+      {isAdmin && (
+        <SitzungsLifecycle termin={termin} isAdmin={isAdmin} onAenderung={loadData} />
       )}
 
       {/* Live-Modus Toggle */}
-      {hatZugriff && (
+      {isAdmin && (
         <div className="mb-4">
           <button onClick={() => setLiveModus(l => !l)}
             className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${liveModus ? 'bg-primary text-white' : 'bg-card border border-border text-foreground hover:border-primary/40'}`}>
@@ -169,8 +177,8 @@ export default function SitzungDetail() {
       )}
 
       {/* Live-Modus Ansicht */}
-      {liveModus && hatZugriff && (
-        <LiveModus termin={termin} tops={tops} abstimmungen={abstimmungen} stimmen={stimmen} ausschussMitglieder={ausschussMitglieder} getMitgliedName={getMitgliedName} isAdmin={hatZugriff} onAenderung={loadData} />
+      {liveModus && isAdmin && (
+        <LiveModus termin={termin} tops={tops} abstimmungen={abstimmungen} stimmen={stimmen} ausschussMitglieder={ausschussMitglieder} getMitgliedName={getMitgliedName} isAdmin={isAdmin} onAenderung={loadData} />
       )}
 
       {/* Tabs */}
@@ -233,6 +241,7 @@ export default function SitzungDetail() {
           mitglieder={mitglieder}
           ausschussIds={ausschussMitglieder.map(a => a.mitglied_id)}
           onSaved={loadData}
+          isAdmin={isAdmin}
         />
       )}
     </div>
@@ -240,13 +249,15 @@ export default function SitzungDetail() {
 }
 
 // ─── Protokoll Tab (direkt in der Sitzung) ─────────────────────────
-function SitzungsProtokollTab({ termin, protokolle, mitglieder, ausschussIds, onSaved }) {
+function SitzungsProtokollTab({ termin, protokolle, mitglieder, ausschussIds, onSaved, isAdmin }) {
   const [showModal, setShowModal] = useState(false);
   const [editP, setEditP] = useState(null);
 
   const handleToggleVeroeffentlicht = async (p) => {
-    await base44.entities.Protokoll.update(p.id, { veroeffentlicht: !p.veroeffentlicht });
-    onSaved();
+    try {
+      await ausschussAktion('protokoll_freigabe', { protokoll_id: p.id, freigabestatus: p.veroeffentlicht ? 'Entwurf' : 'Veröffentlicht' });
+      onSaved();
+    } catch (e) { toast.error(e.message || 'Protokollstatus konnte nicht geändert werden'); }
   };
 
   // Noch kein Protokoll → Leitaktion direkt anbieten
@@ -263,7 +274,7 @@ function SitzungsProtokollTab({ termin, protokolle, mitglieder, ausschussIds, on
   <FileText size={36} className="text-muted-foreground/40 mx-auto mb-3" />
   <p className="text-foreground font-medium">Noch kein Protokoll</p>
   <p className="text-sm text-muted-foreground mt-1 mb-5">Protokoll direkt aus der Sitzung heraus erstellen — Titel und Datum sind bereits ausgefüllt.</p>
-  <div className="flex flex-col sm:flex-row gap-2 justify-center">
+  {isAdmin && <div className="flex flex-col sm:flex-row gap-2 justify-center">
     <button
       onClick={handleEntwurf}
       className="inline-flex items-center gap-2 px-5 py-3 min-h-[44px] rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
@@ -276,8 +287,8 @@ function SitzungsProtokollTab({ termin, protokolle, mitglieder, ausschussIds, on
     >
       <Plus size={16} /> Leeres Protokoll
     </button>
-  </div>
-        {showModal && (
+  </div>}
+        {isAdmin && showModal && (
           <ProtokollModal
             protokoll={null}
             prefill={{ termin_id: termin.id, titel: termin.titel, datum: termin.datum }}
@@ -316,7 +327,7 @@ function SitzungsProtokollTab({ termin, protokolle, mitglieder, ausschussIds, on
                 </a>
               )}
             </div>
-            <div className="flex gap-1 shrink-0">
+            {isAdmin && <div className="flex gap-1 shrink-0">
               <button
                 onClick={() => handleToggleVeroeffentlicht(p)}
                 title={p.veroeffentlicht ? 'Als Entwurf markieren' : 'Veröffentlichen'}
@@ -331,7 +342,7 @@ function SitzungsProtokollTab({ termin, protokolle, mitglieder, ausschussIds, on
               >
                 <Edit size={15} />
               </button>
-            </div>
+            </div>}
           </div>
           {p.inhalt && !p.datei_url && (
             <p className="text-sm text-foreground/90 mt-3 whitespace-pre-wrap leading-relaxed">{p.inhalt}</p>
@@ -339,7 +350,7 @@ function SitzungsProtokollTab({ termin, protokolle, mitglieder, ausschussIds, on
         </div>
       ))}
 
-      {showModal && (
+      {isAdmin && showModal && (
         <ProtokollModal
           protokoll={editP}
           termine={[termin]}
