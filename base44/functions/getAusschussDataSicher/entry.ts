@@ -1,15 +1,18 @@
-import { createClientFromRequest } from "npm:@base44/sdk@0.8.25";
-import { findeMitgliedFuerLogin, istAktuellerSpartenleiter } from "../../shared/ausschussBerechtigung.ts";
+import { createClientFromRequest } from "npm:@base44/sdk@0.8.49";
+import { loeseMitgliedUndRechte } from "../../shared/ausschussBerechtigung.ts";
 
 /**
  * Zentrale, sichere Datenquelle für den Ausschussbereich.
  *
- * Zugriff erhalten dieselben Personen wie im Frontend:
- * - Vorstand, Stellvertretung, Spartenleitung, Admin
+ * Zugriff erhalten (über shared ausschussBerechtigung.ts abgeleitet):
+ * - Vorstand, Stellvertretung, Admin
+ * - aktive Spartenleitung (Mitglied mit nicht-leerem spartenleiter_haesgruppen_ids)
  * - aktive Ausschussmitglieder bzw. Mitglieder mit Zusatzrecht "ausschuss"
  *
- * Die Zusatzberechtigung wird serverseitig über die mit dem Login verknüpfte
+ * Die Berechtigung wird serverseitig über die mit dem Login verknüpfte
  * Mitglieds-ID geprüft. Clientseitig mitgesendete Rollen werden nie vertraut.
+ * Spartenleiter erhalten nur Ausschusszugang (canManage = false); Verwaltungs-
+ * rechte (canManage) bleiben auf Vorstand/Stellv./Admin beschränkt.
  */
 Deno.serve(async (req) => {
   try {
@@ -17,37 +20,23 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-    const rollenMitZugriff = ["vorstand", "stellv_vorstand", "admin"];
-    const mitglied = await findeMitgliedFuerLogin(base44, user);
+    const ctx = await loeseMitgliedUndRechte(base44, user);
 
-    const zusatzRaw = mitglied?.zusatz_berechtigungen || [];
-    const zusatz = Array.isArray(zusatzRaw)
-      ? zusatzRaw
-      : String(zusatzRaw).split(",").map((x) => x.trim()).filter(Boolean);
-
-    let aktivesAusschussmitglied = false;
-    if (mitglied?.id) {
-      const am = await base44.asServiceRole.entities.AusschussMitglied.filter({
-        mitglied_id: mitglied.id,
-        aktiv: true,
-      });
-      aktivesAusschussmitglied = (am?.length || 0) > 0;
+    if (ctx.mehrdeutig) {
+      return Response.json({
+        error: "Mehrdeutige Verknüpfung",
+        message: "E-Mail/Verknüpfung ist mehreren Mitgliedern zugeordnet — ein Admin muss die Verknüpfung manuell vornehmen.",
+      }, { status: 409 });
     }
 
-    const darfAusschussSehen =
-      rollenMitZugriff.includes(user.role) ||
-      zusatz.includes("ausschuss") ||
-      aktivesAusschussmitglied ||
-      await istAktuellerSpartenleiter(base44, mitglied?.id);
-
-    if (!darfAusschussSehen) {
+    if (!ctx.darfAusschuss) {
       return Response.json({
         error: "Access Denied",
         message: "Dieser Bereich ist nur für berechtigte Ausschussmitglieder zugänglich.",
       }, { status: 403 });
     }
 
-    const canManage = ["vorstand", "stellv_vorstand", "admin"].includes(user.role);
+    const canManage = ctx.kannVerwalten;
 
     const [
       termine,
@@ -105,8 +94,9 @@ Deno.serve(async (req) => {
       auditLogs: auditLogs || [],
       tops: tops || [],
       stimmen: stimmen || [],
-      currentMitgliedId: mitglied?.id || null,
+      currentMitgliedId: ctx.currentMitgliedId,
       canManage,
+      aktiveSpartenleitung: ctx.aktiveSpartenleitung,
     });
   } catch (error) {
     console.error("getAusschussDataSicher:", error);
