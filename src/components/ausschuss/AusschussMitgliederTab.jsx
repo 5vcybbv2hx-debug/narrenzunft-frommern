@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Users, Plus, X, Save, Trash2 } from 'lucide-react';
-import { syncAusschussZugang } from '@/lib/ausschussSync';
+import { Users, Plus, X } from 'lucide-react';
+import { ausschussAktion } from '@/lib/ausschussAktionen';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
+import toast from 'react-hot-toast';
 
 const ROLLEN = ['Vorsitzender', 'Stellv. Vorsitzender', 'Schriftführer', 'Kassierer', 'Häswart', 'Beisitzer', 'Jugendleiter', 'Sonstiges'];
 
@@ -17,8 +18,7 @@ const ROLLE_FARBEN = {
   'Sonstiges':           'bg-secondary text-muted-foreground',
 };
 
-export default function AusschussMitgliederTab({ mitglieder, isAdmin }) {
-  const [ausschussMitglieder, setAusschussMitglieder] = useState([]);
+export default function AusschussMitgliederTab({ mitglieder, ausschussMitglieder = [], onSaved, isAdmin }) {
   const [haesgruppen, setHaesgruppen] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -30,11 +30,7 @@ export default function AusschussMitgliederTab({ mitglieder, isAdmin }) {
 
   const load = async () => {
     setLoading(true);
-    const [data, gruppen] = await Promise.all([
-      base44.entities.AusschussMitglied.list('-created_date', 100),
-      base44.entities.Haesgruppe.list('name', 50),
-    ]);
-    setAusschussMitglieder(data);
+    const gruppen = await base44.entities.Haesgruppe.list('name', 50);
     setHaesgruppen(gruppen);
     setLoading(false);
   };
@@ -56,30 +52,29 @@ export default function AusschussMitgliederTab({ mitglieder, isAdmin }) {
   const handleAdd = async () => {
     if (!form.mitglied_id) return;
     setSaving(true);
-    const neu = await base44.entities.AusschussMitglied.create({ ...form, aktiv: true });
-    // Ausschuss-Zugang automatisch setzen (Zusatz-Berechtigung 'ausschuss')
-    try { await syncAusschussZugang(form.mitglied_id, true); } catch (e) { console.error('Sync fehlgeschlagen:', e); }
-    setAusschussMitglieder(prev => [...prev, neu]);
-    setForm({ mitglied_id: '', rolle: 'Beisitzer', notizen: '' });
-    setSuche('');
-    setShowForm(false);
-    setSaving(false);
+    try {
+      await ausschussAktion('ausschuss_mitglied_anlegen', form);
+      onSaved?.();
+      setForm({ mitglied_id: '', rolle: 'Beisitzer', notizen: '' });
+      setSuche('');
+      setShowForm(false);
+    } catch (e) { toast.error(e.message || 'Ausschussmitglied konnte nicht angelegt werden'); }
+    finally { setSaving(false); }
   };
 
   const handleRolleChange = async (amId, rolle) => {
-    await base44.entities.AusschussMitglied.update(amId, { rolle });
-    setAusschussMitglieder(prev => prev.map(a => a.id === amId ? { ...a, rolle } : a));
+    try {
+      await ausschussAktion('ausschuss_mitglied_update', { ausschuss_mitglied_id: amId, rolle });
+      onSaved?.();
+    } catch (e) { toast.error(e.message || 'Rolle konnte nicht geändert werden'); }
   };
 
   const handleRemove = async (amId) => {
-    const am = ausschussMitglieder.find(a => a.id === amId);
     if (!(await confirmDialog('Mitglied aus dem Ausschuss entfernen? Der Ausschuss-Zugang wird automatisch entzogen.'))) return;
-    await base44.entities.AusschussMitglied.delete(amId);
-    // Ausschuss-Zugang automatisch entziehen
-    if (am?.mitglied_id) {
-      try { await syncAusschussZugang(am.mitglied_id, false); } catch (e) { console.error('Sync fehlgeschlagen:', e); }
-    }
-    setAusschussMitglieder(prev => prev.filter(a => a.id !== amId));
+    try {
+      await ausschussAktion('ausschuss_mitglied_loeschen', { ausschuss_mitglied_id: amId });
+      onSaved?.();
+    } catch (e) { toast.error(e.message || 'Mitglied konnte nicht entfernt werden'); }
   };
 
   if (loading) return (

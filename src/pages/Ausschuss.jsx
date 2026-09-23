@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { erstelleNachbesprechungsTops } from '@/lib/nachbereitung';
 import toast from 'react-hot-toast';
 import DateSelect from '../components/ui/DateSelect';
 import TimeSelect from '../components/ui/TimeSelect';
@@ -311,12 +310,12 @@ export default function Ausschuss() {
 
       {/* PROTOKOLLE */}
       {activeTab === 'protokolle' && (
-        <ProtokollTab termine={termine} mitglieder={mitglieder} />
+        <ProtokollTab termine={termine} mitglieder={mitglieder} protokolle={protokolle} ausschussMitglieder={ausschussMitglieder} onSaved={loadData} canManage={canManage} currentMitgliedId={currentMitgliedId} />
       )}
 
       {/* AUSSCHUSSMITGLIEDER */}
       {activeTab === 'mitglieder' && (
-        <AusschussMitgliederTab mitglieder={mitglieder} isAdmin={canManage} />
+        <AusschussMitgliederTab mitglieder={mitglieder} ausschussMitglieder={ausschussMitglieder} onSaved={loadData} isAdmin={canManage} />
       )}
 
       {/* JAHRESPLANUNG */}
@@ -704,8 +703,10 @@ function AbstimmungModal({ abstimmung, termine, onClose, onSaved }) {
     if (!form.titel) return;
     setSaving(true);
     try {
-      if (isNew) await base44.entities.Abstimmung.create(form);
-      else await base44.entities.Abstimmung.update(abstimmung.id, form);
+      const daten = { titel: form.titel, beschreibung: form.beschreibung, termin_id: form.termin_id,
+        angenommen_ab: form.angenommen_ab, antwort_optionen: form.antwort_optionen || [] };
+      if (isNew) await ausschussAktion('abstimmung_anlegen', daten);
+      else await ausschussAktion('abstimmung_update', { abstimmung_id: abstimmung.id, ...daten });
       onSaved();
     } catch (e) {
       console.error('Abstimmung speichern:', e);
@@ -716,7 +717,7 @@ function AbstimmungModal({ abstimmung, termine, onClose, onSaved }) {
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      await base44.entities.Abstimmung.delete(abstimmung.id);
+      await ausschussAktion('abstimmung_loeschen', { abstimmung_id: abstimmung.id });
       onSaved();
     } catch (e) {
       console.error('Abstimmung löschen:', e);
@@ -761,11 +762,7 @@ function AbstimmungModal({ abstimmung, termine, onClose, onSaved }) {
               </button>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className={labelCls}>Status</label>
-              <MobileSelect value={form.status} onChange={v => set('status', v)} options={['Offen','Abgeschlossen']} className={selectCls} />
-            </div>
+          <div>
             <div>
               <label className={labelCls}>Angenommen ab (%)</label>
               <input type="number" min="1" max="100" value={form.angenommen_ab} onChange={e => set('angenommen_ab', Number(e.target.value))} className={inputCls} />
@@ -811,14 +808,8 @@ function SitzungModal({ onClose, onSaved }) {
     setSaving(true);
     setError(null);
     try {
-      const neuTermin = await base44.entities.KalenderTermin.create({
-        ...form,
-        terminart: 'Ausschusssitzung',
-        sichtbarkeit: 'ausschuss',
-        status: 'Geplant',
-      });
-      // Auto-TOP: fällige Nachbesprechungen auf die Tagesordnung setzen
-      const n = await erstelleNachbesprechungsTops(neuTermin.id, form.datum);
+      const { nachbesprechungen: n, nachbesprechungen_fehler } = await ausschussAktion('sitzung_anlegen', form);
+      if (nachbesprechungen_fehler) toast.error('Sitzung erstellt, aber Nachbesprechungs-TOPs bitte prüfen');
       if (n) toast.success(`${n} Nachbesprechungs-TOP${n > 1 ? 's' : ''} automatisch zur Tagesordnung hinzugefügt`);
       onSaved();
     } catch (e) {

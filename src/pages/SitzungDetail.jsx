@@ -297,6 +297,7 @@ function SitzungsProtokollTab({ termin, protokolle, mitglieder, ausschussIds, on
             ausschussIds={ausschussIds}
             onClose={() => setShowModal(false)}
             onSaved={() => { setShowModal(false); onSaved(); }}
+            canManage={isAdmin}
           />
         )}
       </div>
@@ -358,6 +359,7 @@ function SitzungsProtokollTab({ termin, protokolle, mitglieder, ausschussIds, on
           ausschussIds={ausschussIds}
           onClose={() => setShowModal(false)}
           onSaved={() => { setShowModal(false); onSaved(); }}
+          canManage={isAdmin}
         />
       )}
     </div>

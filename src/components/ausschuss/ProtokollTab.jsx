@@ -1,11 +1,12 @@
 import DateSelect from '../ui/DateSelect';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Plus, X, Save, Trash2, FileText, Upload, Eye, EyeOff, Download, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import MobileSelect from '@/components/MobileSelect';
+import { ausschussAktion } from '@/lib/ausschussAktionen';
 
 const EMPTY_FORM = {
   titel: '',
@@ -18,29 +19,10 @@ const EMPTY_FORM = {
   autor_mitglied_id: '',
 };
 
-export default function ProtokollTab({ termine, mitglieder }) {
-  const [protokolle, setProtokolle] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function ProtokollTab({ termine, mitglieder, protokolle = [], ausschussMitglieder = [], onSaved, canManage = false, currentMitgliedId = null }) {
   const [showModal, setShowModal] = useState(false);
   const [editProtokoll, setEditProtokoll] = useState(null);
-  const [ausschussIds, setAusschussIds] = useState([]);
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [p, am] = await Promise.all([
-        base44.entities.Protokoll.list('-datum', 100),
-        base44.entities.AusschussMitglied.list('-created_date', 100).catch(() => []),
-      ]);
-      setProtokolle(p);
-      setAusschussIds((am || []).filter(a => a.aktiv !== false).map(a => a.mitglied_id));
-    } catch (e) { console.error('Error:', e); }
-    setLoading(false);
-  };
+  const ausschussIds = ausschussMitglieder.filter(a => a.aktiv !== false).map(a => a.mitglied_id);
 
   const getSitzungsName = (terminId) => {
     const t = termine.find(t => t.id === terminId);
@@ -54,30 +36,24 @@ export default function ProtokollTab({ termine, mitglieder }) {
 
   const handleDelete = async (id) => {
     if (!(await confirmDialog('Protokoll wirklich löschen?'))) return;
-    await base44.entities.Protokoll.delete(id);
-    setProtokolle(prev => prev.filter(p => p.id !== id));
+    await ausschussAktion('protokoll_loeschen', { protokoll_id: id });
+    onSaved?.();
   };
 
   const handleToggleVeroeffentlicht = async (p) => {
-    const updated = await base44.entities.Protokoll.update(p.id, { veroeffentlicht: !p.veroeffentlicht });
-    setProtokolle(prev => prev.map(x => x.id === p.id ? { ...x, veroeffentlicht: !x.veroeffentlicht } : x));
+    await ausschussAktion('protokoll_freigabe', { protokoll_id: p.id, freigabestatus: p.veroeffentlicht ? 'Entwurf' : 'Veröffentlicht' });
+    onSaved?.();
   };
-
-  if (loading) return (
-    <div className="flex items-center justify-center py-10">
-      <div className="w-6 h-6 border-[3px] border-border border-t-primary rounded-full animate-spin" />
-    </div>
-  );
 
   return (
     <div>
       <div className="flex justify-end mb-4">
-        <button
+        {(canManage || currentMitgliedId) && <button
           onClick={() => { setEditProtokoll(null); setShowModal(true); }}
           className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
         >
           <Plus size={15} /> Protokoll
-        </button>
+        </button>}
       </div>
 
       <div className="space-y-2">
@@ -117,25 +93,25 @@ export default function ProtokollTab({ termine, mitglieder }) {
                 )}
               </div>
               <div className="flex gap-1 shrink-0">
-                <button
+                {canManage && <button
                   onClick={() => handleToggleVeroeffentlicht(p)}
                   title={p.veroeffentlicht ? 'Als Entwurf markieren' : 'Veröffentlichen'}
                   className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                 >
                   {p.veroeffentlicht ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
-                <button
+                </button>}
+                {(canManage || (currentMitgliedId && currentMitgliedId === p.autor_mitglied_id && !p.veroeffentlicht)) && <button
                   onClick={() => { setEditProtokoll(p); setShowModal(true); }}
                   className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                 >
                   <Edit size={14} />
-                </button>
-                <button
+                </button>}
+                {canManage && <button
                   onClick={() => handleDelete(p.id)}
                   className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                 >
                   <Trash2 size={14} />
-                </button>
+                </button>}
               </div>
             </div>
           </div>
@@ -149,14 +125,15 @@ export default function ProtokollTab({ termine, mitglieder }) {
           mitglieder={mitglieder}
           ausschussIds={ausschussIds}
           onClose={() => { setShowModal(false); setEditProtokoll(null); }}
-          onSaved={() => { setShowModal(false); setEditProtokoll(null); loadData(); }}
+          onSaved={() => { setShowModal(false); setEditProtokoll(null); onSaved?.(); }}
+          canManage={canManage}
         />
       )}
     </div>
   );
 }
 
-export function ProtokollModal({ protokoll, prefill = {}, termine, mitglieder, ausschussIds, onClose, onSaved }) {
+export function ProtokollModal({ protokoll, prefill = {}, termine, mitglieder, ausschussIds, onClose, onSaved, canManage = false }) {
   const isNew = !protokoll;
   const [form, setForm] = useState({ ...EMPTY_FORM, ...prefill, ...protokoll });
   const [saving, setSaving] = useState(false);
@@ -204,8 +181,8 @@ export function ProtokollModal({ protokoll, prefill = {}, termine, mitglieder, a
     if (modus === 'datei') { data.inhalt = ''; }
     if (modus === 'text') { data.datei_url = ''; data.datei_name = ''; }
     try {
-      if (isNew) await base44.entities.Protokoll.create(data);
-      else await base44.entities.Protokoll.update(protokoll.id, data);
+      if (isNew) await ausschussAktion('protokoll_anlegen', data);
+      else await ausschussAktion('protokoll_update', { protokoll_id: protokoll.id, ...data });
       onSaved();
     } catch (e) { console.error('Error:', e); }
     setSaving(false);
@@ -213,7 +190,7 @@ export function ProtokollModal({ protokoll, prefill = {}, termine, mitglieder, a
 
   const handleDelete = async () => {
     if (!(await confirmDialog('Protokoll löschen?'))) return;
-    await base44.entities.Protokoll.delete(protokoll.id);
+    await ausschussAktion('protokoll_loeschen', { protokoll_id: protokoll.id });
     onSaved();
   };
 
@@ -331,14 +308,11 @@ export function ProtokollModal({ protokoll, prefill = {}, termine, mitglieder, a
             </div>
           )}
 
-          <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground">
-            <input type="checkbox" checked={form.veroeffentlicht} onChange={e => set('veroeffentlicht', e.target.checked)} className="rounded" />
-            ✓ Protokoll veröffentlichen (für alle Ausschussmitglieder sichtbar)
-          </label>
+          <p className="text-xs text-muted-foreground">Veröffentlichung erfolgt separat durch Vorstand oder Admin.</p>
         </div>
 
         <div className="flex gap-2 mt-5">
-          {!isNew && (
+          {canManage && !isNew && (
             <button onClick={handleDelete} className="p-2.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors">
               <Trash2 size={16} />
             </button>

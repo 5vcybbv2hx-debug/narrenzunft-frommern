@@ -49,13 +49,14 @@ export default async function (req) {
 
     // ── Allowlist ──
     const brauchVerwaltung = (a) =>
-      ["sitzung_status", "sitzung_einladen", "tops_sperren", "sitzung_anwesenheit", "top_status", "top_loeschen",
-       "abstimmung_anlegen", "abstimmung_stimme_fuer", "abstimmung_wiedereroeffnen",
+      ["sitzung_anlegen", "sitzung_status", "sitzung_einladen", "tops_sperren", "sitzung_anwesenheit", "top_status", "top_loeschen",
+       "abstimmung_anlegen", "abstimmung_update", "top_abstimmung_anlegen", "abstimmung_stimme_fuer", "abstimmung_wiedereroeffnen",
        "jahresplan_speichern", "jahresplan_loeschen",
        "abstimmung_abschliessen", "abstimmung_loeschen", "beschluss_anlegen",
        "beschluss_aus_abstimmung", "beschluss_update", "beschluss_aufheben",
        "beschluss_loeschen", "aufgabe_aus_beschluss", "aufgabe_update", "aufgabe_loeschen",
-       "protokoll_freigabe", "sitzung_kopieren", "datei_entfernen"].includes(a);
+       "protokoll_entwurf", "protokoll_freigabe", "protokoll_loeschen", "sitzung_kopieren", "datei_entfernen",
+       "ausschuss_mitglied_anlegen", "ausschuss_mitglied_update", "ausschuss_mitglied_loeschen"].includes(a);
 
     if (brauchVerwaltung(aktion) && !ctx.kannVerwalten) {
       return Response.json({ error: "Access Denied", message: "Aktion nur für Vorstand/Stellv./Admin." }, { status: 403 });
@@ -76,6 +77,40 @@ async function ausfuehren(base44, ctx, body) {
 
   switch (aktion) {
     // ── Sitzungs-Lifecycle ──
+    case "sitzung_anlegen": {
+      const titel = String(body.titel || "").trim();
+      const datum = String(body.datum || "");
+      if (!titel || !/^\d{4}-\d{2}-\d{2}$/.test(datum) || !Number.isFinite(Date.parse(datum))) {
+        throw new Error("Titel und gültiges Sitzungsdatum erforderlich");
+      }
+      const termin = await S.KalenderTermin.create({
+        titel, datum, startzeit: body.startzeit || "", endzeit: body.endzeit || "",
+        ort: body.ort || "", beschreibung: body.beschreibung || "",
+        terminart: "Ausschusssitzung", sichtbarkeit: "ausschuss", status: "Geplant",
+      });
+      await schreibeAudit(base44, ctx, "Sitzung", termin.id, "sitzung_anlegen", { datum });
+      // Fällige Nachbesprechungen serverseitig eintragen; keine unprotokollierten Client-Writes.
+      let nachbesprechungen = 0;
+      let nachbesprechungen_fehler = false;
+      try {
+        const veranstaltungen = await S.Veranstaltung.list("datum", 500);
+        for (const v of (veranstaltungen || []).filter(v => v.nachbereitung_status === "Ausstehend" && v.datum && v.datum < datum)) {
+          const top = await S.Tagesordnungspunkt.create({
+            termin_id: termin.id, veranstaltung_id: v.id, titel: `Nachbesprechung: ${v.titel}`,
+            beschreibung: 'Automatisch erstellt: Zahlen & Erfahrungen im Tab "Nachbereitung" der Veranstaltung nachtragen.',
+            reihenfolge: nachbesprechungen + 1, status: "Offen",
+          });
+          nachbesprechungen++;
+          await schreibeAudit(base44, ctx, "TOP", top.id, "nachbesprechung_top_anlegen", { termin_id: termin.id, veranstaltung_id: v.id });
+        }
+      } catch (e) {
+        console.error("Nachbesprechungs-TOPs nicht vollständig erstellt:", e);
+        nachbesprechungen_fehler = true;
+      }
+      // Sitzung existiert bereits: Erfolg mit Warnung statt 500 und Doppelanlage beim Retry.
+      return { termin, nachbesprechungen, nachbesprechungen_fehler };
+    }
+
     case "sitzung_status": {
       const { termin_id, sitzungs_status } = body;
       await S.KalenderTermin.update(termin_id, { sitzungs_status });
@@ -205,16 +240,48 @@ async function ausfuehren(base44, ctx, body) {
     // ── Abstimmung ──
     case "abstimmung_anlegen": {
       const { titel, beschreibung, angenommen_ab, termin_id } = body;
-      if (!titel?.trim() || !termin_id) throw new Error("Titel und Sitzung fehlen");
-      const termin = await S.KalenderTermin.get(termin_id);
-      if (!termin || !["Ausschusssitzung", "Vorstandssitzung", "Intern"].includes(termin.terminart)) {
-        throw new Error("Sitzung nicht gefunden");
+      if (!titel?.trim()) throw new Error("Titel fehlt");
+      if (termin_id) {
+        const termin = await S.KalenderTermin.get(termin_id);
+        if (!termin || !["Ausschusssitzung", "Vorstandssitzung", "Intern"].includes(termin.terminart)) {
+          throw new Error("Sitzung nicht gefunden");
+        }
       }
       const grenze = Number(angenommen_ab ?? 50);
       if (!Number.isFinite(grenze) || grenze < 1 || grenze > 100) throw new Error("Ungültige Mehrheit");
-      const abstimmung = await S.Abstimmung.create({ titel: titel.trim(), beschreibung: beschreibung || "", termin_id,
-        angenommen_ab: grenze, status: "Offen" });
+      const optionen = body.antwort_optionen || [];
+      if (!Array.isArray(optionen) || optionen.length > 10 || optionen.some(x => typeof x !== "string" || !x.trim())) throw new Error("Ungültige Antwortoptionen");
+      const abstimmung = await S.Abstimmung.create({ titel: titel.trim(), beschreibung: beschreibung || "", termin_id: termin_id || "",
+        angenommen_ab: grenze, antwort_optionen: optionen.map(x => x.trim()), status: "Offen" });
       await schreibeAudit(base44, ctx, "Abstimmung", abstimmung.id, "abstimmung_anlegen", { termin_id, titel });
+      return { abstimmung };
+    }
+    case "abstimmung_update": {
+      const { abstimmung_id } = body;
+      const abs = abstimmung_id ? await S.Abstimmung.get(abstimmung_id) : null;
+      if (!abs) throw new Error("Abstimmung nicht gefunden");
+      if (abs.status !== "Offen") throw new Error("Nur offene Abstimmungen bearbeiten");
+      const termin_id = body.termin_id || "";
+      if (abs.top_id && termin_id !== (abs.termin_id || "")) throw new Error("TOP-gebundene Abstimmung nicht verschieben");
+      if (termin_id) {
+        const termin = await S.KalenderTermin.get(termin_id);
+        if (!termin || !["Ausschusssitzung", "Vorstandssitzung", "Intern"].includes(termin.terminart)) throw new Error("Sitzung nicht gefunden");
+      }
+      const titel = String(body.titel || "").trim();
+      const grenze = Number(body.angenommen_ab);
+      const optionen = body.antwort_optionen || [];
+      if (!titel || !Number.isFinite(grenze) || grenze < 1 || grenze > 100 ||
+          !Array.isArray(optionen) || optionen.length > 10 || optionen.some(x => typeof x !== "string" || !x.trim())) {
+        throw new Error("Ungültige Abstimmungsdaten");
+      }
+      const stimmen = await S.AbstimmungsStimme.filter({ abstimmung_id });
+      if (stimmen?.length && JSON.stringify(optionen) !== JSON.stringify(abs.antwort_optionen || [])) {
+        throw new Error("Antwortoptionen nach Stimmabgabe nicht ändern");
+      }
+      const patch = { titel, beschreibung: body.beschreibung || "", termin_id,
+        angenommen_ab: grenze, antwort_optionen: optionen.map(x => x.trim()) };
+      const abstimmung = await S.Abstimmung.update(abstimmung_id, patch);
+      await schreibeAudit(base44, ctx, "Abstimmung", abstimmung_id, "abstimmung_update", { titel });
       return { abstimmung };
     }
     case "abstimmung_stimme": {
@@ -483,7 +550,90 @@ async function ausfuehren(base44, ctx, body) {
       return { jahresplan_id };
     }
 
+    // ── Ausschussmitgliedschaft: Zusatzrecht und Liste synchron halten ──
+    case "ausschuss_mitglied_anlegen": {
+      const { mitglied_id } = body;
+      const mitglied = mitglied_id ? await S.Mitglied.get(mitglied_id) : null;
+      if (!mitglied) throw new Error("Mitglied nicht gefunden");
+      const bestehende = await S.AusschussMitglied.filter({ mitglied_id, aktiv: true });
+      if (bestehende?.length) throw new Error("Mitglied ist bereits im Ausschuss");
+      const rolle = String(body.rolle || "Beisitzer");
+      if (!["Vorsitzender", "Stellv. Vorsitzender", "Schriftführer", "Kassierer", "Häswart", "Beisitzer", "Jugendleiter", "Sonstiges"].includes(rolle)) throw new Error("Ungültige Rolle");
+      const zusatz = Array.isArray(mitglied.zusatz_berechtigungen) ? mitglied.zusatz_berechtigungen :
+        String(mitglied.zusatz_berechtigungen || "").split(",").map(x => x.trim()).filter(Boolean);
+      const rec = await S.AusschussMitglied.create({ mitglied_id, rolle, notizen: body.notizen || "", aktiv: true });
+      try { await S.Mitglied.update(mitglied_id, { zusatz_berechtigungen: [...new Set([...zusatz, "ausschuss"])] }); }
+      catch (e) { await S.AusschussMitglied.delete(rec.id); throw e; }
+      await schreibeAudit(base44, ctx, "AusschussMitglied", rec.id, "ausschuss_mitglied_anlegen", { mitglied_id, rolle });
+      return { ausschussMitglied: rec };
+    }
+    case "ausschuss_mitglied_update": {
+      const { ausschuss_mitglied_id, rolle } = body;
+      const rec = ausschuss_mitglied_id ? await S.AusschussMitglied.get(ausschuss_mitglied_id) : null;
+      if (!rec) throw new Error("Ausschussmitglied nicht gefunden");
+      if (!["Vorsitzender", "Stellv. Vorsitzender", "Schriftführer", "Kassierer", "Häswart", "Beisitzer", "Jugendleiter", "Sonstiges"].includes(rolle)) throw new Error("Ungültige Rolle");
+      const aktualisiert = await S.AusschussMitglied.update(ausschuss_mitglied_id, { rolle });
+      await schreibeAudit(base44, ctx, "AusschussMitglied", ausschuss_mitglied_id, "ausschuss_mitglied_update", { rolle });
+      return { ausschussMitglied: aktualisiert };
+    }
+    case "ausschuss_mitglied_loeschen": {
+      const { ausschuss_mitglied_id } = body;
+      const rec = ausschuss_mitglied_id ? await S.AusschussMitglied.get(ausschuss_mitglied_id) : null;
+      if (!rec) throw new Error("Ausschussmitglied nicht gefunden");
+      const aktive = await S.AusschussMitglied.filter({ mitglied_id: rec.mitglied_id, aktiv: true });
+      const letzte = !(aktive || []).some(x => x.id !== ausschuss_mitglied_id);
+      const mitglied = letzte ? await S.Mitglied.get(rec.mitglied_id) : null;
+      const zusatz = mitglied ? (Array.isArray(mitglied.zusatz_berechtigungen) ? mitglied.zusatz_berechtigungen :
+        String(mitglied.zusatz_berechtigungen || "").split(",").map(x => x.trim()).filter(Boolean)) : [];
+      // Zugang zuerst entziehen, damit bei einem Fehler die Mitgliedschaft nicht
+      // gelöscht wird, während das Zusatzrecht weiter gültig bleibt.
+      if (mitglied) await S.Mitglied.update(rec.mitglied_id, { zusatz_berechtigungen: zusatz.filter(z => z !== "ausschuss") });
+      try { await S.AusschussMitglied.delete(ausschuss_mitglied_id); }
+      catch (e) {
+        if (mitglied) await S.Mitglied.update(rec.mitglied_id, { zusatz_berechtigungen: zusatz });
+        throw e;
+      }
+      await schreibeAudit(base44, ctx, "AusschussMitglied", ausschuss_mitglied_id, "ausschuss_mitglied_loeschen", { mitglied_id: rec.mitglied_id });
+      return { ausschuss_mitglied_id };
+    }
+
     // ── Protokoll ──
+    case "protokoll_anlegen":
+    case "protokoll_update": {
+      const neu = aktion === "protokoll_anlegen";
+      const prot = !neu && body.protokoll_id ? await S.Protokoll.get(body.protokoll_id) : null;
+      if (!neu && !prot) throw new Error("Protokoll nicht gefunden");
+      if (!ctx.kannVerwalten && (!ctx.currentMitgliedId || (prot &&
+          (prot.autor_mitglied_id !== ctx.currentMitgliedId || prot.veroeffentlicht)))) {
+        throw new Error("Nur eigener unveröffentlichter Entwurf bearbeitbar");
+      }
+      const titel = String(body.titel || "").trim();
+      const datum = String(body.datum || "");
+      if (!titel || !/^\d{4}-\d{2}-\d{2}$/.test(datum) || !Number.isFinite(Date.parse(datum))) throw new Error("Titel und gültiges Datum erforderlich");
+      if (body.termin_id) {
+        const termin = await S.KalenderTermin.get(body.termin_id);
+        if (!termin || !["Ausschusssitzung", "Vorstandssitzung", "Intern"].includes(termin.terminart)) throw new Error("Sitzung nicht gefunden");
+      }
+      const url = String(body.datei_url || "");
+      if (url && !/^https:\/\//i.test(url)) throw new Error("Ungültige Datei-URL");
+      const autor = ctx.kannVerwalten ? (body.autor_mitglied_id || "") : ctx.currentMitgliedId;
+      if (autor && !(await S.Mitglied.get(autor))) throw new Error("Verfasser nicht gefunden");
+      const patch = { titel, datum, termin_id: body.termin_id || "", inhalt: body.inhalt || "",
+        datei_url: url, datei_name: body.datei_name || "", autor_mitglied_id: autor };
+      const gespeichert = neu
+        ? await S.Protokoll.create({ ...patch, veroeffentlicht: false, freigabestatus: "Entwurf" })
+        : await S.Protokoll.update(prot.id, patch);
+      await schreibeAudit(base44, ctx, "Protokoll", gespeichert.id || prot.id, neu ? "protokoll_anlegen" : "protokoll_update", { titel });
+      return { protokoll: gespeichert };
+    }
+    case "protokoll_loeschen": {
+      const { protokoll_id } = body;
+      const prot = protokoll_id ? await S.Protokoll.get(protokoll_id) : null;
+      if (!prot) throw new Error("Protokoll nicht gefunden");
+      await S.Protokoll.delete(protokoll_id);
+      await schreibeAudit(base44, ctx, "Protokoll", protokoll_id, "protokoll_loeschen", { termin_id: prot.termin_id });
+      return { protokoll_id };
+    }
     case "protokoll_entwurf": {
       const { termin_id } = body;
       const termin = await S.KalenderTermin.get(termin_id);

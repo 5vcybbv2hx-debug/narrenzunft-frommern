@@ -13,6 +13,7 @@
         "Stellv. Vorsitzender",
         "Schriftf\u00fchrer",
         "Kassierer",
+        "H\u00e4swart",
         "Beisitzer",
         "Jugendleiter",
         "Sonstiges"
@@ -32,6 +33,11 @@
   ],
   "rls": {
     "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
       "$or": [
         {
           "user_condition": {
@@ -41,38 +47,24 @@
         {
           "user_condition": {
             "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
           }
         }
       ]
     },
-    "read": null,
     "update": {
-      "$or": [
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "vorstand"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
-      "$or": [
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "vorstand"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }
