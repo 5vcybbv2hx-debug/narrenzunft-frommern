@@ -57,6 +57,8 @@ Deno.serve(async (req) => {
       }, { status: 403 });
     }
 
+    const canManage = ["vorstand", "stellv_vorstand", "admin"].includes(user.role);
+
     const [
       termine,
       aufgaben,
@@ -79,7 +81,7 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.AusschussMitglied.filter({ aktiv: true }),
       base44.asServiceRole.entities.Abstimmung.list("-created_date", 500),
       base44.asServiceRole.entities.Protokoll.list("-datum", 500),
-      base44.asServiceRole.entities.Mitgliedsantrag.list("-created_date", 500),
+      canManage ? base44.asServiceRole.entities.Mitgliedsantrag.list("-created_date", 500) : Promise.resolve([]),
       base44.asServiceRole.entities.Veranstaltung.list("-datum", 500),
       base44.asServiceRole.entities.AusschussJahresplan.list("titel", 200).catch(() => []),
       base44.asServiceRole.entities.AusschussAuditLog.list("-zeitpunkt", 300).catch(() => []),
@@ -95,7 +97,15 @@ Deno.serve(async (req) => {
       termine: sitzungen,
       aufgaben,
       beschluesse,
-      mitglieder,
+      mitglieder: (mitglieder || []).map((m) => ({
+        id: m.id,
+        vorname: m.vorname,
+        nachname: m.nachname,
+        mitgliedsstatus: m.mitgliedsstatus,
+        app_rolle: m.app_rolle,
+        spartenleiter_haesgruppen_ids: m.spartenleiter_haesgruppen_ids,
+        spartenleiter_haesgruppe_id: m.spartenleiter_haesgruppe_id,
+      })),
       ausschussMitglieder,
       abstimmungen,
       protokolle,
@@ -106,7 +116,7 @@ Deno.serve(async (req) => {
       tops: tops || [],
       stimmen: stimmen || [],
       currentMitgliedId: mitglied?.id || null,
-      canManage: ["vorstand", "stellv_vorstand", "admin"].includes(user.role),
+      canManage,
     });
   } catch (error) {
     console.error("getAusschussDataSicher:", error);

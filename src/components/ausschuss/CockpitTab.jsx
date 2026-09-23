@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, ClipboardList, CheckSquare, Gavel, FileText, CalendarClock, AlertTriangle, ChevronRight, Users, ListChecks } from 'lucide-react';
+import { Search, CheckSquare, Gavel, FileText, CalendarClock, AlertTriangle, ChevronRight, ListChecks } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -7,7 +7,7 @@ import { de } from 'date-fns/locale';
  * Ausschuss-Cockpit — erster Tab.
  * Kacheln als klickbare Filter/Shortcuts; globale Suche über alle Objekte.
  */
-export default function CockpitTab({ data, onNavigate, onOpenSitzung, onFilterAufgaben }) {
+export default function CockpitTab({ data, onNavigate, onOpenSitzung, onFilterAufgaben, canManage }) {
   const [suche, setSuche] = useState('');
   const { termine, aufgaben, beschluesse, protokolle, antraege, veranstaltungen, tops, abstimmungen, currentMitgliedId, mitglieder } = data;
 
@@ -111,7 +111,7 @@ export default function CockpitTab({ data, onNavigate, onOpenSitzung, onFilterAu
             <Kachel icon={AlertTriangle} label="Überfällige Aufgaben" count={ueberfaelligeAufgaben.length} warn onClick={() => onFilterAufgaben('ueberfaellig')} />
             <Kachel icon={Gavel} label="Offene Beschlüsse" count={offeneBeschluesse.length} warn={false} accent onClick={() => onNavigate('beschluesse')} />
             <Kachel icon={FileText} label="Fehlende Protokolle" count={fehlendeProtokolle.length} warn onClick={() => onNavigate('sitzungen')} />
-            <Kachel icon={FileText} label="Offene Anträge" count={offeneAntraege.length} warn={offeneAntraege.length > 0} onClick={() => onNavigate('antraege')} />
+            {canManage && <Kachel icon={FileText} label="Offene Anträge" count={offeneAntraege.length} warn={offeneAntraege.length > 0} onClick={() => onNavigate('antraege')} />}
             <Kachel icon={CalendarClock} label="Nachbereitung" count={nachbereitung.length} warn={nachbereitung.length > 0} onClick={() => onNavigate('sitzungen')} />
           </div>
 

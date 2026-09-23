@@ -64,7 +64,6 @@ export default function Ausschuss() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(() => TABS.some(t => t.id === searchParams.get('tab')) ? searchParams.get('tab') : 'sitzungen');
-  const isAdmin = kannAusschussSehn(user);
   const [termine, setTermine] = useState([]);
   const [aufgaben, setAufgaben] = useState([]);
   const [beschluesse, setBeschluesse] = useState([]);
@@ -223,7 +222,7 @@ export default function Ausschuss() {
 
       {/* Tabs */}
       <div className="flex gap-1 bg-neutral-900 rounded-xl p-1 mb-5 overflow-x-auto">
-        {TABS.map(tab => {
+        {TABS.filter(tab => tab.id !== 'antraege' || canManage).map(tab => {
           const Icon = tab.icon;
           const badge = tabBadges[tab.id];
           return (
@@ -242,7 +241,8 @@ export default function Ausschuss() {
         <div className="space-y-4">
           <CockpitTab
             data={{ termine, aufgaben, beschluesse, protokolle, antraege, veranstaltungen, tops, abstimmungen, currentMitgliedId, mitglieder }}
-            onNavigate={(t) => setActiveTab(t)}
+            canManage={canManage}
+            onNavigate={(t) => setActiveTab(t === 'antraege' && !canManage ? 'cockpit' : t)}
             onOpenSitzung={(sid) => navigate(`/ausschuss/sitzung/${sid}`)}
             onFilterAufgaben={(f) => { setAufgabenFilter(f === 'meine' ? 'Meine' : 'Überfällig'); setActiveTab('aufgaben'); }}
           />
@@ -499,7 +499,7 @@ export default function Ausschuss() {
       )}
 
       {/* MITGLIEDSANTRÄGE */}
-      {activeTab === 'antraege' && isAdmin && (
+      {activeTab === 'antraege' && canManage && (
         <Mitgliedsantraege embedded />
       )}
 
