@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
-import { useAuth } from '@/lib/AuthContext';
+import { ausschussAktion } from '@/lib/ausschussAktionen';
 import {
-  Vote, Plus, X, ChevronUp, ChevronDown, Trash2, Check, FileText,
+  Vote, Plus, ChevronUp, ChevronDown, FileText,
 } from 'lucide-react';
 
 const STIMME_FARBEN = {
@@ -19,48 +18,18 @@ const STIMME_BTN = {
 
 const inputCls = "w-full px-3 py-2.5 rounded-lg bg-neutral-900 border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors";
 
-export default function AbstimmungenTab({ abstimmungen, setAbstimmungen, mitglieder, ausschussMitglieder, termine, isAdmin, onEdit, onNew }) {
-  const { user } = useAuth();
-  const [stimmen, setStimmen] = useState([]);
-  const [myMitgliedId, setMyMitgliedId] = useState(null);
+export default function AbstimmungenTab({ abstimmungen, setAbstimmungen, mitglieder, ausschussMitglieder, termine, isAdmin, onEdit, onNew, initialStimmen = [], myMitgliedId }) {
+  const [stimmen, setStimmen] = useState(initialStimmen);
   const [expandedId, setExpandedId] = useState(null);
-  const [loadingStimmen, setLoadingStimmen] = useState(true);
+  useEffect(() => { setStimmen(initialStimmen); }, [initialStimmen]);
 
   // Aktive Ausschussmitglied-IDs
   const ausschussMitgliedIds = (ausschussMitglieder || [])
     .filter(am => am.aktiv !== false)
     .map(am => am.mitglied_id);
 
-  // Aktuelles Mitglied des Users ermitteln
-  useEffect(() => {
-    const findMe = async () => {
-      if (!user) return;
-      try {
-        const me = await base44.entities.Mitglied.filter({ user_id: user.id });
-        if (me && me[0]) setMyMitgliedId(me[0].id);
-      } catch (e) {
-        console.error('Mitglied konnte nicht ermittelt werden:', e);
-      }
-    };
-    findMe();
-  }, [user]);
-
-  // Ist der aktuelle User Teil des Ausschusses?
+  // Servergeprüfte Mitglieds-ID und Stimmen aus getAusschussDataSicher nutzen.
   const isAusschussMitglied = myMitgliedId && ausschussMitgliedIds.includes(myMitgliedId);
-
-  // Stimmen laden
-  const loadStimmen = async () => {
-    setLoadingStimmen(true);
-    try {
-      const st = await base44.entities.AbstimmungsStimme.list('-created_date', 500);
-      setStimmen(st || []);
-    } catch (e) {
-      console.error('Stimmen laden:', e);
-    }
-    setLoadingStimmen(false);
-  };
-
-  useEffect(() => { loadStimmen(); }, []);
 
   const getStimmenFuerAbstimmung = (abstimmungId) => stimmen.filter(s => s.abstimmung_id === abstimmungId);
 
@@ -76,10 +45,10 @@ export default function AbstimmungenTab({ abstimmungen, setAbstimmungen, mitglie
     try {
       if (vorh) {
         if (vorh.stimme === stimme) return; // keine Änderung
-        await base44.entities.AbstimmungsStimme.update(vorh.id, { stimme });
+        await ausschussAktion('abstimmung_stimme', { abstimmung_id: abstimmungId, stimme });
         setStimmen(prev => prev.map(s => s.id === vorh.id ? { ...s, stimme } : s));
       } else {
-        const neu = await base44.entities.AbstimmungsStimme.create({ abstimmung_id: abstimmungId, mitglied_id: myMitgliedId, stimme });
+        const { stimme: neu } = await ausschussAktion('abstimmung_stimme', { abstimmung_id: abstimmungId, stimme });
         setStimmen(prev => [...prev, neu]);
       }
     } catch (e) {
@@ -93,10 +62,10 @@ export default function AbstimmungenTab({ abstimmungen, setAbstimmungen, mitglie
     try {
       if (vorh) {
         if (vorh.stimme === stimme) return;
-        await base44.entities.AbstimmungsStimme.update(vorh.id, { stimme });
+        await ausschussAktion('abstimmung_stimme_fuer', { abstimmung_id: abstimmungId, mitglied_id: mitgliedId, stimme });
         setStimmen(prev => prev.map(s => s.id === vorh.id ? { ...s, stimme } : s));
       } else {
-        const neu = await base44.entities.AbstimmungsStimme.create({ abstimmung_id: abstimmungId, mitglied_id: mitgliedId, stimme });
+        const { stimme: neu } = await ausschussAktion('abstimmung_stimme_fuer', { abstimmung_id: abstimmungId, mitglied_id: mitgliedId, stimme });
         setStimmen(prev => [...prev, neu]);
       }
     } catch (e) {
@@ -106,13 +75,8 @@ export default function AbstimmungenTab({ abstimmungen, setAbstimmungen, mitglie
 
   // Abstimmung abschließen
   const handleAbschliessen = async (abs) => {
-    const st = getStimmenFuerAbstimmung(abs.id);
-    const ja = st.filter(s => s.stimme === 'Ja').length;
-    const gesamt = st.filter(s => s.stimme !== 'Enthaltung').length;
-    const prozent = gesamt > 0 ? (ja / gesamt) * 100 : 0;
-    const ergebnis = prozent > (abs.angenommen_ab || 50) ? 'Angenommen' : 'Abgelehnt';
     try {
-      await base44.entities.Abstimmung.update(abs.id, { status: 'Abgeschlossen', ergebnis });
+      const { ergebnis } = await ausschussAktion('abstimmung_abschliessen', { abstimmung_id: abs.id });
       setAbstimmungen(prev => prev.map(a => a.id === abs.id ? { ...a, status: 'Abgeschlossen', ergebnis } : a));
     } catch (e) {
       console.error('Abstimmung abschließen:', e);
@@ -122,7 +86,7 @@ export default function AbstimmungenTab({ abstimmungen, setAbstimmungen, mitglie
   // Abstimmung wieder öffnen
   const handleWiederOeffnen = async (abs) => {
     try {
-      await base44.entities.Abstimmung.update(abs.id, { status: 'Offen', ergebnis: null });
+      await ausschussAktion('abstimmung_wiedereroeffnen', { abstimmung_id: abs.id });
       setAbstimmungen(prev => prev.map(a => a.id === abs.id ? { ...a, status: 'Offen', ergebnis: null } : a));
     } catch (e) {
       console.error('Abstimmung öffnen:', e);
@@ -138,12 +102,12 @@ export default function AbstimmungenTab({ abstimmungen, setAbstimmungen, mitglie
   return (
     <div>
       {/* Header mit Neu-Button */}
-      <div className="flex justify-end mb-4">
+      {isAdmin && <div className="flex justify-end mb-4">
         <button onClick={onNew}
           className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-red-700 transition-colors">
           <Plus size={15} /> Abstimmung
         </button>
-      </div>
+      </div>}
 
       {abstimmungen.length === 0 && (
         <div className="text-center py-12 bg-card border border-border rounded-xl">
@@ -195,10 +159,10 @@ export default function AbstimmungenTab({ abstimmungen, setAbstimmungen, mitglie
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => onEdit(abs)}
+                  {isAdmin && <button onClick={() => onEdit(abs)}
                     className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Bearbeiten">
                     <FileText size={14} />
-                  </button>
+                  </button>}
                   <button onClick={() => setExpandedId(expandedId === abs.id ? null : abs.id)}
                     className="p-1 rounded text-muted-foreground hover:text-white shrink-0" title="Details">
                     {expandedId === abs.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}

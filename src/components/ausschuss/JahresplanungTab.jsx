@@ -1,13 +1,10 @@
 import { useState } from 'react';
-import { base44 } from '@/api/base44Client';
-import { jahresplanGenerieren } from '@/lib/ausschussAktionen';
+import { ausschussAktion, jahresplanGenerieren } from '@/lib/ausschussAktionen';
 import { Plus, X, Trash2, Repeat, Sparkles, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
-import DateSelect from '@/components/ui/DateSelect';
 import MitgliedLiveSuche from '@/components/MitgliedLiveSuche';
 import MobileSelect from '@/components/MobileSelect';
-import { format } from 'date-fns';
 
 const PRIO = ['Niedrig', 'Mittel', 'Hoch', 'Dringend'];
 const WIEDERHOLUNG = ['Jährlich', 'Einmalig'];
@@ -34,8 +31,7 @@ export default function JahresplanungTab({ plaene, mitglieder, canManage, onSave
     setSaving(true);
     try {
       const payload = { ...form, monat: Number(form.monat) || 1, tag: Number(form.tag) || 1, jahr: form.jahr ? Number(form.jahr) : null };
-      if (edit) await base44.entities.AusschussJahresplan.update(edit.id, payload);
-      else await base44.entities.AusschussJahresplan.create(payload);
+      await ausschussAktion('jahresplan_speichern', { jahresplan_id: edit?.id || null, daten: payload });
       toast.success(edit ? 'Plan aktualisiert' : 'Plan angelegt');
       setShowForm(false);
       onSaved();
@@ -47,7 +43,7 @@ export default function JahresplanungTab({ plaene, mitglieder, canManage, onSave
 
   const handleDelete = async (id) => {
     if (!(await confirmDialog('Diesen Jahresplan-Punkt wirklich löschen?'))) return;
-    try { await base44.entities.AusschussJahresplan.delete(id); toast.success('Gelöscht'); onSaved(); }
+    try { await ausschussAktion('jahresplan_loeschen', { jahresplan_id: id }); toast.success('Gelöscht'); onSaved(); }
     catch (e) { toast.error('Löschen fehlgeschlagen'); }
   };
 

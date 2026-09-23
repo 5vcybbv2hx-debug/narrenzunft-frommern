@@ -3,9 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import {
-  ArrowLeft, Plus, X, Save, Trash2, ChevronUp, ChevronDown,
-  Users, ClipboardList, Vote, CheckCircle2, Circle, Clock, Lock,
-  FileText, Eye, EyeOff, Edit, Download, Gavel, ListPlus, Zap, Send, ShieldCheck, ArrowRight
+  ArrowLeft, Plus, Save, Trash2, ChevronUp, ChevronDown,
+  Users, ClipboardList, Vote, CheckCircle2, Lock,
+  FileText, Eye, EyeOff, Edit, Download, Gavel, ListPlus, Zap, Send, ShieldCheck
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -13,7 +13,6 @@ import MobileSelect from '@/components/MobileSelect';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import { ProtokollModal } from '@/components/ausschuss/ProtokollTab';
 import { ausschussAktion } from '@/lib/ausschussAktionen';
-import DateienAnhang from '@/components/ausschuss/DateienAnhang';
 import toast from 'react-hot-toast';
 
 const ANWESENHEIT_FARBEN = {
@@ -88,14 +87,12 @@ export default function SitzungDetail() {
   const getAnwesenheit = (mitgliedId) => anwesenheiten.find(a => a.mitglied_id === mitgliedId);
 
   const handleAnwesenheit = async (mitgliedId, status) => {
-    const vorh = getAnwesenheit(mitgliedId);
-    if (vorh) {
-      await base44.entities.SitzungsAnwesenheit.update(vorh.id, { status });
-      setAnwesenheiten(prev => prev.map(a => a.id === vorh.id ? { ...a, status } : a));
-    } else {
-      const neu = await base44.entities.SitzungsAnwesenheit.create({ termin_id: id, mitglied_id: mitgliedId, status });
-      setAnwesenheiten(prev => [...prev, neu]);
-    }
+    try {
+      const { anwesenheit } = await ausschussAktion('sitzung_anwesenheit', { termin_id: id, mitglied_id: mitgliedId, status });
+      const vorh = getAnwesenheit(mitgliedId);
+      if (vorh) setAnwesenheiten(prev => prev.map(a => a.id === vorh.id ? { ...a, status } : a));
+      else setAnwesenheiten(prev => [...prev, anwesenheit]);
+    } catch (e) { toast.error(e.message || 'Anwesenheit konnte nicht gespeichert werden'); }
   };
 
   // Anwesende für Quorum
@@ -436,29 +433,38 @@ function TopsTab({ terminId, tops, setTops, mitglieder, isAdmin, onAenderung }) 
   const handleCreate = async () => {
     if (!form.titel) return;
     setSaving(true);
-    const neu = await base44.entities.Tagesordnungspunkt.create({
-      ...form, termin_id: terminId, reihenfolge: tops.length + 1, status: 'Offen'
-    });
-    setTops(prev => [...prev, neu]);
-    setForm({ titel: '', beschreibung: '', verantwortlicher_id: '' });
-    setShowForm(false);
-    setSaving(false);
+    try {
+      const { top } = await ausschussAktion('top_anlegen', { ...form, termin_id: terminId });
+      setTops(prev => [...prev, top]);
+      setForm({ titel: '', beschreibung: '', verantwortlicher_id: '' });
+      setShowForm(false);
+      onAenderung?.();
+    } catch (e) { toast.error(e.message || 'TOP konnte nicht angelegt werden'); }
+    finally { setSaving(false); }
   };
 
   const handleStatus = async (top, status) => {
-    await base44.entities.Tagesordnungspunkt.update(top.id, { status });
-    setTops(prev => prev.map(t => t.id === top.id ? { ...t, status } : t));
+    try {
+      await ausschussAktion('top_status', { top_id: top.id, status });
+      setTops(prev => prev.map(t => t.id === top.id ? { ...t, status } : t));
+    } catch (e) { toast.error(e.message || 'TOP-Status konnte nicht gespeichert werden'); }
   };
 
   const handleNotizen = async (top) => {
-    await base44.entities.Tagesordnungspunkt.update(top.id, { notizen: editNotizen[top.id] ?? top.notizen });
-    setTops(prev => prev.map(t => t.id === top.id ? { ...t, notizen: editNotizen[top.id] ?? t.notizen } : t));
+    try {
+      const notizen = editNotizen[top.id] ?? top.notizen;
+      await ausschussAktion('top_notiz', { top_id: top.id, notizen });
+      setTops(prev => prev.map(t => t.id === top.id ? { ...t, notizen } : t));
+    } catch (e) { toast.error(e.message || 'TOP-Notiz konnte nicht gespeichert werden'); }
   };
 
   const handleDelete = async (topId) => {
     if (!(await confirmDialog('Diesen Tagesordnungspunkt wirklich löschen?'))) return;
-    await base44.entities.Tagesordnungspunkt.delete(topId);
-    setTops(prev => prev.filter(t => t.id !== topId));
+    try {
+      await ausschussAktion('top_loeschen', { top_id: topId });
+      setTops(prev => prev.filter(t => t.id !== topId));
+      onAenderung?.();
+    } catch (e) { toast.error(e.message || 'TOP konnte nicht gelöscht werden'); }
   };
 
   return (
@@ -578,40 +584,39 @@ function AbstimmungenTab({ terminId, abstimmungen, setAbstimmungen, ausschussMit
   const handleCreate = async () => {
     if (!form.titel) return;
     setSaving(true);
-    const neu = await base44.entities.Abstimmung.create({ ...form, termin_id: terminId, status: 'Offen' });
-    setAbstimmungen(prev => [...prev, neu]);
-    setForm({ titel: '', beschreibung: '', angenommen_ab: 50 });
-    setShowForm(false);
-    setSaving(false);
+    try {
+      const { abstimmung } = await ausschussAktion('abstimmung_anlegen', { ...form, termin_id: terminId });
+      setAbstimmungen(prev => [...prev, abstimmung]);
+      setForm({ titel: '', beschreibung: '', angenommen_ab: 50 });
+      setShowForm(false);
+    } catch (e) { toast.error(e.message || 'Abstimmung konnte nicht angelegt werden'); }
+    finally { setSaving(false); }
   };
 
   const getStimmenFuerAbstimmung = (abstimmungId) => stimmen.filter(s => s.abstimmung_id === abstimmungId);
 
   const handleStimme = async (abstimmungId, mitgliedId, stimme) => {
-    const vorh = stimmen.find(s => s.abstimmung_id === abstimmungId && s.mitglied_id === mitgliedId);
-    if (vorh) {
-      await base44.entities.AbstimmungsStimme.update(vorh.id, { stimme });
-      setStimmen(prev => prev.map(s => s.id === vorh.id ? { ...s, stimme } : s));
-    } else {
-      const neu = await base44.entities.AbstimmungsStimme.create({ abstimmung_id: abstimmungId, mitglied_id: mitgliedId, stimme });
-      setStimmen(prev => [...prev, neu]);
-    }
+    try {
+      const vorh = stimmen.find(s => s.abstimmung_id === abstimmungId && s.mitglied_id === mitgliedId);
+      const { stimme: rec } = await ausschussAktion('abstimmung_stimme_fuer', { abstimmung_id: abstimmungId, mitglied_id: mitgliedId, stimme });
+      if (vorh) setStimmen(prev => prev.map(s => s.id === vorh.id ? { ...s, stimme } : s));
+      else setStimmen(prev => [...prev, rec]);
+    } catch (e) { toast.error(e.message || 'Stimme konnte nicht gespeichert werden'); }
   };
 
   const handleAbschliessen = async (abs) => {
-    const st = getStimmenFuerAbstimmung(abs.id);
-    const ja = st.filter(s => s.stimme === 'Ja').length;
-    const gesamt = st.filter(s => s.stimme !== 'Enthaltung').length;
-    const prozent = gesamt > 0 ? (ja / gesamt) * 100 : 0;
-    const ergebnis = prozent > (abs.angenommen_ab || 50) ? 'Angenommen' : 'Abgelehnt';
-    await base44.entities.Abstimmung.update(abs.id, { status: 'Abgeschlossen', ergebnis });
-    setAbstimmungen(prev => prev.map(a => a.id === abs.id ? { ...a, status: 'Abgeschlossen', ergebnis } : a));
+    try {
+      const { ergebnis } = await ausschussAktion('abstimmung_abschliessen', { abstimmung_id: abs.id });
+      setAbstimmungen(prev => prev.map(a => a.id === abs.id ? { ...a, status: 'Abgeschlossen', ergebnis } : a));
+    } catch (e) { toast.error(e.message || 'Abstimmung konnte nicht abgeschlossen werden'); }
   };
 
   const handleDelete = async (absId) => {
     if (!(await confirmDialog('Abstimmung wirklich löschen?'))) return;
-    await base44.entities.Abstimmung.delete(absId);
-    setAbstimmungen(prev => prev.filter(a => a.id !== absId));
+    try {
+      await ausschussAktion('abstimmung_loeschen', { abstimmung_id: absId });
+      setAbstimmungen(prev => prev.filter(a => a.id !== absId));
+    } catch (e) { toast.error(e.message || 'Abstimmung konnte nicht gelöscht werden'); }
   };
 
   const [busyBeschluss, setBusyBeschluss] = useState(null);

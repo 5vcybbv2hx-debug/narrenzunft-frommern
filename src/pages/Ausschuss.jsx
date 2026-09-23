@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { erstelleNachbesprechungsTops } from '@/lib/nachbereitung';
 import toast from 'react-hot-toast';
 import DateSelect from '../components/ui/DateSelect';
@@ -7,7 +7,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  ClipboardList, CheckSquare, FileText, Lock, Plus, X, Save,
+  ClipboardList, CheckSquare, FileText, Lock, Plus, X,
   Trash2, ChevronRight, Circle, CheckCircle2, Clock, Users,
   AlertTriangle, Calendar, MapPin, User as UserIcon, Gavel, Vote, Shield, ListPlus, Pencil,
 } from 'lucide-react';
@@ -257,12 +257,12 @@ export default function Ausschuss() {
       {/* SITZUNGEN */}
       {activeTab === 'sitzungen' && (
         <div className="space-y-4">
-          <div className="flex justify-end">
+          {canManage && <div className="flex justify-end">
             <button onClick={() => setShowSitzungModal(true)}
               className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-red-700 transition-colors">
               <Plus size={15} /> Neue Sitzung
             </button>
-          </div>
+          </div>}
           {kommendeSitzungen.length > 0 && (
             <div>
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Kommende Sitzungen</h3>
@@ -301,7 +301,9 @@ export default function Ausschuss() {
           mitglieder={mitglieder}
           ausschussMitglieder={ausschussMitglieder}
           termine={termine}
-          isAdmin={isAdmin}
+          isAdmin={canManage}
+          initialStimmen={stimmen}
+          myMitgliedId={currentMitgliedId}
           onNew={() => { setEditAbstimmung(null); setShowAbstimmungModal(true); }}
           onEdit={(a) => { setEditAbstimmung(a); setShowAbstimmungModal(true); }}
         />
@@ -314,7 +316,7 @@ export default function Ausschuss() {
 
       {/* AUSSCHUSSMITGLIEDER */}
       {activeTab === 'mitglieder' && (
-        <AusschussMitgliederTab mitglieder={mitglieder} isAdmin={isAdmin} />
+        <AusschussMitgliederTab mitglieder={mitglieder} isAdmin={canManage} />
       )}
 
       {/* JAHRESPLANUNG */}
@@ -599,11 +601,12 @@ function AufgabeModal({ aufgabe, mitglieder, termine, onClose, onSaved }) {
     if (!form.titel) return;
     setSaving(true);
     try {
-      if (isNew) await base44.entities.Ausschussaufgabe.create(form);
-      else await base44.entities.Ausschussaufgabe.update(aufgabe.id, form);
+      if (isNew) await ausschussAktion('aufgabe_anlegen', form);
+      else await ausschussAktion('aufgabe_update', { aufgabe_id: aufgabe.id, ...form });
       onSaved();
     } catch (e) {
       console.error('Aufgabe speichern:', e);
+      toast.error('Aufgabe konnte nicht gespeichert werden');
     }
     setSaving(false);
   };
@@ -611,10 +614,11 @@ function AufgabeModal({ aufgabe, mitglieder, termine, onClose, onSaved }) {
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      await base44.entities.Ausschussaufgabe.delete(aufgabe.id);
+      await ausschussAktion('aufgabe_loeschen', { aufgabe_id: aufgabe.id });
       onSaved();
     } catch (e) {
       console.error('Aufgabe löschen:', e);
+      toast.error('Aufgabe konnte nicht gelöscht werden');
     }
     setDeleting(false);
   };
