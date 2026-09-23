@@ -49,7 +49,9 @@ export default async function (req) {
 
     // ── Allowlist ──
     const brauchVerwaltung = (a) =>
-      ["sitzung_status", "sitzung_einladen", "tops_sperren", "top_status", "top_loeschen",
+      ["sitzung_status", "sitzung_einladen", "tops_sperren", "sitzung_anwesenheit", "top_status", "top_loeschen",
+       "abstimmung_anlegen", "abstimmung_stimme_fuer", "abstimmung_wiedereroeffnen",
+       "jahresplan_speichern", "jahresplan_loeschen",
        "abstimmung_abschliessen", "abstimmung_loeschen", "beschluss_anlegen",
        "beschluss_aus_abstimmung", "beschluss_update", "beschluss_aufheben",
        "beschluss_loeschen", "aufgabe_aus_beschluss", "aufgabe_update", "aufgabe_loeschen",
@@ -129,6 +131,27 @@ async function ausfuehren(base44, ctx, body) {
       return { ziel_id: zielTerminId, anzahl: (tops || []).length };
     }
 
+    // ── Anwesenheit einer Ausschusssitzung ──
+    case "sitzung_anwesenheit": {
+      const { termin_id, mitglied_id, status } = body;
+      if (!termin_id || !mitglied_id || !["Anwesend", "Entschuldigt", "Unentschuldigt"].includes(status)) {
+        throw new Error("Ungültige Anwesenheit");
+      }
+      const termin = await S.KalenderTermin.get(termin_id);
+      if (!termin || !["Ausschusssitzung", "Vorstandssitzung", "Intern"].includes(termin.terminart)) {
+        throw new Error("Sitzung nicht gefunden");
+      }
+      const mitgliedschaft = await S.AusschussMitglied.filter({ mitglied_id, aktiv: true });
+      if (!mitgliedschaft?.length) throw new Error("Kein aktives Ausschussmitglied");
+      const alle = await S.SitzungsAnwesenheit.filter({ termin_id });
+      const bestehend = (alle || []).find((a) => a.mitglied_id === mitglied_id);
+      const anwesenheit = bestehend
+        ? await S.SitzungsAnwesenheit.update(bestehend.id, { status })
+        : await S.SitzungsAnwesenheit.create({ termin_id, mitglied_id, status });
+      await schreibeAudit(base44, ctx, "Sitzung", termin_id, "sitzung_anwesenheit", { mitglied_id, status });
+      return { anwesenheit: anwesenheit || { ...bestehend, status } };
+    }
+
     // ── TOPs ──
     case "top_anlegen": {
       const { termin_id, titel, beschreibung, kategorie, dauer_minuten, vertraulich } = body;
@@ -180,9 +203,30 @@ async function ausfuehren(base44, ctx, body) {
     }
 
     // ── Abstimmung ──
+    case "abstimmung_anlegen": {
+      const { titel, beschreibung, angenommen_ab, termin_id } = body;
+      if (!titel?.trim() || !termin_id) throw new Error("Titel und Sitzung fehlen");
+      const termin = await S.KalenderTermin.get(termin_id);
+      if (!termin || !["Ausschusssitzung", "Vorstandssitzung", "Intern"].includes(termin.terminart)) {
+        throw new Error("Sitzung nicht gefunden");
+      }
+      const grenze = Number(angenommen_ab ?? 50);
+      if (!Number.isFinite(grenze) || grenze < 1 || grenze > 100) throw new Error("Ungültige Mehrheit");
+      const abstimmung = await S.Abstimmung.create({ titel: titel.trim(), beschreibung: beschreibung || "", termin_id,
+        angenommen_ab: grenze, status: "Offen" });
+      await schreibeAudit(base44, ctx, "Abstimmung", abstimmung.id, "abstimmung_anlegen", { termin_id, titel });
+      return { abstimmung };
+    }
     case "abstimmung_stimme": {
       const { abstimmung_id, stimme } = body;
       if (!ctx.currentMitgliedId) throw new Error("Kein Mitglied verknüpft");
+      const aktiv = await S.AusschussMitglied.filter({ mitglied_id: ctx.currentMitgliedId, aktiv: true });
+      if (!aktiv?.length) throw new Error("Nur aktive Ausschussmitglieder dürfen abstimmen");
+      const abs = await S.Abstimmung.get(abstimmung_id);
+      const optionen = Array.isArray(abs?.antwort_optionen) && abs.antwort_optionen.length ? abs.antwort_optionen : ["Ja", "Nein", "Enthaltung"];
+      if (!abs || abs.status !== "Offen" || !optionen.includes(stimme)) {
+        throw new Error("Abstimmung geschlossen oder Stimme ungültig");
+      }
       const existing = (await S.AbstimmungsStimme.filter({ abstimmung_id })).find(
         (s) => s.mitglied_id === ctx.currentMitgliedId
       );
@@ -196,6 +240,29 @@ async function ausfuehren(base44, ctx, body) {
         });
       }
       return { stimme: stimmeRec };
+    }
+    case "abstimmung_stimme_fuer": {
+      const { abstimmung_id, mitglied_id, stimme } = body;
+      const aktiv = await S.AusschussMitglied.filter({ mitglied_id, aktiv: true });
+      const abs = await S.Abstimmung.get(abstimmung_id);
+      const optionen = Array.isArray(abs?.antwort_optionen) && abs.antwort_optionen.length ? abs.antwort_optionen : ["Ja", "Nein", "Enthaltung"];
+      if (!aktiv?.length || !abs || abs.status !== "Offen" || !optionen.includes(stimme)) {
+        throw new Error("Ausschussmitglied, offene Abstimmung und gültige Stimme erforderlich");
+      }
+      const existing = (await S.AbstimmungsStimme.filter({ abstimmung_id })).find((v) => v.mitglied_id === mitglied_id);
+      const stimmeRec = existing
+        ? await S.AbstimmungsStimme.update(existing.id, { stimme })
+        : await S.AbstimmungsStimme.create({ abstimmung_id, mitglied_id, stimme });
+      await schreibeAudit(base44, ctx, "Abstimmung", abstimmung_id, "abstimmung_stimme_fuer", { mitglied_id });
+      return { stimme: stimmeRec || { ...existing, stimme } };
+    }
+    case "abstimmung_wiedereroeffnen": {
+      const { abstimmung_id } = body;
+      const abs = await S.Abstimmung.get(abstimmung_id);
+      if (!abs) throw new Error("Abstimmung nicht gefunden");
+      await S.Abstimmung.update(abstimmung_id, { status: "Offen", ergebnis: null });
+      await schreibeAudit(base44, ctx, "Abstimmung", abstimmung_id, "abstimmung_wiedereroeffnen", {});
+      return { abstimmung_id, status: "Offen", ergebnis: null };
     }
     case "abstimmung_abschliessen": {
       const { abstimmung_id } = body;
@@ -306,13 +373,13 @@ async function ausfuehren(base44, ctx, body) {
 
     // ── Aufgaben ──
     case "aufgabe_anlegen": {
-      const { titel, beschreibung, faellig_am, verantwortlicher_id, prioritaet, termin_id, top_id, beschluss_id } = body;
+      const { titel, beschreibung, faellig_am, verantwortlicher_id, prioritaet, termin_id, top_id, beschluss_id, notizen, status } = body;
       if (!titel) throw new Error("Titel fehlt");
       const aufg = await S.Ausschussaufgabe.create({
-        titel, beschreibung: beschreibung || "", status: "Offen",
+        titel, beschreibung: beschreibung || "", status: ["Offen", "In Bearbeitung", "Erledigt", "Abgebrochen"].includes(status) ? status : "Offen",
         prioritaet: prioritaet || "Mittel", faellig_am: faellig_am || "",
         verantwortlicher_id: verantwortlicher_id || "", termin_id: termin_id || "",
-        top_id: top_id || "", beschluss_id: beschluss_id || "",
+        top_id: top_id || "", beschluss_id: beschluss_id || "", notizen: notizen || "",
       });
       if (top_id) await pushToArr(base44, "Tagesordnungspunkt", top_id, "aufgabe_ids", aufg.id);
       await schreibeAudit(base44, ctx, "Aufgabe", aufg.id, "aufgabe_anlegen", { titel });
@@ -349,7 +416,7 @@ async function ausfuehren(base44, ctx, body) {
       delete fields.aktion;
       const clean = {};
       for (const k of ["titel", "beschreibung", "prioritaet", "faellig_am", "verantwortlicher_id",
-        "status", "fortschritt_notiz", "notizen", "top_id", "beschluss_id", "veranstaltung_id", "wiederholung"]) {
+        "status", "fortschritt_notiz", "notizen", "termin_id", "top_id", "beschluss_id", "veranstaltung_id", "wiederholung"]) {
         if (fields[k] !== undefined) clean[k] = fields[k];
       }
       if (clean.status === "Erledigt") clean.abgeschlossen_am = heuteISO();
@@ -384,6 +451,36 @@ async function ausfuehren(base44, ctx, body) {
       await S.Ausschussaufgabe.delete(aufgabe_id);
       await schreibeAudit(base44, ctx, "Aufgabe", aufgabe_id, "aufgabe_loeschen", {});
       return { aufgabe_id };
+    }
+
+    // ── Jahresplanung ──
+    case "jahresplan_speichern": {
+      const { jahresplan_id, daten } = body;
+      if (!daten || typeof daten !== "object" || !daten.titel?.trim()) throw new Error("Titel fehlt");
+      const monat = Number(daten.monat), tag = Number(daten.tag);
+      if (!Number.isInteger(monat) || monat < 1 || monat > 12 || !Number.isInteger(tag) || tag < 1 || tag > 31) {
+        throw new Error("Ungültiges Plandatum");
+      }
+      const jahresplan = {};
+      for (const feld of ["titel", "beschreibung", "verantwortlicher_id", "prioritaet", "aktiv", "wiederholung", "jahr", "kategorie"]) {
+        if (daten[feld] !== undefined) jahresplan[feld] = daten[feld];
+      }
+      jahresplan.monat = monat;
+      jahresplan.tag = tag;
+      if (!["Niedrig", "Mittel", "Hoch", "Dringend"].includes(jahresplan.prioritaet)) throw new Error("Ungültige Priorität");
+      if (!["Jährlich", "Einmalig"].includes(jahresplan.wiederholung)) throw new Error("Ungültige Wiederholung");
+      const gespeichert = jahresplan_id
+        ? await S.AusschussJahresplan.update(jahresplan_id, jahresplan)
+        : await S.AusschussJahresplan.create(jahresplan);
+      await schreibeAudit(base44, ctx, "Jahresplan", jahresplan_id || gespeichert.id, jahresplan_id ? "jahresplan_update" : "jahresplan_anlegen", { titel: jahresplan.titel });
+      return { jahresplan: gespeichert };
+    }
+    case "jahresplan_loeschen": {
+      const { jahresplan_id } = body;
+      if (!jahresplan_id) throw new Error("Jahresplan-ID fehlt");
+      await S.AusschussJahresplan.delete(jahresplan_id);
+      await schreibeAudit(base44, ctx, "Jahresplan", jahresplan_id, "jahresplan_loeschen", {});
+      return { jahresplan_id };
     }
 
     // ── Protokoll ──
