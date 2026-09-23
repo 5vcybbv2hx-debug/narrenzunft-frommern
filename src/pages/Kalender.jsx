@@ -907,7 +907,7 @@ function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditV
               <Edit size={13} />
             </button>
           )}
-          {onEdit && !istVonVeranstaltung && (
+          {onEdit && !istVonVeranstaltung && !istVonAusfahrt && (
             <button onClick={onEdit} className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
               <Edit size={13} />
             </button>
