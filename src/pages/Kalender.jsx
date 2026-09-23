@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { meldeAnAusfahrtSicher } from '@/lib/ausfahrtAnmeldung';
+import { familienIdsAusVerwandtschaft, angemeldeteIdsFuerTermin } from '@/lib/kalenderMeineTermine';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -87,11 +88,18 @@ export default function Kalender({ nur = 'alle' }) {
   const [quelle, setQuelle] = useState(nur); // 'alle' | 'veranstaltung' | 'ausfahrt'
   const [suche, setSuche] = useState('');
   const [meineTeilnahmen, setMeineTeilnahmen] = useState([]);
+  const [familienMitglieder, setFamilienMitglieder] = useState([]);
+  const [familienAnmeldungen, setFamilienAnmeldungen] = useState([]);
+  const [familienTeilnahmen, setFamilienTeilnahmen] = useState([]);
+  const [familienAusfahrtAnmeldungen, setFamilienAusfahrtAnmeldungen] = useState([]);
+  const [terminUmfang, setTerminUmfang] = useState(['meine', 'familie'].includes(searchParams.get('umfang')) ? searchParams.get('umfang') : 'alle');
+  const [submittingKalenderId, setSubmittingKalenderId] = useState(null);
+  const kalenderPending = useRef(new Set());
 
   const userRolle = user?.role || 'mitglied';
   const erlaubteSichtbarkeiten = ROLLE_ERLAUBTE_SICHTBARKEIT[userRolle] || ['alle'];
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { if (user?.id) loadData(); }, [user?.id]);
 
   const loadData = async () => {
     setLoading(true);
@@ -106,7 +114,7 @@ export default function Kalender({ nur = 'alle' }) {
       // Parallel: Ausfahrten + eigenes Mitglied laden
       const [ausfahrtData, myMArr] = await Promise.all([
         base44.entities.Ausfahrt.list('datum', 300),
-        base44.entities.Mitglied.filter({ user_id: user?.id })
+        base44.entities.Mitglied.filter({ user_id: user.id })
       ]);
       const ausfahrtTermine = (ausfahrtData || []).map(a => ({
         id: `a_${a.id}`,
@@ -133,6 +141,12 @@ export default function Kalender({ nur = 'alle' }) {
 
       const myM = myMArr[0] || null;
       setMyMitglied(myM);
+      setAnmeldungen([]);
+      setMeineTeilnahmen([]);
+      setFamilienMitglieder([]);
+      setFamilienAnmeldungen([]);
+      setFamilienTeilnahmen([]);
+      setFamilienAusfahrtAnmeldungen([]);
 
       if (myM) {
         const [anm, teilnahmen] = await Promise.all([
@@ -141,6 +155,35 @@ export default function Kalender({ nur = 'alle' }) {
         ]);
         setAnmeldungen(anm);
         setMeineTeilnahmen(teilnahmen || []);
+
+        // Nur direkt verknüpfte Kinder und Ehepartner, Beziehungen in beide Richtungen.
+        // Die sichtbaren Termine selbst kommen weiterhin ausschließlich aus getKalenderSicher.
+        try {
+          const [direkt, umgekehrt] = await Promise.all([
+            base44.entities.Verwandtschaft.filter({ mitglied_id: myM.id }),
+            base44.entities.Verwandtschaft.filter({ verwandter_id: myM.id }),
+          ]);
+          const ids = familienIdsAusVerwandtschaft([...(direkt || []), ...(umgekehrt || [])], myM.id);
+          if (ids.length) {
+            const familienDaten = await Promise.all(ids.map(async id => {
+              const [mitglied, kalAnm, teil, ausAnm] = await Promise.all([
+                base44.entities.Mitglied.filter({ id }),
+                base44.entities.KalenderAnmeldung.filter({ mitglied_id: id }),
+                base44.entities.Teilnahme.filter({ mitglied_id: id }),
+                base44.entities.AusfahrtAnmeldung.filter({ mitglied_id: id }),
+              ]);
+              return { mitglied: mitglied?.[0], kalAnm, teil, ausAnm };
+            }));
+            const gueltige = familienDaten.filter(x => x.mitglied && ids.includes(x.mitglied.id));
+            setFamilienMitglieder(gueltige.map(x => x.mitglied));
+            setFamilienAnmeldungen(gueltige.flatMap(x => x.kalAnm || []));
+            setFamilienTeilnahmen(gueltige.flatMap(x => x.teil || []));
+            setFamilienAusfahrtAnmeldungen(gueltige.flatMap(x => x.ausAnm || []));
+          }
+        } catch (e) {
+          console.error('Familientermine laden:', e);
+          toast.error('Familienanmeldungen konnten nicht geladen werden.');
+        }
       }
 
       // Eigene Ausfahrt-Anmeldungen laden (für eigenen Status)
@@ -161,6 +204,16 @@ export default function Kalender({ nur = 'alle' }) {
     setLoading(false);
   };
 
+  const angemeldetePersonen = (termin, umfang = terminUmfang) => {
+    const erlaubteIds = new Set([myMitglied?.id, ...(umfang === 'familie' ? familienMitglieder.map(m => m.id) : [])].filter(Boolean));
+    if (!erlaubteIds.size) return [];
+    const ids = angemeldeteIdsFuerTermin(termin, erlaubteIds,
+      [...anmeldungen, ...familienAnmeldungen], [...meineTeilnahmen, ...familienTeilnahmen],
+      [...ausfahrtAnmeldungen, ...familienAusfahrtAnmeldungen]);
+    return ids.map(id => id === myMitglied?.id ? 'Du' :
+      (familienMitglieder.find(m => m.id === id)?.vorname || 'Familie'));
+  };
+
   const gefilterteTermine = useMemo(() => {
     // Dedup: falls Backend schon Ausfahrten liefert, nicht doppelt reinmergen
     const backendIds = new Set(termine.map(t => t.id));
@@ -173,9 +226,12 @@ export default function Kalender({ nur = 'alle' }) {
       const q = suche.trim().toLowerCase();
       list = list.filter(t => (t.titel || '').toLowerCase().includes(q) || (t.ort || '').toLowerCase().includes(q));
     }
+    if (terminUmfang !== 'alle') {
+      list = list.filter(t => angemeldetePersonen(t).length > 0);
+    }
     // Chronologisch: Datum zuerst, bei gleichem Datum nach Startzeit (Uhrzeit)
     return list.sort((a, b) => (a.datum || '').localeCompare(b.datum || '') || (a.startzeit || '').localeCompare(b.startzeit || ''));
-  }, [termine, ausfahrten, filterArt, quelle, suche]);
+  }, [termine, ausfahrten, filterArt, quelle, suche, terminUmfang, myMitglied, familienMitglieder, anmeldungen, familienAnmeldungen, meineTeilnahmen, familienTeilnahmen, ausfahrtAnmeldungen, familienAusfahrtAnmeldungen]);
 
   const termineImMonat = useMemo(() => {
     const start = format(startOfMonth(monat), 'yyyy-MM-dd');
@@ -188,18 +244,36 @@ export default function Kalender({ nur = 'alle' }) {
     return gefilterteTermine.filter(t => t.datum === key);
   };
 
-  const meineAnmeldung = (terminId) => anmeldungen.find(a => a.termin_id === terminId);
+  const meineAnmeldung = (terminId) => anmeldungen.find(a => a.termin_id === terminId && a.status === 'Angemeldet') ||
+    anmeldungen.find(a => a.termin_id === terminId && a.status === 'Warteliste') ||
+    anmeldungen.find(a => a.termin_id === terminId && a.status === 'Abgesagt');
 
   const handleAnmelden = async (termin) => {
-    if (!myMitglied) return;
-    const vorhandene = meineAnmeldung(termin.id);
-    if (vorhandene) {
-      await base44.entities.KalenderAnmeldung.update(vorhandene.id, { status: 'Abgesagt' });
-    } else {
-      await base44.entities.KalenderAnmeldung.create({ termin_id: termin.id, mitglied_id: myMitglied.id, status: 'Angemeldet' });
+    if (!myMitglied || kalenderPending.current.has(termin.id)) return;
+    kalenderPending.current.add(termin.id);
+    setSubmittingKalenderId(termin.id);
+    try {
+      const vorhandene = meineAnmeldung(termin.id);
+      if (vorhandene?.status === 'Warteliste') {
+        toast.info('Die Warteliste kann nur durch die Verwaltung geändert werden.');
+        return;
+      }
+      if (vorhandene) {
+        await base44.entities.KalenderAnmeldung.update(vorhandene.id, {
+          status: vorhandene.status === 'Angemeldet' ? 'Abgesagt' : 'Angemeldet',
+        });
+      } else {
+        await base44.entities.KalenderAnmeldung.create({ termin_id: termin.id, mitglied_id: myMitglied.id, status: 'Angemeldet' });
+      }
+      const anm = await base44.entities.KalenderAnmeldung.filter({ mitglied_id: myMitglied.id });
+      setAnmeldungen(anm || []);
+    } catch (e) {
+      console.error('Kalender-Anmeldung:', e);
+      toast.error('Anmeldung konnte nicht geändert werden.');
+    } finally {
+      kalenderPending.current.delete(termin.id);
+      setSubmittingKalenderId(null);
     }
-    const anm = await base44.entities.KalenderAnmeldung.filter({ mitglied_id: myMitglied.id });
-    setAnmeldungen(anm);
   };
 
   // === Ausfahrt-Anmeldung ===
@@ -396,14 +470,14 @@ export default function Kalender({ nur = 'alle' }) {
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-semibold text-foreground">Nach Terminart filtern</p>
             {filterArt !== 'alle' && (
-              <button onClick={() => { setFilterArt('alle'); setSearchParams(prev => { prev.delete('filter'); return prev; }); }} className="text-xs text-primary flex items-center gap-1">
+              <button onClick={() => { setFilterArt('alle'); setSearchParams(prev => { const next = new URLSearchParams(prev); next.delete('filter'); return next; }); }} className="text-xs text-primary flex items-center gap-1">
                 <X size={12} /> Zurücksetzen
               </button>
             )}
           </div>
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => { setFilterArt('alle'); setSearchParams(prev => { prev.delete('filter'); return prev; }); }}
+              onClick={() => { setFilterArt('alle'); setSearchParams(prev => { const next = new URLSearchParams(prev); next.delete('filter'); return next; }); }}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${filterArt === 'alle' ? 'bg-primary text-white border-primary' : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'}`}
             >
               Alle
@@ -411,7 +485,7 @@ export default function Kalender({ nur = 'alle' }) {
             {ALLE_TERMINARTEN.map(art => (
               <button
                 key={art}
-                onClick={() => { setFilterArt(art); setSearchParams({ filter: art }); }}
+                onClick={() => { setFilterArt(art); setSearchParams(prev => { const next = new URLSearchParams(prev); next.set('filter', art); return next; }); }}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${filterArt === art ? 'bg-primary text-white border-primary' : `${TERMINART_FARBEN[art]} border`}`}
               >
                 {art}
@@ -453,16 +527,40 @@ export default function Kalender({ nur = 'alle' }) {
         </div>
       </div>
 
+      {/* Nur aktive eigene bzw. direkt verknüpfte Familienanmeldungen anzeigen. */}
+      <div className="flex gap-1.5 mb-4" role="group" aria-label="Terminumfang">
+        {[
+          { key: 'alle', label: 'Alle Termine' },
+          { key: 'meine', label: 'Meine Termine' },
+          ...(familienMitglieder.length || terminUmfang === 'familie' ? [{ key: 'familie', label: 'Familie' }] : []),
+        ].map(option => (
+          <button key={option.key} type="button" aria-pressed={terminUmfang === option.key}
+            onClick={() => {
+              setTerminUmfang(option.key);
+              setListLimit(30);
+              setSearchParams(prev => {
+                const next = new URLSearchParams(prev);
+                if (option.key === 'alle') next.delete('umfang');
+                else next.set('umfang', option.key);
+                return next;
+              });
+            }}
+            className={`flex-1 px-2 py-2.5 min-h-[44px] rounded-lg text-xs sm:text-sm font-medium ${terminUmfang === option.key ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
+            {option.label}
+          </button>
+        ))}
+      </div>
+
       {/* Ansicht-Toggle */}
       <div className="flex gap-1.5 mb-4">
         <button
-          onClick={() => { setAnsicht('liste'); setSearchParams({ ansicht: 'liste' }); }}
+          onClick={() => { setAnsicht('liste'); setSearchParams(prev => { const next = new URLSearchParams(prev); next.set('ansicht', 'liste'); return next; }); }}
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-all ${ansicht === 'liste' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
         >
           <List size={15} /> Liste
         </button>
         <button
-          onClick={() => { setAnsicht('monat'); setSearchParams({ ansicht: 'monat' }); }}
+          onClick={() => { setAnsicht('monat'); setSearchParams(prev => { const next = new URLSearchParams(prev); next.set('ansicht', 'monat'); return next; }); }}
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-all ${ansicht === 'monat' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
         >
           <Calendar size={15} /> Monat
@@ -546,6 +644,8 @@ export default function Kalender({ nur = 'alle' }) {
                   anmeldung={meineAnmeldung(t.id)}
                   teilnahme={t._veranstaltung_id ? (meineTeilnahmen.find(x => x.veranstaltung_id === t._veranstaltung_id && !['Abgesagt'].includes(x.status)) || null) : null}
                   onAnmelden={() => handleAnmelden(t)}
+                  submittingKalender={submittingKalenderId === t.id}
+                  angemeldetePersonen={terminUmfang === 'familie' ? angemeldetePersonen(t) : []}
                   onEdit={admin ? () => { setEditTermin(t); setShowModal(true); } : null}
                   onEditVeranstaltung={admin ? (v) => { setEditVeranstaltung(v); setShowVeranstaltungModal(true); } : null}
                   ausfahrtAnmeldung={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeStatus(t._ausfahrt_id) : null}
@@ -575,6 +675,8 @@ export default function Kalender({ nur = 'alle' }) {
                   anmeldung={meineAnmeldung(t.id)}
                   teilnahme={t._veranstaltung_id ? (meineTeilnahmen.find(x => x.veranstaltung_id === t._veranstaltung_id && !['Abgesagt'].includes(x.status)) || null) : null}
                   onAnmelden={() => handleAnmelden(t)}
+                  submittingKalender={submittingKalenderId === t.id}
+                  angemeldetePersonen={terminUmfang === 'familie' ? angemeldetePersonen(t) : []}
                   onEdit={admin ? () => { setEditTermin(t); setShowModal(true); } : null}
                   onEditVeranstaltung={admin ? (v) => { setEditVeranstaltung(v); setShowVeranstaltungModal(true); } : null}
                   ausfahrtAnmeldung={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeStatus(t._ausfahrt_id) : null}
@@ -621,8 +723,8 @@ export default function Kalender({ nur = 'alle' }) {
             {listeAnzeigen.length === 0 ? (
               <div className="text-center py-16 bg-card border border-border rounded-xl">
                 <Calendar size={36} className="text-muted-foreground/40 mx-auto mb-3" />
-                <p className="text-muted-foreground">{zeigeVergangene ? 'Keine vergangenen Termine' : 'Keine bevorstehenden Termine'}</p>
-                {admin && !zeigeVergangene && (
+                <p className="text-muted-foreground">{terminUmfang !== 'alle' ? 'Keine passenden Anmeldungen gefunden' : zeigeVergangene ? 'Keine vergangenen Termine' : 'Keine bevorstehenden Termine'}</p>
+                {admin && terminUmfang === 'alle' && !zeigeVergangene && (
                   <button onClick={() => { setEditTermin(null); setShowModal(true); }} className="mt-3 text-sm text-primary hover:underline">
                     Ersten Termin erstellen
                   </button>
@@ -636,6 +738,8 @@ export default function Kalender({ nur = 'alle' }) {
                   anmeldung={meineAnmeldung(t.id)}
                   teilnahme={t._veranstaltung_id ? (meineTeilnahmen.find(x => x.veranstaltung_id === t._veranstaltung_id && !['Abgesagt'].includes(x.status)) || null) : null}
                   onAnmelden={() => handleAnmelden(t)}
+                  submittingKalender={submittingKalenderId === t.id}
+                  angemeldetePersonen={terminUmfang === 'familie' ? angemeldetePersonen(t) : []}
                   onEdit={admin ? () => { setEditTermin(t); setShowModal(true); } : null}
                   onEditVeranstaltung={admin ? (v) => { setEditVeranstaltung(v); setShowVeranstaltungModal(true); } : null}
                   ausfahrtAnmeldung={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeStatus(t._ausfahrt_id) : null}
@@ -690,7 +794,7 @@ export default function Kalender({ nur = 'alle' }) {
   );
 }
 
-function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditVeranstaltung, compact = false, ausfahrtAnmeldung, ausfahrtAnmeldeCount, isAusfahrtOpen, canUnregisterAusfahrt, onAusfahrtRegister, onAusfahrtUnregister, submittingAusfahrt }) {
+function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditVeranstaltung, compact = false, ausfahrtAnmeldung, ausfahrtAnmeldeCount, isAusfahrtOpen, canUnregisterAusfahrt, onAusfahrtRegister, onAusfahrtUnregister, submittingAusfahrt, submittingKalender = false, angemeldetePersonen = [] }) {
   const farbeClass = TERMINART_FARBEN[termin.terminart] || TERMINART_FARBEN['Sonstiges'];
   const isAngemeldet = anmeldung?.status === 'Angemeldet';
   const istVonVeranstaltung = termin._quelle === 'veranstaltung';
@@ -733,6 +837,9 @@ function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditV
             {istVonAusfahrt && (
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400">Ausfahrt</span>
             )}
+            {anmeldung?.status === 'Warteliste' && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Warteliste</span>
+            )}
             {isAngemeldet && (
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">✓ Angemeldet</span>
             )}
@@ -754,6 +861,9 @@ function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditV
             )}
             {termin._bus && <span className="text-blue-400">🚌 Bus</span>}
           </div>
+          {angemeldetePersonen.length > 0 && (
+            <p className="text-xs text-primary mt-1">Mit Anmeldung: {angemeldetePersonen.join(', ')}</p>
+          )}
           {!compact && termin.beschreibung && (
             <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{termin.beschreibung}</p>
           )}
@@ -860,13 +970,14 @@ function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditV
         <div className="px-4 pb-3">
           <button
             onClick={onAnmelden}
+            disabled={submittingKalender || anmeldung?.status === 'Warteliste'}
             className={`w-full py-2.5 min-h-[44px] rounded-lg text-sm font-semibold transition-colors ${
               isAngemeldet
                 ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
                 : 'bg-primary text-white hover:bg-primary/90'
             }`}
           >
-            {isAngemeldet ? 'Absagen' : 'Anmelden'}
+            {anmeldung?.status === 'Warteliste' ? 'Warteliste' : submittingKalender ? 'Bitte warten…' : isAngemeldet ? 'Absagen' : 'Anmelden'}
           </button>
         </div>
       )}
