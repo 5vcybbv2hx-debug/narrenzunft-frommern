@@ -135,10 +135,10 @@ const AuthenticatedApp = () => {
         {/* ── Ausschuss (Rollen + Zusatz-Berechtigung 'ausschuss') ── */}
         <Route path="/shop" element={<Shop />} />
         <Route path="/ausschuss" element={
-          <Guard roles={ROLLEN_FUEHRUNG} zusatz={['ausschuss']}><Ausschuss /></Guard>
+          <Guard roles={ROLLEN_VORSTAND} zusatz={['ausschuss']}><Ausschuss /></Guard>
         } />
         <Route path="/ausschuss/sitzung/:id" element={
-          <Guard roles={ROLLEN_FUEHRUNG} zusatz={['ausschuss']}><SitzungDetail /></Guard>
+          <Guard roles={ROLLEN_VORSTAND} zusatz={['ausschuss']}><SitzungDetail /></Guard>
         } />
 
         {/* ── Todos: für alle angemeldeten Nutzer offen — die Seite selbst filtert

@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { istAktuellerSpartenleiter } from '../../shared/ausschussBerechtigung.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -11,18 +12,20 @@ Deno.serve(async (req) => {
 
     if (user.id) {
       const byUserId = await base44.asServiceRole.entities.Mitglied.filter({ user_id: user.id });
-      if (byUserId.length > 0) { mitglied = byUserId[0]; matchStrategy = 'user_id'; }
+      if (byUserId.length > 1) return Response.json({ linked: false, message: 'Mehrere Mitgliedsprofile mit diesem Login verknüpft. Bitte vom Vorstand prüfen lassen.' });
+      if (byUserId.length === 1) { mitglied = byUserId[0]; matchStrategy = 'user_id'; }
     }
 
     if (!mitglied && user.email) {
-      const byEmail = await base44.asServiceRole.entities.Mitglied.filter({ email: user.email });
-      if (byEmail.length > 0) { mitglied = byEmail[0]; matchStrategy = 'email'; }
-      // Case-insensitive Fallback: Auth-Provider geben Emails oft lowercase zurück,
-      // aber in der DB können sie mit Großbuchstaben gespeichert sein (z.B. NZFrommern@gmx.de)
-      if (!mitglied) {
-        const allByEmailDomain = await base44.asServiceRole.entities.Mitglied.list({ limit: 500 });
-        const ciMatch = allByEmailDomain.find(m => m.email && m.email.toLowerCase() === user.email.toLowerCase());
-        if (ciMatch) { mitglied = ciMatch; matchStrategy = 'email_ci'; }
+      // Nur eindeutige E-Mail, inklusive Groß-/Kleinschreibvarianten.
+      const alle = await base44.asServiceRole.entities.Mitglied.list({ limit: 500 });
+      if (alle.length < 500) {
+        const norm = String(user.email).trim().toLowerCase();
+        const matches = alle.filter(m => m.email && m.email.trim().toLowerCase() === norm);
+        if (matches.length === 1) {
+          mitglied = matches[0];
+          matchStrategy = mitglied.email === user.email ? 'email' : 'email_ci';
+        }
       }
     }
 
@@ -30,7 +33,9 @@ Deno.serve(async (req) => {
     // mit dem Namen eines Vorstands-Mitglieds registrieren und dessen Rolle übernehmen.
     // Verknüpfung ausschließlich über user_id oder verifizierte E-Mail-Adresse.
 
-    if (!mitglied) return Response.json({ linked: false, message: 'Kein passendes Mitglied gefunden', user_email: user.email, user_name: user.full_name });
+    if (!mitglied || (mitglied.user_id && mitglied.user_id !== user.id)) {
+      return Response.json({ linked: false, message: 'Keine eindeutige, freie Mitgliedsverknüpfung. Bitte vom Vorstand prüfen lassen.' });
+    }
 
     const updates = [];
 
@@ -57,7 +62,14 @@ Deno.serve(async (req) => {
       updates.push('role-pending (Admin-Zuweisung erforderlich: ' + mitglied.app_rolle + ')');
     }
 
-    return Response.json({ linked: true, mitglied_id: mitglied.id, match_strategy: matchStrategy, updates, app_rolle: mitglied.app_rolle, zusatz_berechtigungen: mitglied.zusatz_berechtigungen || [] });
+    const ausschuss = await base44.asServiceRole.entities.AusschussMitglied.filter({ mitglied_id: mitglied.id, aktiv: true });
+    const zusatz = Array.isArray(mitglied.zusatz_berechtigungen) ? mitglied.zusatz_berechtigungen :
+      String(mitglied.zusatz_berechtigungen || '').split(',').map(x => x.trim()).filter(Boolean);
+    const ausschuss_berechtigt = ['vorstand', 'stellv_vorstand', 'admin'].includes(user.role) ||
+      zusatz.includes('ausschuss') || ausschuss.length > 0 ||
+      await istAktuellerSpartenleiter(base44, mitglied.id);
+    return Response.json({ linked: true, mitglied_id: mitglied.id, match_strategy: matchStrategy, updates,
+      app_rolle: mitglied.app_rolle, zusatz_berechtigungen: zusatz, ausschuss_berechtigt });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

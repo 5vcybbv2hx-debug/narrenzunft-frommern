@@ -12,22 +12,42 @@
  * Verwaltung) bleiben auf Vorstand / Stellv. / Admin beschränkt (kannVerwalten).
  */
 
-const ROLLEN_MIT_ZUGRIFF = ["vorstand", "stellv_vorstand", "spartenleiter", "admin"];
+const ROLLEN_MIT_ZUGRIFF = ["vorstand", "stellv_vorstand", "admin"];
 const ROLLEN_VERWALTUNG = ["vorstand", "stellv_vorstand", "admin"];
+
+/** Nur eindeutig verknüpfte Logins dürfen Mitgliedsrechte übernehmen. */
+export async function findeMitgliedFuerLogin(base44, user) {
+  if (user?.id) {
+    const byId = await base44.asServiceRole.entities.Mitglied.filter({ user_id: user.id });
+    if (byId?.length === 1) return byId[0];
+    if (byId?.length > 1) return null;
+  }
+  if (!user?.email) return null;
+  // E-Mail-Adressen werden teils mit abweichender Großschreibung gespeichert.
+  // Auch solche Dubletten müssen die automatische Verknüpfung verhindern.
+  const alle = await base44.asServiceRole.entities.Mitglied.list({ limit: 500 });
+  if (alle.length >= 500) return null; // Ohne vollständige Trefferliste keine Rechte per E-Mail.
+  const norm = String(user.email).trim().toLowerCase();
+  const kandidaten = alle.filter(m => m.email && m.email.trim().toLowerCase() === norm);
+  if (kandidaten.length !== 1) return null;
+  const m = kandidaten[0];
+  return m.user_id && m.user_id !== user.id ? null : m;
+}
+
+/** Rollenrecht aus einer aktiven Gruppe, statt dauerhaftem Zusatzrecht. */
+export async function istAktuellerSpartenleiter(base44, mitgliedId) {
+  if (!mitgliedId) return false;
+  const gruppen = await base44.asServiceRole.entities.Haesgruppe.list("name", 250);
+  return (gruppen || []).some(g => g.aktiv !== false && (
+    (Array.isArray(g.verantwortliche_ids) && g.verantwortliche_ids.includes(mitgliedId)) ||
+    g.verantwortlicher_id === mitgliedId
+  ));
+}
 
 export async function loeseMitgliedUndRechte(base44, user) {
   if (!user) return { mitglied: null, currentMitgliedId: null, darfAusschuss: false, kannVerwalten: false };
 
-  let mitglied = null;
-  if (user.id) {
-    const treffer = await base44.asServiceRole.entities.Mitglied.filter({ user_id: user.id });
-    mitglied = treffer?.[0] || null;
-  }
-  // Nur bei noch nicht verknüpften Alt-Konten per E-Mail suchen
-  if (!mitglied && user.email) {
-    const treffer = await base44.asServiceRole.entities.Mitglied.filter({ email: user.email });
-    mitglied = treffer?.[0] || null;
-  }
+  const mitglied = await findeMitgliedFuerLogin(base44, user);
 
   const zusatzRaw = mitglied?.zusatz_berechtigungen || [];
   const zusatz = Array.isArray(zusatzRaw)
@@ -46,7 +66,8 @@ export async function loeseMitgliedUndRechte(base44, user) {
   const darfAusschuss =
     ROLLEN_MIT_ZUGRIFF.includes(user.role) ||
     zusatz.includes("ausschuss") ||
-    aktivesAusschussmitglied;
+    aktivesAusschussmitglied ||
+    await istAktuellerSpartenleiter(base44, mitglied?.id);
 
   const kannVerwalten = ROLLEN_VERWALTUNG.includes(user.role);
 

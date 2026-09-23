@@ -45,7 +45,7 @@ export const NAV_SECTIONS = [
     icon: Shield,
     roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'],
     items: [
-      { path: '/ausschuss',  label: 'Ausschussbereich', icon: Lock,        roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'], zusatz: ['ausschuss'] },
+      { path: '/ausschuss',  label: 'Ausschussbereich', icon: Lock,        roles: ['vorstand', 'stellv_vorstand', 'admin'], zusatz: ['ausschuss'] },
       { path: '/todos',      label: 'Aufgaben',         icon: CheckSquare,  roles: ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'], zusatz: ['todos'] },
       { path: '/inventar',   label: 'Inventar & Verleih', icon: Package,    roles: ['vorstand', 'stellv_vorstand', 'admin'], zusatz: ['inventar'] },
     ],
@@ -92,6 +92,7 @@ export function canSeeItem(item, user) {
   if (item.roles.includes(user?.role)) return true;
   const zusatz = user?._mitglied?.zusatz_berechtigungen || [];
   if (item.zusatz && item.zusatz.some(z => zusatz.includes(z))) return true;
+  if (item.zusatz?.includes('ausschuss') && user?._mitglied?.ausschuss_berechtigt === true) return true;
   return false;
 }
 

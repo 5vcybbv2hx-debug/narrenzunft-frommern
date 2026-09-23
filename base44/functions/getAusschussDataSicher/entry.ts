@@ -1,4 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.25";
+import { findeMitgliedFuerLogin, istAktuellerSpartenleiter } from "../../shared/ausschussBerechtigung.ts";
 
 /**
  * Zentrale, sichere Datenquelle für den Ausschussbereich.
@@ -16,20 +17,8 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-    const rollenMitZugriff = ["vorstand", "stellv_vorstand", "spartenleiter", "admin"];
-    let mitglied = null;
-
-    if (user.id) {
-      const treffer = await base44.asServiceRole.entities.Mitglied.filter({ user_id: user.id });
-      mitglied = treffer?.[0] || null;
-    }
-
-    // Nur bei noch nicht verknüpften Alt-Konten per E-Mail suchen. Die E-Mail
-    // kommt aus dem authentifizierten Login und nicht aus dem Request-Body.
-    if (!mitglied && user.email) {
-      const treffer = await base44.asServiceRole.entities.Mitglied.filter({ email: user.email });
-      mitglied = treffer?.[0] || null;
-    }
+    const rollenMitZugriff = ["vorstand", "stellv_vorstand", "admin"];
+    const mitglied = await findeMitgliedFuerLogin(base44, user);
 
     const zusatzRaw = mitglied?.zusatz_berechtigungen || [];
     const zusatz = Array.isArray(zusatzRaw)
@@ -48,7 +37,8 @@ Deno.serve(async (req) => {
     const darfAusschussSehen =
       rollenMitZugriff.includes(user.role) ||
       zusatz.includes("ausschuss") ||
-      aktivesAusschussmitglied;
+      aktivesAusschussmitglied ||
+      await istAktuellerSpartenleiter(base44, mitglied?.id);
 
     if (!darfAusschussSehen) {
       return Response.json({

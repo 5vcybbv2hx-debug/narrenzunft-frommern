@@ -108,6 +108,7 @@ export const AuthProvider = ({ children }) => {
           currentUser._mitglied = {
             id: res.data.mitglied_id,
             zusatz_berechtigungen: res.data.zusatz_berechtigungen || [],
+            ausschuss_berechtigt: res.data.ausschuss_berechtigt === true,
           };
         }
       } catch (e) {

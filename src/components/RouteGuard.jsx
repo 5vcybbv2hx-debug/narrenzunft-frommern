@@ -16,6 +16,7 @@ export function canAccess(user, roles, zusatz) {
   if (zusatz) {
     const userZusatz = user?._mitglied?.zusatz_berechtigungen || [];
     if (zusatz.some(z => userZusatz.includes(z))) return true;
+    if (zusatz.includes('ausschuss') && user?._mitglied?.ausschuss_berechtigt === true) return true;
   }
   return false;
 }

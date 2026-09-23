@@ -110,8 +110,9 @@ export function kannMitgliedProfilSehn(user, myMitglied, zielMitglied, meineKind
  * (wird beim Hinzufügen/Entfernen im Ausschuss automatisch synchronisiert, s. lib/ausschussSync.js).
  */
 export function kannAusschussSehn(user) {
-  return ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'].includes(user?.role)
+  return ['vorstand', 'stellv_vorstand', 'admin'].includes(user?.role)
     || (user?._mitglied?.zusatz_berechtigungen || []).includes('ausschuss')
+    || user?._mitglied?.ausschuss_berechtigt === true
     || isDeveloper(user);
 }
 
