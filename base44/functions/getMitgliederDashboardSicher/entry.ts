@@ -14,18 +14,26 @@ import {
  *
  * KEIN Warnungs-Raten, KEIN "noch nie eingeladen", KEIN Spartenzuordnungs-Hinweis.
  */
-const heuteISO = () => new Date().toISOString().split("T")[0];
+// Geburtstage sind Kalendertage des Vereins (Europe/Berlin), keine UTC-Zeitpunkte.
+// Datumsdifferenzen in UTC berechnen, damit Sommer-/Winterzeit keine Tage verschiebt.
+function naechsteGeburtstageInfo(geb, jetzt = new Date()) {
+  if (typeof geb !== "string") return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(geb);
+  if (!match) return null;
+  const [jahr, monat, tag] = match.slice(1).map(Number);
+  const geboren = new Date(Date.UTC(jahr, monat - 1, tag));
+  if (geboren.getUTCFullYear() !== jahr || geboren.getUTCMonth() !== monat - 1 || geboren.getUTCDate() !== tag) return null;
 
-function naechsteGeburtstageInfo(geb) {
-  if (!geb) return null;
-  const d = new Date(geb);
-  if (isNaN(d.getTime())) return null;
-  const heute = new Date();
-  let naechste = new Date(heute.getFullYear(), d.getMonth(), d.getDate());
-  if (naechste < heute) naechste.setFullYear(naechste.getFullYear() + 1);
-  const tage = Math.ceil((naechste - heute) / 86400000);
-  const wirdAlter = heute.getFullYear() - d.getFullYear() + (naechste.getFullYear() > heute.getFullYear() ? 1 : 0);
-  return { tage, wirdAlter, datum: naechste.toISOString().split("T")[0] };
+  const teile = Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(jetzt);
+  const heute = Object.fromEntries(teile.map(({ type, value }) => [type, Number(value)]));
+  const heuteTag = Date.UTC(heute.year, heute.month - 1, heute.day);
+  // Ein 29. Februar fällt in Nicht-Schaltjahren auf den 1. März (wie zuvor).
+  let naechste = new Date(Date.UTC(heute.year, monat - 1, tag));
+  if (naechste.getTime() < heuteTag) naechste = new Date(Date.UTC(heute.year + 1, monat - 1, tag));
+  const tage = Math.round((naechste.getTime() - heuteTag) / 86400000);
+  return { tage, wirdAlter: naechste.getUTCFullYear() - jahr, datum: naechste.toISOString().slice(0, 10) };
 }
 
 export default async function (req) {
