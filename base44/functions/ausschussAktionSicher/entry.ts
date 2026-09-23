@@ -1,5 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.50";
-import { loeseMitgliedUndRechte, schreibeAudit, generiereBeschlussnummer } from "../../shared/ausschussBerechtigung.ts";
+import { loeseMitgliedUndRechte, schreibeAudit, generiereBeschlussnummer } from "../../shared/ausschussBerechtigung.ts"; // redeploy 481cf71
 
 /**
  * Zentrale, allowlist-basierte Function für Ausschuss-Lifecycle- und
