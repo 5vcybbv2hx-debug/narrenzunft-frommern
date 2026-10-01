@@ -5,6 +5,7 @@ import MobileSelect from '@/components/MobileSelect';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
 import { ArrowLeft, Save, X } from 'lucide-react';
+import { clearEntityCache } from '../lib/entityCache';
 import DateSelect from '../components/ui/DateSelect';
 import TimeSelect from '../components/ui/TimeSelect';
 import { toast } from 'sonner';
@@ -125,6 +126,7 @@ export default function AusfahrtNeu() {
       };
 
       const created = await base44.entities.Ausfahrt.create(payload);
+      clearEntityCache('Ausfahrt');
       if (!created?.id) throw new Error('Keine ID vom Server erhalten');
       navigate(`/ausfahrten/${created.id}`);
     } catch (err) {

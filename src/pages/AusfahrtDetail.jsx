@@ -5,6 +5,7 @@ import { meldeAnAusfahrtSicher } from '@/lib/ausfahrtAnmeldung';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannAusschussSehn, kannAusfahrtCheckin } from '@/lib/roles';
 import { Bus, MapPin, Clock, Calendar, Users, ChevronRight, ArrowLeft, UserPlus, CheckCircle2, Download, X, Pencil, Trash2, Ban, AlertTriangle, QrCode, ScanLine, Search } from 'lucide-react';
+import { clearEntityCache } from '../lib/entityCache';
 import AusfahrtEditModal from '@/components/ausfahrt/AusfahrtEditModal';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -569,6 +570,7 @@ export default function AusfahrtDetail() {
     if (!(await confirmDialog('Soll diese Ausfahrt wirklich abgesagt werden? Alle Anmeldungen bleiben erhalten, aber die Ausfahrt wird als abgesagt markiert.'))) return;
     try {
       await base44.entities.Ausfahrt.update(id, { status: 'Abgesagt' });
+      clearEntityCache('Ausfahrt');
       fetchData();
     } catch (err) {
       toast.error('Absagen fehlgeschlagen: ' + (err?.message || 'Unbekannt'));
@@ -578,6 +580,7 @@ export default function AusfahrtDetail() {
   const saveBusVerantwortliche = async () => {
     try {
       await base44.entities.Ausfahrt.update(id, { bus_verantwortliche: selectedBusVw });
+      clearEntityCache('Ausfahrt');
       setShowBusVwModal(false);
       fetchData();
     } catch (err) {
@@ -593,6 +596,7 @@ export default function AusfahrtDetail() {
         await base44.entities.AusfahrtAnmeldung.deleteMany({ ausfahrt_id: id });
       }
       await base44.entities.Ausfahrt.delete(id);
+      clearEntityCache('Ausfahrt');
       navigate('/ausfahrten');
     } catch (err) {
       toast.error('Löschen fehlgeschlagen: ' + (err?.message || 'Unbekannt'));

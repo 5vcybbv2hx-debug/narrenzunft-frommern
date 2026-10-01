@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { istVerleihZustaendig } from '../lib/verleih';
 import { kannInventarSehn, isAdmin } from '@/lib/roles';
 import { Package, Plus, Lock, ChevronRight, Calendar, CheckCircle2, Clock, XCircle, Globe, User, AlertCircle, AlertTriangle, Inbox, QrCode, Check, X, Phone, Mail, Loader2 } from 'lucide-react';
+import { cachedFetch, clearEntityCache } from '../lib/entityCache';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import AusruestungKarte from '@/components/inventar/AusruestungKarte';
@@ -49,22 +50,22 @@ export default function Inventar() {
     setLoading(true);
     setError(null);
     try {
-            const [a, al, ep, myMArr, va] = await Promise.all([
-        base44.entities.Ausruestung.list('name', 200),
-        base44.entities.Ausleihe.list('-von_datum', 300),
-        admin ? base44.entities.ExternePerson.list('name', 200) : Promise.resolve([]),
+            const [a, al, ep, myMArr, va, alleM] = await Promise.all([
+        cachedFetch(`Ausruestung|${user.id}|liste`, () => base44.entities.Ausruestung.list('name', 200), 90000),
+        cachedFetch(`Ausleihe|${user.id}|liste`, () => base44.entities.Ausleihe.list('-von_datum', 300), 90000),
+        admin ? cachedFetch(`ExternePerson|${user.id}|liste`, () => base44.entities.ExternePerson.list('name', 200), 90000) : Promise.resolve([]),
         base44.entities.Mitglied.filter({ user_id: user?.id }),
-        base44.entities.VerleihAnfrage.list('-created_date', 200),
+        cachedFetch(`VerleihAnfrage|${user.id}|liste`, () => base44.entities.VerleihAnfrage.list('-created_date', 200), 60000),
+        admin ? cachedFetch(`Mitglied|${user.id}|inventar`, () => base44.entities.Mitglied.list('nachname', 500), 120000) : Promise.resolve([]),
       ]);
       setAusruestungen(a.filter(x => x.aktiv !== false));
       setAusleihen(al);
       setExternePersonen(ep);
       setMeinMitglied(myMArr[0] || null);
       setVerleihAnfragen(va);
-      // Mitgliedernamen nur für Admins laden (für Ausleiher-Anzeige und Form)
+      // Mitgliedernamen nur für Admins (für Ausleiher-Anzeige und Form), jetzt parallel im ersten Schwung
       if (admin) {
-        const m = await base44.entities.Mitglied.list('nachname', 500);
-        setMitglieder(m.filter(x => !x.archiviert));
+        setMitglieder(alleM.filter(x => !x.archiviert));
       }
     } catch (err) {
       console.error(err);
@@ -120,9 +121,11 @@ export default function Inventar() {
     try {
       if (editAusruestung) {
         const updated = await base44.entities.Ausruestung.update(editAusruestung.id, form);
+      clearEntityCache('Ausruestung');
         setAusruestungen(prev => prev.map(a => a.id === updated.id ? updated : a));
       } else {
         const neu = await base44.entities.Ausruestung.create({ ...form, aktiv: true });
+      clearEntityCache('Ausruestung');
         setAusruestungen(prev => [...prev, neu]);
       }
       setShowAusruestungForm(false);
@@ -137,6 +140,7 @@ export default function Inventar() {
     setError(null);
     try {
       await base44.entities.Ausruestung.update(id, { aktiv: false });
+      clearEntityCache('Ausruestung');
       setAusruestungen(prev => prev.filter(a => a.id !== id));
       setShowAusruestungForm(false);
       setEditAusruestung(null);
@@ -163,6 +167,7 @@ export default function Inventar() {
     try {
       if (editAusleihe) {
         const updated = await base44.entities.Ausleihe.update(editAusleihe.id, form);
+      clearEntityCache('Ausleihe');
         setAusleihen(prev => prev.map(a => a.id === updated.id ? updated : a));
       } else {
         const neu = await base44.entities.Ausleihe.create({
@@ -170,6 +175,7 @@ export default function Inventar() {
           verantwortlicher_id: meinMitglied?.id || '',
         });
         setAusleihen(prev => [neu, ...prev]);
+      clearEntityCache('Ausleihe');
         // Bestätigungsmail an den Ausleiher (Mitglied/extern), solange nicht zurückgegeben/abgesagt
         if (['Reserviert', 'Ausgeliehen'].includes(neu.status)) {
           base44.functions.invoke('sendeVerleihBestaetigung', { ausleihe_id: neu.id })
@@ -190,6 +196,7 @@ export default function Inventar() {
     setError(null);
     try {
       await base44.entities.Ausleihe.delete(id);
+      clearEntityCache('Ausleihe');
       setAusleihen(prev => prev.filter(a => a.id !== id));
       setShowAusleiheForm(false);
       setEditAusleihe(null);
@@ -220,6 +227,7 @@ export default function Inventar() {
           notizen: 'Automatisch aus QR-Verleih-Anfrage',
         });
         setExternePersonen(prev => [...prev, ep]);
+      clearEntityCache('ExternePerson');
       }
       // Ausleihe als Reservierung anlegen; Preis ggf. individuell angepasst (Vergünstigung)
       const preisTag = parseFloat(String(entscheidung.preisTag ?? '').replace(',', '.'));
@@ -246,7 +254,9 @@ export default function Inventar() {
         antwort_notiz: entscheidung.notiz || '',
       });
       setVerleihAnfragen(prev => prev.map(v => v.id === an.id ? aktualisiert : v));
+      clearEntityCache('VerleihAnfrage');
       setAusleihen(prev => [neuAusleihe, ...prev]);
+      clearEntityCache('Ausleihe');
       setEntscheidung(null);
       // Bestätigungsmail an den externen Anfrager
       base44.functions.invoke('sendeVerleihBestaetigung', {
@@ -276,6 +286,7 @@ export default function Inventar() {
         antwort_notiz: entscheidung.notiz || '',
       });
       setVerleihAnfragen(prev => prev.map(v => v.id === an.id ? aktualisiert : v));
+      clearEntityCache('VerleihAnfrage');
       setEntscheidung(null);
     } catch (err) {
       console.error(err);

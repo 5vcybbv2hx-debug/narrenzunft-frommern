@@ -9,6 +9,7 @@ import {
   Archive, RotateCcw, Lock, Check, ClipboardList, Wallet, Crown, AlertCircle, Heart, LogOut
 } from 'lucide-react';
 import { format, differenceInYears } from 'date-fns';
+import { useQueryClient } from '@tanstack/react-query';
 import { de } from 'date-fns/locale';
 import { isAdmin, kannBankdatenSehn, istNurMitglied, kannMitgliedProfilSehn } from '@/lib/roles';
 import { syncVerantwortliche } from '@/lib/spartenSync';
@@ -104,6 +105,7 @@ export default function MitgliedDetail() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const isNew = id === 'neu';
   const admin = isAdmin(user);
@@ -342,6 +344,7 @@ export default function MitgliedDetail() {
       setError('Speichern fehlgeschlagen.');
       toast.error('Speichern fehlgeschlagen.');
     }
+    queryClient.invalidateQueries({ queryKey: ['mitglieder'] });
     setSaving(false);
   };
 

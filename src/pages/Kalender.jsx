@@ -9,6 +9,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Calendar, List, ChevronLeft, ChevronRight, ChevronDown, Plus, Clock,
   MapPin, Download, Filter, X, Edit, LayoutTemplate, Bus, AlertCircle, Search, Link2 } from 'lucide-react';
+import { cachedFetch, clearEntityCache } from '../lib/entityCache';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth,
   addMonths, subMonths, parseISO, isToday, isSameDay, startOfDay, isBefore, isAfter, differenceInDays } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -106,18 +107,17 @@ export default function Kalender({ nur = 'alle' }) {
   const loadData = async () => {
     setLoading(true);
     try {
-      const result = await base44.functions.invoke('getKalenderSicher', {});
+      // Welle A parallel: Termine (Cache), Ausfahrten (Cache), eigenes Mitglied
+      const [result, ausfahrtData, myMArr] = await Promise.all([
+        cachedFetch(`KalenderTermine|${user.id}`, () => base44.functions.invoke('getKalenderSicher', {}), 120000),
+        cachedFetch(`Ausfahrt|${user.id}|liste`, () => base44.entities.Ausfahrt.list('datum', 300), 120000),
+        base44.entities.Mitglied.filter({ user_id: user.id }),
+      ]);
       if (!result.data.erfolg) {
         setLoading(false);
         return;
       }
       setTermine(result.data.termine);
-
-      // Parallel: Ausfahrten + eigenes Mitglied laden
-      const [ausfahrtData, myMArr] = await Promise.all([
-        base44.entities.Ausfahrt.list('datum', 300),
-        base44.entities.Mitglied.filter({ user_id: user.id })
-      ]);
       const ausfahrtTermine = (ausfahrtData || []).map(a => ({
         id: `a_${a.id}`,
         _ausfahrt_id: a.id,
@@ -153,20 +153,22 @@ export default function Kalender({ nur = 'alle' }) {
       setFamilienAusfahrtAnmeldungen([]);
 
       if (myM) {
-        const [anm, teilnahmen] = await Promise.all([
+        // Welle B parallel: alle eigenen Abhängigkeiten in einem Schwung
+        const [anm, teilnahmen, direkt, umgekehrt, eigeneAusAnm, alleAusAnm] = await Promise.all([
           base44.entities.KalenderAnmeldung.filter({ mitglied_id: myM.id }),
           base44.entities.Teilnahme.filter({ mitglied_id: myM.id }),
+          base44.entities.Verwandtschaft.filter({ mitglied_id: myM.id }),
+          base44.entities.Verwandtschaft.filter({ verwandter_id: myM.id }),
+          base44.entities.AusfahrtAnmeldung.filter({ mitglied_id: myM.id }),
+          admin ? base44.entities.AusfahrtAnmeldung.filter({}) : Promise.resolve(null),
         ]);
         setAnmeldungen(anm);
         setMeineTeilnahmen(teilnahmen || []);
+        setAusfahrtAnmeldungen(admin ? (alleAusAnm || []) : (eigeneAusAnm || []));
 
         // Nur direkt verknüpfte Kinder und Ehepartner, Beziehungen in beide Richtungen.
         // Die sichtbaren Termine selbst kommen weiterhin ausschließlich aus getKalenderSicher.
         try {
-          const [direkt, umgekehrt] = await Promise.all([
-            base44.entities.Verwandtschaft.filter({ mitglied_id: myM.id }),
-            base44.entities.Verwandtschaft.filter({ verwandter_id: myM.id }),
-          ]);
           const ids = familienIdsAusVerwandtschaft([...(direkt || []), ...(umgekehrt || [])], myM.id);
           if (ids.length) {
             const familienDaten = await Promise.all(ids.map(async id => {
@@ -190,16 +192,12 @@ export default function Kalender({ nur = 'alle' }) {
         }
       }
 
-      // Eigene Ausfahrt-Anmeldungen laden (für eigenen Status)
-      let ausfahrtAnm = [];
-      if (myM) {
-        ausfahrtAnm = await base44.entities.AusfahrtAnmeldung.filter({ mitglied_id: myM.id });
-      }
-      setAusfahrtAnmeldungen(ausfahrtAnm || []);
-      // Für Admins: alle Anmeldungen laden (für Zähler)
-      if (admin) {
+      else if (admin) {
+        // Admin ohne eigenes Mitgliederprofil: alle Ausfahrt-Anmeldungen (für Zähler)
         const allAnm = await base44.entities.AusfahrtAnmeldung.filter({});
         setAusfahrtAnmeldungen(allAnm || []);
+      } else {
+        setAusfahrtAnmeldungen([]);
       }
     } catch (e) {
       console.error('[Kalender]', e instanceof Error ? e.message : e);
@@ -863,7 +861,7 @@ export default function Kalender({ nur = 'alle' }) {
         <KalenderTerminModal
           termin={editTermin}
           onClose={() => { setShowModal(false); setEditTermin(null); }}
-          onSaved={() => { setShowModal(false); setEditTermin(null); loadData(); }}
+          onSaved={() => { clearEntityCache('KalenderTermine'); setShowModal(false); setEditTermin(null); loadData(); }}
         />
       )}
 
@@ -872,12 +870,12 @@ export default function Kalender({ nur = 'alle' }) {
         <VeranstaltungBearbeitenModal
           veranstaltung={editVeranstaltung}
           onClose={() => { setShowVeranstaltungModal(false); setEditVeranstaltung(null); }}
-          onSaved={() => { setShowVeranstaltungModal(false); setEditVeranstaltung(null); loadData(); }}
+          onSaved={() => { clearEntityCache('KalenderTermine'); setShowVeranstaltungModal(false); setEditVeranstaltung(null); loadData(); }}
         />
       )}
 
       {/* Vorlagen Modal */}
-      {showVorlagen && <VeranstaltungsvorlagenModal onClose={() => setShowVorlagen(false)} />}
+      {showVorlagen && <VeranstaltungsvorlagenModal onClose={() => { setShowVorlagen(false); clearEntityCache('KalenderTermine'); loadData(); }} />}
 
       {/* Dropdown schließen bei Klick außerhalb */}
       {showNeuDropdown && <div className="fixed inset-0 z-20" onClick={() => setShowNeuDropdown(false)} />}

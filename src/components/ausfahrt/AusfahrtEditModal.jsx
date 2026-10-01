@@ -3,6 +3,7 @@ import DateSelect from '../ui/DateSelect';
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, Save } from 'lucide-react';
+import { clearEntityCache } from '../../lib/entityCache';
 import MobileSelect from '@/components/MobileSelect';
 
 export default function AusfahrtEditModal({ ausfahrt, sparten, onSave, onClose }) {
@@ -91,6 +92,7 @@ export default function AusfahrtEditModal({ ausfahrt, sparten, onSave, onClose }
         notizen: formData.notizen.trim() || undefined
       };
       await base44.entities.Ausfahrt.update(ausfahrt.id, payload);
+      clearEntityCache('Ausfahrt');
       onSave();
     } catch (err) {
       const msg = err?.response?.data?.message || err?.message || 'Unbekannter Fehler';
