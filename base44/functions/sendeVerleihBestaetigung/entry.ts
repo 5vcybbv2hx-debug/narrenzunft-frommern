@@ -44,11 +44,15 @@ Deno.serve(async (req) => {
       return Response.json({ ok: true, sent: 0, grund: 'Keine E-Mail-Adresse des Empfängers vorhanden.' });
     }
 
-    // Preis: Mitglied oder Extern; Tagespreis inkl. Rückgabetag
+    // Preis: individuell vereinbarter Tagespreis (z. B. Vergünstigung bei Genehmigung)
+    // hat Vorrang; sonst Standardpreis je nach Mitglied/Extern.
+    const vereinbart = Number(al?.vereinbarter_preis);
     const istMitglied = al.ausleiher_typ !== 'extern';
-    const preisProTag = istMitglied
-      ? Number(a?.verleih_preis_mitglied ?? a?.verleih_preis ?? 0)
-      : Number(a?.verleih_preis ?? 0);
+    const preisProTag = Number.isFinite(vereinbart) && vereinbart >= 0
+      ? vereinbart
+      : istMitglied
+        ? Number(a?.verleih_preis_mitglied ?? a?.verleih_preis ?? 0)
+        : Number(a?.verleih_preis ?? 0);
     const kaution = Number(a?.verleih_kaution ?? 0);
     const tage = al.von_datum && al.bis_datum
       ? Math.max(1, Math.round((new Date(al.bis_datum) - new Date(al.von_datum)) / 86400000) + 1)

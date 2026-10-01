@@ -221,7 +221,11 @@ export default function Inventar() {
         });
         setExternePersonen(prev => [...prev, ep]);
       }
-      // Ausleihe als Reservierung anlegen
+      // Ausleihe als Reservierung anlegen; Preis ggf. individuell angepasst (Vergünstigung)
+      const preisTag = parseFloat(String(entscheidung.preisTag ?? '').replace(',', '.'));
+      const ausr = ausruestungen.find(a => a.id === an.ausruestung_id);
+      const standardPreis = Number(ausr?.verleih_preis ?? 0);
+      const vereinbarterPreis = Number.isFinite(preisTag) && preisTag >= 0 && preisTag !== standardPreis ? preisTag : undefined;
       const neuAusleihe = await base44.entities.Ausleihe.create({
         ausruestung_id: an.ausruestung_id,
         ausleiher_typ: 'extern',
@@ -232,6 +236,7 @@ export default function Inventar() {
         status: 'Reserviert',
         anzahl: 1,
         verantwortlicher_id: meinMitglied?.id || '',
+        ...(vereinbarterPreis !== undefined && { vereinbarter_preis: vereinbarterPreis }),
       });
       // Anfrage abschließen
       const aktualisiert = await base44.entities.VerleihAnfrage.update(an.id, {
@@ -435,6 +440,32 @@ export default function Inventar() {
 
               {entscheidung?.anfrage?.id === an.id ? (
                 <div className="mt-3 space-y-2">
+                  {entscheidung.typ === 'genehmigen' && kostet > 0 && (() => {
+                    const pIn = parseFloat(String(entscheidung.preisTag ?? '').replace(',', '.')) || 0;
+                    const gesamtNeu = pIn * tage;
+                    return (
+                      <div className="px-3 py-2 rounded-lg bg-secondary border border-border">
+                        <div className="flex items-center justify-between gap-2">
+                          <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Tagespreis anpassbar</label>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="number" min="0" step="0.5" inputMode="decimal"
+                              value={entscheidung.preisTag ?? ''}
+                              onChange={(e) => setEntscheidung(p => ({ ...p, preisTag: e.target.value }))}
+                              className="w-20 px-2 py-1 rounded-md bg-neutral-900 border border-border text-xs text-white text-right focus:outline-none focus:border-primary"
+                            />
+                            <span className="text-xs text-muted-foreground">€ / Tag</span>
+                          </div>
+                        </div>
+                        <p className="text-[11px] mt-1">
+                          <span className={pIn < (ausr?.verleih_preis || 0) ? 'text-green-400' : 'text-muted-foreground'}>
+                            ≈ {gesamtNeu.toFixed(2).replace('.', ',')} € Miete{pIn !== (ausr?.verleih_preis || 0) ? ' (vereinbart)' : ''}
+                          </span>
+                          {ausr?.verleih_kaution > 0 && <span className="text-muted-foreground"> + {Number(ausr.verleih_kaution).toFixed(2).replace('.', ',')} € Kaution</span>}
+                        </p>
+                      </div>
+                    );
+                  })()}
                   <textarea
                     value={entscheidung.notiz}
                     onChange={(e) => setEntscheidung(p => ({ ...p, notiz: e.target.value }))}
@@ -456,7 +487,7 @@ export default function Inventar() {
                 </div>
               ) : (
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  <button onClick={() => setEntscheidung({ anfrage: an, typ: 'genehmigen', notiz: '' })} disabled={!istZustaendig}
+                  <button onClick={() => setEntscheidung({ anfrage: an, typ: 'genehmigen', notiz: '', preisTag: ausr?.verleih_preis != null ? String(ausr.verleih_preis) : '0' })} disabled={!istZustaendig}
                     className="py-2.5 min-h-[44px] rounded-lg bg-green-900/30 border border-green-700/40 text-green-400 text-xs font-semibold hover:bg-green-900/50 transition-colors disabled:opacity-40 flex items-center justify-center gap-1.5">
                     <Check size={14} /> Genehmigen
                   </button>

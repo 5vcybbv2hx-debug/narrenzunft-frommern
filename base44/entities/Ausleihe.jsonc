@@ -58,6 +58,10 @@
       "type": "string",
       "description": "Sch\u00e4den bei R\u00fcckgabe"
     },
+    "vereinbarter_preis": {
+      "type": "number",
+      "description": "Individuell vereinbarter Tagespreis (\u20ac) bei Genehmigung \u2013 z. B. Verg\u00fcnstigung; leer = Standardpreis des Gegenstands"
+    },
     "rueckgabe_datum": {
       "type": "string",
       "format": "date"
