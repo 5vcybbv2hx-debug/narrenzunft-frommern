@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48'; // redeploy eb7b009
 
 /**
  * Sendet eine Buchungs-Bestätigungsmail für eine Ausleihe (Verleih).
