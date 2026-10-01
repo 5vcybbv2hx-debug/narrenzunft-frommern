@@ -12,7 +12,7 @@ import {
 } from '@/lib/ehrungsLogik';
 import {
   Award, AlertTriangle, CheckCircle2, Clock, Download,
-  Star, TrendingUp, ChevronDown, ChevronUp, RefreshCw, Tent, AlertCircle
+  Star, TrendingUp, RefreshCw, Tent, AlertCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';

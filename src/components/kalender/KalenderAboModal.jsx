@@ -17,13 +17,14 @@ export default function KalenderAboModal({ onClose }) {
   const handleErstellen = async () => {
     setStatus('erstelle');
     try {
-      const res = await base44.functions.invoke('generateKalenderFeedToken', { feed_typ: 'persoenlich' });
+      const origin = window.location.origin;
+      const res = await base44.functions.invoke('generateKalenderFeedToken', { feed_typ: 'persoenlich', origin });
       const data = res?.data || res;
       if (!data?.token) throw new Error('Kein Token erhalten');
-      const origin = window.location.origin;
-      const url = data.url?.startsWith('http')
-        ? data.url
-        : `${origin}/api/apps/${appParams.appId}/functions/getKalenderFeedSicher?type=persoenlich&token=${data.token}`;
+      // URL IMMER client-seitig bauen: Die serverseitig gebaute URL läuft im
+      // Production-Dispatcher mit leerer App-ID und Dispatcher-Origin (worker.dev)
+      // und ist dort nicht abrufbar. Der öffentliche App-Origin ist verbindlich.
+      const url = `${origin}/api/apps/${appParams.appId}/functions/getKalenderFeedSicher?type=persoenlich&token=${data.token}`;
       setAboUrl(url);
       setTokenId(data.token_id || '');
       setStatus('bereit');

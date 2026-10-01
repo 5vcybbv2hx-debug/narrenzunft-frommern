@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, User, X, Loader2 } from 'lucide-react';
+import { Search, User, X } from 'lucide-react';
 
 /**
  * MitgliedLiveSuche – Eingabefeld mit Live-Suche in der Mitgliederdatenbank.

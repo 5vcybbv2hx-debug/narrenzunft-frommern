@@ -3,7 +3,7 @@
  * Wird sowohl in VeranstaltungDetail (eigene) als auch in Umzuege (auswärtig) verwendet.
  */
 
-import { MapPin, Clock, Navigation } from 'lucide-react';
+import { Navigation } from 'lucide-react';
 import AdresseAutocomplete from '@/components/AdresseAutocomplete';
 
 function NavButton({ adresse, label }) {

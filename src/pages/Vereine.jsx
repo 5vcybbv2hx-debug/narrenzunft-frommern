@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
-import { Users, Plus, Search, Edit, Trash2, Mail, Phone, Globe, MapPin, ChevronDown, ChevronUp, X, AlertTriangle, Building2 } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Mail, Phone, Globe, MapPin, ChevronDown, ChevronUp, X, AlertTriangle, Building2 } from 'lucide-react';
 
 export default function Vereine() {
   const { user } = useAuth();

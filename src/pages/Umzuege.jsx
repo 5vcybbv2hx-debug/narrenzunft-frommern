@@ -9,11 +9,9 @@ import { Bus, Car, Clock, MapPin, Check, Plus, X, Edit, Trash2, Save, ChevronDow
 import { VeranstaltungsDetailsForm, VeranstaltungsDetailsView } from '@/components/veranstaltung/VeranstaltungsDetails';
 import AdresseAutocomplete from '@/components/AdresseAutocomplete';
 import UmzugCheckinModal from '@/components/umzug/UmzugCheckinModal';
-import UmzugAbschliessenModal from '@/components/umzug/UmzugAbschliessenModal';
 import BusverantwortlicheModal from '@/components/umzug/BusverantwortlicheModal';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { toast } from 'sonner';
 import MobileSelect from '@/components/MobileSelect';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';

@@ -4,12 +4,12 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { syncVerantwortliche } from '@/lib/spartenSync';
 import { useAuth } from '@/lib/AuthContext';
-import { isAdmin, isDeveloper } from '@/lib/roles';
+import { isAdmin } from '@/lib/roles';
 import {
   Calendar, Clock, MapPin, Plus, Users, Wallet, 
-  Send, ChevronLeft, ChevronRight, Edit, Trash2, 
+  Send, Edit, Trash2, 
   Check, X, AlertCircle, MessageSquare, Repeat,
-  Euro, UserCheck, ArrowLeft, Save, UserPlus, Phone, MessageCircle, Search, User
+  Euro, UserCheck, ArrowLeft, Save, Phone, MessageCircle, Search, User
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';

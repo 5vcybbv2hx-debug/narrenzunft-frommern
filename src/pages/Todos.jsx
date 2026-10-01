@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { kannAusschussSehn, isAdmin } from '@/lib/roles';
-import { CheckSquare, Plus, Circle, Clock, CheckCircle2, AlertCircle, Calendar, User as UserIcon, Search, ChevronDown, ListChecks, AlertTriangle, Pencil } from 'lucide-react';
+import { CheckSquare, Plus, Circle, Clock, CheckCircle2, AlertCircle, Calendar, User as UserIcon, Search, ChevronDown, ListChecks, Pencil } from 'lucide-react';
 import { format, differenceInCalendarDays } from 'date-fns';
 import { de } from 'date-fns/locale';
 import TodoForm from '@/components/todos/TodoForm';

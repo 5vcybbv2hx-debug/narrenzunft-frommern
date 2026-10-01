@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
 import { useParams, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { isAdmin, isDeveloper, kannAusfahrtCheckin } from '@/lib/roles';
+import { kannAusfahrtCheckin } from '@/lib/roles';
 import { ArrowLeft, ScanLine, CheckCircle2, XCircle, AlertTriangle, Users, QrCode, Calendar, Search, Volume2, VolumeX } from 'lucide-react';
-import { format, parseISO, isToday, isSameDay } from 'date-fns';
+import { format, parseISO, isToday } from 'date-fns';
 import { de } from 'date-fns/locale';
 
 export default function AusfahrtScanner() {
@@ -403,6 +402,8 @@ export default function AusfahrtScanner() {
     (async () => {
       let html5QrCode;
       try {
+        // html5-qrcode lazy: ~300 KB laden erst beim Start des Scanners
+        const { Html5Qrcode } = await import('html5-qrcode');
         html5QrCode = new Html5Qrcode('qr-reader');
         html5QrCodeRef.current = html5QrCode;
 

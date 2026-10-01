@@ -2,9 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { isAdmin, kannArbeitsdiensteVerwalten } from '@/lib/roles';
-import { Briefcase, Plus, Calendar, MapPin, Users, User, Edit, X, ChevronDown, ChevronUp, LayoutTemplate, List, FileDown } from 'lucide-react';
-import { jsPDF } from 'jspdf';
+import { kannArbeitsdiensteVerwalten } from '@/lib/roles';
+import { Briefcase, Plus, Calendar, MapPin, Users, User, Edit, ChevronDown, ChevronUp, LayoutTemplate, List, FileDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import ArbeitsdienstEditModal from '@/components/arbeitsdienst/ArbeitsdienstEditModal';
@@ -122,7 +121,9 @@ export default function Arbeitsdienste() {
   });
 
   // PDF-Export der aktuell gefilterten Ansicht (respektiert Kommend/Vergangen/Alle + 'Nur meine')
-  const exportierePdf = () => {
+  const exportierePdf = async () => {
+    // jsPDF lazy: ~500 KB (inkl. html2canvas) laden erst beim Export-Klick
+    const { jsPDF } = await import('jspdf');
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
     const SEITENBREITE = 210;
     const RAND = 15;

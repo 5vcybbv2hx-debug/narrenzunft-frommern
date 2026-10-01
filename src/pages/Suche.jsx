@@ -1,5 +1,3 @@
-import { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useSearchParams } from 'react-router-dom';
 import SecureSearch from '@/components/SecureSearch';
 

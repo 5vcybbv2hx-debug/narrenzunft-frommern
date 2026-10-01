@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { X, Upload, FileText, CheckCircle2, AlertTriangle, Download } from 'lucide-react';
+import { X, Upload, FileText, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function HaesHistorieImportModal({ onClose, onImported }) {

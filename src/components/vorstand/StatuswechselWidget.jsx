@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Baby, CheckCircle2, ChevronRight, RefreshCw, X, ArrowRight } from 'lucide-react';
+import { CheckCircle2, RefreshCw, X, ArrowRight } from 'lucide-react';
 
 const STATUS_FARBEN = {
   'Kleinkind 0-3':     'bg-pink-500/20 text-pink-300',

@@ -1,7 +1,7 @@
 import DateSelect from '../ui/DateSelect';
 import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { X, Save, Trash2, Search, AlertTriangle, Users, UserPlus, Plus, Globe, User, AlertCircle } from 'lucide-react';
+import { X, Save, Trash2, Search, AlertTriangle, Users, UserPlus, Plus, AlertCircle } from 'lucide-react';
 import MobileSelect from '@/components/MobileSelect';
 
 const STATUS_OPTIONEN = ['Reserviert', 'Ausgeliehen', 'Zurückgegeben', 'Abgesagt'];

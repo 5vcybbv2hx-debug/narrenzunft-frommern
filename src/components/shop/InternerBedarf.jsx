@@ -5,7 +5,7 @@ import { kannShopVerwalten } from '@/lib/roles';
 import { toast } from 'sonner';
 import {
   ClipboardList, PenLine, Users, Plus, Pencil, Trash2, Download,
-  Lock, Unlock, CheckCircle2, Package, XCircle, Loader2, CalendarDays, ChevronDown, Euro,
+  Lock, Unlock, CheckCircle2, Package, XCircle, Loader2, CalendarDays, Euro,
 } from 'lucide-react';
 import InterneBestellModal from './InterneBestellModal';
 import InternerArtikelModal from './InternerArtikelModal';

@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { meldeAnAusfahrtSicher } from '@/lib/ausfahrtAnmeldung';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannAusschussSehn, kannAusfahrtCheckin } from '@/lib/roles';
-import { Bus, MapPin, Clock, Calendar, Users, ChevronRight, ArrowLeft, UserPlus, CheckCircle2, Download, X, Pencil, Trash2, Ban, AlertTriangle, QrCode, ScanLine, Search } from 'lucide-react';
+import { Bus, MapPin, Clock, Calendar, Users, ArrowLeft, UserPlus, CheckCircle2, Download, X, Pencil, Trash2, Ban, AlertTriangle, QrCode, ScanLine, Search } from 'lucide-react';
 import { clearEntityCache } from '../lib/entityCache';
 import AusfahrtEditModal from '@/components/ausfahrt/AusfahrtEditModal';
 import { format, parseISO, differenceInDays } from 'date-fns';

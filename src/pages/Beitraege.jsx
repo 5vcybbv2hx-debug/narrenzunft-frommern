@@ -3,7 +3,6 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
 import { CreditCard, Search, Plus, Settings, Bus, AlertCircle, Check, AlertTriangle } from 'lucide-react';
-import { format } from 'date-fns';
 import { toast } from 'sonner';
 import BeitraegeEinstellungen from '@/components/beitraege/BeitraegeEinstellungen';
 import Buskosten from '@/components/beitraege/Buskosten';

@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import {
-  Users, Heart, Baby, Calendar, Briefcase, Shirt, Bus,
+  Users, Heart, Baby, Calendar, Briefcase,
   Plus, X, Search, ChevronRight, Phone, Mail, Trash2,
-  UserPlus, Check, AlertCircle, ArrowRight, Bus as BusIcon,
+  UserPlus, Check, AlertCircle,
   Pencil
 } from 'lucide-react';
 import { differenceInYears } from 'date-fns';

@@ -6,8 +6,8 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { kannCheckinDurchfuehren, isAdmin as checkAdmin } from '@/lib/roles';
 import {
-  ArrowLeft, Edit, Save, X, Calendar, MapPin, Clock, Users,
-  Bus, Check, XCircle, Search, Trash2, CheckCircle, Send, Link, Copy, RefreshCw
+  ArrowLeft, Edit, Save, X,
+  Bus, Check, Search, Trash2, CheckCircle, Send, Link, Copy, RefreshCw
 } from 'lucide-react';
 import ArbeitsdienstTab from '@/components/veranstaltung/ArbeitsdienstTab';
 import DokumenteTab from '@/components/veranstaltung/DokumenteTab';

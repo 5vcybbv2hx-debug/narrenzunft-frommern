@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, ROLLEN_LABELS } from '@/lib/roles';
-import { Shield, Search, ChevronDown, ChevronUp, Lock, Check, AlertCircle, User, Users, ClipboardList, Wallet, Crown, Package, Landmark, CheckSquare, ShoppingBag } from 'lucide-react';
+import { Shield, Search, ChevronDown, ChevronUp, Lock, Check, AlertCircle, User, ClipboardList, Wallet, Crown, Package, Landmark, CheckSquare, ShoppingBag } from 'lucide-react';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 const ROLLEN_OPTIONEN = [

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
-import { Inbox, Phone, Mail, Calendar, Package, ArrowRight } from 'lucide-react';
+import { Inbox, Phone, Calendar, Package, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 

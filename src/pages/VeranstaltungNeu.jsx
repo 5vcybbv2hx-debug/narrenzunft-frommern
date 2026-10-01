@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
 import {
-  ArrowLeft, Save, Plus, X, ChevronDown, ChevronUp,
+  ArrowLeft, Save, Plus, ChevronDown, ChevronUp,
   Bookmark, Briefcase, Trash2
 } from 'lucide-react';
 import AdresseAutocomplete from '@/components/AdresseAutocomplete';

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { X, CheckCircle, Loader2, AlertTriangle, Users, Bus } from 'lucide-react';
+import { X, CheckCircle, Loader2, AlertTriangle } from 'lucide-react';
 
 export default function UmzugAbschliessenModal({ veranstaltung, onClose, onAbgeschlossen }) {
   const [loading, setLoading] = useState(false);

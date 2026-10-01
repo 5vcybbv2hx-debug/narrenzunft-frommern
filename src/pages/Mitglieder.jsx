@@ -15,7 +15,6 @@ import MitgliederCockpit from '@/components/mitglieder/MitgliederCockpit';
 import { AenderungsantraegeVerwaltung } from '@/components/mitglied/Aenderungsantraege';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import { format, differenceInYears } from 'date-fns';
-import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 
 const STATUS_COLORS = {
@@ -213,6 +212,8 @@ export default function Mitglieder() {
     // The new selected export intentionally excludes payment and mandate information.
     if (selectedOnly) rows.forEach(row => { for (const k of ['Kontoinhaber', 'Bank', 'IBAN', 'Mandatnummer', 'Mandatdatum']) delete row[k]; });
     if (!rows.length) { toast.error('Keine Mitglieder zum Export ausgewählt.'); return; }
+    // xlsx lazy: ~400 KB laden erst beim Export-Klick
+    const XLSX = await import('xlsx').then(m => m.default ?? m);
     const ws = XLSX.utils.json_to_sheet(rows);
     // Spaltenbreiten
     ws['!cols'] = Object.keys(rows[0] || {}).map((k) => ({ wch: Math.max(k.length, 12) }));

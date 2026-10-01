@@ -9,7 +9,6 @@ import HaesHistorieImportModal from '@/components/haes/HaesHistorieImportModal';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 const STATUS_COLORS = {
   'Aktiv': 'bg-green-500/20 text-green-400',
