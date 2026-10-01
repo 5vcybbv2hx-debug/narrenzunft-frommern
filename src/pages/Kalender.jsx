@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  Calendar, List, ChevronLeft, ChevronRight, Plus, Clock,
+  Calendar, List, ChevronLeft, ChevronRight, ChevronDown, Plus, Clock,
   MapPin, Download, Filter, X, Edit, LayoutTemplate, Bus, AlertCircle, Search, Link2 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth,
   addMonths, subMonths, parseISO, isToday, isSameDay, startOfDay, isBefore, isAfter, differenceInDays } from 'date-fns';
@@ -887,13 +887,13 @@ export default function Kalender({ nur = 'alle' }) {
   );
 }
 
-function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditVeranstaltung, compact = false, ausfahrtAnmeldung, ausfahrtAnmeldeCount, isAusfahrtOpen, canUnregisterAusfahrt, onAusfahrtRegister, onAusfahrtUnregister, submittingAusfahrt, submittingKalender = false, angemeldetePersonen = [] }) {
+function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditVeranstaltung, ausfahrtAnmeldung, ausfahrtAnmeldeCount, isAusfahrtOpen, canUnregisterAusfahrt, onAusfahrtRegister, onAusfahrtUnregister, submittingAusfahrt, submittingKalender = false, angemeldetePersonen = [] }) {
   const farbeClass = TERMINART_FARBEN[termin.terminart] || TERMINART_FARBEN['Sonstiges'];
   const isAngemeldet = anmeldung?.status === 'Angemeldet';
   const istVonVeranstaltung = termin._quelle === 'veranstaltung';
   const istVonAusfahrt = termin._quelle === 'ausfahrt';
   const istTeilnahme = istVonVeranstaltung && teilnahme && !['Abgesagt', 'Abgemeldet'].includes(teilnahme.status);
-  const [detailsOffen, setDetailsOffen] = useState(false);
+  const [offen, setOffen] = useState(false);
 
   const hatDetails = istVonVeranstaltung && (
     termin._busparkplatz_adresse || termin._busparkplatz_treffzeit ||
@@ -903,38 +903,34 @@ function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditV
   );
 
   return (
-    <div className={`bg-card border border-border rounded-xl overflow-hidden ${compact ? '' : 'hover:border-primary/30 transition-colors'}`}>
-      <div className="flex gap-3 p-3 sm:p-4">
-        {/* Datum */}
-        <div className="w-14 h-14 rounded-xl bg-primary/10 flex flex-col items-center justify-center shrink-0 py-1">
+    <div className="bg-card border border-border rounded-xl overflow-hidden">
+      {/* Kompakter Kopf: Datum + Titel + Art. Alles Weitere per Antippen. */}
+      <button
+        onClick={() => setOffen(v => !v)}
+        className="w-full flex items-center gap-3 p-3 text-left hover:bg-secondary/50 transition-colors"
+      >
+        <div className="w-12 h-12 rounded-lg bg-primary/10 flex flex-col items-center justify-center shrink-0 py-0.5">
           <span className="text-[9px] text-muted-foreground leading-none capitalize">
             {format(parseISO(termin.datum), 'EEEEEE', { locale: de })}
           </span>
-          <span className="text-base font-bold text-primary leading-none mt-0.5">
+          <span className="text-sm font-bold text-primary leading-none mt-0.5">
             {format(parseISO(termin.datum), 'd')}
           </span>
           <span className="text-[8px] text-muted-foreground leading-none mt-0.5">
             {format(parseISO(termin.datum), 'MMM', { locale: de })}
           </span>
         </div>
+        <p className="flex-1 min-w-0 font-semibold text-foreground text-sm break-words">{termin.titel}</p>
+        <span className={`shrink-0 text-[10px] px-2 py-0.5 rounded-full border font-medium ${farbeClass}`}>
+          {termin.terminart}
+        </span>
+        <ChevronDown size={14} className={`shrink-0 text-muted-foreground transition-transform ${offen ? 'rotate-180' : ''}`} />
+      </button>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start gap-2 flex-wrap">
-            <p className="font-semibold text-foreground text-sm break-words">{termin.titel}</p>
-            <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${farbeClass}`}>
-              {termin.terminart}
-            </span>
-            {anmeldung?.status === 'Warteliste' && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Warteliste</span>
-            )}
-            {isAngemeldet && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">✓ Angemeldet</span>
-            )}
-            {istTeilnahme && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">✓ Angemeldet</span>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2 mt-1 text-xs text-muted-foreground">
+      {/* Aufgeklappt: alle Details + Anmeldungen */}
+      {offen && (
+        <div className="px-4 pb-4 pt-3 border-t border-border space-y-3">
+          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
             {(termin.startzeit || termin.endzeit) && (
               <span className="flex items-center gap-1">
                 <Clock size={10} />
@@ -942,198 +938,193 @@ function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditV
               </span>
             )}
             {termin.ort && (
-              <span className="flex items-center gap-1 truncate">
+              <span className="flex items-center gap-1">
                 <MapPin size={10} /> {termin.ort}
               </span>
             )}
             {termin._bus && <span className="text-blue-400">🚌 Bus</span>}
           </div>
-          {angemeldetePersonen.length > 0 && (
-            <p className="text-xs text-primary mt-1">Mit Anmeldung: {angemeldetePersonen.join(', ')}</p>
-          )}
-          {!compact && termin.beschreibung && (
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{termin.beschreibung}</p>
-          )}
-          {/* Details-Toggle für Veranstaltungen */}
-          {hatDetails && !compact && (
-            <button
-              onClick={() => setDetailsOffen(v => !v)}
-              className="mt-2 flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
-            >
-              <ChevronRight size={12} className={`transition-transform ${detailsOffen ? 'rotate-90' : ''}`} />
-              {detailsOffen ? 'Details einklappen' : 'Details anzeigen'}
-            </button>
-          )}
-        </div>
 
-        <div className="flex flex-col gap-1 shrink-0">
-          {istVonVeranstaltung && (
-            <Link
-              to={`/veranstaltungen/${termin._veranstaltung_id}`}
-              className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors text-xs"
-              title="Zur Veranstaltung"
-            >
-              →
-            </Link>
-          )}
-          {istVonAusfahrt && (
-            <Link
-              to={`/ausfahrten/${termin._ausfahrt_id}`}
-              className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors text-xs"
-              title="Zur Ausfahrt"
-            >
-              →
-            </Link>
-          )}
-          {onEditVeranstaltung && istVonVeranstaltung && ['Umzug', 'Abendveranstaltung'].includes(termin.terminart) && (
-            <button
-              onClick={() => onEditVeranstaltung({ id: termin._veranstaltung_id, ...termin, typ: termin.terminart })}
-              className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-              title="Bearbeiten"
-            >
-              <Edit size={13} />
-            </button>
-          )}
-          {onEdit && !istVonVeranstaltung && !istVonAusfahrt && (
-            <button onClick={onEdit} className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
-              <Edit size={13} />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Veranstaltungs-Detailinfos */}
-      {detailsOffen && hatDetails && (
-        <div className="px-4 pb-4 space-y-2 border-t border-border pt-3">
-          {(termin._busparkplatz_treffzeit || termin._busparkplatz_adresse) && (
-            <DetailBlock emoji="🅿️" title="Bus / Heimatpunkt">
-              {termin._busparkplatz_treffzeit && <p className="text-xs text-foreground">Abfahrt: {termin._busparkplatz_treffzeit} Uhr</p>}
-              {termin._busparkplatz_adresse && <p className="text-xs text-muted-foreground">{termin._busparkplatz_adresse}</p>}
-            </DetailBlock>
-          )}
-          {(termin._umzugsaufstellung_ort || termin._umzugsaufstellung_zeit) && (
-            <DetailBlock emoji="📋" title="Aufstellung">
-              {termin._umzugsaufstellung_zeit && <p className="text-xs text-foreground">{termin._umzugsaufstellung_zeit} Uhr</p>}
-              {termin._umzugsaufstellung_ort && <p className="text-xs text-muted-foreground">{termin._umzugsaufstellung_ort}</p>}
-            </DetailBlock>
-          )}
-          {termin._festakt_ort && (
-            <DetailBlock emoji="🎉" title="Festakt">
-              {termin._festakt_zeit && <p className="text-xs text-foreground">{termin._festakt_zeit} Uhr</p>}
-              <p className="text-xs text-muted-foreground">{termin._festakt_ort}</p>
-            </DetailBlock>
-          )}
-          {termin._veranstaltungsort_adresse && (
-            <DetailBlock emoji="📍" title="Veranstaltungsort">
-              <p className="text-xs text-muted-foreground">{termin._veranstaltungsort_adresse}</p>
-            </DetailBlock>
-          )}
-          {(termin._einlass_zeit || termin._beginn_zeit) && (
-            <DetailBlock emoji="🕐" title="Zeiten">
-              {termin._einlass_zeit && <p className="text-xs text-foreground">Einlass: {termin._einlass_zeit} Uhr</p>}
-              {termin._beginn_zeit && <p className="text-xs text-foreground">Beginn: {termin._beginn_zeit} Uhr</p>}
-            </DetailBlock>
-          )}
-          {termin._dresscode && (
-            <DetailBlock emoji="👗" title="Dresscode">
-              <p className="text-xs text-foreground">{termin._dresscode}</p>
-            </DetailBlock>
-          )}
-          {termin._hinweise && (
-            <DetailBlock emoji="📝" title="Hinweise">
-              <p className="text-xs text-muted-foreground whitespace-pre-line">{termin._hinweise}</p>
-            </DetailBlock>
-          )}
-          <Link
-            to={`/veranstaltungen/${termin._veranstaltung_id}`}
-            className="inline-flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors mt-1"
-          >
-            Zur vollständigen Veranstaltungsseite →
-          </Link>
-        </div>
-      )}
-
-      {termin.anmeldbar && !istVonVeranstaltung && !istVonAusfahrt && onAnmelden && (
-        <div className="px-3 sm:px-4 pb-3">
-          <button
-            onClick={onAnmelden}
-            disabled={submittingKalender || anmeldung?.status === 'Warteliste'}
-            className={`w-full py-2.5 min-h-[44px] rounded-lg text-sm font-semibold transition-colors ${
-              isAngemeldet
-                ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
-                : 'bg-primary text-white hover:bg-primary/90'
-            }`}
-          >
-            {anmeldung?.status === 'Warteliste' ? 'Warteliste' : submittingKalender ? 'Bitte warten…' : isAngemeldet ? 'Absagen' : 'Anmelden'}
-          </button>
-        </div>
-      )}
-      {termin.anmeldbar && istVonVeranstaltung && (
-        <div className="px-3 sm:px-4 pb-3">
-          <Link
-            to={`/veranstaltungen/${termin._veranstaltung_id}`}
-            className="block w-full py-2.5 min-h-[44px] rounded-lg text-sm font-semibold text-center bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-          >
-            Zur Anmeldung →
-          </Link>
-        </div>
-      )}
-      {istVonAusfahrt && (
-        <div className="px-3 sm:px-4 pb-3 space-y-2">
-          {/* Anmeldestand kompakt in einer Zeile */}
-          {(ausfahrtAnmeldeCount !== undefined || ausfahrtAnmeldung || (termin._bus && termin._startnummer)) && (
-            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              {ausfahrtAnmeldeCount !== undefined && (
-                <span className="flex items-center gap-1">
-                  {termin._bus ? <Bus size={11} /> : null}
-                  {ausfahrtAnmeldeCount} angemeldet
-                </span>
+          {(anmeldung?.status === 'Warteliste' || isAngemeldet || istTeilnahme) && (
+            <div className="flex flex-wrap gap-2">
+              {anmeldung?.status === 'Warteliste' && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Warteliste</span>
               )}
-              {termin._bus && termin._startnummer && (
-                <span>· Startnr. {termin._startnummer}</span>
-              )}
-              {ausfahrtAnmeldung && (
-                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">
-                  ✓ {ausfahrtAnmeldung.status}
-                </span>
+              {(isAngemeldet || istTeilnahme) && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">✓ Angemeldet</span>
               )}
             </div>
           )}
-          {/* An-/Abmelde-Buttons */}
-          {onAusfahrtRegister && !ausfahrtAnmeldung && (
+
+          {angemeldetePersonen.length > 0 && (
+            <p className="text-xs text-primary">Mit Anmeldung: {angemeldetePersonen.join(', ')}</p>
+          )}
+          {termin.beschreibung && (
+            <p className="text-xs text-muted-foreground whitespace-pre-line">{termin.beschreibung}</p>
+          )}
+
+          {/* Veranstaltungs-Details */}
+          {hatDetails && (
+            <div className="space-y-2">
+              {(termin._busparkplatz_treffzeit || termin._busparkplatz_adresse) && (
+                <DetailBlock emoji="🅿️" title="Bus / Heimatpunkt">
+                  {termin._busparkplatz_treffzeit && <p className="text-xs text-foreground">Abfahrt: {termin._busparkplatz_treffzeit} Uhr</p>}
+                  {termin._busparkplatz_adresse && <p className="text-xs text-muted-foreground">{termin._busparkplatz_adresse}</p>}
+                </DetailBlock>
+              )}
+              {(termin._umzugsaufstellung_ort || termin._umzugsaufstellung_zeit) && (
+                <DetailBlock emoji="📋" title="Aufstellung">
+                  {termin._umzugsaufstellung_zeit && <p className="text-xs text-foreground">{termin._umzugsaufstellung_zeit} Uhr</p>}
+                  {termin._umzugsaufstellung_ort && <p className="text-xs text-muted-foreground">{termin._umzugsaufstellung_ort}</p>}
+                </DetailBlock>
+              )}
+              {termin._festakt_ort && (
+                <DetailBlock emoji="🎉" title="Festakt">
+                  {termin._festakt_zeit && <p className="text-xs text-foreground">{termin._festakt_zeit} Uhr</p>}
+                  <p className="text-xs text-muted-foreground">{termin._festakt_ort}</p>
+                </DetailBlock>
+              )}
+              {termin._veranstaltungsort_adresse && (
+                <DetailBlock emoji="📍" title="Veranstaltungsort">
+                  <p className="text-xs text-muted-foreground">{termin._veranstaltungsort_adresse}</p>
+                </DetailBlock>
+              )}
+              {(termin._einlass_zeit || termin._beginn_zeit) && (
+                <DetailBlock emoji="🕐" title="Zeiten">
+                  {termin._einlass_zeit && <p className="text-xs text-foreground">Einlass: {termin._einlass_zeit} Uhr</p>}
+                  {termin._beginn_zeit && <p className="text-xs text-foreground">Beginn: {termin._beginn_zeit} Uhr</p>}
+                </DetailBlock>
+              )}
+              {termin._dresscode && (
+                <DetailBlock emoji="👗" title="Dresscode">
+                  <p className="text-xs text-foreground">{termin._dresscode}</p>
+                </DetailBlock>
+              )}
+              {termin._hinweise && (
+                <DetailBlock emoji="📝" title="Hinweise">
+                  <p className="text-xs text-muted-foreground whitespace-pre-line">{termin._hinweise}</p>
+                </DetailBlock>
+              )}
+            </div>
+          )}
+
+          {/* Navigation + Bearbeiten */}
+          {(istVonVeranstaltung || istVonAusfahrt || onEdit || onEditVeranstaltung) && (
+            <div className="flex flex-wrap items-center gap-2">
+              {istVonVeranstaltung && (
+                <Link
+                  to={`/veranstaltungen/${termin._veranstaltung_id}`}
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
+                >
+                  Zur Veranstaltung →
+                </Link>
+              )}
+              {istVonAusfahrt && (
+                <Link
+                  to={`/ausfahrten/${termin._ausfahrt_id}`}
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
+                >
+                  Zur Ausfahrt →
+                </Link>
+              )}
+              {onEditVeranstaltung && istVonVeranstaltung && ['Umzug', 'Abendveranstaltung'].includes(termin.terminart) && (
+                <button
+                  onClick={() => onEditVeranstaltung({ id: termin._veranstaltung_id, ...termin, typ: termin.terminart })}
+                  className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                  title="Bearbeiten"
+                >
+                  <Edit size={13} />
+                </button>
+              )}
+              {onEdit && !istVonVeranstaltung && !istVonAusfahrt && (
+                <button onClick={onEdit} className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Bearbeiten">
+                  <Edit size={13} />
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Anmeldung: reiner Termin */}
+          {termin.anmeldbar && !istVonVeranstaltung && !istVonAusfahrt && onAnmelden && (
             <button
-              onClick={onAusfahrtRegister}
-              disabled={!isAusfahrtOpen || submittingAusfahrt === termin._ausfahrt_id}
+              onClick={onAnmelden}
+              disabled={submittingKalender || anmeldung?.status === 'Warteliste'}
               className={`w-full py-2.5 min-h-[44px] rounded-lg text-sm font-semibold transition-colors ${
-                isAusfahrtOpen
-                  ? 'bg-primary text-white hover:bg-primary/90'
-                  : 'bg-secondary text-muted-foreground border border-border cursor-not-allowed'
+                isAngemeldet
+                  ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
+                  : 'bg-primary text-white hover:bg-primary/90'
               }`}
             >
-              {submittingAusfahrt === termin._ausfahrt_id ? 'Anmeldung...' : isAusfahrtOpen ? 'Anmelden' : 'Anmeldung geschlossen'}
+              {anmeldung?.status === 'Warteliste' ? 'Warteliste' : submittingKalender ? 'Bitte warten…' : isAngemeldet ? 'Absagen' : 'Anmelden'}
             </button>
           )}
-          {onAusfahrtUnregister && ausfahrtAnmeldung && (
-            <button
-              onClick={onAusfahrtUnregister}
-              disabled={!canUnregisterAusfahrt || submittingAusfahrt === termin._ausfahrt_id}
-              className={`w-full py-2.5 min-h-[44px] rounded-lg text-sm font-semibold border transition-colors ${
-                canUnregisterAusfahrt
-                  ? 'border-red-500/40 text-red-400 hover:bg-red-500/10'
-                  : 'border-border text-muted-foreground cursor-not-allowed'
-              }`}
-              title={!canUnregisterAusfahrt ? 'Abmeldung nur bis 3 Tage vor der Ausfahrt möglich' : ''}
+
+          {/* Anmeldung: Veranstaltung */}
+          {termin.anmeldbar && istVonVeranstaltung && (
+            <Link
+              to={`/veranstaltungen/${termin._veranstaltung_id}`}
+              className="block w-full py-2.5 min-h-[44px] rounded-lg text-sm font-semibold text-center bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
             >
-              {submittingAusfahrt === termin._ausfahrt_id ? 'Abmeldung...' : 'Abmelden'}
-            </button>
+              Zur Anmeldung →
+            </Link>
           )}
-          {/* Link zur Detail-Seite */}
-          <Link
-            to={`/ausfahrten/${termin._ausfahrt_id}`}
-            className="block text-xs text-muted-foreground hover:text-primary text-center pt-1"
-          >
-            Details ansehen →
-          </Link>
+
+          {/* Ausfahrt: Anmeldestand + An-/Abmelden */}
+          {istVonAusfahrt && (
+            <div className="space-y-2">
+              {(ausfahrtAnmeldeCount !== undefined || ausfahrtAnmeldung || (termin._bus && termin._startnummer)) && (
+                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  {ausfahrtAnmeldeCount !== undefined && (
+                    <span className="flex items-center gap-1">
+                      {termin._bus ? <Bus size={11} /> : null}
+                      {ausfahrtAnmeldeCount} angemeldet
+                    </span>
+                  )}
+                  {termin._bus && termin._startnummer && (
+                    <span>· Startnr. {termin._startnummer}</span>
+                  )}
+                  {ausfahrtAnmeldung && (
+                    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">
+                      ✓ {ausfahrtAnmeldung.status}
+                    </span>
+                  )}
+                </div>
+              )}
+              {onAusfahrtRegister && !ausfahrtAnmeldung && (
+                <button
+                  onClick={onAusfahrtRegister}
+                  disabled={!isAusfahrtOpen || submittingAusfahrt === termin._ausfahrt_id}
+                  className={`w-full py-2.5 min-h-[44px] rounded-lg text-sm font-semibold transition-colors ${
+                    isAusfahrtOpen
+                      ? 'bg-primary text-white hover:bg-primary/90'
+                      : 'bg-secondary text-muted-foreground border border-border cursor-not-allowed'
+                  }`}
+                >
+                  {submittingAusfahrt === termin._ausfahrt_id ? 'Anmeldung...' : isAusfahrtOpen ? 'Anmelden' : 'Anmeldung geschlossen'}
+                </button>
+              )}
+              {onAusfahrtUnregister && ausfahrtAnmeldung && (
+                <button
+                  onClick={onAusfahrtUnregister}
+                  disabled={!canUnregisterAusfahrt || submittingAusfahrt === termin._ausfahrt_id}
+                  className={`w-full py-2.5 min-h-[44px] rounded-lg text-sm font-semibold border transition-colors ${
+                    canUnregisterAusfahrt
+                      ? 'border-red-500/40 text-red-400 hover:bg-red-500/10'
+                      : 'border-border text-muted-foreground cursor-not-allowed'
+                  }`}
+                  title={!canUnregisterAusfahrt ? 'Abmeldung nur bis 3 Tage vor der Ausfahrt möglich' : ''}
+                >
+                  {submittingAusfahrt === termin._ausfahrt_id ? 'Abmeldung...' : 'Abmelden'}
+                </button>
+              )}
+              <Link
+                to={`/ausfahrten/${termin._ausfahrt_id}`}
+                className="block text-xs text-muted-foreground hover:text-primary text-center"
+              >
+                Details ansehen →
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </div>
