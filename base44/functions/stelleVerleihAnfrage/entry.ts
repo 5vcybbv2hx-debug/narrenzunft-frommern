@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48'; // redeploy 6562760
 
 /**
  * HTML-Entity-Escaping für Benutzereingaben, die in E-Mail-Templates eingebettet werden.
