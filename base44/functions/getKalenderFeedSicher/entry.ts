@@ -16,7 +16,6 @@ const escapeICS = (str) => (str || '')
   .replace(/,/g, '\\,')
   .replace(/\r?\n/g, '\\n');
 
-// YYYY-MM-DD + optional HH:MM -> ICS-UTC-Stempel
 const dtStamp = () => new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
 const formatICSDate = (datum, zeit) => {
@@ -43,7 +42,7 @@ const buildICS = (events, calName) => {
     lines.push(`DTSTAMP:${dtStamp()}`);
     if (isAllDay) {
       const endTag = new Date((t.datum || '') + 'T00:00:00Z');
-      endTag.setUTCDate(endTag.getUTCDate() + 1); // DTEND bei VALUE=DATE ist exklusiv
+      endTag.setUTCDate(endTag.getUTCDate() + 1);
       lines.push(`DTSTART;VALUE=DATE:${formatICSDate(t.datum)}`);
       lines.push(`DTEND;VALUE=DATE:${formatICSDate(endTag.toISOString().slice(0, 10))}`);
     } else {
@@ -71,8 +70,6 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Token erforderlich' }, { status: 400 });
     }
 
-    // 1. Token validieren (Hash vergleichen) — der Token IST die Authentifizierung,
-    // Kalender-Apps koennen sich nicht einloggen.
     const tokenHash = await hashToken(plainToken);
     const base44 = createClientFromRequest(req);
     const tokenResp = await base44.asServiceRole.entities.KalenderFeedToken.filter({
@@ -86,21 +83,18 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid or revoked token' }, { status: 401 });
     }
 
-    // 2. Zuletzt genutzt aktualisieren (fehler-tolerant)
     try {
       await base44.asServiceRole.entities.KalenderFeedToken.update(token.id, {
         zuletzt_genutzt_am: new Date().toISOString(),
       });
-    } catch { /* Nutzungsspur darf den Feed nicht blockieren */ }
+    } catch { }
 
-    // 3. Mitglied + LIVE-Rolle laden (Rolle kann sich seit Token-Erstellung geaendert haben)
     const mitgliedResp = await base44.asServiceRole.entities.Mitglied.filter({ id: token.mitglied_id });
     const mitglied = mitgliedResp[0] || null;
     const rolle = mitglied?.app_rolle || token.rolle || 'mitglied';
     const fuehrung = ['admin', 'vorstand', 'stellv_vorstand'].includes(rolle);
     const imAusschuss = fuehrung || ['ausschuss'].includes(rolle);
 
-    // 4. Termine: alles, was das Mitglied im App-Kalender sieht
     const alleTermine = await base44.asServiceRole.entities.KalenderTermin.list('datum', 500);
 
     let kinderIds = [];
@@ -114,10 +108,10 @@ Deno.serve(async (req) => {
     const vor30Tagen = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
 
     const sichtbareTermine = alleTermine.filter(t => {
-      if (t.datum < vor30Tagen) return false; // Vergangenheit aelterer als 30 Tage ausblenden
+      if (t.datum < vor30Tagen) return false;
       const s = t.sichtbarkeit || 'alle';
       if (s === 'alle') return true;
-      if (['eingeladen'].includes(s)) {
+      if (s === 'eingeladen') {
         if (!mitglied) return false;
         return (t.eingeladene_ids || []).includes(mitglied.id) ||
           (t.eingeladene_ids || []).some(id => kinderIds.includes(id));
@@ -135,14 +129,12 @@ Deno.serve(async (req) => {
       return false;
     });
 
-    // 5. Ausfahrten (Bus & Umzuege) — im App-Kalender fuer alle sichtbar
     const alleAusfahrten = await base44.asServiceRole.entities.Ausfahrt.list('datum', 200);
     const sichtbareAusfahrten = alleAusfahrten.filter(a => {
       if (!a.datum || a.datum < vor30Tagen) return false;
       return a.status !== 'Abgesagt';
     });
 
-    // 6. Events zusammenfuehren (Termin + Ausfahrt), Ausfahrt mit Logistik-Infos
     const events = [
       ...sichtbareTermine.map(t => ({
         id: `termin-${t.id}`,

@@ -28,11 +28,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'feed_typ erforderlich' }, { status: 400 });
     }
 
-    // 1. Eigenes Mitglied laden
     const eigeneMResp = await base44.asServiceRole.entities.Mitglied.filter({ user_id: user.id });
     const eigenMitglied = eigeneMResp[0];
 
-    // 2. Alte aktive Tokens deaktivieren
     const alteTokens = await base44.asServiceRole.entities.KalenderFeedToken.filter({ 
       user_id: user.id,
       feed_typ: feed_typ,
@@ -46,12 +44,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 3. Neuen Token generieren
     const plainToken = generateRandomToken();
     const tokenHash = await hashToken(plainToken);
     const jetzt = new Date().toISOString();
 
-    // 4. Token speichern (nur Hash)
     const neuerToken = await base44.asServiceRole.entities.KalenderFeedToken.create({
       user_id: user.id,
       mitglied_id: eigenMitglied?.id || '',
@@ -62,23 +58,23 @@ Deno.serve(async (req) => {
       aktiv: true,
     });
 
-    // 5. Plain Token zurückgeben (nur einmal!)
+    const url = (() => {
+      try {
+        const reqUrl = new URL(req.url);
+        const appIdMatch = reqUrl.pathname.match(/\/apps\/([^/]+)\/functions/);
+        const appId = appIdMatch ? appIdMatch[1] : '';
+        return `${reqUrl.origin}/api/apps/${appId}/functions/getKalenderFeedSicher?type=${feed_typ}&token=${plainToken}`;
+      } catch {
+        return `/api/kalender/${feed_typ}.ics?token=${plainToken}`;
+      }
+    })();
+
     return Response.json({
       erfolg: true,
       token: plainToken,
       token_id: neuerToken.id,
       feed_typ: feed_typ,
-      // Volle oeffentliche URL zurueckgeben (Origin + App-ID aus dem Request-Pfad ableiten)
-      url: (() => {
-        try {
-          const reqUrl = new URL(req.url);
-          const appIdMatch = reqUrl.pathname.match(/\/apps\/([^/]+)\/functions/);
-          const appId = appIdMatch ? appIdMatch[1] : '';
-          return `${reqUrl.origin}/api/apps/${appId}/functions/getKalenderFeedSicher?type=${feed_typ}&token=${plainToken}`;
-        } catch {
-          return `/api/kalender/${feed_typ}.ics?token=${plainToken}`;
-        }
-      })(),
+      url,
     });
   } catch (error) {
     console.error(error);
