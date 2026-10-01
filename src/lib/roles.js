@@ -73,6 +73,15 @@ export function kannCheckinDurchfuehren(user) {
   return ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'].includes(user?.role) || isDeveloper(user);
 }
 
+/**
+ * Check-In bei AUSFAHRTEN: nur Vorstand, Stellv. Vorstand und Admin.
+ * Busverantwortliche kommen pro Ausfahrt hinzu (ausfahrt.bus_verantwortliche,
+ * geprüft in der jeweiligen Seite). Spartenleiter sind bewusst NICHT enthalten.
+ */
+export function kannAusfahrtCheckin(user) {
+  return ['vorstand', 'stellv_vorstand', 'admin'].includes(user?.role) || isDeveloper(user);
+}
+
 /** Ehrungen verwalten */
 export function kannEhrungenVerwalten(user) {
   return ['vorstand', 'stellv_vorstand', 'admin'].includes(user?.role) || isDeveloper(user);

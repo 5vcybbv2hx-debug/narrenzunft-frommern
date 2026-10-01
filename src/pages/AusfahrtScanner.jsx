@@ -3,7 +3,7 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { useParams, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { isAdmin, isDeveloper, kannCheckinDurchfuehren } from '@/lib/roles';
+import { isAdmin, isDeveloper, kannAusfahrtCheckin } from '@/lib/roles';
 import { ArrowLeft, ScanLine, CheckCircle2, XCircle, AlertTriangle, Users, QrCode, Calendar, Search, Volume2, VolumeX } from 'lucide-react';
 import { format, parseISO, isToday, isSameDay } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -124,8 +124,8 @@ export default function AusfahrtScanner() {
   const currentMitglied = mitglieder.find(m => m.user_id === user?.id || m.email === user?.email);
   const isBusverantwortlicher = ausfahrt?.bus_verantwortliche?.includes(currentMitglied?.id);
 
-  // Vorstand / Admin / Spartenleiter können immer scannen (über kannCheckinDurchfuehren aus roles.js)
-  const hasGeneralAccess = kannCheckinDurchfuehren(user) || isAdmin(user) || isDeveloper(user);
+  // Check-in bei Ausfahrten: nur Vorstand / Stellv. / Admin (Spartenleiter bewusst nicht)
+  const hasGeneralAccess = kannAusfahrtCheckin(user);
 
   // Busverantwortliche nur am Ausfahrttag
   const isAusfahrtTag = () => {

@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { meldeAnAusfahrtSicher } from '@/lib/ausfahrtAnmeldung';
 import { useAuth } from '@/lib/AuthContext';
-import { isAdmin, kannAusschussSehn } from '@/lib/roles';
+import { isAdmin, kannAusschussSehn, kannAusfahrtCheckin } from '@/lib/roles';
 import { Bus, MapPin, Clock, Calendar, Users, ChevronRight, ArrowLeft, UserPlus, CheckCircle2, Download, X, Pencil, Trash2, Ban, AlertTriangle, QrCode, ScanLine, Search } from 'lucide-react';
 import AusfahrtEditModal from '@/components/ausfahrt/AusfahrtEditModal';
 import { format, parseISO, differenceInDays } from 'date-fns';
@@ -139,7 +139,7 @@ export default function AusfahrtDetail() {
 
   // Ist aktueller User Busverantwortlicher?
   const isBusverantwortlicher = ausfahrt?.bus_verantwortliche?.includes(currentMitglied?.id);
-  const kannScannen = isAdmin(user) || isBusverantwortlicher;
+  const kannScannen = kannAusfahrtCheckin(user) || isBusverantwortlicher;
 
   // Familienmitglieder des aktuellen Mitglieds (nur Ehepartner/in und Kind)
   // Normalisiert auf die Sicht des Mitglieds: Beziehungen können in beide
@@ -338,12 +338,16 @@ export default function AusfahrtDetail() {
 
   // Prüft das Check-in-Zeitfenster; gibt true/false und zeigt bei Missachtung einen Toast
   const pruefeCheckinFenster = () => {
+    if (!kannEinchecken) {
+      toast.error('Check-in nur für Vorstand, Admin und Busverantwortliche möglich.');
+      return false;
+    }
     if (istVorDemTag) {
       toast.error(`Check-in ist erst am ${(ausfahrt.datum || '').split('-').reverse().join('.')} möglich.`);
       return false;
     }
     if (!istAmAusfahrtstag && !hatKorrekturRecht) {
-      toast.error('Nachträglicher Check-in nur für Vorstand und Spartenleiter möglich.');
+      toast.error('Nachträglicher Check-in nur für Vorstand und Admin möglich.');
       return false;
     }
     return true;
@@ -377,8 +381,12 @@ export default function AusfahrtDetail() {
 
   // Check-in rückgängig machen (Korrektur) — am Tag für alle Berechtigten, danach nur Führung
   const handleCheckOut = async (registration) => {
+    if (!kannEinchecken) {
+      toast.error('Korrektur nur für Vorstand, Admin und Busverantwortliche möglich.');
+      return;
+    }
     if (!istAmAusfahrtstag && !hatKorrekturRecht) {
-      toast.error('Korrektur nur für Vorstand und Spartenleiter möglich.');
+      toast.error('Nachträgliche Korrektur nur für Vorstand und Admin möglich.');
       return;
     }
     const name = registration?.name || 'Person';
@@ -730,9 +738,12 @@ export default function AusfahrtDetail() {
   const heuteStr = new Date().toISOString().split('T')[0];
   const istAmAusfahrtstag = ausfahrt?.datum === heuteStr;
   const istVorDemTag = ausfahrt?.datum && ausfahrt.datum > heuteStr;
-  const hatKorrekturRecht = ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'].includes(user?.role);
-  // Am Tag selbst: alle Berechtigten. Danach: nur Vorstand/Stellv./Spartenleiter/Admin (Korrektur).
-  const darfJetztChecken = !istVorDemTag && (istAmAusfahrtstag || hatKorrekturRecht);
+  // Check-in bei Ausfahrten: nur Vorstand, Stellv. Vorstand, Admin und die
+  // Busverantwortlichen dieser Ausfahrt (Spartenleiter bewusst NICHT mehr).
+  const hatKorrekturRecht = kannAusfahrtCheckin(user);
+  const kannEinchecken = hatKorrekturRecht || isBusverantwortlicher;
+  // Am Tag selbst: Vorstand/Admin/Busverantwortliche. Danach: nur Vorstand/Stellv./Admin (Korrektur).
+  const darfJetztChecken = !istVorDemTag && kannEinchecken && (istAmAusfahrtstag || hatKorrekturRecht);
 
   // Eigene Familien-Anmeldungen (für QR-Anzeige)
   const meineFamilienAnmeldungen = familienmitglieder
