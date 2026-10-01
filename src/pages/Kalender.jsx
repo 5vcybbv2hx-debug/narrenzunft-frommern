@@ -399,6 +399,31 @@ export default function Kalender({ nur = 'alle' }) {
     </div>
   );
 
+  // ── Filter-Status (kompakt: alles Laeuftzeichen steckt im Filter-Sheet) ──
+  const QUELL_OPTIONEN = [
+    { key: 'alle', label: 'Alle' },
+    { key: 'veranstaltung', label: 'Veranstaltungen' },
+    { key: 'ausfahrt', label: 'Bus' },
+  ];
+  const quelleLabel = (key) => (QUELL_OPTIONEN.find(q => q.key === key) || {}).label || key;
+  const hatAktiveFilter = filterArt !== 'alle' || terminUmfang !== 'alle' || suche.trim() !== '' || quelle !== nur;
+  const heuteStr = format(new Date(), 'yyyy-MM-dd');
+  const kommendCount = gefilterteTermine.filter(t => (t.datum || '') >= heuteStr).length;
+  const vergangeneCount = gefilterteTermine.length - kommendCount;
+  const resetAlleFilter = () => {
+    setFilterArt('alle');
+    setTerminUmfang('alle');
+    setListLimit(30);
+    setSuche('');
+    setQuelle(nur);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.delete('filter');
+      next.delete('umfang');
+      return next;
+    });
+  };
+
   return (
     <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-3xl mx-auto">
       {/* Header */}
@@ -420,7 +445,7 @@ export default function Kalender({ nur = 'alle' }) {
           </button>
           <button
             onClick={() => setShowFilter(!showFilter)}
-            className={`relative p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors ${showFilter || filterArt !== 'alle' ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+            className={`relative p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors ${showFilter || hatAktiveFilter ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
           >
             <Filter size={18} />
           </button>
@@ -473,107 +498,155 @@ export default function Kalender({ nur = 'alle' }) {
         </div>
       </div>
 
-      {/* Filter */}
-      {showFilter && (
-        <div className="bg-card border border-border rounded-xl p-4 mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold text-foreground">Nach Terminart filtern</p>
-            {filterArt !== 'alle' && (
-              <button onClick={() => { setFilterArt('alle'); setSearchParams(prev => { const next = new URLSearchParams(prev); next.delete('filter'); return next; }); }} className="text-xs text-primary flex items-center gap-1">
-                <X size={12} /> Zurücksetzen
-              </button>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => { setFilterArt('alle'); setSearchParams(prev => { const next = new URLSearchParams(prev); next.delete('filter'); return next; }); }}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${filterArt === 'alle' ? 'bg-primary text-white border-primary' : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'}`}
-            >
-              Alle
+      {/* Aktive Filter als kompakte, abwaehlbare Chips */}
+      {hatAktiveFilter && (
+        <div className="flex flex-wrap items-center gap-1.5 mb-3">
+          {quelle !== nur && (
+            <button onClick={() => setQuelle(nur)}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/15 text-primary text-xs font-medium border border-primary/30 hover:bg-primary/25 transition-colors">
+              <X size={11} /> {quelleLabel(quelle)}
             </button>
-            {ALLE_TERMINARTEN.map(art => (
-              <button
-                key={art}
-                onClick={() => { setFilterArt(art); setSearchParams(prev => { const next = new URLSearchParams(prev); next.set('filter', art); return next; }); }}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${filterArt === art ? 'bg-primary text-white border-primary' : `${TERMINART_FARBEN[art]} border`}`}
-              >
-                {art}
-              </button>
-            ))}
-          </div>
-
-
-        </div>
-      )}
-
-      {/* Quellen-Umschalter + Suche */}
-      <div className="flex flex-col sm:flex-row gap-2 mb-3">
-        <div className="flex gap-1.5 p-1 bg-secondary rounded-lg">
-          {[
-            { key: 'alle', label: 'Alle' },
-            { key: 'veranstaltung', label: 'Veranstaltungen' },
-            { key: 'ausfahrt', label: 'Bus' },
-          ].map(q => (
-            <button key={q.key} onClick={() => setQuelle(q.key)}
-              className={`flex-1 px-3 py-2 min-h-[40px] rounded-md text-xs font-semibold transition-all ${quelle === q.key ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground'}`}>
-              {q.label}
+          )}
+          {terminUmfang !== 'alle' && (
+            <button onClick={() => { setTerminUmfang('alle'); setListLimit(30); setSearchParams(prev => { const next = new URLSearchParams(prev); next.delete('umfang'); return next; }); }}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/15 text-primary text-xs font-medium border border-primary/30 hover:bg-primary/25 transition-colors">
+              <X size={11} /> {terminUmfang === 'meine' ? 'Meine Termine' : 'Familie'}
             </button>
-          ))}
-        </div>
-        <div className="relative flex-1">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-          <input
-            value={suche}
-            onChange={e => setSuche(e.target.value)}
-            placeholder="Suchen (Titel / Ort)…"
-            className="w-full pl-9 pr-8 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
-          />
-          {suche && (
-            <button onClick={() => setSuche('')} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground hover:text-foreground">
-              <X size={14} />
+          )}
+          {filterArt !== 'alle' && (
+            <button onClick={() => { setFilterArt('alle'); setSearchParams(prev => { const next = new URLSearchParams(prev); next.delete('filter'); return next; }); }}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/15 text-primary text-xs font-medium border border-primary/30 hover:bg-primary/25 transition-colors">
+              <X size={11} /> {filterArt}
+            </button>
+          )}
+          {suche.trim() !== '' && (
+            <button onClick={() => setSuche('')}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/15 text-primary text-xs font-medium border border-primary/30 hover:bg-primary/25 transition-colors max-w-[200px]">
+              <X size={11} /> <span className="truncate">„{suche}"</span>
             </button>
           )}
         </div>
-      </div>
+      )}
 
-      {/* Nur aktive eigene bzw. direkt verknüpfte Familienanmeldungen anzeigen. */}
-      <div className="flex gap-1.5 mb-4" role="group" aria-label="Terminumfang">
-        {[
-          { key: 'alle', label: 'Alle Termine' },
-          { key: 'meine', label: 'Meine Termine' },
-          ...(familienMitglieder.length || terminUmfang === 'familie' ? [{ key: 'familie', label: 'Familie' }] : []),
-        ].map(option => (
-          <button key={option.key} type="button" aria-pressed={terminUmfang === option.key}
-            onClick={() => {
-              setTerminUmfang(option.key);
-              setListLimit(30);
-              setSearchParams(prev => {
-                const next = new URLSearchParams(prev);
-                if (option.key === 'alle') next.delete('umfang');
-                else next.set('umfang', option.key);
-                return next;
-              });
-            }}
-            className={`flex-1 px-2 py-2.5 min-h-[44px] rounded-lg text-xs sm:text-sm font-medium ${terminUmfang === option.key ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
-            {option.label}
+      {/* Filter-Sheet: Suche, Quelle, Umfang, Terminart */}
+      {showFilter && (
+        <div className="bg-card border border-border rounded-xl p-4 mb-4 space-y-4">
+          <div className="relative">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            <input
+              value={suche}
+              onChange={e => setSuche(e.target.value)}
+              placeholder="Suchen (Titel / Ort)…"
+              className="w-full pl-9 pr-8 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+            />
+            {suche && (
+              <button onClick={() => setSuche('')} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground hover:text-foreground">
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Quelle</p>
+            <div className="flex gap-1.5 p-1 bg-secondary rounded-lg">
+              {QUELL_OPTIONEN.map(q => (
+                <button key={q.key} onClick={() => setQuelle(q.key)}
+                  className={`flex-1 px-3 py-2 min-h-[40px] rounded-md text-xs font-semibold transition-all ${quelle === q.key ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground'}`}>
+                  {q.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Nur aktive eigene bzw. direkt verknuepfte Familienanmeldungen anzeigen. */}
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Umfang</p>
+            <div className="flex gap-1.5 p-1 bg-secondary rounded-lg" role="group" aria-label="Terminumfang">
+              {[
+                { key: 'alle', label: 'Alle' },
+                { key: 'meine', label: 'Meine' },
+                ...(familienMitglieder.length || terminUmfang === 'familie' ? [{ key: 'familie', label: 'Familie' }] : []),
+              ].map(option => (
+                <button key={option.key} type="button" aria-pressed={terminUmfang === option.key}
+                  onClick={() => {
+                    setTerminUmfang(option.key);
+                    setListLimit(30);
+                    setSearchParams(prev => {
+                      const next = new URLSearchParams(prev);
+                      if (option.key === 'alle') next.delete('umfang');
+                      else next.set('umfang', option.key);
+                      return next;
+                    });
+                  }}
+                  className={`flex-1 px-2 py-2 min-h-[40px] rounded-md text-xs font-semibold transition-all ${terminUmfang === option.key ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground'}`}>
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Terminart</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => { setFilterArt('alle'); setSearchParams(prev => { const next = new URLSearchParams(prev); next.delete('filter'); return next; }); }}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${filterArt === 'alle' ? 'bg-primary text-white border-primary' : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'}`}
+              >
+                Alle
+              </button>
+              {ALLE_TERMINARTEN.map(art => (
+                <button
+                  key={art}
+                  onClick={() => { setFilterArt(art); setSearchParams(prev => { const next = new URLSearchParams(prev); next.set('filter', art); return next; }); }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${filterArt === art ? 'bg-primary text-white border-primary' : `${TERMINART_FARBEN[art]} border`}`}
+                >
+                  {art}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {hatAktiveFilter && (
+            <button onClick={resetAlleFilter}
+              className="w-full py-2.5 min-h-[44px] rounded-lg bg-secondary text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Alle Filter zurücksetzen
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Kompakte Segmentleiste: Ansicht + Zeitraum */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <div className="flex gap-1 p-1 bg-secondary rounded-lg">
+          <button
+            onClick={() => { setAnsicht('liste'); setSearchParams(prev => { const next = new URLSearchParams(prev); next.set('ansicht', 'liste'); return next; }); }}
+            className={`flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[38px] rounded-md text-xs sm:text-sm font-semibold transition-all ${ansicht === 'liste' ? 'bg-primary text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            <List size={14} /> Liste
           </button>
-        ))}
-      </div>
-
-      {/* Ansicht-Toggle */}
-      <div className="flex gap-1.5 mb-4">
-        <button
-          onClick={() => { setAnsicht('liste'); setSearchParams(prev => { const next = new URLSearchParams(prev); next.set('ansicht', 'liste'); return next; }); }}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-all ${ansicht === 'liste' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
-        >
-          <List size={15} /> Liste
-        </button>
-        <button
-          onClick={() => { setAnsicht('monat'); setSearchParams(prev => { const next = new URLSearchParams(prev); next.set('ansicht', 'monat'); return next; }); }}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-all ${ansicht === 'monat' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
-        >
-          <Calendar size={15} /> Monat
-        </button>
+          <button
+            onClick={() => { setAnsicht('monat'); setSearchParams(prev => { const next = new URLSearchParams(prev); next.set('ansicht', 'monat'); return next; }); }}
+            className={`flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[38px] rounded-md text-xs sm:text-sm font-semibold transition-all ${ansicht === 'monat' ? 'bg-primary text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            <Calendar size={14} /> Monat
+          </button>
+        </div>
+        {ansicht === 'liste' && (
+          <div className="flex gap-1 p-1 bg-secondary rounded-lg">
+            <button
+              onClick={() => setZeigeVergangene(false)}
+              className={`px-3 py-1.5 min-h-[38px] rounded-md text-xs sm:text-sm font-semibold transition-all ${!zeigeVergangene ? 'bg-primary text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Kommend ({kommendCount})
+            </button>
+            <button
+              onClick={() => setZeigeVergangene(true)}
+              className={`px-3 py-1.5 min-h-[38px] rounded-md text-xs sm:text-sm font-semibold transition-all ${zeigeVergangene ? 'bg-primary text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Vergangen ({vergangeneCount})
+            </button>
+          </div>
+        )}
       </div>
 
       {/* MONATSANSICHT */}
@@ -714,21 +787,6 @@ export default function Kalender({ nur = 'alle' }) {
         const listeAnzeigen = zeigeVergangene ? listeVergangen : listeKommend;
         return (
           <div className="space-y-3">
-            {/* Toggle Kommend/Vergangen */}
-            <div className="flex gap-2 text-xs">
-              <button
-                onClick={() => setZeigeVergangene(false)}
-                className={`px-3 py-1.5 rounded-full font-medium transition-all ${!zeigeVergangene ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
-              >
-                Kommend ({listeKommend.length})
-              </button>
-              <button
-                onClick={() => setZeigeVergangene(true)}
-                className={`px-3 py-1.5 rounded-full font-medium transition-all ${zeigeVergangene ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
-              >
-                Vergangen ({listeVergangen.length})
-              </button>
-            </div>
             {listeAnzeigen.length === 0 ? (
               <div className="text-center py-16 bg-card border border-border rounded-xl">
                 <Calendar size={36} className="text-muted-foreground/40 mx-auto mb-3" />
