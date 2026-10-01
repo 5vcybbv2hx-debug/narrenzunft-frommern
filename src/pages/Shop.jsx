@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import InternerBedarf from '@/components/shop/InternerBedarf';
 import { base44 } from '@/api/base44Client';
 import {
@@ -11,38 +11,74 @@ import {
   ShoppingBag,
   Store,
   ClipboardList,
+  RefreshCw,
 } from 'lucide-react';
 
 const ALLE_KATEGORIEN = ['Alle', 'Erwachsene', 'Garde', 'Kinder', 'Ersatzteile', 'Sonstiges'];
 const WIX_SHOP_URL = 'https://www.narrenzunft-frommern.de/category/all-products';
+const WIX_CACHE_KEY = 'nzf_wix_products_cache';
+const WIX_CACHE_TTL_MS = 60 * 60 * 1000; // 1 Stunde
 
 export default function Shop() {
   const [activeTab, setActiveTab] = useState('wix');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [wixLoading, setWixLoading] = useState(false);
+  const [wixError, setWixError] = useState(null);
   const [wixProducts, setWixProducts] = useState([]);
   const [selectedKategorie, setSelectedKategorie] = useState('Alle');
   const [searchQuery, setSearchQuery] = useState('');
+  const wixLoadedRef = useRef(false);
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const wixData = await base44.functions.invoke("getWixProducts", {});
-        if (wixData && wixData.success) {
-          setWixProducts(wixData.products || []);
-        } else {
-          setError(wixData?.error || 'Produkte konnten nicht geladen werden');
+  const ladeWix = async ({ force = false } = {}) => {
+    // 1. Lokaler Cache: sofort anzeigen (ggf. im Hintergrund aktualisieren)
+    let cached = null;
+    try {
+      const raw = localStorage.getItem(WIX_CACHE_KEY);
+      if (raw) cached = JSON.parse(raw);
+    } catch { /* ignorieren */ }
+
+    const cacheFrisch = cached && (Date.now() - cached.ts) < WIX_CACHE_TTL_MS;
+    if (cached?.products?.length) {
+      setWixProducts(cached.products);
+      setWixError(null);
+    }
+    if (!force && cacheFrisch) {
+      wixLoadedRef.current = true;
+      return;
+    }
+
+    // 2. Live laden (nur wenn kein frischer Cache oder force)
+    setWixLoading(true);
+    setWixError(null);
+    try {
+      const wixData = await base44.functions.invoke("getWixProducts", {});
+      if (wixData && wixData.success) {
+        const products = wixData.products || [];
+        setWixProducts(products);
+        try {
+          localStorage.setItem(WIX_CACHE_KEY, JSON.stringify({ products, ts: Date.now() }));
+        } catch { /* Storage voll - egal */ }
+      } else {
+        if (!cached?.products?.length) {
+          setWixError(wixData?.error || 'Produkte konnten nicht geladen werden');
         }
-      } catch (err) {
-        console.error('Shop laden fehlgeschlagen:', err);
-        setError(err.message || 'Fehler beim Laden der Produkte.');
-      } finally {
-        setLoading(false);
       }
-    })();
-  }, []);
+    } catch (err) {
+      console.error('Shop laden fehlgeschlagen:', err);
+      if (!cached?.products?.length) {
+        setWixError(err.message || 'Fehler beim Laden der Produkte.');
+      }
+    } finally {
+      setWixLoading(false);
+      wixLoadedRef.current = true;
+    }
+  };
+
+  // Wix-Produkte erst laden, wenn der Wix-Tab offen ist (Interner Bedarf wartet nicht mehr darauf)
+  useEffect(() => {
+    if (activeTab === 'wix' && !wixLoadedRef.current && !wixLoading) {
+      ladeWix();
+    }
+  }, [activeTab]);
 
   const filteredProducts = useMemo(() => {
     return wixProducts.filter((p) => {
@@ -54,15 +90,6 @@ export default function Shop() {
       return true;
     });
   }, [wixProducts, selectedKategorie, searchQuery]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-        <div className="w-10 h-10 border-[3px] border-border border-t-primary rounded-full animate-spin" />
-        <p className="mt-4 text-sm font-medium tracking-wide font-oswald uppercase text-muted-foreground">Shop wird geladen…</p>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans pb-20">
@@ -104,18 +131,31 @@ export default function Shop() {
         </div>
       ) : (
       <div className="max-w-7xl mx-auto px-4 mt-6">
-        {error && (
+        {wixError && (
           <div className="bg-destructive/10 border border-destructive/30 text-destructive p-4 rounded-xl mb-6 flex items-start justify-between">
             <div className="flex gap-3">
               <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
               <div>
                 <p className="font-semibold text-sm">Fehler aufgetreten</p>
-                <p className="text-xs mt-1 opacity-80">{error}</p>
+                <p className="text-xs mt-1 opacity-80">{wixError}</p>
               </div>
             </div>
-            <button onClick={() => setError(null)} className="shrink-0 p-2 -mr-1 hover:text-foreground">
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button onClick={() => ladeWix({ force: true })} className="p-2 hover:text-foreground" title="Erneut versuchen">
+                <RefreshCw className="w-5 h-5" />
+              </button>
+              <button onClick={() => setWixError(null)} className="shrink-0 p-2 -mr-1 hover:text-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Ladehinweis nur im Wix-Tab, Seite bleibt bedienbar */}
+        {wixLoading && wixProducts.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20 bg-card border border-border rounded-xl">
+            <div className="w-8 h-8 border-[3px] border-border border-t-primary rounded-full animate-spin" />
+            <p className="mt-4 text-sm font-medium tracking-wide font-oswald uppercase text-muted-foreground">Produkte werden geladen…</p>
           </div>
         )}
 
@@ -155,7 +195,7 @@ export default function Shop() {
             <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="font-oswald uppercase tracking-wide text-lg">Keine Artikel verfügbar</h3>
             <p className="text-muted-foreground text-sm mt-1">
-              {wixProducts.length === 0
+              {wixProducts.length === 0 && !wixLoading
                 ? 'Es sind aktuell keine Produkte im Online-Shop.'
                 : 'Keine Artikel für deine Auswahl gefunden.'}
             </p>

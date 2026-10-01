@@ -43,29 +43,27 @@ export default function InternerBedarf() {
   const laden = useCallback(async () => {
     setLoading(true);
     try {
-      const [rundenRes, artikelRes, gruppenRes] = await Promise.all([
+      // Alle unabhängigen Abfragen parallel statt sequenziell (Wasserfall)
+      const [rundenRes, artikelRes, gruppenRes, profRes] = await Promise.all([
         base44.entities.Bestellrunde.filter({}, '-created_date'),
         base44.entities.InternerArtikel.filter({}, 'sortierung'),
         base44.entities.Haesgruppe.list('name', 200),
+        user?.id ? base44.entities.Mitglied.filter({ user_id: user.id }) : Promise.resolve([]),
       ]);
       setRunden(rundenRes || []);
       setArtikel(artikelRes || []);
       setGruppen(gruppenRes || []);
 
-      let p = null;
-      if (user?.id) {
-        const prof = await base44.entities.Mitglied.filter({ user_id: user.id });
-        p = prof?.[0] || null;
-        setProfil(p);
-        if (p) {
-          const meineRes = await base44.entities.InterneBestellung.filter({ mitglied_id: p.id });
-          setMeine(meineRes || []);
-        }
-      }
-      if (canSeeOverview) {
-        const alleRes = await base44.entities.InterneBestellung.filter({}, '-created_date');
-        setAlle(alleRes || []);
-      }
+      const p = profRes?.[0] || null;
+      setProfil(p);
+
+      // Abhängige Abfragen parallel
+      const [meineRes, alleRes] = await Promise.all([
+        p ? base44.entities.InterneBestellung.filter({ mitglied_id: p.id }) : Promise.resolve([]),
+        canSeeOverview ? base44.entities.InterneBestellung.filter({}, '-created_date') : Promise.resolve([]),
+      ]);
+      setMeine(meineRes || []);
+      setAlle(alleRes || []);
     } catch (e) {
       console.error('InternerBedarf laden fehlgeschlagen:', e);
       toast.error('Interner Bedarf konnte nicht geladen werden.');

@@ -1,10 +1,20 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
+// Module-Cache: überlebt warme Isolate und verhindert, dass jeder Seitenaufruf
+// die komplette Wix-Website neu scraped (dauert ~3s). TTL 1 Stunde.
+let produktCache: { data: any; ts: number } | null = null;
+const CACHE_TTL_MS = 60 * 60 * 1000;
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+    // Frischer Cache? Sofort liefern ohne Wix zu scrapen.
+    if (produktCache && (Date.now() - produktCache.ts) < CACHE_TTL_MS) {
+      return Response.json({ ...produktCache.data, cached: true });
+    }
 
     const SHOP_URL = 'https://www.narrenzunft-frommern.de/category/all-products';
     const PRODUCT_BASE_URL = 'https://www.narrenzunft-frommern.de/product-page';
@@ -59,13 +69,8 @@ Deno.serve(async (req) => {
       sparten: [],
     }));
 
-    return Response.json({
-      success: true,
-      products: normalizedProducts,
-      totalCount,
-      source: 'scrape',
-      fetchedAt: new Date().toISOString(),
-    });
+    produktCache = { data: { success: true, products: normalizedProducts, totalCount, source: 'scrape', fetchedAt: new Date().toISOString() }, ts: Date.now() };
+    return Response.json(produktCache.data);
   } catch (error) {
     console.error('getWixProducts error:', error);
     return Response.json({
