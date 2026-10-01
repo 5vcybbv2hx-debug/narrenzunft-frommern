@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
+import KalenderAboModal from '@/components/kalender/KalenderAboModal';
 import { meldeAnAusfahrtSicher } from '@/lib/ausfahrtAnmeldung';
 import { familienIdsAusVerwandtschaft, angemeldeteIdsFuerTermin } from '@/lib/kalenderMeineTermine';
 import { useAuth } from '@/lib/AuthContext';
@@ -7,8 +8,7 @@ import { isAdmin } from '@/lib/roles';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Calendar, List, ChevronLeft, ChevronRight, Plus, Clock,
-  MapPin, Download, Filter, X, Edit, LayoutTemplate, Bus, AlertCircle, Search
-} from 'lucide-react';
+  MapPin, Download, Filter, X, Edit, LayoutTemplate, Bus, AlertCircle, Search, Link2 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth,
   addMonths, subMonths, parseISO, isToday, isSameDay, startOfDay, isBefore, isAfter, differenceInDays } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -76,6 +76,8 @@ export default function Kalender({ nur = 'alle' }) {
   const [filterArt, setFilterArt] = useState(searchParams.get('filter') || 'alle');
   const [showFilter, setShowFilter] = useState(false);
   const [downloadingFeed, setDownloadingFeed] = useState(false);
+  const [showFeedMenu, setShowFeedMenu] = useState(false);
+  const [showAboModal, setShowAboModal] = useState(false);
   const [showVeranstaltungModal, setShowVeranstaltungModal] = useState(false);
   const [editVeranstaltung, setEditVeranstaltung] = useState(null);
   const [showVorlagen, setShowVorlagen] = useState(false);
@@ -435,14 +437,36 @@ export default function Kalender({ nur = 'alle' }) {
           <p className="text-sm text-muted-foreground mt-0.5">{gefilterteTermine.length} Termine · {format(new Date(), 'MMMM yyyy', { locale: de })}</p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleDownloadFeed('mitglieder')}
-            disabled={downloadingFeed}
-            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-            title="Kalender als ICS herunterladen"
-          >
-            <Download size={18} />
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => { setShowFeedMenu(v => !v); setShowNeuDropdown(false); }}
+              disabled={downloadingFeed}
+              className={`p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors ${showFeedMenu ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+              title="Kalender abonnieren oder herunterladen"
+            >
+              <Download size={18} />
+            </button>
+            {showFeedMenu && (
+              <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-lg z-30 min-w-[240px] overflow-hidden">
+                <button onClick={() => { setShowFeedMenu(false); handleDownloadFeed('mitglieder'); }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-secondary transition-colors border-b border-border">
+                  <Download size={15} className="text-primary shrink-0" />
+                  <div className="text-left">
+                    <p className="font-medium">ICS herunterladen</p>
+                    <p className="text-xs text-muted-foreground">Einmaliger Schnappschuss als Datei</p>
+                  </div>
+                </button>
+                <button onClick={() => { setShowFeedMenu(false); setShowAboModal(true); }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-secondary transition-colors">
+                  <Link2 size={15} className="text-primary shrink-0" />
+                  <div className="text-left">
+                    <p className="font-medium">Live-Kalender abonnieren</p>
+                    <p className="text-xs text-muted-foreground">Hält sich automatisch aktuell</p>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
           <button
             onClick={() => setShowFilter(!showFilter)}
             className={`relative p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors ${showFilter || hatAktiveFilter ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
@@ -452,7 +476,7 @@ export default function Kalender({ nur = 'alle' }) {
           {admin && (
             <div className="relative">
               <button
-                onClick={() => setShowNeuDropdown(v => !v)}
+                onClick={() => { setShowNeuDropdown(v => !v); setShowFeedMenu(false); }}
                 className="flex items-center gap-2 px-3 py-2.5 min-h-[44px] rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
               >
                 <Plus size={16} /> <span className="hidden sm:inline">Neu</span> <ChevronRight size={12} className={`transition-transform ${showNeuDropdown ? 'rotate-90' : ''}`} />
@@ -857,6 +881,8 @@ export default function Kalender({ nur = 'alle' }) {
 
       {/* Dropdown schließen bei Klick außerhalb */}
       {showNeuDropdown && <div className="fixed inset-0 z-20" onClick={() => setShowNeuDropdown(false)} />}
+      {showAboModal && <KalenderAboModal onClose={() => setShowAboModal(false)} />}
+
     </div>
   );
 }

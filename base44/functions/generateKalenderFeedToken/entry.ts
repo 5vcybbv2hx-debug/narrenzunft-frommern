@@ -68,7 +68,17 @@ Deno.serve(async (req) => {
       token: plainToken,
       token_id: neuerToken.id,
       feed_typ: feed_typ,
-      url: `/api/kalender/${feed_typ}.ics?token=${plainToken}`,
+      // Volle oeffentliche URL zurueckgeben (Origin + App-ID aus dem Request-Pfad ableiten)
+      url: (() => {
+        try {
+          const reqUrl = new URL(req.url);
+          const appIdMatch = reqUrl.pathname.match(/\/apps\/([^/]+)\/functions/);
+          const appId = appIdMatch ? appIdMatch[1] : '';
+          return `${reqUrl.origin}/api/apps/${appId}/functions/getKalenderFeedSicher?type=${feed_typ}&token=${plainToken}`;
+        } catch {
+          return `/api/kalender/${feed_typ}.ics?token=${plainToken}`;
+        }
+      })(),
     });
   } catch (error) {
     console.error(error);
