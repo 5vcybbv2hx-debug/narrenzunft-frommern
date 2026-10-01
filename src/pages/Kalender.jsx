@@ -904,7 +904,7 @@ function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditV
 
   return (
     <div className={`bg-card border border-border rounded-xl overflow-hidden ${compact ? '' : 'hover:border-primary/30 transition-colors'}`}>
-      <div className="flex gap-3 p-4">
+      <div className="flex gap-3 p-3 sm:p-4">
         {/* Datum */}
         <div className="w-14 h-14 rounded-xl bg-primary/10 flex flex-col items-center justify-center shrink-0 py-1">
           <span className="text-[9px] text-muted-foreground leading-none capitalize">
@@ -924,12 +924,6 @@ function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditV
             <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${farbeClass}`}>
               {termin.terminart}
             </span>
-            {istVonVeranstaltung && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Veranstaltung</span>
-            )}
-            {istVonAusfahrt && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400">Ausfahrt</span>
-            )}
             {anmeldung?.status === 'Warteliste' && (
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Warteliste</span>
             )}
@@ -940,7 +934,7 @@ function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditV
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">✓ Angemeldet</span>
             )}
           </div>
-          <div className="flex flex-wrap gap-3 mt-1 text-xs text-muted-foreground">
+          <div className="flex flex-wrap gap-2 mt-1 text-xs text-muted-foreground">
             {(termin.startzeit || termin.endzeit) && (
               <span className="flex items-center gap-1">
                 <Clock size={10} />
@@ -958,7 +952,7 @@ function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditV
             <p className="text-xs text-primary mt-1">Mit Anmeldung: {angemeldetePersonen.join(', ')}</p>
           )}
           {!compact && termin.beschreibung && (
-            <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{termin.beschreibung}</p>
+            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{termin.beschreibung}</p>
           )}
           {/* Details-Toggle für Veranstaltungen */}
           {hatDetails && !compact && (
@@ -1060,7 +1054,7 @@ function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditV
       )}
 
       {termin.anmeldbar && !istVonVeranstaltung && !istVonAusfahrt && onAnmelden && (
-        <div className="px-4 pb-3">
+        <div className="px-3 sm:px-4 pb-3">
           <button
             onClick={onAnmelden}
             disabled={submittingKalender || anmeldung?.status === 'Warteliste'}
@@ -1075,7 +1069,7 @@ function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditV
         </div>
       )}
       {termin.anmeldbar && istVonVeranstaltung && (
-        <div className="px-4 pb-3">
+        <div className="px-3 sm:px-4 pb-3">
           <Link
             to={`/veranstaltungen/${termin._veranstaltung_id}`}
             className="block w-full py-2.5 min-h-[44px] rounded-lg text-sm font-semibold text-center bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
@@ -1085,24 +1079,25 @@ function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditV
         </div>
       )}
       {istVonAusfahrt && (
-        <div className="px-4 pb-3 space-y-2">
-          {/* Anmeldezähler */}
-          {ausfahrtAnmeldeCount !== undefined && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                {termin._bus ? <Bus size={11} /> : null}
-                {ausfahrtAnmeldeCount} angemeldet
-              </span>
+        <div className="px-3 sm:px-4 pb-3 space-y-2">
+          {/* Anmeldestand kompakt in einer Zeile */}
+          {(ausfahrtAnmeldeCount !== undefined || ausfahrtAnmeldung || (termin._bus && termin._startnummer)) && (
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              {ausfahrtAnmeldeCount !== undefined && (
+                <span className="flex items-center gap-1">
+                  {termin._bus ? <Bus size={11} /> : null}
+                  {ausfahrtAnmeldeCount} angemeldet
+                </span>
+              )}
               {termin._bus && termin._startnummer && (
-                <span className="text-muted-foreground">· Startnr. {termin._startnummer}</span>
+                <span>· Startnr. {termin._startnummer}</span>
+              )}
+              {ausfahrtAnmeldung && (
+                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">
+                  ✓ {ausfahrtAnmeldung.status}
+                </span>
               )}
             </div>
-          )}
-          {/* Anmelde-Status */}
-          {ausfahrtAnmeldung && (
-            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">
-              ✓ {ausfahrtAnmeldung.status}
-            </span>
           )}
           {/* An-/Abmelde-Buttons */}
           {onAusfahrtRegister && !ausfahrtAnmeldung && (
