@@ -135,6 +135,8 @@ export default function Kalender({ nur = 'alle' }) {
         _abfahrt_ort: a.abfahrt_ort || null,
         _abfahrt_zeit: a.abfahrt_zeit || null,
         _status: a.status || 'Geplant',
+        _anmeldung_start: a.anmeldung_start || null,
+        _anmeldung_ende: a.anmeldung_ende || null,
         _startnummer: a.startnummer || null,
       }));
       setAusfahrten(ausfahrtTermine);
@@ -333,13 +335,20 @@ export default function Kalender({ nur = 'alle' }) {
   };
 
   const isAusfahrtRegistrationOpen = (termin) => {
-    const today = startOfDay(new Date());
+    const status = termin._status;
+    if (status === 'Abgesagt' || status === 'Abgeschlossen') return false;
     const regStart = termin._anmeldung_start ? startOfDay(parseISO(termin._anmeldung_start)) : null;
     const regEnd = termin._anmeldung_ende ? startOfDay(parseISO(termin._anmeldung_ende)) : null;
-    const status = termin._status;
-    return status === 'Anmeldung offen' &&
-      (!regStart || !isBefore(today, regStart)) &&
-      (!regEnd || !isAfter(today, regEnd));
+    // Anmeldezeitraum gesetzt -> Fenster entscheidet live (unabhaengig vom gespeicherten Status,
+    // der erst beim Oeffnen der Detailseite nachgezogen wird)
+    if (regStart || regEnd) {
+      const today = startOfDay(new Date());
+      if (regStart && isBefore(today, regStart)) return false;
+      if (regEnd && isAfter(today, regEnd)) return false;
+      return true;
+    }
+    // Kein Zeitraum gesetzt -> gespeicherter Status entscheidet (wie bisher)
+    return status === 'Anmeldung offen';
   };
 
   const canUnregisterAusfahrt = (termin) => {
