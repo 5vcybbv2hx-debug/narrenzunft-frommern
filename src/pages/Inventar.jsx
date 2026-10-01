@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { istVerleihZustaendig } from '../lib/verleih';
@@ -24,7 +25,11 @@ export default function Inventar() {
   const [meinMitglied, setMeinMitglied] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('uebersicht');
+  // Direkt-Sprung per URL: /inventar?tab=anfragen (z. B. aus der Verleih-Anfrage-E-Mail)
+  const [searchParams] = useSearchParams();
+  const TAB_IDS = ['uebersicht', 'anfragen', 'ausleihen', 'historie'];
+  const initialTab = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(TAB_IDS.includes(initialTab) ? initialTab : 'uebersicht');
   const [showAusruestungForm, setShowAusruestungForm] = useState(false);
   const [editAusruestung, setEditAusruestung] = useState(null);
   const [showAusleiheForm, setShowAusleiheForm] = useState(false);

@@ -108,7 +108,9 @@ Deno.serve(async (req) => {
               ${anfrage.zweck ? `<tr><td style="padding:6px 0;color:#6b7280;">Zweck</td><td style="padding:6px 0;color:#e2e8f0;text-align:right;">${escapeHtml(anfrage.zweck)}</td></tr>` : ''}
             </table>
             <p style="color:#94a3b8;font-size:12px;margin:20px 0 0;padding-top:16px;border-top:1px solid #2a2a2a;">
-              Anfrage in der App unter <span style="color:#EA2525;font-weight:600;">Inventar &amp; Verleih → Anfragen</span> genehmigen oder ablehnen.
+              Anfrage in der App unter
+              <a href="https://narrenzunft-frommern.base44.app/inventar?tab=anfragen" style="color:#EA2525;font-weight:600;text-decoration:underline;">Inventar &amp; Verleih → Anfragen</a>
+              genehmigen oder ablehnen.
             </p>
           </div>
         </div>
