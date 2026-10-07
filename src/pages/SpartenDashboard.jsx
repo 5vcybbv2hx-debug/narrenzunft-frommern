@@ -202,6 +202,15 @@ export default function SpartenDashboard() {
     return false;
   }, [user, myMitglied, id]);
 
+  // Gruppen-Verantwortliche (verantwortliche_ids) — unabhängig vom Sync-Zustand
+  // der Login-Rolle. Spiegelt exakt die Autorisierung der Backend-Functions
+  // (z. B. verwalteGruppenTeilnehmer), die ebenfalls auf verantwortliche_ids prüfen.
+  const istGruppenVerantwortlicher = useMemo(() => {
+    if (!gruppe || !myMitglied) return false;
+    const ids = gruppe.verantwortliche_ids || (gruppe.verantwortlicher_id ? [gruppe.verantwortlicher_id] : []);
+    return ids.includes(myMitglied.id);
+  }, [gruppe, myMitglied]);
+
   // Tab 1: stats computation
   const stats = useMemo(() => {
     const mitgliederCount = mitglieder.length;
@@ -986,7 +995,7 @@ export default function SpartenDashboard() {
 
         {/* TAB 3: AUSLAGEN */}
         {activeTab === 'teilnehmer' && (
-          <TeilnehmerTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit} />
+          <TeilnehmerTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} />
         )}
         {canEdit && activeTab === 'auslagen' && (
           <div className="space-y-6">

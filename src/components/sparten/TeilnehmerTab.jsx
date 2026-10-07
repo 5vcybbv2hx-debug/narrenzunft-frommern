@@ -11,8 +11,9 @@ import { confirmDialog } from '@/components/ui/ConfirmProvider';
  * gibt es eine freie Position/Rolle (z. B. „Vortänzerin", „Reihe 1").
  *
  * Lesen darf jeder, der die Gruppe öffnen darf. Schreiben (Hinzufügen,
- * Position ändern, Pausieren, Entfernen) nur Vorstand/Stellv./Admin und
- * Spartenleiter der Gruppe — läuft aus RLS-Gründen über die sichere
+ * Position ändern, Pausieren, Entfernen) dürfen Vorstand/Stellv./Admin und
+ * ALLE Verantwortlichen der Gruppe (canEdit-Prop, gespiegelt aus
+ * gruppe.verantwortliche_ids) — läuft aus RLS-Gründen über die sichere
  * Backend-Function 'verwalteGruppenTeilnehmer'.
  */
 const POSITION_SUGGESTIONS = ['Vortänzer:in', 'Reihe 1', 'Reihe 2', 'Reihe 3', 'Solo', 'Musik'];
