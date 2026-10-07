@@ -1,0 +1,72 @@
+{
+  "name": "GruppenTeilnehmer",
+  "type": "object",
+  "properties": {
+    "haesgruppe_id": {
+      "type": "string",
+      "description": "ID der Gruppe/Sparte (z. B. Tanzgruppe)"
+    },
+    "mitglied_id": {
+      "type": "string",
+      "description": "ID des Teilnehmer-Mitglieds"
+    },
+    "position": {
+      "type": "string",
+      "description": "Freie Position/Rolle (z. B. Vort\u00e4nzer:in, Reihe 1)"
+    },
+    "aktiv": {
+      "type": "boolean",
+      "default": true,
+      "description": "false = pausiert (nimmt vorl\u00e4ufig nicht teil)"
+    }
+  },
+  "required": [
+    "haesgruppe_id",
+    "mitglied_id"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    },
+    "read": null,
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    }
+  }
+}
