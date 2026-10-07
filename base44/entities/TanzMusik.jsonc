@@ -18,6 +18,10 @@
       "type": "number",
       "default": 0,
       "description": "Sortierreihenfolge"
+    },
+    "marker": {
+      "type": "string",
+      "description": "JSON-Array aus {zeit: 0-86400 Sekunden, figur_id?, label?}, max. 200 Eintr\u00e4ge. Leer erlaubt."
     }
   },
   "required": [
