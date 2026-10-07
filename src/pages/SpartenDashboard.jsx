@@ -42,6 +42,7 @@ export default function SpartenDashboard() {
   // Core State
   const [gruppe, setGruppe] = useState(null);
   const [mitglieder, setMitglieder] = useState([]);
+  const [teilnehmerListe, setTeilnehmerListe] = useState([]);
   const [termine, setTermine] = useState([]);
   const [auslagen, setAuslagen] = useState([]);
   const [alleMitglieder, setAlleMitglieder] = useState([]);
@@ -123,6 +124,18 @@ export default function SpartenDashboard() {
         !m.archiviert && (m.haesgruppe_id === id || (m.haesgruppen_ids && m.haesgruppen_ids.includes(id)))
       );
       setMitglieder(gruppenMitglieder);
+
+      // Bei Tanzgruppen SIND die GruppenTeilnehmer die Mitglieder-Liste
+      // (Mitgliedsprofile zeigen dort auf die Häs-Gruppe, nicht auf die
+      // Tanzgruppe). Für Statistik-Kachel und Anzeige mitladen.
+      if (g.typ === 'Tanzgruppe') {
+        try {
+          const tn = await base44.entities.GruppenTeilnehmer.filter({ haesgruppe_id: id });
+          setTeilnehmerListe(tn || []);
+        } catch (e) {
+          console.error(e);
+        }
+      }
 
       // Spartenleiter-Historie (Amtszeiten) laden — darf das Laden der
       // Gruppe niemals blockieren (z. B. wenn Entität noch nicht bereit)
@@ -224,7 +237,9 @@ export default function SpartenDashboard() {
 
   // Tab 1: stats computation
   const stats = useMemo(() => {
-    const mitgliederCount = mitglieder.length;
+    const mitgliederCount = gruppe?.typ === 'Tanzgruppe'
+      ? teilnehmerListe.filter(t => t.aktiv !== false).length
+      : mitglieder.length;
     
     // Find next upcoming appointment
     const nowStr = new Date().toISOString().split('T')[0];
@@ -245,7 +260,7 @@ export default function SpartenDashboard() {
       offeneSum,
       whatsappStatus: 'Verbunden'
     };
-  }, [mitglieder, termine, auslagen]);
+  }, [mitglieder, termine, auslagen, gruppe, teilnehmerListe]);
 
   // Termine Handlers
   const handleOpenTerminModal = (termin = null) => {
@@ -692,7 +707,7 @@ export default function SpartenDashboard() {
           </button>
           {gruppe?.typ === 'Tanzgruppe' && (
             <button onClick={() => setActiveTab('teilnehmer')} className={tabClass('teilnehmer')}>
-              <UserCheck className="w-4 h-4" /> Teilnehmer
+              <Users className="w-4 h-4" /> Mitglieder
             </button>
           )}
           {gruppe?.typ === 'Tanzgruppe' && (
@@ -753,7 +768,7 @@ export default function SpartenDashboard() {
 
                 {/* Aktuelle Verantwortliche */}
                 <div className="pt-4 border-t border-border">
-                  <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-2">Verantwortliche (Spartenleiter)</span>
+                  <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-2">{gruppe.typ === 'Tanzgruppe' ? 'Verantwortliche' : 'Verantwortliche (Spartenleiter)'}</span>
                   {alleMitglieder.filter(m => gruppe.verantwortliche_ids?.includes(m.id)).length === 0 ? (
                     <p className="text-sm text-muted-foreground italic">Keine Verantwortlichen zugewiesen.</p>
                   ) : (
@@ -1021,30 +1036,7 @@ export default function SpartenDashboard() {
 
         {/* TAB 3: AUSLAGEN */}
         {activeTab === 'teilnehmer' && (
-          <div className="space-y-8">
-            <TeilnehmerTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} />
-
-            {/* Für Tanzgruppen ist dies DIE Mitglieder-Seite: komplettes Roster
-                inkl. Verantwortlichen-Zuweisung direkt unter der Teilnehmer-Verwaltung. */}
-            {(canEdit || istGruppenVerantwortlicher) && (
-              <div className="space-y-4 pt-2 border-t border-border">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <h2 className="text-2xl font-oswald uppercase tracking-wide text-white">
-                    Gruppenmitglieder
-                  </h2>
-                  {canEdit && (
-                    <button
-                      onClick={handleOpenVerantwortlicherModal}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-secondary hover:bg-secondary/50 border border-border text-foreground rounded-lg text-sm font-semibold transition-colors"
-                    >
-                      <UserCheck className="w-4 h-4 text-primary" /> Verantwortliche zuweisen
-                    </button>
-                  )}
-                </div>
-                <GruppenMitgliederListe mitglieder={mitglieder} gruppe={gruppe} />
-              </div>
-            )}
-          </div>
+          <TeilnehmerTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} />
         )}
         {activeTab === 'figuren' && (
           <FigurenTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} onUebeMusik={handleUebeMusik} />

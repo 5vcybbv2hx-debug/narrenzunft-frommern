@@ -17,6 +17,7 @@ export default function Sparten() {
 
   const [gruppen, setGruppen] = useState([]);
   const [mitglieder, setMitglieder] = useState([]);
+  const [alleTeilnehmer, setAlleTeilnehmer] = useState([]);
   const [meinMitglied, setMeinMitglied] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -32,11 +33,13 @@ export default function Sparten() {
     setGruppen(g);
     // Mitgliederliste nur für Admins und Spartenleiter laden
     if (admin || isSpartenleiter) {
-      const [m, myMArr] = await Promise.all([
+      const [m, myMArr, tn] = await Promise.all([
         base44.entities.Mitglied.list('nachname', 500),
         isSpartenleiter ? base44.entities.Mitglied.filter({ user_id: user?.id }) : Promise.resolve([]),
+        base44.entities.GruppenTeilnehmer.list('name', 500).catch(() => []),
       ]);
       setMitglieder(m);
+      setAlleTeilnehmer(tn || []);
       if (myMArr[0]) setMeinMitglied(myMArr[0]);
     }
     } catch (e) {
@@ -184,6 +187,7 @@ export default function Sparten() {
                       <Sparte
                         gruppe={gruppe}
                         alleMitglieder={mitglieder}
+                        alleTeilnehmer={alleTeilnehmer}
                         isAdmin={admin}
                         kannBearbeiten={isResponsible}
                         onEdit={() => { setEditGruppe(gruppe); setShowForm(true); }}
@@ -214,6 +218,7 @@ export default function Sparten() {
                 <Sparte
                   gruppe={gruppe}
                   alleMitglieder={mitglieder}
+                        alleTeilnehmer={alleTeilnehmer}
                   isAdmin={admin}
                   kannBearbeiten={isResponsible}
                   onEdit={() => { setEditGruppe(gruppe); setShowForm(true); }}

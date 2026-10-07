@@ -6,9 +6,11 @@ import MitgliedLiveSuche from '@/components/MitgliedLiveSuche';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 /**
- * TeilnehmerTab – Verwaltung der Teilnehmer:innen einer Tanzgruppe
- * (z. B. Hexentanz). Auswählbar sind ALLE Zunftmitglieder, pro Teilnehmer:in
- * gibt es eine freie Position/Rolle (z. B. „Vortänzerin", „Reihe 1").
+ * MitgliederTab (technisch: GruppenTeilnehmer) – DIE Mitglieder-Seite einer
+ * Tanzgruppe (z. B. Hexentanz). Gruppenmitglieder und Teilnehmer sind hier
+ * dasselbe: Auswählbar sind ALLE Zunftmitglieder (deren Mitgliedsprofil zeigt
+ * auf die Häs-Gruppe, nicht auf die Tanzgruppe), pro Mitglied gibt es eine
+ * freie Position/Rolle (z. B. „Vortänzerin", „Reihe 1").
  *
  * Lesen darf jeder, der die Gruppe öffnen darf. Schreiben (Hinzufügen,
  * Position ändern, Pausieren, Entfernen) dürfen Vorstand/Stellv./Admin und
@@ -33,7 +35,7 @@ export default function TeilnehmerTab({ gruppeId, alleMitglieder, canEdit }) {
       setTeilnehmer(t || []);
     } catch (e) {
       console.error(e);
-      toast.error('Teilnehmer:innen konnten nicht geladen werden.');
+      toast.error('Mitglieder konnten nicht geladen werden.');
     } finally {
       setLoading(false);
     }
@@ -94,7 +96,7 @@ export default function TeilnehmerTab({ gruppeId, alleMitglieder, canEdit }) {
       setTeilnehmer(v => [...(v || []), data.teilnehmer]);
       setAuswahl(null);
       setPositionDraft('');
-      toast.success(`${auswahl.vorname || ''} ${auswahl.nachname || ''}`.trim() + ' als Teilnehmer:in hinzugefügt.');
+      toast.success(`${auswahl.vorname || ''} ${auswahl.nachname || ''}`.trim() + ' als Mitglied hinzugefügt.');
     } catch (e) {
       toast.error(e.message || 'Hinzufügen fehlgeschlagen.');
     } finally {
@@ -122,7 +124,7 @@ export default function TeilnehmerTab({ gruppeId, alleMitglieder, canEdit }) {
       const data = await invoke({ aktion: 'update', haesgruppe_id: gruppeId, teilnehmer_id: t.id, aktiv: neuerZustand });
       if (data?.error) throw new Error(data.error);
       setTeilnehmer(v => v.map(x => (x.id === t.id ? { ...x, aktiv: neuerZustand } : x)));
-      toast.success(neuerZustand ? 'Teilnehmer:in wieder aktiv.' : 'Teilnehmer:in pausiert.');
+      toast.success(neuerZustand ? 'Mitglied wieder aktiv.' : 'Mitglied pausiert.');
     } catch (e) {
       toast.error(e.message || 'Änderung fehlgeschlagen.');
     }
@@ -130,8 +132,8 @@ export default function TeilnehmerTab({ gruppeId, alleMitglieder, canEdit }) {
 
   const entfernen = async (t) => {
     const m = mitgliedVon(t.mitglied_id);
-    const name = `${m?.vorname || ''} ${m?.nachname || ''}`.trim() || 'Teilnehmer:in';
-    if (!(await confirmDialog(`${name} als Teilnehmer:in entfernen?`))) return;
+    const name = `${m?.vorname || ''} ${m?.nachname || ''}`.trim() || 'Mitglied';
+    if (!(await confirmDialog(`${name} aus der Tanzgruppe entfernen?`))) return;
     try {
       const data = await invoke({ aktion: 'remove', haesgruppe_id: gruppeId, teilnehmer_id: t.id });
       if (data?.error) throw new Error(data.error);
@@ -146,7 +148,7 @@ export default function TeilnehmerTab({ gruppeId, alleMitglieder, canEdit }) {
     <div className="space-y-4">
       {/* Kopf */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-xl font-semibold text-white">Teilnehmer:innen</h2>
+        <h2 className="text-xl font-semibold text-white">Mitglieder</h2>
         {!loading && (
           <span className="text-sm text-muted-foreground">
             {aktivCount} aktiv{teilnehmer.length > aktivCount ? ` · ${teilnehmer.length - aktivCount} pausiert` : ''}
@@ -158,7 +160,7 @@ export default function TeilnehmerTab({ gruppeId, alleMitglieder, canEdit }) {
       {canEdit && (
         <div className="rounded-xl border border-border bg-card p-4 space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium text-white">
-            <UserCheck className="w-4 h-4 text-primary" /> Teilnehmer:in hinzufügen
+            <UserCheck className="w-4 h-4 text-primary" /> Mitglied hinzufügen
           </div>
           <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
             <MitgliedLiveSuche
@@ -194,10 +196,10 @@ export default function TeilnehmerTab({ gruppeId, alleMitglieder, canEdit }) {
 
       {/* Liste */}
       {loading ? (
-        <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground text-sm">Lade Teilnehmer:innen…</div>
+        <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground text-sm">Lade Mitglieder…</div>
       ) : sortierte.length === 0 ? (
         <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground text-sm">
-          Noch keine Teilnehmer:innen ausgewählt.
+          Noch keine Mitglieder in dieser Tanzgruppe.
           {canEdit && <span className="block mt-1">Oben über die Suche Mitglieder hinzufügen.</span>}
         </div>
       ) : (
@@ -211,9 +213,9 @@ export default function TeilnehmerTab({ gruppeId, alleMitglieder, canEdit }) {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-medium text-white truncate">{name}</span>
-                    {m?.status && (
+                    {m?.mitgliedsstatus && (
                       <span className="px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wide bg-secondary text-muted-foreground">
-                        {m.status}
+                        {m.mitgliedsstatus}
                       </span>
                     )}
                     {pausiert && (

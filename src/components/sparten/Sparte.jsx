@@ -17,13 +17,20 @@ const STATUS_GRUPPEN = [
   { label: 'Ehren',   status: ['Ehrenmitglied'],                      color: 'text-purple-400', bg: 'bg-purple-500/10' },
 ];
 
-export default function Sparte({ gruppe, alleMitglieder, isAdmin, kannBearbeiten, onEdit, onDelete }) {
+export default function Sparte({ gruppe, alleMitglieder, alleTeilnehmer, isAdmin, kannBearbeiten, onEdit, onDelete }) {
   const [expandedStatus, setExpandedStatus] = useState(null);
 
-  // Mitglieder dieser Gruppe
-  const mitglieder = alleMitglieder.filter(m =>
-    !m.archiviert && ((m.haesgruppen_ids || []).includes(gruppe.id) || m.haesgruppe_id === gruppe.id)
-  );
+  // Mitglieder dieser Gruppe. Bei Tanzgruppen SIND die aktiven GruppenTeilnehmer
+  // die Mitglieder (die Mitgliedsprofile zeigen dort auf die Häs-Gruppe).
+  const teilnehmerMitglieder = (alleTeilnehmer || [])
+    .filter(t => t.haesgruppe_id === gruppe.id && t.aktiv !== false)
+    .map(t => alleMitglieder.find(m => m.id === t.mitglied_id))
+    .filter(Boolean);
+  const mitglieder = gruppe.typ === 'Tanzgruppe'
+    ? teilnehmerMitglieder
+    : alleMitglieder.filter(m =>
+        !m.archiviert && ((m.haesgruppen_ids || []).includes(gruppe.id) || m.haesgruppe_id === gruppe.id)
+      );
 
   // Verantwortliche (verantwortliche_ids mit Legacy-Fallback auf verantwortlicher_id)
   const verantwIds = gruppe.verantwortliche_ids?.length
