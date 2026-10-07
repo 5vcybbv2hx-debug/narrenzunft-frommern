@@ -228,6 +228,19 @@ export default function SpartenDashboard() {
 
   // Gruppen-Verantwortliche (verantwortliche_ids) — unabhängig vom Sync-Zustand
   // der Login-Rolle. Spiegelt exakt die Autorisierung der Backend-Functions
+  // Personen-Pool für Auslagen & Umlagen: Bei Tanzgruppen sind die Mitglieder
+  // die aktiven Teilnehmer:innen (Roster via haesgruppe_id wäre leer), sonst der
+  // klassische Gruppen-Roster.
+  const auslagenPersonen = useMemo(() => {
+    if (gruppe?.typ === 'Tanzgruppe') {
+      const aktivIds = new Set(
+        (teilnehmerListe || []).filter(t => t.aktiv !== false).map(t => t.mitglied_id)
+      );
+      return alleMitglieder.filter(m => aktivIds.has(m.id));
+    }
+    return mitglieder;
+  }, [gruppe, teilnehmerListe, alleMitglieder, mitglieder]);
+
   // (z. B. verwalteGruppenTeilnehmer), die ebenfalls auf verantwortliche_ids prüfen.
   const istGruppenVerantwortlicher = useMemo(() => {
     if (!gruppe || !myMitglied) return false;
@@ -359,9 +372,9 @@ export default function SpartenDashboard() {
       });
     } else {
       setEditingAuslage(null);
-      const defaultMitgliedId = mitglieder[0]?.id || '';
+      const defaultMitgliedId = auslagenPersonen[0]?.id || '';
       const initialSelected = {};
-      mitglieder.forEach(m => {
+      auslagenPersonen.forEach(m => {
         initialSelected[m.id] = true;
       });
 
@@ -1454,7 +1467,7 @@ export default function SpartenDashboard() {
                   value={auslageForm.mitglied_id}
                   onChange={(v) => setAuslageForm({ ...auslageForm, mitglied_id: v })}
                   placeholder="Mitglied auswählen..."
-                  options={mitglieder.map(m => ({ label: `${m.vorname} ${m.nachname}`, value: m.id }))}
+                  options={auslagenPersonen.map(m => ({ label: `${m.vorname} ${m.nachname}`, value: m.id }))}
                 />
               </div>
 
@@ -1513,7 +1526,7 @@ export default function SpartenDashboard() {
                   </span>
                   
                   <div className="max-h-40 overflow-y-auto space-y-1.5 pr-2">
-                    {mitglieder.map(m => {
+                    {auslagenPersonen.map(m => {
                       const isSelected = !!auslageForm.selectedAnteile[m.id];
                       return (
                         <label key={m.id} className="flex items-center gap-2 cursor-pointer text-sm">
