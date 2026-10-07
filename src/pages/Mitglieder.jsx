@@ -352,18 +352,22 @@ export default function Mitglieder() {
 
       {/* Suche + Sort + Filter — sticky */}
       <div className="sticky top-0 z-20 -mx-4 lg:-mx-6 px-4 lg:px-6 pb-2 pt-2 bg-background/95 backdrop-blur-sm mb-3 overflow-x-hidden">
-      <div className="flex flex-col sm:flex-row gap-2 mb-3">
-        <div className="relative flex-1">
+      <div className="flex gap-2 mb-3 items-stretch">
+        {/* Suche — bewusst groß (Hauptwerkzeug der Seite) */}
+        <div className="relative flex-1 min-w-0">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             placeholder="Name, #Nr, Häs-Nr., E-Mail, Ort…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-colors"
+            className="w-full pl-9 pr-4 py-3 rounded-lg bg-card border border-border text-base sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-colors"
           />
         </div>
-        <MobileSelect value={sortBy} onChange={setSortBy} options={SORT_OPTIONS} className="!py-2.5" />
+        {/* Sortierung — kompakt, frisst nicht mehr die halbe Zeile */}
+        <div className="w-36 sm:w-44 shrink-0">
+          <MobileSelect value={sortBy} onChange={setSortBy} options={SORT_OPTIONS} className="!w-full !py-3" />
+        </div>
       </div>
 
       {/* Status-Filter mit Zählern */}

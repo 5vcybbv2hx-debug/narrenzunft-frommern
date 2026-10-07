@@ -73,7 +73,7 @@ function SectionLabel({ children }) {
 }
 
 export default function MitgliederStatistik({ mitglieder, gruppenMap, onStatusFilter }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   const s = useMemo(() => {
     const aktive = mitglieder.filter(m => !m.archiviert);
@@ -159,7 +159,13 @@ export default function MitgliederStatistik({ mitglieder, gruppenMap, onStatusFi
           <h3 className="font-oswald font-semibold text-foreground text-sm tracking-wide">Mitglieder-Statistik</h3>
         </div>
         <div className="flex items-center gap-2">
-          <p className="text-xs text-muted-foreground">{s.gesamt} Mitglieder</p>
+          {open ? (
+            <p className="text-xs text-muted-foreground">{s.gesamt} Mitglieder</p>
+          ) : (
+            <p className="text-[11px] text-muted-foreground text-right">
+              {s.aktivCount} Aktiv · {s.passivCount} Passiv · {s.kinderJugend} Kinder &amp; Jugend
+            </p>
+          )}
           {open ? <ChevronUp size={14} className="text-muted-foreground group-hover:text-primary transition-colors" /> 
                 : <ChevronDown size={14} className="text-muted-foreground group-hover:text-primary transition-colors" />}
         </div>
