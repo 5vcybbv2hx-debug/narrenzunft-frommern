@@ -1,0 +1,86 @@
+{
+  "name": "TanzSchritt",
+  "type": "object",
+  "properties": {
+    "haesgruppe_id": {
+      "type": "string",
+      "description": "ID der Gruppe/Sparte"
+    },
+    "nr": {
+      "type": "number",
+      "default": 0,
+      "description": "Fortlaufende Nummer im Tanzablauf"
+    },
+    "beschreibung": {
+      "type": "string",
+      "description": "Beschreibung des Tanzschritts"
+    },
+    "figur_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpfte Figur (optional)"
+    }
+  },
+  "required": [
+    "haesgruppe_id"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "read": null,
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    }
+  }
+}

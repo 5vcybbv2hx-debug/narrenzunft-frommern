@@ -1,0 +1,91 @@
+{
+  "name": "TanzFigur",
+  "type": "object",
+  "properties": {
+    "haesgruppe_id": {
+      "type": "string",
+      "description": "ID der Gruppe/Sparte (z. B. Tanzgruppe)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Bezeichnung der Figur"
+    },
+    "reihenfolge": {
+      "type": "number",
+      "default": 0,
+      "description": "Sortierreihenfolge"
+    },
+    "pdf_url": {
+      "type": "string",
+      "description": "URL einer verkn\u00fcpften PDF (z. B. Notation/Skizze)"
+    },
+    "aufstellung": {
+      "type": "string",
+      "description": "Aufstellungs-JSON: [{mitglied_id, x, y}] mit x/y in 0-100"
+    }
+  },
+  "required": [
+    "haesgruppe_id",
+    "name"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "read": null,
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    }
+  }
+}

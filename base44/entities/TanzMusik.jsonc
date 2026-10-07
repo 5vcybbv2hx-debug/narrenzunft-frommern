@@ -1,0 +1,86 @@
+{
+  "name": "TanzMusik",
+  "type": "object",
+  "properties": {
+    "haesgruppe_id": {
+      "type": "string",
+      "description": "ID der Gruppe/Sparte"
+    },
+    "titel": {
+      "type": "string",
+      "description": "Titel des Musikst\u00fccks"
+    },
+    "datei_url": {
+      "type": "string",
+      "description": "URL der Musikdatei"
+    },
+    "sortierung": {
+      "type": "number",
+      "default": 0,
+      "description": "Sortierreihenfolge"
+    }
+  },
+  "required": [
+    "haesgruppe_id"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "read": null,
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    }
+  }
+}
