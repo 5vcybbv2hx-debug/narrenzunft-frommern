@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { toast } from 'react-hot-toast';
-import { ArrowLeft, ArrowUp, ArrowDown, Plus, X, Check, Upload, Loader2, FileText, ExternalLink, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowUp, ArrowDown, Plus, X, Check, Upload, Loader2, FileText, ExternalLink, Trash2, Play as PlayIcon } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { fmtZeit, einsatzpunkteFuerFigur } from '@/lib/tanzMarker';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 /**
@@ -20,7 +21,7 @@ const parseAufstellung = (raw) => {
   try { return JSON.parse(raw || '[]') || []; } catch { return []; }
 };
 
-export default function FigurenTab({ gruppeId, alleMitglieder, canEdit }) {
+export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMusik }) {
   const [figuren, setFiguren] = useState([]);
   const [gewaehlt, setGewaehlt] = useState(null); // geöffnete Figur
   const [loading, setLoading] = useState(true);
@@ -39,11 +40,17 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit }) {
     return `${m.vorname || ''} ${m.nachname || ''}`.trim();
   };
 
+  const [musikListe, setMusikListe] = useState([]);
+
   const laden = async () => {
     try {
-      const f = await base44.entities.TanzFigur.filter({ haesgruppe_id: gruppeId });
+      const [f, mus] = await Promise.all([
+        base44.entities.TanzFigur.filter({ haesgruppe_id: gruppeId }),
+        base44.entities.TanzMusik.filter({ haesgruppe_id: gruppeId }),
+      ]);
       const sortiert = [...(f || [])].sort((a, b) => (a.reihenfolge ?? 0) - (b.reihenfolge ?? 0));
       setFiguren(sortiert);
+      setMusikListe(mus || []);
     } catch (e) {
       console.error(e);
       toast.error('Figuren konnten nicht geladen werden.');
@@ -172,7 +179,7 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit }) {
 
   useEffect(() => {
     if (!gewaehlt) return;
-    tanzlisteLaden().then(setTanzliste); // eslint-disable-line
+    tanzlisteLaden().then(setTanzliste);
   }, [gewaehlt?.id]);
 
   const hinzufuegenZurAufstellung = (t) => {
@@ -425,6 +432,35 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit }) {
           </div>
         )}
       </div>
+
+      {/* Musik-Einsatzpunkte dieser Figur (aus den Zeitmarkern im Musik-Tab) */}
+      {(() => {
+        const punkte = einsatzpunkteFuerFigur(musikListe, gewaehlt.id);
+        return (
+          <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+            <span className="text-sm font-medium text-white">Musik-Einsatzpunkte</span>
+            {punkte.length === 0 ? (
+              <p className="text-xs text-muted-foreground italic">
+                Diese Figur ist noch mit keinem Musik-Zeitmarker verknüpft. Zeitmarker werden im Musik-Tab gesetzt{canEdit ? '' : ' (durch Vorstand oder Spartenleiter)'}.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {punkte.map((p, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <span className="px-2 py-1 rounded-lg bg-primary/15 border border-primary/30 text-primary text-xs font-mono">{fmtZeit(p.marker.zeit)}</span>
+                    <span className="text-sm text-white truncate flex-1 min-w-0">{p.musik.titel}{p.marker.label ? <span className="text-muted-foreground text-xs"> · {p.marker.label}</span> : null}</span>
+                    <button onClick={() => onUebeMusik?.(p.musik.id, p.marker.zeit)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary text-white text-xs font-medium hover:bg-primary/90 shrink-0">
+                      <PlayIcon /> Üben
+                    </button>
+                  </div>
+                ))}
+                <p className="text-[11px] text-muted-foreground">„Üben" wechselt in den Musik-Tab und spielt den Abschnitt ab diesem Marker in Dauerschleife.</p>
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }

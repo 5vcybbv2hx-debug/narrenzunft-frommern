@@ -50,6 +50,12 @@ export default function SpartenDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('uebersicht');
+  // Sprungwunsch aus Figuren-/Ablauf-Tab: {musik_id, zeit} → Musik-Tab spielt Abschnitt
+  const [uebungswunsch, setUebungswunsch] = useState(null);
+  const handleUebeMusik = (musik_id, zeit) => {
+    setUebungswunsch({ musik_id, zeit });
+    setActiveTab('musik');
+  };
 
   // Modals & Forms State
   const [showTerminModal, setShowTerminModal] = useState(false);
@@ -1015,13 +1021,13 @@ export default function SpartenDashboard() {
           <TeilnehmerTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} />
         )}
         {activeTab === 'figuren' && (
-          <FigurenTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} />
+          <FigurenTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} onUebeMusik={handleUebeMusik} />
         )}
         {activeTab === 'ablauf' && (
-          <AblaufTab gruppeId={id} canEdit={canEdit || istGruppenVerantwortlicher} />
+          <AblaufTab gruppeId={id} canEdit={canEdit || istGruppenVerantwortlicher} onUebeMusik={handleUebeMusik} />
         )}
         {activeTab === 'musik' && (
-          <MusikTab gruppeId={id} canEdit={canEdit || istGruppenVerantwortlicher} />
+          <MusikTab gruppeId={id} canEdit={canEdit || istGruppenVerantwortlicher} uebungswunsch={uebungswunsch} onWunschVerbraucht={() => setUebungswunsch(null)} />
         )}
         {canEdit && activeTab === 'auslagen' && (
           <div className="space-y-6">

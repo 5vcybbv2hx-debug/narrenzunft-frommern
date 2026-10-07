@@ -72,6 +72,32 @@ export default async function(req) {
       return { value: JSON.stringify(sauber) };
     };
 
+    // ── Musik-Marker-JSON validieren: [{zeit, figur_id?, label?}] ──
+    const pruefeMarker = (raw) => {
+      let arr;
+      try {
+        arr = raw === undefined || raw === null ? undefined : JSON.parse(raw);
+      } catch {
+        return { invalid: true };
+      }
+      if (arr === undefined) return { value: undefined };
+      if (!Array.isArray(arr)) return { invalid: true };
+      if (arr.length > 200) return { invalid: true };
+      const sauber = [];
+      for (const mk of arr) {
+        if (!mk || typeof mk !== 'object') return { invalid: true };
+        const zeit = Number(mk.zeit);
+        if (!Number.isFinite(zeit) || zeit < 0 || zeit > 86400) return { invalid: true };
+        sauber.push({
+          zeit: Math.round(zeit * 10) / 10,
+          figur_id: str(mk.figur_id, 100) || '',
+          label: str(mk.label, 120) || '',
+        });
+      }
+      sauber.sort((a, b) => a.zeit - b.zeit);
+      return { value: JSON.stringify(sauber) };
+    };
+
     // ══════════ FIGUREN ══════════
     if (typ === 'figur') {
       const ENT = srv.entities.TanzFigur;
@@ -166,11 +192,14 @@ export default async function(req) {
         const titel = str(body.titel, 160) || 'Musikstück';
         const datei_url = str(body.datei_url, 1000);
         if (!datei_url) return Response.json({ error: 'datei_url fehlt' }, { status: 400 });
+        const mk = pruefeMarker(body.marker);
+        if (mk.invalid) return Response.json({ error: 'Ungültiges Marker-Format' }, { status: 400 });
         const neu = await ENT.create({
           haesgruppe_id,
           titel,
           datei_url,
           sortierung: num(body.sortierung) ?? 0,
+          marker: mk.value ?? JSON.stringify([]),
         });
         return Response.json({ erfolg: true, eintrag: neu });
       }
@@ -186,6 +215,11 @@ export default async function(req) {
           patch.datei_url = datei_url;
         }
         if (body.sortierung !== undefined) patch.sortierung = num(body.sortierung) ?? 0;
+        if (body.marker !== undefined) {
+          const mk = pruefeMarker(body.marker);
+          if (mk.invalid) return Response.json({ error: 'Ungültiges Marker-Format' }, { status: 400 });
+          patch.marker = mk.value ?? JSON.stringify([]);
+        }
         const t = await ENT.update(musikId, patch);
         return Response.json({ erfolg: true, eintrag: t });
       }

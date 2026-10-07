@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { Plus, ArrowUp, ArrowDown, Trash2, Pencil, Check, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { fmtZeit, einsatzpunkteFuerFigur } from '@/lib/tanzMarker';
+import { Music as MusicIcon } from 'lucide-react';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 
 /**
@@ -13,9 +15,10 @@ import { confirmDialog } from '@/components/ui/ConfirmProvider';
  * Admin und alle Verantwortlichen der Gruppe — läuft über die sichere
  * Backend-Function 'verwalteTanzDaten' (typ 'schritt').
  */
-export default function AblaufTab({ gruppeId, canEdit }) {
+export default function AblaufTab({ gruppeId, canEdit, onUebeMusik }) {
   const [schritte, setSchritte] = useState([]);
   const [figuren, setFiguren] = useState([]);
+  const [musikListe, setMusikListe] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [neuText, setNeuText] = useState('');
@@ -26,12 +29,14 @@ export default function AblaufTab({ gruppeId, canEdit }) {
 
   const laden = async () => {
     try {
-      const [s, f] = await Promise.all([
+      const [s, f, mus] = await Promise.all([
         base44.entities.TanzSchritt.filter({ haesgruppe_id: gruppeId }),
         base44.entities.TanzFigur.filter({ haesgruppe_id: gruppeId }),
+        base44.entities.TanzMusik.filter({ haesgruppe_id: gruppeId }),
       ]);
       setSchritte([...(s || [])].sort((a, b) => (a.nr ?? 0) - (b.nr ?? 0)));
       setFiguren([...(f || [])].sort((a, b) => (a.reihenfolge ?? 0) - (b.reihenfolge ?? 0)));
+      setMusikListe(mus || []);
     } catch (e) {
       console.error(e);
       toast.error('Tanzablauf konnte nicht geladen werden.');
@@ -185,6 +190,13 @@ export default function AblaufTab({ gruppeId, canEdit }) {
                         Figur: {figurName(s.figur_id)}
                       </span>
                     )}
+                    {s.figur_id && einsatzpunkteFuerFigur(musikListe, s.figur_id).slice(0, 3).map((p, pi) => (
+                      <button key={pi} onClick={() => onUebeMusik?.(p.musik.id, p.marker.zeit)}
+                        className="mt-1 mr-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary border border-border text-[11px] text-white hover:border-primary"
+                        title="Diesen Musik-Abschnitt im Musik-Tab üben">
+                        <MusicIcon className="w-3 h-3 text-primary" /> {fmtZeit(p.marker.zeit)} · {p.musik.titel}
+                      </button>
+                    ))}
                   </>
                 )}
               </div>
