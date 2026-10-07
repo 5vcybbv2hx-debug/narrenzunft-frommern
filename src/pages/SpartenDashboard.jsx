@@ -1,4 +1,5 @@
 import DateSelect from '../components/ui/DateSelect';
+import TeilnehmerTab from '@/components/sparten/TeilnehmerTab';
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
@@ -669,6 +670,11 @@ export default function SpartenDashboard() {
           <button onClick={() => setActiveTab('termine')} className={tabClass('termine')}>
             <Calendar className="w-4 h-4" /> Termine
           </button>
+          {gruppe?.typ === 'Tanzgruppe' && (
+            <button onClick={() => setActiveTab('teilnehmer')} className={tabClass('teilnehmer')}>
+              <UserCheck className="w-4 h-4" /> Teilnehmer
+            </button>
+          )}
           {canEdit && (
             <>
               <button onClick={() => setActiveTab('auslagen')} className={tabClass('auslagen')}>
@@ -979,6 +985,9 @@ export default function SpartenDashboard() {
         )}
 
         {/* TAB 3: AUSLAGEN */}
+        {activeTab === 'teilnehmer' && (
+          <TeilnehmerTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit} />
+        )}
         {canEdit && activeTab === 'auslagen' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
