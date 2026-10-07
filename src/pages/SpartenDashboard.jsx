@@ -1,12 +1,16 @@
 import DateSelect from '../components/ui/DateSelect';
 import TeilnehmerTab from '@/components/sparten/TeilnehmerTab';
+import FigurenTab from '@/components/sparten/FigurenTab';
+import AblaufTab from '@/components/sparten/AblaufTab';
+import MusikTab from '@/components/sparten/MusikTab';
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { syncVerantwortliche } from '@/lib/spartenSync';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
-import {
+import { Drama, ListOrdered, Music,
+
   Calendar, Clock, MapPin, Plus, Users, Wallet, 
   Send, Edit, Trash2, 
   Check, X, AlertCircle, MessageSquare, Repeat,
@@ -684,6 +688,19 @@ export default function SpartenDashboard() {
               <UserCheck className="w-4 h-4" /> Teilnehmer
             </button>
           )}
+          {gruppe?.typ === 'Tanzgruppe' && (
+            <>
+              <button onClick={() => setActiveTab('figuren')} className={tabClass('figuren')}>
+                <Drama className="w-4 h-4" /> Figuren
+              </button>
+              <button onClick={() => setActiveTab('ablauf')} className={tabClass('ablauf')}>
+                <ListOrdered className="w-4 h-4" /> Ablauf
+              </button>
+              <button onClick={() => setActiveTab('musik')} className={tabClass('musik')}>
+                <Music className="w-4 h-4" /> Musik
+              </button>
+            </>
+          )}
           {canEdit && (
             <>
               <button onClick={() => setActiveTab('auslagen')} className={tabClass('auslagen')}>
@@ -996,6 +1013,15 @@ export default function SpartenDashboard() {
         {/* TAB 3: AUSLAGEN */}
         {activeTab === 'teilnehmer' && (
           <TeilnehmerTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} />
+        )}
+        {activeTab === 'figuren' && (
+          <FigurenTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} />
+        )}
+        {activeTab === 'ablauf' && (
+          <AblaufTab gruppeId={id} canEdit={canEdit || istGruppenVerantwortlicher} />
+        )}
+        {activeTab === 'musik' && (
+          <MusikTab gruppeId={id} canEdit={canEdit || istGruppenVerantwortlicher} />
         )}
         {canEdit && activeTab === 'auslagen' && (
           <div className="space-y-6">
