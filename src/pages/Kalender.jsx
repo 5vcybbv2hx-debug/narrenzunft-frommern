@@ -8,7 +8,7 @@ import { isAdmin } from '@/lib/roles';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Calendar, List, ChevronLeft, ChevronRight, ChevronDown, Plus, Clock,
-  MapPin, Download, Filter, X, Edit, LayoutTemplate, Bus, AlertCircle, Search, Link2 } from 'lucide-react';
+  MapPin, Download, Filter, X, Edit, LayoutTemplate, Bus, Car, AlertCircle, Search, Link2 } from 'lucide-react';
 import { cachedFetch, clearEntityCache } from '../lib/entityCache';
 import { useSwipe } from '@/hooks/useSwipe';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
@@ -282,14 +282,14 @@ export default function Kalender({ nur = 'alle' }) {
   };
 
   // === Ausfahrt-Anmeldung ===
-  const handleAusfahrtRegister = async (ausfahrtId) => {
+  const handleAusfahrtRegister = async (ausfahrtId, transport = 'Bus') => {
     if (!myMitglied) return;
     setSubmittingAusfahrtId(ausfahrtId);
     try {
       const res = await meldeAnAusfahrtSicher({
         ausfahrtId,
         mitgliedId: myMitglied.id,
-        transport: 'Bus',
+        transport,
       });
       if (res.bereitsAngemeldet) {
         toast.info('Du bist für diese Ausfahrt bereits angemeldet.');
@@ -774,7 +774,7 @@ export default function Kalender({ nur = 'alle' }) {
                   ausfahrtAnmeldeCount={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeCount(t._ausfahrt_id) : 0}
                   isAusfahrtOpen={t._quelle === 'ausfahrt' ? isAusfahrtRegistrationOpen(t) : false}
                   canUnregisterAusfahrt={t._quelle === 'ausfahrt' ? canUnregisterAusfahrt(t) : false}
-                  onAusfahrtRegister={t._quelle === 'ausfahrt' ? () => handleAusfahrtRegister(t._ausfahrt_id) : null}
+                  onAusfahrtRegister={t._quelle === 'ausfahrt' ? (transport) => handleAusfahrtRegister(t._ausfahrt_id, transport) : null}
                   onAusfahrtUnregister={t._quelle === 'ausfahrt' ? () => {
                     const anm = getAusfahrtAnmeldeStatus(t._ausfahrt_id);
                     if (anm) handleAusfahrtUnregister(anm.id, t._ausfahrt_id);
@@ -805,7 +805,7 @@ export default function Kalender({ nur = 'alle' }) {
                   ausfahrtAnmeldeCount={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeCount(t._ausfahrt_id) : 0}
                   isAusfahrtOpen={t._quelle === 'ausfahrt' ? isAusfahrtRegistrationOpen(t) : false}
                   canUnregisterAusfahrt={t._quelle === 'ausfahrt' ? canUnregisterAusfahrt(t) : false}
-                  onAusfahrtRegister={t._quelle === 'ausfahrt' ? () => handleAusfahrtRegister(t._ausfahrt_id) : null}
+                  onAusfahrtRegister={t._quelle === 'ausfahrt' ? (transport) => handleAusfahrtRegister(t._ausfahrt_id, transport) : null}
                   onAusfahrtUnregister={t._quelle === 'ausfahrt' ? () => {
                     const anm = getAusfahrtAnmeldeStatus(t._ausfahrt_id);
                     if (anm) handleAusfahrtUnregister(anm.id, t._ausfahrt_id);
@@ -853,7 +853,7 @@ export default function Kalender({ nur = 'alle' }) {
                   ausfahrtAnmeldeCount={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeCount(t._ausfahrt_id) : 0}
                   isAusfahrtOpen={t._quelle === 'ausfahrt' ? isAusfahrtRegistrationOpen(t) : false}
                   canUnregisterAusfahrt={t._quelle === 'ausfahrt' ? canUnregisterAusfahrt(t) : false}
-                  onAusfahrtRegister={t._quelle === 'ausfahrt' ? () => handleAusfahrtRegister(t._ausfahrt_id) : null}
+                  onAusfahrtRegister={t._quelle === 'ausfahrt' ? (transport) => handleAusfahrtRegister(t._ausfahrt_id, transport) : null}
                   onAusfahrtUnregister={t._quelle === 'ausfahrt' ? () => {
                     const anm = getAusfahrtAnmeldeStatus(t._ausfahrt_id);
                     if (anm) handleAusfahrtUnregister(anm.id, t._ausfahrt_id);
@@ -1107,17 +1107,31 @@ function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditV
                 </div>
               )}
               {onAusfahrtRegister && !ausfahrtAnmeldung && (
-                <button
-                  onClick={onAusfahrtRegister}
-                  disabled={!isAusfahrtOpen || submittingAusfahrt === termin._ausfahrt_id}
-                  className={`w-full py-2.5 min-h-[44px] rounded-lg text-sm font-semibold transition-colors ${
-                    isAusfahrtOpen
-                      ? 'bg-primary text-white hover:bg-primary/90'
-                      : 'bg-secondary text-muted-foreground border border-border cursor-not-allowed'
-                  }`}
-                >
-                  {submittingAusfahrt === termin._ausfahrt_id ? 'Anmeldung...' : isAusfahrtOpen ? 'Anmelden' : 'Anmeldung geschlossen'}
-                </button>
+                isAusfahrtOpen ? (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => onAusfahrtRegister('Bus')}
+                      disabled={submittingAusfahrt === termin._ausfahrt_id}
+                      className="flex-1 py-2.5 min-h-[44px] rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Bus size={15} /> {submittingAusfahrt === termin._ausfahrt_id ? '...' : 'Mit Bus'}
+                    </button>
+                    <button
+                      onClick={() => onAusfahrtRegister('Privat')}
+                      disabled={submittingAusfahrt === termin._ausfahrt_id}
+                      className="flex-1 py-2.5 min-h-[44px] rounded-lg text-sm font-semibold bg-secondary text-foreground border border-border hover:border-primary/60 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Car size={15} /> {submittingAusfahrt === termin._ausfahrt_id ? '...' : 'Privat'}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    disabled
+                    className="w-full py-2.5 min-h-[44px] rounded-lg text-sm font-semibold bg-secondary text-muted-foreground border border-border cursor-not-allowed"
+                  >
+                    Anmeldung geschlossen
+                  </button>
+                )
               )}
               {onAusfahrtUnregister && ausfahrtAnmeldung && (
                 <button
