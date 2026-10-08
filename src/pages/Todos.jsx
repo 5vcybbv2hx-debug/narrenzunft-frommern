@@ -6,6 +6,7 @@ import { CheckSquare, Plus, Circle, Clock, CheckCircle2, AlertCircle, Calendar, 
 import { format, differenceInCalendarDays } from 'date-fns';
 import { de } from 'date-fns/locale';
 import TodoForm from '@/components/todos/TodoForm';
+import SwipeActionRow from '@/components/ui/SwipeAction';
 
 const PRIO_RANK = { 'Dringend': 0, 'Hoch': 1, 'Mittel': 2, 'Niedrig': 3 };
 
@@ -246,8 +247,13 @@ export default function Todos() {
     const chip = faelligChip(todo);
     const istErledigt = todo.status === 'Erledigt';
     return (
-      <div
+      <SwipeActionRow
         key={todo.id}
+        onSwipe={() => handleErledigtToggle(todo)}
+        actionLabel={istErledigt ? 'Wieder öffnen' : 'Erledigt'}
+        className="mb-3"
+      >
+      <div
         className={`bg-card border rounded-xl p-4 transition-all ${
           istErledigt ? 'opacity-55 border-border'
           : ueberfaellig ? 'border-red-700/40 hover:border-red-500/60'
@@ -339,6 +345,7 @@ export default function Todos() {
           </div>
         </div>
       </div>
+      </SwipeActionRow>
     );
   };
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import KalenderAboModal from '@/components/kalender/KalenderAboModal';
 import { meldeAnAusfahrtSicher } from '@/lib/ausfahrtAnmeldung';
@@ -10,6 +10,9 @@ import {
   Calendar, List, ChevronLeft, ChevronRight, ChevronDown, Plus, Clock,
   MapPin, Download, Filter, X, Edit, LayoutTemplate, Bus, AlertCircle, Search, Link2 } from 'lucide-react';
 import { cachedFetch, clearEntityCache } from '../lib/entityCache';
+import { useSwipe } from '@/hooks/useSwipe';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth,
   addMonths, subMonths, parseISO, isToday, isSameDay, startOfDay, isBefore, isAfter, differenceInDays } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -104,8 +107,8 @@ export default function Kalender({ nur = 'alle' }) {
 
   useEffect(() => { if (user?.id) loadData(); }, [user?.id]);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async ({ leise } = {}) => {
+    if (!leise) setLoading(true);
     try {
       // Welle A parallel: Termine (Cache), Ausfahrten (Cache), eigenes Mitglied
       const [result, ausfahrtData, myMArr] = await Promise.all([
@@ -380,6 +383,20 @@ export default function Kalender({ nur = 'alle' }) {
 
   const tage = eachDayOfInterval({ start: startOfMonth(monat), end: endOfMonth(monat) });
 
+  // Pull-to-Refresh (leise: ohne Full-Screen-Skeleton) + Monats-Wischen
+  const loadDataRef = useRef(loadData);
+  loadDataRef.current = loadData;
+  const { pullDistance, refreshing } = usePullToRefresh(useCallback(async () => {
+    clearEntityCache();
+    await loadDataRef.current({ leise: true });
+  }, []));
+
+  const monatSwipe = useSwipe({
+    onSwipeLeft: () => setMonat(m => addMonths(m, 1)),
+    onSwipeRight: () => setMonat(m => subMonths(m, 1)),
+    enabled: ansicht === 'monat',
+  });
+
   if (error) return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
       <AlertCircle size={32} className="text-red-400" />
@@ -426,6 +443,7 @@ export default function Kalender({ nur = 'alle' }) {
 
   return (
     <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-3xl mx-auto">
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
@@ -673,7 +691,7 @@ export default function Kalender({ nur = 'alle' }) {
 
       {/* MONATSANSICHT */}
       {ansicht === 'monat' && (
-        <div className="bg-card border border-border rounded-xl overflow-hidden mb-4">
+        <div {...monatSwipe} className="bg-card border border-border rounded-xl overflow-hidden mb-4 touch-pan-y">
           {/* Monat-Navigation */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <button onClick={() => setMonat(subMonths(monat, 1))} className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-secondary transition-colors text-muted-foreground">

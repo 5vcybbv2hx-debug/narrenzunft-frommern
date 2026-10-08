@@ -1,4 +1,5 @@
 import DateSelect from '../components/ui/DateSelect';
+import { useSwipe } from '@/hooks/useSwipe';
 import TeilnehmerTab from '@/components/sparten/TeilnehmerTab';
 import GruppenMitgliederListe from '@/components/sparten/GruppenMitgliederListe';
 import FigurenTab from '@/components/sparten/FigurenTab';
@@ -619,6 +620,37 @@ export default function SpartenDashboard() {
     }
   };
 
+  // Sichtbare Tabs in fester Reihenfolge — Wischgeste bewegt sich genau durch diese Liste
+  const tabsSichtbar = () => {
+    const t = ['uebersicht', 'termine'];
+    if (gruppe?.typ === 'Tanzgruppe') t.push('teilnehmer', 'figuren', 'ablauf', 'musik');
+    if (canEdit) {
+      t.push('auslagen');
+      if (gruppe?.typ !== 'Tanzgruppe') t.push('mitglieder');
+      t.push('nachricht');
+    }
+    return t;
+  };
+
+  const tabSwipe = useSwipe({
+    onSwipeLeft: () => {
+      const tabs = tabsSichtbar();
+      const i = tabs.indexOf(activeTab);
+      if (i >= 0 && i < tabs.length - 1) {
+        setActiveTab(tabs[i + 1]);
+        window.scrollTo({ top: 0 });
+      }
+    },
+    onSwipeRight: () => {
+      const tabs = tabsSichtbar();
+      const i = tabs.indexOf(activeTab);
+      if (i > 0) {
+        setActiveTab(tabs[i - 1]);
+        window.scrollTo({ top: 0 });
+      }
+    },
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4 sm:p-6">
@@ -755,7 +787,7 @@ export default function SpartenDashboard() {
       </div>
 
       {/* CONTENT AREA */}
-      <main className="max-w-6xl mx-auto px-4 py-6 md:px-8">
+      <main {...tabSwipe} className="max-w-6xl mx-auto px-4 py-6 md:px-8 touch-pan-y">
         {/* TAB 1: ÜBERSICHT */}
         {activeTab === 'uebersicht' && (
           <div className="space-y-6">

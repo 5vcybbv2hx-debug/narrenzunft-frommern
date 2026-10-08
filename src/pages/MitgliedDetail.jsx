@@ -11,7 +11,9 @@ import {
 import { format, differenceInYears } from 'date-fns';
 import { useQueryClient } from '@tanstack/react-query';
 import { de } from 'date-fns/locale';
-import { isAdmin, kannBankdatenSehn, istNurMitglied, kannMitgliedProfilSehn } from '@/lib/roles';
+import { isAdmin, kannBankdatenSehn, istNurMitglied, kannMitgliedProfilSehn, kannMitgliederlisteSehn } from '@/lib/roles';
+import { useSwipe } from '@/hooks/useSwipe';
+import { ChevronLeft } from 'lucide-react';
 import { syncVerantwortliche } from '@/lib/spartenSync';
 import EhrungsStatus from '@/components/mitglied/EhrungsStatus';
 import AdresseAutocomplete from '@/components/AdresseAutocomplete';
@@ -132,6 +134,37 @@ export default function MitgliedDetail() {
   // Spartenleiter-Historie des Mitglieds laden (nur wenn er je Leiter war/ist)
   const zeigeSplatSektion = mitglied?.app_rolle === 'spartenleiter' || linkedUser?.role === 'spartenleiter'
     || (mitglied?.spartenleiter_haesgruppen_ids?.length || 0) > 0 || (mitglied?.spartenleiter_haesgruppe_id || '') !== '';
+  // Wisch-Navigation: Reihenfolge wie Mitgliederliste (Nachname A-Z), ohne Archiv
+  const kannNav = !isNew && kannMitgliederlisteSehn(user);
+  const [navIds, setNavIds] = useState(null);
+  useEffect(() => {
+    if (!kannNav) return;
+    let aktiv = true;
+    base44.entities.Mitglied.list('nachname', 2000).then(list => {
+      if (!aktiv) return;
+      const ids = (list || [])
+        .filter(m => !m.archiviert)
+        .sort((a, b) => (a.nachname || '').localeCompare(b.nachname || '') || (a.vorname || '').localeCompare(b.vorname || ''))
+        .map(m => m.id);
+      setNavIds(ids);
+    }).catch(() => {});
+    return () => { aktiv = false; };
+  }, [kannNav]);
+
+  const navIndex = navIds ? navIds.indexOf(id) : -1;
+  const geheZuMitglied = (delta) => {
+    if (navIndex < 0) return;
+    const ziel = navIds[navIndex + delta];
+    if (ziel && ziel !== id) navigate(`/mitglieder/${ziel}`);
+  };
+
+  // Wischgeste: links = nächstes, rechts = vorheriges Mitglied (nur außerhalb des Bearbeitungsmodus)
+  const mitgliedSwipe = useSwipe({
+    onSwipeLeft: () => geheZuMitglied(1),
+    onSwipeRight: () => geheZuMitglied(-1),
+    enabled: !editing && !loading && navIndex >= 0,
+  });
+
   useEffect(() => {
     if (!mitglied?.id || !zeigeSplatSektion || splatHistorieGeladen) return;
     base44.entities.SpartenleiterHistorie.filter({ mitglied_id: mitglied.id })
@@ -514,12 +547,24 @@ export default function MitgliedDetail() {
   }
 
   return (
-    <div className="px-4 lg:px-6 py-6 max-w-3xl mx-auto overflow-x-hidden">
+    <div {...mitgliedSwipe} className="px-4 lg:px-6 py-6 max-w-3xl mx-auto overflow-x-hidden touch-pan-y">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6 flex-wrap">
         <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground">
           <ArrowLeft size={20} />
         </button>
+        {navIndex > 0 && (
+          <button onClick={() => geheZuMitglied(-1)} title="Vorheriges Mitglied"
+            className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground">
+            <ChevronLeft size={18} />
+          </button>
+        )}
+        {navIndex >= 0 && navIndex < (navIds?.length || 0) - 1 && (
+          <button onClick={() => geheZuMitglied(1)} title="Nächstes Mitglied"
+            className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground">
+            <ChevronRight size={18} />
+          </button>
+        )}
         <div className="flex-1">
           <h1 className="text-xl font-bold font-oswald uppercase tracking-wide text-white">
             {isNew ? 'Neues Mitglied' : `${mitglied.vorname} ${mitglied.nachname}`}
