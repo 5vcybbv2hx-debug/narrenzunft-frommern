@@ -163,12 +163,21 @@ export default function VeranstaltungBearbeitenModal({ veranstaltung, onClose, o
             </div>
           )}
 
-          {/* Anmeldeschluss & Checkboxen */}
-          <div>
-            <label className="text-xs text-muted-foreground block mb-1">Anmeldeschluss</label>
-            <DateSelect name="anmeldeschluss" value={form.anmeldeschluss || ''} onChange={e => set('anmeldeschluss', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
-          </div>
+          {/* Anmeldezeitfenster & Checkboxen */}
+          {form.anmeldung_aktiv !== false && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Anmeldung ab</label>
+                <DateSelect name="anmeldung_start" value={form.anmeldung_start || ''} onChange={e => set('anmeldung_start', e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Anmeldung bis</label>
+                <DateSelect name="anmeldung_ende" value={form.anmeldung_ende || ''} onChange={e => set('anmeldung_ende', e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+              </div>
+            </div>
+          )}
           <div className="flex gap-4 sm:p-6">
             <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground">
               <input type="checkbox" checked={!!form.bus_erforderlich} onChange={e => set('bus_erforderlich', e.target.checked)} className="rounded" />

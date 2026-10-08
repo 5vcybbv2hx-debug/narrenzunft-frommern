@@ -1,3 +1,4 @@
+import { istVeranstaltungAnmeldungOffen, veranstaltungAnmeldeText } from '@/lib/veranstaltungAnmeldung';
 import DateSelect from '../components/ui/DateSelect';
 import TimeSelect from '../components/ui/TimeSelect';
 import { useState, useCallback } from 'react';
@@ -98,7 +99,7 @@ function VerantwortlicheAuswahl({ mitglieder, selected, onChange, haeufige }) {
 
 const EMPTY_FORM = {
   titel: '', typ: 'Umzug', datum: '', uhrzeit: '', ort: '',
-  beschreibung: '', anmeldeschluss: '', bus_erforderlich: true,
+  beschreibung: '', anmeldeschluss: '', anmeldung_start: '', anmeldung_ende: '', bus_erforderlich: true,
   anmeldung_aktiv: true, status: 'Geplant', externer_verein_id: '',
 };
 
@@ -162,7 +163,7 @@ export default function Umzuege() {
     setEditItem(null);
     setForm({
       titel: '', typ: 'Umzug', datum: '', uhrzeit: '', ort: '',
-      beschreibung: '', anmeldeschluss: '', bus_erforderlich: true,
+      beschreibung: '', anmeldeschluss: '', anmeldung_start: '', anmeldung_ende: '', bus_erforderlich: true,
       anmeldung_aktiv: true, status: 'Geplant', bus_rueckfahrtszeit: '',
       verantwortliche_ids: [...busverantwortlicheIds], externer_verein_id: '',
     });
@@ -174,7 +175,7 @@ export default function Umzuege() {
     setForm({
       titel: u.titel || '', typ: u.typ || 'Umzug', datum: u.datum || '',
       uhrzeit: u.uhrzeit || '', ort: u.ort || '', beschreibung: u.beschreibung || '',
-      anmeldeschluss: u.anmeldeschluss || '', bus_erforderlich: u.bus_erforderlich || false,
+      anmeldeschluss: u.anmeldeschluss || '', anmeldung_start: u.anmeldung_start || '', anmeldung_ende: u.anmeldung_ende || '', bus_erforderlich: u.bus_erforderlich || false,
       anmeldung_aktiv: u.anmeldung_aktiv !== false, status: u.status || 'Geplant',
       bus_rueckfahrtszeit: u.bus_rueckfahrtszeit || '',
       verantwortliche_ids: u.verantwortliche_ids || [], externer_verein_id: u.externer_verein_id || '',
@@ -366,7 +367,11 @@ export default function Umzuege() {
 
                   {myMitglied && u.anmeldung_aktiv && (
                     <div className="px-4 pb-4">
-                      {!isAngemeldet ? (
+                      {!istVeranstaltungAnmeldungOffen(u) ? (
+                        <p className="text-center text-xs text-muted-foreground py-2 font-medium">
+                          ⏰ {veranstaltungAnmeldeText(u)}
+                        </p>
+                      ) : !isAngemeldet ? (
                         <div className="flex gap-2">
                           <button onClick={() => handleAnmelden(u.id, false)} className="flex-1 py-2.5 rounded-xl bg-secondary text-foreground text-sm font-semibold hover:bg-border transition-colors flex items-center justify-center gap-2">
                             <Car size={14} /> Mit Auto
@@ -573,10 +578,17 @@ export default function Umzuege() {
                   </div>
                 </div>
               )}
-              <div>
-                <label className="text-xs text-muted-foreground block mb-1">Anmeldeschluss</label>
-                <DateSelect value={form.anmeldeschluss} onChange={e => setForm(p => ({ ...p, anmeldeschluss: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Anmeldung ab</label>
+                  <DateSelect value={form.anmeldung_start || ''} onChange={e => setForm(p => ({ ...p, anmeldung_start: e.target.value }))}
+                    className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Anmeldung bis</label>
+                  <DateSelect value={form.anmeldung_ende || ''} onChange={e => setForm(p => ({ ...p, anmeldung_ende: e.target.value }))}
+                    className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+                </div>
               </div>
 
 

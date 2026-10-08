@@ -13,6 +13,7 @@ import ArbeitsdienstTab from '@/components/veranstaltung/ArbeitsdienstTab';
 import DokumenteTab from '@/components/veranstaltung/DokumenteTab';
 import PlanungTab from '@/components/veranstaltung/PlanungTab';
 import NachbereitungTab from '@/components/veranstaltung/NachbereitungTab';
+import { istVeranstaltungAnmeldungOffen, veranstaltungAnmeldeText } from '@/lib/veranstaltungAnmeldung';
 import AdresseAutocomplete from '@/components/AdresseAutocomplete';
 import { VeranstaltungsDetailsForm, VeranstaltungsDetailsView } from '@/components/veranstaltung/VeranstaltungsDetails';
 import { format } from 'date-fns';
@@ -35,7 +36,7 @@ export default function VeranstaltungDetail() {
 
   const [veranstaltung, setVeranstaltung] = useState({
     titel: '', typ: 'Intern', datum: '', uhrzeit: '', ort: '',
-    beschreibung: '', anmeldeschluss: '', max_teilnehmer: '',
+    beschreibung: '', anmeldeschluss: '', max_teilnehmer: '', anmeldung_start: '', anmeldung_ende: '',
     bus_erforderlich: false, anmeldung_aktiv: true, status: 'Geplant'
   });
   const [editing, setEditing] = useState(isNew);
@@ -335,10 +336,8 @@ export default function VeranstaltungDetail() {
                   )}
                 </div>
               ) : (() => {
-                // #5 – Anmeldeschluss erzwingen
-                const heute = new Date().toISOString().split('T')[0];
-                const schlussVorbei = veranstaltung.anmeldeschluss && heute > veranstaltung.anmeldeschluss;
-                const anmeldungMoeglich = veranstaltung.anmeldung_aktiv && !schlussVorbei;
+                // #5 – Anmeldezeitfenster erzwingen
+                const anmeldungMoeglich = istVeranstaltungAnmeldungOffen(veranstaltung);
                 if (anmeldungMoeglich) {
                   return (
                     <div className="flex gap-2">
@@ -362,7 +361,7 @@ export default function VeranstaltungDetail() {
                 return (
                   <div className="py-2 px-3 rounded-lg bg-secondary text-center">
                     <p className="text-sm text-muted-foreground font-medium">
-                      {schlussVorbei ? `⏰ Anmeldeschluss war ${veranstaltung.anmeldeschluss}` : 'Anmeldung geschlossen'}
+                      ⏰ {veranstaltungAnmeldeText(veranstaltung) || 'Anmeldung geschlossen'}
                     </p>
                     {isAdmin && (
                       <p className="text-xs text-primary mt-0.5">Admins können weiterhin manuell hinzufügen</p>
@@ -431,7 +430,11 @@ export default function VeranstaltungDetail() {
                   <p className="text-sm text-foreground py-1">{veranstaltung.ort || '–'}</p>
                 )}
               </div>
-              <Field label="Anmeldeschluss" field="anmeldeschluss" type="date" />
+              {editing && <Field label="Anmeldung ab" field="anmeldung_start" type="date" />}
+              {editing && <Field label="Anmeldung bis" field="anmeldung_ende" type="date" />}
+              {!editing && veranstaltung.anmeldung_start && <Field label="Anmeldung ab" field="anmeldung_start" type="date" />}
+              {!editing && veranstaltung.anmeldung_ende && <Field label="Anmeldung bis" field="anmeldung_ende" type="date" />}
+              {!editing && !veranstaltung.anmeldung_ende && veranstaltung.anmeldeschluss && <Field label="Anmeldeschluss" field="anmeldeschluss" type="date" />}
               <Field label="Max. Teilnehmer" field="max_teilnehmer" type="number" />
 
             </div>

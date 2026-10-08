@@ -33,6 +33,16 @@
       "type": "string",
       "format": "date"
     },
+    "anmeldung_start": {
+      "type": "string",
+      "format": "date",
+      "description": "Anmeldezeitfenster: ab diesem Tag ist die Anmeldung möglich"
+    },
+    "anmeldung_ende": {
+      "type": "string",
+      "format": "date",
+      "description": "Anmeldezeitfenster: bis einschließlich dieses Tages ist die Anmeldung möglich"
+    },
     "max_teilnehmer": {
       "type": "number"
     },

@@ -17,7 +17,7 @@ const STATUS_LIST = ['Geplant', 'Aktiv', 'Abgeschlossen', 'Abgesagt'];
 
 const EMPTY_FORM = {
   titel: '', typ: 'Intern', datum: '', uhrzeit: '', ort: '',
-  beschreibung: '', anmeldeschluss: '', bus_erforderlich: false,
+  beschreibung: '', anmeldeschluss: '', anmeldung_start: '', anmeldung_ende: '', bus_erforderlich: false,
   anmeldung_aktiv: true, status: 'Geplant',
 };
 
@@ -304,11 +304,20 @@ export default function VeranstaltungNeu() {
           className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary resize-none"
         />
 
-        <div>
-          <label className="text-xs text-muted-foreground block mb-1">Anmeldeschluss</label>
-          <DateSelect value={form.anmeldeschluss || ''} onChange={e => setForm(p => ({ ...p, anmeldeschluss: e.target.value }))}
-            className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
-        </div>
+        {form.anmeldung_aktiv && (
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">Anmeldung ab</label>
+              <DateSelect value={form.anmeldung_start || ''} onChange={e => setForm(p => ({ ...p, anmeldung_start: e.target.value }))}
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">Anmeldung bis</label>
+              <DateSelect value={form.anmeldung_ende || ''} onChange={e => setForm(p => ({ ...p, anmeldung_ende: e.target.value }))}
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-6">
           <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground">
