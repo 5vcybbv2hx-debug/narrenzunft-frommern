@@ -2,16 +2,14 @@ import DateSelect from '../components/ui/DateSelect';
 import { useSwipe } from '@/hooks/useSwipe';
 import TeilnehmerTab from '@/components/sparten/TeilnehmerTab';
 import GruppenMitgliederListe from '@/components/sparten/GruppenMitgliederListe';
-import FigurenTab from '@/components/sparten/FigurenTab';
-import AblaufTab from '@/components/sparten/AblaufTab';
-import MusikTab from '@/components/sparten/MusikTab';
+import TanzTab from '@/components/sparten/TanzTab';
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { syncVerantwortliche } from '@/lib/spartenSync';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
-import { Drama, ListOrdered, Music,
+import { Drama,
 
   Calendar, Clock, MapPin, Plus, Users, Wallet, 
   Send, Edit, Trash2, 
@@ -53,12 +51,6 @@ export default function SpartenDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('uebersicht');
-  // Sprungwunsch aus Figuren-/Ablauf-Tab: {musik_id, zeit} → Musik-Tab spielt Abschnitt
-  const [uebungswunsch, setUebungswunsch] = useState(null);
-  const handleUebeMusik = (musik_id, zeit) => {
-    setUebungswunsch({ musik_id, zeit });
-    setActiveTab('musik');
-  };
 
   // Modals & Forms State
   const [showTerminModal, setShowTerminModal] = useState(false);
@@ -623,7 +615,7 @@ export default function SpartenDashboard() {
   // Sichtbare Tabs in fester Reihenfolge — Wischgeste bewegt sich genau durch diese Liste
   const tabsSichtbar = () => {
     const t = ['uebersicht', 'termine'];
-    if (gruppe?.typ === 'Tanzgruppe') t.push('teilnehmer', 'figuren', 'ablauf', 'musik');
+    if (gruppe?.typ === 'Tanzgruppe') t.push('teilnehmer', 'tanz');
     if (canEdit) {
       t.push('auslagen');
       if (gruppe?.typ !== 'Tanzgruppe') t.push('mitglieder');
@@ -756,17 +748,9 @@ export default function SpartenDashboard() {
             </button>
           )}
           {gruppe?.typ === 'Tanzgruppe' && (
-            <>
-              <button onClick={() => setActiveTab('figuren')} className={tabClass('figuren')}>
-                <Drama className="w-4 h-4" /> Figuren
-              </button>
-              <button onClick={() => setActiveTab('ablauf')} className={tabClass('ablauf')}>
-                <ListOrdered className="w-4 h-4" /> Ablauf
-              </button>
-              <button onClick={() => setActiveTab('musik')} className={tabClass('musik')}>
-                <Music className="w-4 h-4" /> Musik
-              </button>
-            </>
+            <button onClick={() => setActiveTab('tanz')} className={tabClass('tanz')}>
+              <Drama className="w-4 h-4" /> Tanz
+            </button>
           )}
           {canEdit && (
             <>
@@ -1083,14 +1067,8 @@ export default function SpartenDashboard() {
         {activeTab === 'teilnehmer' && (
           <TeilnehmerTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} />
         )}
-        {activeTab === 'figuren' && (
-          <FigurenTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} onUebeMusik={handleUebeMusik} />
-        )}
-        {activeTab === 'ablauf' && (
-          <AblaufTab gruppeId={id} canEdit={canEdit || istGruppenVerantwortlicher} onUebeMusik={handleUebeMusik} />
-        )}
-        {activeTab === 'musik' && (
-          <MusikTab gruppeId={id} canEdit={canEdit || istGruppenVerantwortlicher} uebungswunsch={uebungswunsch} onWunschVerbraucht={() => setUebungswunsch(null)} />
+        {activeTab === 'tanz' && (
+          <TanzTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} />
         )}
         {canEdit && activeTab === 'auslagen' && (
           <div className="space-y-6">

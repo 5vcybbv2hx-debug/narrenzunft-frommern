@@ -20,7 +20,7 @@ import { parseMarker, fmtZeit, parseZeit, sortMarker } from '@/lib/tanzMarker';
  * Stellv./Admin und alle Verantwortlichen der Gruppe — läuft über die
  * sichere Backend-Function 'verwalteTanzDaten' (typ 'musik').
  */
-export default function MusikTab({ gruppeId, canEdit, uebungswunsch, onWunschVerbraucht }) {
+export default function MusikTab({ gruppeId, canEdit, uebungswunsch, onWunschVerbraucht, playerApi, onSpielstand }) {
   const [liste, setListe] = useState([]);
   const [figuren, setFiguren] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +32,7 @@ export default function MusikTab({ gruppeId, canEdit, uebungswunsch, onWunschVer
   const [markerDrafts, setMarkerDrafts] = useState({});
   // Aktive Übung: { musikId, start, ende (null = bis Stückende), loop }
   const [uebung, setUebung] = useState(null);
+  const [spielendId, setSpielendId] = useState(null); // zuletzt abgespieltes Stück
   const audios = useRef({});
 
   const laden = async () => {
@@ -55,6 +56,32 @@ export default function MusikTab({ gruppeId, canEdit, uebungswunsch, onWunschVer
   };
 
   useEffect(() => { if (gruppeId) laden(); }, [gruppeId]);
+
+  // Spielstand nach außen melden (Mini-Player im TanzTab) …
+  const meldeSpielstand = (m, playing) => {
+    if (playing) setSpielendId(m.id);
+    onSpielstand?.({ musikId: m.id, titel: m.titel, playing });
+  };
+
+  // … und Fernbedienung für die Mini-Player-Leiste bereitstellen
+  useEffect(() => {
+    if (!playerApi) return;
+    playerApi.current = {
+      toggle: () => {
+        const id = spielendId || liste[0]?.id;
+        const a = id ? audios.current[id] : null;
+        if (!a) return;
+        if (a.paused) a.play().catch(() => {}); else a.pause();
+      },
+      stop: () => { Object.values(audios.current).forEach(a => a.pause()); },
+    };
+  }, [playerApi, liste, spielendId]);
+
+  // Beim echten Auseinandernehmen (Tab-Wechsel/Gruppenwechsel): Leiste ausblenden
+  useEffect(() => () => {
+    if (playerApi) playerApi.current = null;
+    onSpielstand?.(null);
+  }, []);
 
   const invoke = async (payload) => {
     const res = await base44.functions.invoke('verwalteTanzDaten', { haesgruppe_id: gruppeId, ...payload });
@@ -288,9 +315,13 @@ export default function MusikTab({ gruppeId, canEdit, uebungswunsch, onWunschVer
                 </div>
 
                 <audio
+                  data-no-swipe
                   ref={el => { audios.current[m.id] = el; }}
                   controls preload="none" src={m.datei_url}
                   onTimeUpdate={e => onTimeUpdate(e, m)}
+                  onPlay={() => meldeSpielstand(m, true)}
+                  onPause={() => meldeSpielstand(m, false)}
+                  onEnded={() => meldeSpielstand(m, false)}
                   className="w-full mt-2.5"
                 />
 
