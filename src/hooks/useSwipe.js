@@ -17,6 +17,12 @@ export function useSwipe({ onSwipeLeft, onSwipeRight, threshold = 60, enabled = 
 
   const onTouchStart = useCallback((e) => {
     if (!enabled || e.touches.length !== 1) return;
+    // Gesten, die in einem Drag-Bereich (data-no-swipe) oder in horizontal
+    // scrollbaren Feldern/Eingaben starten, gehören dem Element, nicht dem Tab-Wisch.
+    if (e.target && e.target.closest && e.target.closest('[data-no-swipe], input, textarea, select, [draggable="true"]')) {
+      start.current = null;
+      return;
+    }
     start.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
   }, [enabled]);
 

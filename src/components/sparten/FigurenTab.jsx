@@ -383,6 +383,7 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
           onPointerUp={endeDrag}
           onPointerCancel={endeDrag}
           onPointerLeave={endeDrag}
+          data-no-swipe
           style={canEdit ? { touchAction: 'none' } : undefined}
           className="relative w-full aspect-[16/10] rounded-lg border border-dashed border-border bg-secondary/40 overflow-hidden select-none"
         >
