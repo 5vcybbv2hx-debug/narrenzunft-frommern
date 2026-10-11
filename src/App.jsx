@@ -49,6 +49,7 @@ import MitgliedsantragFormular from './pages/MitgliedsantragFormular';
 import VerleihAnfrage from './pages/VerleihAnfrage';
 import VerleihUebersicht from './pages/VerleihUebersicht';
 import Mitgliedsantraege from './pages/Mitgliedsantraege';
+import Dokumente from './pages/Dokumente';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -107,6 +108,7 @@ const AuthenticatedApp = () => {
         <Route path="/profil" element={<Profil />} />
         <Route path="/suche" element={<Suche />} />
         <Route path="/mehr" element={<Mehr />} />
+        <Route path="/dokumente" element={<Dokumente />} />
         <Route path="/nachrichten" element={<Nachrichten />} />
 
         {/* ── Mitglieder: Detail frei (Seite prüft selbst), Liste nur für Führung ── */}

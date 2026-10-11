@@ -1,0 +1,21 @@
+{
+  "name": "DatenschutzZustimmung",
+  "type": "object",
+  "properties": {
+    "mitglied_id": { "type": "string", "description": "Wer hat zugestimmt" },
+    "fuer_mitglied_id": { "type": "string", "description": "Optional: für wessen Daten (z.B. Kind, vertreten durch Elternteil). Leer = für sich selbst." },
+    "version": { "type": "number", "description": "Version der Datenschutz-Fassung, der zugestimmt wurde" },
+    "dokument_id": { "type": "string", "description": "VereinsDokument.id der Satzung/Datenschutz-Fassung" },
+    "zugestimmt_am": { "type": "string", "format": "date-time" },
+    "art": { "type": "string", "enum": ["App", "Manuell durch Vorstand"], "default": "App" },
+    "eingetragen_von_id": { "type": "string", "description": "Bei manueller Erfassung: Vorstandsmitglied" },
+    "notiz": { "type": "string" }
+  },
+  "required": ["mitglied_id", "version"],
+  "rls": {
+    "create": { "$or": [ { "user_condition": { "role": "admin" } }, { "user_condition": { "role": "vorstand" } }, { "user_condition": { "role": "stellv_vorstand" } } ] },
+    "read":   { "$or": [ { "user_condition": { "role": "admin" } }, { "user_condition": { "role": "vorstand" } }, { "user_condition": { "role": "stellv_vorstand" } } ] },
+    "update": { "$or": [ { "user_condition": { "role": "admin" } } ] },
+    "delete": { "$or": [ { "user_condition": { "role": "admin" } } ] }
+  }
+}

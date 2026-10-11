@@ -1,0 +1,34 @@
+{
+  "name": "VereinsDokument",
+  "type": "object",
+  "properties": {
+    "titel": { "type": "string", "description": "Anzeigename, z.B. 'Satzung (Stand Mai 2023)'" },
+    "kategorie": {
+      "type": "string",
+      "enum": ["Satzung", "Ordnung", "Antragsformular", "Datenschutz", "Protokoll", "Sonstiges"],
+      "default": "Sonstiges"
+    },
+    "beschreibung": { "type": "string" },
+    "sichtbarkeit": {
+      "type": "string",
+      "enum": ["alle", "ausschuss"],
+      "default": "ausschuss",
+      "description": "alle = jedes Mitglied darf lesen, ausschuss = nur Vorstand/Stv./Admin"
+    },
+    "version": { "type": "number", "default": 1, "description": "Hochzählen bei neuer Fassung (Datenschutz: löst erneute Zustimmung aus)" },
+    "stand_datum": { "type": "string", "format": "date", "description": "Stand/Beschlussdatum des Dokuments" },
+    "file_uri": { "type": "string", "description": "Private Storage-URI. NIE öffentlich, Download nur per signierter URL." },
+    "dateiname": { "type": "string" },
+    "datei_groesse": { "type": "number" },
+    "ist_aktuell": { "type": "boolean", "default": true, "description": "false = ersetzte alte Fassung (Archiv)" },
+    "hochgeladen_von_id": { "type": "string" },
+    "sortierung": { "type": "number", "default": 100 }
+  },
+  "required": ["titel", "file_uri"],
+  "rls": {
+    "create": { "$or": [ { "user_condition": { "role": "admin" } }, { "user_condition": { "role": "vorstand" } }, { "user_condition": { "role": "stellv_vorstand" } } ] },
+    "read":   { "$or": [ { "user_condition": { "role": "admin" } }, { "user_condition": { "role": "vorstand" } }, { "user_condition": { "role": "stellv_vorstand" } } ] },
+    "update": { "$or": [ { "user_condition": { "role": "admin" } }, { "user_condition": { "role": "vorstand" } }, { "user_condition": { "role": "stellv_vorstand" } } ] },
+    "delete": { "$or": [ { "user_condition": { "role": "admin" } }, { "user_condition": { "role": "vorstand" } } ] }
+  }
+}

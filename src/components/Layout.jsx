@@ -8,10 +8,11 @@ import {
   Award, CreditCard, ChevronDown,
   LogOut, Shield, ClipboardList,
   AlertTriangle, Lock, CheckSquare, Package, ShoppingBag,
-  ArrowLeft, LayoutGrid,
+  ArrowLeft, LayoutGrid, FileText,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import SecureSearch from './SecureSearch';
+import DatenschutzZustimmungModal from '@/components/dokumente/DatenschutzZustimmungModal';
 
 // ── Akkordeon-Sektionen ──
 export const NAV_SECTIONS = [
@@ -24,6 +25,7 @@ export const NAV_SECTIONS = [
       { path: '/sparten',        label: 'Sparten & Gruppen', icon: Users,       roles: null },
       { path: '/shop',           label: 'Shop',               icon: ShoppingBag, roles: null },
       { path: '/arbeitsdienste', label: 'Arbeitsdienste',     icon: Briefcase,   roles: null },
+      { path: '/dokumente',      label: 'Dokumente',          icon: FileText,    roles: null },
     ],
   },
   {
@@ -342,6 +344,8 @@ export default function Layout() {
             </motion.div>
           </AnimatePresence>
         </main>
+
+        <DatenschutzZustimmungModal />
 
         {/* ── Bottom Navigation (Mobile) ── */}
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-20 border-t border-border pb-safe"
