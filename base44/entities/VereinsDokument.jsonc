@@ -3,6 +3,15 @@
   "type": "object",
   "properties": {
     "titel": { "type": "string", "description": "Anzeigename, z.B. 'Satzung (Stand Mai 2023)'" },
+    "typ": {
+      "type": "string",
+      "enum": ["Datei", "Text"],
+      "default": "Datei",
+      "description": "Datei = PDF/Bild im privaten Speicher, Text = direkt in der App editierbarer Text (Absätze als JSON)"
+    },
+    "absaetze": { "type": "string", "description": "Veröffentlichter Inhalt als JSON-Array [{nummer, titel, text}] (nur typ=Text)" },
+    "entwurf": { "type": "string", "description": "Nicht veröffentlichter Entwurf als JSON-Array (nur typ=Text)" },
+    "zustimmung_version": { "type": "number", "description": "Version, für die eine Datenschutz-Zustimmung nötig ist. Erhöht nur der Veröffentlichungs-Schritt mit Häkchen 'erneute Zustimmung'." },
     "kategorie": {
       "type": "string",
       "enum": ["Satzung", "Ordnung", "Antragsformular", "Datenschutz", "Protokoll", "Sonstiges"],

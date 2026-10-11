@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { toast } from 'sonner';
 import { ShieldCheck, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * Pflicht-Zustimmung zum Datenschutz (Satzung § 14) beim App-Start.
@@ -12,6 +13,7 @@ import { ShieldCheck, FileText } from 'lucide-react';
  */
 export default function DatenschutzZustimmungModal() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [status, setStatus] = useState(null);
   const [kinderAuswahl, setKinderAuswahl] = useState({});
   const [busy, setBusy] = useState(false);
@@ -33,6 +35,7 @@ export default function DatenschutzZustimmungModal() {
   if (!status) return null;
 
   async function oeffneDokument() {
+    if (status.dokument.typ === 'Text') { navigate('/dokumente'); return; }
     const tab = window.open('', '_blank');
     if (!tab) return toast.error('Bitte Pop-ups erlauben.');
     tab.opener = null;
@@ -71,7 +74,7 @@ export default function DatenschutzZustimmungModal() {
           <li>Fotos und Ehrungen dürfen veröffentlicht werden. Du kannst dem jederzeit beim Vorstand widersprechen.</li>
           <li>Du hast ein Recht auf Auskunft, Berichtigung und Löschung.</li>
         </ul>
-        <button onClick={oeffneDokument} className="inline-flex items-center gap-1.5 text-sm text-primary mb-4"><FileText size={15} /> {status.dokument.titel} lesen</button>
+        <button onClick={oeffneDokument} className="inline-flex items-center gap-1.5 text-sm text-primary mb-4"><FileText size={15} /> {status.dokument.typ === 'Text' ? status.dokument.titel + ' in der App lesen' : status.dokument.titel + ' (PDF) lesen'}</button>
 
         {kinder.length > 0 && (
           <div className="rounded-lg border border-border bg-background p-3 mb-4">

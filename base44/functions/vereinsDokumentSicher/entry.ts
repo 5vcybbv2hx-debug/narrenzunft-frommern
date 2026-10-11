@@ -23,11 +23,75 @@ const KATEGORIEN = new Set(["Satzung", "Ordnung", "Antragsformular", "Datenschut
 const SICHTBARKEIT = new Set(["alle", "ausschuss"]);
 
 async function aktuellesDatenschutzDokument(S) {
-  const docs = await S.VereinsDokument.filter({ kategorie: "Datenschutz", ist_aktuell: true }).catch(() => []);
-  if (docs?.length) return docs.sort((a, b) => (b.version || 0) - (a.version || 0))[0];
-  // Fallback: Satzung enthält § 14
-  const satz = await S.VereinsDokument.filter({ kategorie: "Satzung", ist_aktuell: true }).catch(() => []);
-  return satz?.length ? satz.sort((a, b) => (b.version || 0) - (a.version || 0))[0] : null;
+  const [ds, sa] = await Promise.all([
+    S.VereinsDokument.filter({ kategorie: "Datenschutz", ist_aktuell: true }).catch(() => []),
+    S.VereinsDokument.filter({ kategorie: "Satzung", ist_aktuell: true }).catch(() => []),
+  ]);
+  const kandidaten = [...(ds || []), ...(sa || [])];
+  if (!kandidaten.length) return null;
+  const w = (d) => d.zustimmung_version || d.version || 1;
+  return kandidaten.sort((a, b) => w(b) - w(a))[0];
+}
+const zustimmungsVersion = (doc) => doc?.zustimmung_version || doc?.version || 1;
+
+/** Rohtext (z.B. aus Word kopiert) in §-Absätze zerlegen. */
+function parseAbsaetze(raw) {
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  let text = raw.replace(/\r\n/g, "\n").replace(/\u00a0/g, " ").trim();
+  if (text.length > 300000) return null;
+  const glue = (t) => {
+    const lines = t.split("\n").map(l => l.trim()).filter(Boolean);
+    const out = []; let buf = [];
+    const flush = () => { if (buf.length) { out.push(buf.join(" ")); buf = []; } };
+    for (const l of lines) {
+      if (/^(\(\d+\)|[a-z]\)|[ivx]+\)|\d+\.)\s/i.test(l) && buf.length) flush();
+      buf.push(l);
+    }
+    flush();
+    return out.join("\n\n");
+  };
+  const re = /^§\s*(\d+[a-zA-Z]?)\s*(.*)$/;
+  const absaetze = [];
+  const matchAll = [...text.matchAll(/^§.*$/gm)];
+  if (!matchAll.length) {
+    return [{ nummer: "", titel: "", text: glue(text) }].map(normalize).filter(Boolean);
+  }
+  const pre = text.slice(0, matchAll[0].index).trim();
+  if (pre) absaetze.push({ nummer: "", titel: "Präambel", text: glue(pre) });
+  for (let i = 0; i < matchAll.length; i++) {
+    const m = matchAll[i];
+    const inline = (m[0].match(re)?.[2] || "").trim();
+    const start = m.index + m[0].length;
+    const end = i + 1 < matchAll.length ? matchAll[i + 1].index : text.length;
+    const block = text.slice(start, end).trim();
+    let titel = ""; let rest = block;
+    if (!inline) {
+      const lines = block.split("\n");
+      const erste = (lines[0] || "").trim();
+      if (erste && !/^(\(\d+\)|[a-z]\)|[ivx]+\)|\d+\.)\s/i.test(erste) && erste.length <= 80) {
+        titel = erste; rest = lines.slice(1).join("\n");
+      }
+    } else titel = inline;
+    absaetze.push({ nummer: "§ " + (m[0].match(re)?.[1] || ""), titel, text: glue(rest) });
+  }
+  function normalize(a) {
+    const nummer = String(a.nummer || "").slice(0, 20);
+    const titel = String(a.titel || "").slice(0, 200);
+    const text = String(a.text || "").trim().slice(0, 30000);
+    return text || titel || nummer ? { nummer, titel, text } : null;
+  }
+  const liste = absaetze.map(normalize).filter(Boolean).slice(0, 200);
+  return liste.length ? liste : null;
+}
+
+/** JSON-Absätze aus Entity-Feld lesen (mit Fallbacks). */
+function leseAbsaetze(jsonStr) {
+  if (!jsonStr) return null;
+  try {
+    const arr = JSON.parse(jsonStr);
+    if (!Array.isArray(arr)) return null;
+    return arr.map(a => ({ nummer: String(a?.nummer || "").slice(0, 20), titel: String(a?.titel || "").slice(0, 200), text: String(a?.text || "").slice(0, 30000) })).slice(0, 200);
+  } catch { return null; }
 }
 
 export default async function (req) {
@@ -73,7 +137,7 @@ export default async function (req) {
         const doc = await aktuellesDatenschutzDokument(S);
         if (!doc) return Response.json({ erforderlich: false, grund: "kein_dokument" });
         if (!meinMitglied) return Response.json({ erforderlich: false, grund: "kein_mitglied" });
-        const version = doc.version || 1;
+        const version = zustimmungsVersion(doc);
         const meine = await S.DatenschutzZustimmung.filter({ mitglied_id: meinMitglied.id });
         const habeZugestimmt = (meine || []).some(z => !z.fuer_mitglied_id && (z.version || 0) >= version);
         // Verknüpfte Kinder (Eltern stimmen für sie mit zu)
@@ -94,14 +158,25 @@ export default async function (req) {
           ich_offen: !habeZugestimmt,
           kinder_offen: kinderOffen,
           version,
-          dokument: { id: doc.id, titel: doc.titel, kategorie: doc.kategorie, stand_datum: doc.stand_datum || "" },
+          dokument: { id: doc.id, titel: doc.titel, kategorie: doc.kategorie, typ: doc.typ || "Datei", stand_datum: doc.stand_datum || "" },
+        });
+      }
+      case "text_laden": {
+        const { dokument_id } = body;
+        if (!dokument_id) return Response.json({ error: "dokument_id fehlt" }, { status: 400 });
+        const doc = await S.VereinsDokument.get(dokument_id).catch(() => null);
+        if (!doc || doc.typ !== "Text") return Response.json({ error: "Text-Dokument nicht gefunden" }, { status: 404 });
+        if (doc.sichtbarkeit !== "alle" && !verwaltung) return Response.json({ error: "Access Denied" }, { status: 403 });
+        return Response.json({
+          absaetze: leseAbsaetze(doc.absaetze) || [],
+          entwurf: verwaltung ? (leseAbsaetze(doc.entwurf) || null) : null,
         });
       }
       case "zustimmen": {
         if (!meinMitglied) return Response.json({ error: "Kein Mitglied verknüpft" }, { status: 400 });
         const doc = await aktuellesDatenschutzDokument(S);
         if (!doc) return Response.json({ error: "Kein Datenschutz-Dokument hinterlegt" }, { status: 400 });
-        const version = doc.version || 1;
+        const version = zustimmungsVersion(doc);
         const jetzt = new Date().toISOString();
         const meine = await S.DatenschutzZustimmung.filter({ mitglied_id: meinMitglied.id });
         if (!(meine || []).some(z => !z.fuer_mitglied_id && (z.version || 0) >= version)) {
@@ -160,6 +235,58 @@ export default async function (req) {
         });
         return Response.json({ dokument: doc });
       }
+      case "text_anlegen": {
+        const { titel, kategorie, sichtbarkeit, rohtext, stand_datum } = body;
+        if (!titel || !rohtext) return Response.json({ error: "titel und rohtext fehlen" }, { status: 400 });
+        if (!KATEGORIEN.has(kategorie || "Sonstiges")) return Response.json({ error: "Ungültige Kategorie" }, { status: 400 });
+        if (!SICHTBARKEIT.has(sichtbarkeit || "ausschuss")) return Response.json({ error: "Ungültige Sichtbarkeit" }, { status: 400 });
+        const absaetze = parseAbsaetze(rohtext);
+        if (!absaetze) return Response.json({ error: "Text konnte nicht gelesen werden (leer oder zu groß)" }, { status: 400 });
+        const doc = await S.VereinsDokument.create({
+          titel: String(titel).slice(0, 180), kategorie: kategorie || "Sonstiges", typ: "Text",
+          sichtbarkeit: sichtbarkeit || "ausschuss",
+          absaetze: JSON.stringify(absaetze), entwurf: "",
+          stand_datum: stand_datum || heuteISO(),
+          version: 1, ist_aktuell: true, hochgeladen_von_id: meinMitglied?.id || "", sortierung: 100,
+          zustimmung_version: ["Satzung", "Datenschutz"].includes(kategorie) ? 1 : 0,
+        });
+        return Response.json({ dokument: doc, absaetze });
+      }
+      case "text_entwurf_speichern": {
+        const { dokument_id, absaetze } = body;
+        if (!dokument_id) return Response.json({ error: "dokument_id fehlt" }, { status: 400 });
+        const doc = await S.VereinsDokument.get(dokument_id).catch(() => null);
+        if (!doc || doc.typ !== "Text") return Response.json({ error: "Text-Dokument nicht gefunden" }, { status: 404 });
+        if (!Array.isArray(absaetze) || absaetze.length === 0 || absaetze.length > 200) {
+          return Response.json({ error: "Ungültige Absatzliste" }, { status: 400 });
+        }
+        const sauber = absaetze.map(a => ({
+          nummer: String(a?.nummer || "").slice(0, 20),
+          titel: String(a?.titel || "").slice(0, 200),
+          text: String(a?.text || "").slice(0, 30000),
+        })).filter(a => a.nummer || a.titel || a.text.trim());
+        if (!sauber.length) return Response.json({ error: "Absatzliste ist leer" }, { status: 400 });
+        const upd = await S.VereinsDokument.update(dokument_id, { entwurf: JSON.stringify(sauber) });
+        return Response.json({ ok: true, entwurf: sauber });
+      }
+      case "text_veroeffentlichen": {
+        const { dokument_id, zustimmung_erforderlich } = body;
+        if (!dokument_id) return Response.json({ error: "dokument_id fehlt" }, { status: 400 });
+        const alt = await S.VereinsDokument.get(dokument_id).catch(() => null);
+        if (!alt || alt.typ !== "Text") return Response.json({ error: "Text-Dokument nicht gefunden" }, { status: 404 });
+        const neuAbsaetze = leseAbsaetze(alt.entwurf) || leseAbsaetze(alt.absaetze);
+        if (!neuAbsaetze || !neuAbsaetze.length) return Response.json({ error: "Kein Inhalt zum Veröffentlichen (erst Entwurf speichern)" }, { status: 400 });
+        const neuVersion = (alt.version || 1) + 1;
+        const neu = await S.VereinsDokument.create({
+          titel: alt.titel, kategorie: alt.kategorie, typ: "Text", beschreibung: alt.beschreibung || "",
+          sichtbarkeit: alt.sichtbarkeit, absaetze: JSON.stringify(neuAbsaetze), entwurf: "",
+          stand_datum: heuteISO(), version: neuVersion, ist_aktuell: true,
+          hochgeladen_von_id: meinMitglied?.id || "", sortierung: alt.sortierung || 100,
+          zustimmung_version: zustimmung_erforderlich ? neuVersion : (alt.zustimmung_version || 0),
+        });
+        await S.VereinsDokument.update(alt.id, { ist_aktuell: false, entwurf: "" });
+        return Response.json({ dokument: neu });
+      }
       case "aktualisieren": {
         const { dokument_id, titel, beschreibung, sichtbarkeit, kategorie, stand_datum } = body;
         if (!dokument_id) return Response.json({ error: "dokument_id fehlt" }, { status: 400 });
@@ -188,6 +315,9 @@ export default async function (req) {
           version: (alt.version || 1) + 1, ist_aktuell: true,
           hochgeladen_von_id: meinMitglied?.id || "", sortierung: alt.sortierung || 100,
         });
+        const neuVersion2 = neu.version;
+        if (["Satzung", "Datenschutz"].includes(alt.kategorie)) neu.zustimmung_version = neuVersion2;
+        await S.VereinsDokument.update(neu.id, { zustimmung_version: neuVersion2 });
         await S.VereinsDokument.update(alt.id, { ist_aktuell: false });
         return Response.json({ dokument: neu });
       }
@@ -200,7 +330,7 @@ export default async function (req) {
       }
       case "zustimmung_uebersicht": {
         const doc = await aktuellesDatenschutzDokument(S);
-        const version = doc?.version || 1;
+        const version = zustimmungsVersion(doc);
         const [mitglieder, zust] = await Promise.all([
           S.Mitglied.list("nachname", 2000),
           S.DatenschutzZustimmung.list("-zugestimmt_am", 5000),
