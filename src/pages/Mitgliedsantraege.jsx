@@ -16,6 +16,21 @@ const STATUS_COLORS = {
   'Abgelehnt': 'bg-red-500/20 text-red-400',
 };
 
+const TYP_LABELS = {
+  'Aktiv': 'Aktiv',
+  'Passiv': 'Passiv',
+  'Wechsel_zu_Aktiv': 'Wechsel → Aktiv',
+  'Wechsel_zu_Passiv': 'Wechsel → Passiv',
+  'Junggarde': 'Junggarde',
+};
+const TYP_FARben = {
+  'Aktiv': 'bg-primary/15 text-primary',
+  'Passiv': 'bg-secondary text-muted-foreground',
+  'Wechsel_zu_Aktiv': 'bg-blue-500/15 text-blue-400',
+  'Wechsel_zu_Passiv': 'bg-amber-500/15 text-amber-400',
+  'Junggarde': 'bg-pink-500/15 text-pink-400',
+};
+
 const STATUS_ICONS = {
   'Neu': <Clock size={13} className="text-yellow-400" />,
   'In Bearbeitung': <Eye size={13} className="text-blue-400" />,
@@ -31,6 +46,7 @@ export default function Mitgliedsantraege({ embedded = false }) {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [statusFilter, setStatusFilter] = useState('Alle');
+  const [typFilter, setTypFilter] = useState('Alle');
   const [notizen, setNotizen] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -81,7 +97,9 @@ export default function Mitgliedsantraege({ embedded = false }) {
     setNotizen(a.notizen || '');
   };
 
-  const filtered = statusFilter === 'Alle' ? antraege : antraege.filter(a => a.status === statusFilter);
+  const gefiltert = antraege
+    .filter(a => statusFilter === 'Alle' || a.status === statusFilter)
+    .filter(a => typFilter === 'Alle' || (a.antrag_typ || 'Aktiv') === typFilter);
   const neuCount = antraege.filter(a => a.status === 'Neu').length;
 
   if (!admin) {
@@ -134,15 +152,25 @@ export default function Mitgliedsantraege({ embedded = false }) {
         ))}
       </div>
 
+      {/* Typ Filter */}
+      <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
+        {['Alle', 'Aktiv', 'Passiv', 'Wechsel_zu_Aktiv', 'Wechsel_zu_Passiv', 'Junggarde'].map(t => (
+          <button key={t} onClick={() => setTypFilter(t)}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${typFilter === t ? 'bg-primary text-white' : 'bg-card border border-border text-muted-foreground'}`}>
+            {t === 'Alle' ? 'Alle Arten' : (TYP_LABELS[t] || t)}
+          </button>
+        ))}
+      </div>
+
       {/* Liste */}
       <div className="space-y-2">
-        {filtered.length === 0 && (
+        {gefiltert.length === 0 && (
           <div className="text-center py-12 bg-card border border-border rounded-xl">
             <FileText size={32} className="text-muted-foreground mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">Keine Anträge vorhanden</p>
           </div>
         )}
-        {filtered.map(a => (
+        {gefiltert.map(a => (
           <button key={a.id} onClick={() => openAntrag(a)}
             className="w-full bg-card border border-border rounded-xl px-4 py-3 text-left hover:border-primary/40 transition-all flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
@@ -154,7 +182,13 @@ export default function Mitgliedsantraege({ embedded = false }) {
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${STATUS_COLORS[a.status]}`}>
                   {STATUS_ICONS[a.status]} {a.status}
                 </span>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${TYP_FARben[a.antrag_typ || 'Aktiv'] || 'bg-secondary text-muted-foreground'}`}>
+                  {TYP_LABELS[a.antrag_typ || 'Aktiv'] || a.antrag_typ}
+                </span>
                 {a.sparte && <span className="text-xs text-muted-foreground">{a.sparte}</span>}
+                {a.antrag_typ === 'Junggarde' && a.kind_vorname && (
+                  <span className="text-xs text-muted-foreground">Kind: {a.kind_vorname} {a.kind_nachname}</span>
+                )}
                 <span className="text-xs text-muted-foreground">
                   {format(new Date(a.created_date), 'dd.MM.yyyy', { locale: de })}
                 </span>
@@ -184,11 +218,19 @@ export default function Mitgliedsantraege({ embedded = false }) {
               {/* Daten */}
               <div className="space-y-4 text-sm">
                 <Section titel="Persönliches">
+                  <Row label="Antragsart" value={TYP_LABELS[selected.antrag_typ || 'Aktiv'] || selected.antrag_typ} highlight />
                   <Row label="Name" value={`${selected.vorname} ${selected.nachname}`} />
                   <Row label="Geburtsdatum" value={selected.geburtsdatum} />
                   <Row label="Eintritt ab" value={selected.eintrittsdatum} />
                   <Row label="Sparte" value={selected.sparte} highlight />
                 </Section>
+
+                {selected.antrag_typ === 'Junggarde' && selected.kind_vorname && (
+                  <Section titel="Kind (Junggarde)">
+                    <Row label="Name" value={`${selected.kind_vorname} ${selected.kind_nachname}`} />
+                    <Row label="Geburtsdatum" value={selected.kind_geburtsdatum} />
+                  </Section>
+                )}
 
                 <Section titel="Kontakt">
                   <Row label="Adresse" value={[selected.strasse, `${selected.plz} ${selected.ort}`].filter(Boolean).join(', ')} />

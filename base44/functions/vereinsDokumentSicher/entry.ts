@@ -84,14 +84,35 @@ function parseAbsaetze(raw) {
   return liste.length ? liste : null;
 }
 
-/** JSON-Absätze aus Entity-Feld lesen (mit Fallbacks). */
-function leseAbsaetze(jsonStr) {
-  if (!jsonStr) return null;
-  try {
-    const arr = JSON.parse(jsonStr);
-    if (!Array.isArray(arr)) return null;
-    return arr.map(a => ({ nummer: String(a?.nummer || "").slice(0, 20), titel: String(a?.titel || "").slice(0, 200), text: String(a?.text || "").slice(0, 30000) })).slice(0, 200);
-  } catch { return null; }
+/** Absätze eines Dokuments aus der SatzungAbsatz-Entity laden (sortiert). */
+async function ladeAbsaetze(S, dokumentId, istEntwurf) {
+  const alle = await S.SatzungAbsatz.filter({ vereinsdokument_id: dokumentId, ist_entwurf: istEntwurf }).catch(() => []);
+  return (alle || [])
+    .map(a => ({ id: a.id, nummer: a.nummer || "", titel: a.titel || "", text: a.text || "", sortierung: a.sortierung || 100 }))
+    .sort((a, b) => a.sortierung - b.sortierung)
+    .slice(0, 200);
+}
+
+/** Absatz-Records anlegen (ist_entwurf steuert Entwurf vs. veröffentlicht). */
+async function erstelleAbsaetze(S, dokumentId, absaetze, istEntwurf, revision) {
+  const sauber = (absaetze || []).map(a => ({
+    nummer: String(a?.nummer || "").slice(0, 20),
+    titel: String(a?.titel || "").slice(0, 200),
+    text: String(a?.text || "").slice(0, 30000),
+  })).filter(a => a.nummer || a.titel || a.text.trim()).slice(0, 200);
+  for (let i = 0; i < sauber.length; i++) {
+    await S.SatzungAbsatz.create({
+      vereinsdokument_id: dokumentId, nummer: sauber[i].nummer, titel: sauber[i].titel,
+      text: sauber[i].text, sortierung: (i + 1) * 10, ist_entwurf: istEntwurf, revision: revision || 1,
+    });
+  }
+  return sauber;
+}
+
+/** Entwürfe eines Dokuments löschen (vor neuem Entwurfsstand). */
+async function loescheEntwuerfe(S, dokumentId) {
+  const entwuerfe = await S.SatzungAbsatz.filter({ vereinsdokument_id: dokumentId, ist_entwurf: true }).catch(() => []);
+  for (const e of entwuerfe || []) await S.SatzungAbsatz.delete(e.id).catch(() => {});
 }
 
 export default async function (req) {
@@ -167,9 +188,13 @@ export default async function (req) {
         const doc = await S.VereinsDokument.get(dokument_id).catch(() => null);
         if (!doc || doc.typ !== "Text") return Response.json({ error: "Text-Dokument nicht gefunden" }, { status: 404 });
         if (doc.sichtbarkeit !== "alle" && !verwaltung) return Response.json({ error: "Access Denied" }, { status: 403 });
+        const [veroeffentlicht, entwurf] = await Promise.all([
+          ladeAbsaetze(S, doc.id, false),
+          verwaltung ? ladeAbsaetze(S, doc.id, true) : Promise.resolve([]),
+        ]);
         return Response.json({
-          absaetze: leseAbsaetze(doc.absaetze) || [],
-          entwurf: verwaltung ? (leseAbsaetze(doc.entwurf) || null) : null,
+          absaetze: veroeffentlicht,
+          entwurf: verwaltung ? (entwurf.length ? entwurf : null) : null,
         });
       }
       case "zustimmen": {
@@ -244,12 +269,12 @@ export default async function (req) {
         if (!absaetze) return Response.json({ error: "Text konnte nicht gelesen werden (leer oder zu groß)" }, { status: 400 });
         const doc = await S.VereinsDokument.create({
           titel: String(titel).slice(0, 180), kategorie: kategorie || "Sonstiges", typ: "Text",
-          sichtbarkeit: sichtbarkeit || "ausschuss",
-          absaetze: JSON.stringify(absaetze), entwurf: "",
+          sichtbarkeit: sichtbarkeit || "ausschuss", file_uri: "text://" + Date.now(),
           stand_datum: stand_datum || heuteISO(),
           version: 1, ist_aktuell: true, hochgeladen_von_id: meinMitglied?.id || "", sortierung: 100,
           zustimmung_version: ["Satzung", "Datenschutz"].includes(kategorie) ? 1 : 0,
         });
+        await erstelleAbsaetze(S, doc.id, absaetze, false, 1);
         return Response.json({ dokument: doc, absaetze });
       }
       case "text_entwurf_speichern": {
@@ -257,16 +282,14 @@ export default async function (req) {
         if (!dokument_id) return Response.json({ error: "dokument_id fehlt" }, { status: 400 });
         const doc = await S.VereinsDokument.get(dokument_id).catch(() => null);
         if (!doc || doc.typ !== "Text") return Response.json({ error: "Text-Dokument nicht gefunden" }, { status: 404 });
-        if (!Array.isArray(absaetze) || absaetze.length === 0 || absaetze.length > 200) {
-          return Response.json({ error: "Ungültige Absatzliste" }, { status: 400 });
-        }
-        const sauber = absaetze.map(a => ({
+        const vorab = (absaetze || []).map(a => ({
           nummer: String(a?.nummer || "").slice(0, 20),
           titel: String(a?.titel || "").slice(0, 200),
           text: String(a?.text || "").slice(0, 30000),
         })).filter(a => a.nummer || a.titel || a.text.trim());
-        if (!sauber.length) return Response.json({ error: "Absatzliste ist leer" }, { status: 400 });
-        const upd = await S.VereinsDokument.update(dokument_id, { entwurf: JSON.stringify(sauber) });
+        if (!vorab.length) return Response.json({ error: "Absatzliste ist leer" }, { status: 400 });
+        await loescheEntwuerfe(S, dokument_id);
+        const sauber = await erstelleAbsaetze(S, dokument_id, vorab, true, doc.version || 1);
         return Response.json({ ok: true, entwurf: sauber });
       }
       case "text_veroeffentlichen": {
@@ -274,17 +297,20 @@ export default async function (req) {
         if (!dokument_id) return Response.json({ error: "dokument_id fehlt" }, { status: 400 });
         const alt = await S.VereinsDokument.get(dokument_id).catch(() => null);
         if (!alt || alt.typ !== "Text") return Response.json({ error: "Text-Dokument nicht gefunden" }, { status: 404 });
-        const neuAbsaetze = leseAbsaetze(alt.entwurf) || leseAbsaetze(alt.absaetze);
-        if (!neuAbsaetze || !neuAbsaetze.length) return Response.json({ error: "Kein Inhalt zum Veröffentlichen (erst Entwurf speichern)" }, { status: 400 });
+        let quelle = await ladeAbsaetze(S, alt.id, true); // Entwurf bevorzugt
+        if (!quelle.length) quelle = await ladeAbsaetze(S, alt.id, false); // sonst aktueller Stand
+        if (!quelle.length) return Response.json({ error: "Kein Inhalt zum Veröffentlichen (erst Entwurf speichern)" }, { status: 400 });
         const neuVersion = (alt.version || 1) + 1;
         const neu = await S.VereinsDokument.create({
           titel: alt.titel, kategorie: alt.kategorie, typ: "Text", beschreibung: alt.beschreibung || "",
-          sichtbarkeit: alt.sichtbarkeit, absaetze: JSON.stringify(neuAbsaetze), entwurf: "",
+          sichtbarkeit: alt.sichtbarkeit, file_uri: alt.file_uri || "text://" + Date.now(),
           stand_datum: heuteISO(), version: neuVersion, ist_aktuell: true,
           hochgeladen_von_id: meinMitglied?.id || "", sortierung: alt.sortierung || 100,
           zustimmung_version: zustimmung_erforderlich ? neuVersion : (alt.zustimmung_version || 0),
         });
-        await S.VereinsDokument.update(alt.id, { ist_aktuell: false, entwurf: "" });
+        await erstelleAbsaetze(S, neu.id, quelle, false, neuVersion);
+        await loescheEntwuerfe(S, alt.id);
+        await S.VereinsDokument.update(alt.id, { ist_aktuell: false });
         return Response.json({ dokument: neu });
       }
       case "aktualisieren": {

@@ -1,0 +1,43 @@
+{
+  "name": "SatzungAbsatz",
+  "type": "object",
+  "properties": {
+    "vereinsdokument_id": {
+      "type": "string",
+      "description": "ID des VereinsDokuments (z.B. Satzung), zu dem dieser Absatz gehört"
+    },
+    "nummer": {
+      "type": "string",
+      "description": "Paragraf, z.B. '§ 14' (leer = Präambel)"
+    },
+    "titel": {
+      "type": "string",
+      "description": "Überschrift des Absatzes"
+    },
+    "text": {
+      "type": "string",
+      "description": "Absatztext"
+    },
+    "sortierung": {
+      "type": "number",
+      "default": 100
+    },
+    "ist_entwurf": {
+      "type": "boolean",
+      "default": false,
+      "description": "true = unveröffentlichter Entwurf (nur Verwaltung sichtbar)"
+    },
+    "revision": {
+      "type": "number",
+      "default": 1,
+      "description": "Dokument-Version, zu der dieser Absatz gehört (Archiv)"
+    }
+  },
+  "required": ["vereinsdokument_id", "text"],
+  "rls": {
+    "create": { "$or": [ { "user_condition": { "role": "admin" } }, { "user_condition": { "role": "vorstand" } }, { "user_condition": { "role": "stellv_vorstand" } } ] },
+    "read":   { "$or": [ { "user_condition": { "role": "admin" } }, { "user_condition": { "role": "vorstand" } }, { "user_condition": { "role": "stellv_vorstand" } } ] },
+    "update": { "$or": [ { "user_condition": { "role": "admin" } }, { "user_condition": { "role": "vorstand" } }, { "user_condition": { "role": "stellv_vorstand" } } ] },
+    "delete": { "$or": [ { "user_condition": { "role": "admin" } }, { "user_condition": { "role": "vorstand" } }, { "user_condition": { "role": "stellv_vorstand" } } ] }
+  }
+}
