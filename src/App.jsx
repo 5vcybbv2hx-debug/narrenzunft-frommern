@@ -50,8 +50,7 @@ import VerleihAnfrage from './pages/VerleihAnfrage';
 import VerleihUebersicht from './pages/VerleihUebersicht';
 import Mitgliedsantraege from './pages/Mitgliedsantraege';
 import Dokumente from './pages/Dokumente';
-import About from './pages/About';
-import Contact from './pages/Contact';
+
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -79,7 +78,7 @@ const AuthenticatedApp = () => {
   }
 
   // Öffentliche Routen, die auch ohne Login erreichbar sein müssen
-  const PUBLIC_PREFIXES = ['/mitgliedsantrag', '/verleih', '/busfahrer/', '/about', '/contact'];
+  const PUBLIC_PREFIXES = ['/mitgliedsantrag', '/verleih', '/busfahrer/'];
   const isPublicRoute = PUBLIC_PREFIXES.some(p => location.pathname.startsWith(p));
 
   if (authError) {
@@ -182,8 +181,6 @@ const AuthenticatedApp = () => {
           <FamilienDashboard />
         } />
       </Route>
-      <Route path="/about" element={<About />} />
-      <Route path="/contact" element={<Contact />} />
       <Route path="/mitgliedsantrag" element={<MitgliedsantragFormular />} />
       <Route path="/verleih" element={<VerleihUebersicht />} />
       <Route path="/verleih/:id" element={<VerleihAnfrage />} />

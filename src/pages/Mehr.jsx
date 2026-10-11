@@ -4,7 +4,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { getRollenLabel } from '@/lib/roles';
 import { NAV_SECTIONS, canSeeItem, canSeeSection } from '@/components/Layout';
 import SecureSearch from '@/components/SecureSearch';
-import { ChevronRight, LogOut, Shield, Info, Mail } from 'lucide-react';
+import { ChevronRight, LogOut, Shield } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 export default function Mehr() {
@@ -93,22 +93,6 @@ export default function Mehr() {
           <p className="text-xs text-muted-foreground">Du siehst zusätzliche Verwaltungsbereiche für deine Rolle.</p>
         </div>
       )}
-
-      {/* Über uns & Kontakt */}
-      <div className="grid grid-cols-2 gap-2.5 mb-4">
-        <Link to="/about" className="flex flex-col items-start gap-2.5 rounded-xl border border-border bg-card p-3.5 transition-all active:scale-[0.97] hover:border-primary/30">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-primary/10 border border-primary/25">
-            <Info size={19} className="text-primary" />
-          </div>
-          <span className="text-[13px] font-medium text-foreground leading-tight">Über die App</span>
-        </Link>
-        <Link to="/contact" className="flex flex-col items-start gap-2.5 rounded-xl border border-border bg-card p-3.5 transition-all active:scale-[0.97] hover:border-primary/30">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-primary/10 border border-primary/25">
-            <Mail size={19} className="text-primary" />
-          </div>
-          <span className="text-[13px] font-medium text-foreground leading-tight">Kontakt</span>
-        </Link>
-      </div>
 
       {/* Abmelden */}
       <button onClick={handleLogout}
