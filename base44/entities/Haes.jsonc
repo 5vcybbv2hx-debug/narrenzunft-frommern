@@ -41,6 +41,11 @@
       "description": "Mitglied, dem das H\u00e4s privat geh\u00f6rt (nur wenn kein Vereinseigentum)"
     }
   },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
+  },
   "required": [
     "haesnummer"
   ],

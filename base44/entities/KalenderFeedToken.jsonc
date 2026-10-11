@@ -50,6 +50,11 @@
       "description": "Ist dieser Token noch g\u00fcltig"
     }
   },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
+  },
   "required": [
     "user_id",
     "token_hash",

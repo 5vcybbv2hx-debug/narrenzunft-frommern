@@ -18,6 +18,11 @@
       "description": "Beliebige JSON-Daten (z.B. Beitragss\u00e4tze)"
     }
   },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
+  },
   "required": [
     "schluessel"
   ],

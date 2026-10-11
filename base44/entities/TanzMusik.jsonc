@@ -24,6 +24,11 @@
       "description": "JSON-Array aus {zeit: 0-86400 Sekunden, figur_id?, label?}, max. 200 Eintr\u00e4ge. Leer erlaubt."
     }
   },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
+  },
   "required": [
     "haesgruppe_id"
   ],

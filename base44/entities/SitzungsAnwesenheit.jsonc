@@ -18,6 +18,11 @@
       "default": "Anwesend"
     }
   },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
+  },
   "required": [
     "termin_id",
     "mitglied_id"

@@ -59,6 +59,11 @@
       "description": "Begr\u00fcndung / Hinweis bei Entscheidung"
     }
   },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
+  },
   "required": [
     "mitglied_id",
     "ziel_mitglied_id",

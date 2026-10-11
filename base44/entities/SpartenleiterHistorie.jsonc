@@ -29,6 +29,11 @@
       "description": "Ende der Amtszeit (leer = aktuell aktiv)"
     }
   },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
+  },
   "required": [
     "mitglied_id",
     "haesgruppe_id"

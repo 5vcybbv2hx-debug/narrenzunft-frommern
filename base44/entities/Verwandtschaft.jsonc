@@ -30,6 +30,11 @@
       "description": "Optionale Anmerkung zur Beziehung"
     }
   },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
+  },
   "required": [
     "mitglied_id",
     "verwandter_id",

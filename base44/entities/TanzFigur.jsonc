@@ -24,6 +24,11 @@
       "description": "Aufstellungs-JSON: [{mitglied_id, x, y}] mit x/y in 0-100"
     }
   },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
+  },
   "required": [
     "haesgruppe_id",
     "name"

@@ -37,6 +37,11 @@
       "description": "JSON-String mit zus\u00e4tzlichen Daten (z.B. f\u00fcr Statuswechsel-Details)"
     }
   },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
+  },
   "required": [
     "titel"
   ],
