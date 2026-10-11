@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { X, Save, Shield, ExternalLink, Search } from 'lucide-react';
 import { syncVerantwortliche } from '@/lib/spartenSync';
 import { Link } from 'react-router-dom';
+import BottomModal from '@/components/ui/BottomModal';
 
 const TYPEN = ['Häsgruppe', 'Tanzgruppe', 'Musikgruppe', 'Sonstige'];
 const FARBEN = ['#f97316', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899', '#f59e0b', '#ef4444', '#6b7280'];
@@ -175,8 +176,7 @@ export default function SparteFormModal({ gruppe, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
+    <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-foreground">{isNew ? 'Neue Gruppe' : 'Gruppe bearbeiten'}</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"><X size={18} /></button>
@@ -270,7 +270,6 @@ export default function SparteFormModal({ gruppe, onClose, onSaved }) {
             <Save size={14} /> {saving ? 'Speichern...' : 'Speichern'}
           </button>
         </div>
-      </div>
-    </div>
+      </BottomModal>
   );
 }

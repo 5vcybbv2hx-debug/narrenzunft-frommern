@@ -11,6 +11,7 @@ import AdresseAutocomplete from '@/components/AdresseAutocomplete';
 import DateSelect from '../components/ui/DateSelect';
 import TimeSelect from '../components/ui/TimeSelect';
 import { toast } from 'sonner';
+import BottomModal from '@/components/ui/BottomModal';
 
 const TYPEN = ['Intern', 'Fest', 'Arbeitsdienst', 'Umzug', 'Abendveranstaltung'];
 const STATUS_LIST = ['Geplant', 'Aktiv', 'Abgeschlossen', 'Abgesagt'];
@@ -409,8 +410,7 @@ export default function VeranstaltungNeu() {
 
       {/* Modal: Als Vorlage speichern */}
       {showSaveVorlage && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-sm">
+        <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-sm">
             <h3 className="font-bold text-foreground mb-1">Als Vorlage speichern</h3>
             <p className="text-xs text-muted-foreground mb-4">Typ, Ort, Zeiten und Arbeitsdienste werden gespeichert.</p>
             <input
@@ -431,8 +431,7 @@ export default function VeranstaltungNeu() {
                 {savingVorlage ? 'Speichern...' : 'Speichern'}
               </button>
             </div>
-          </div>
-        </div>
+          </BottomModal>
       )}
     </div>
   );

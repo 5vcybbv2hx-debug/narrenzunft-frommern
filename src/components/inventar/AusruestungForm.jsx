@@ -4,6 +4,7 @@ import { X, Save, Trash2, Truck, AlertCircle, QrCode } from 'lucide-react';
 import MobileSelect from '../MobileSelect';
 import MitgliedLiveSuche from '../MitgliedLiveSuche';
 import { verleihZustaendigeIds } from '../../lib/verleih';
+import BottomModal from '@/components/ui/BottomModal';
 
 const KATEGORIEN = ['Anhänger', 'Kühlanhänger', 'Bar', 'Zelt', 'Technik', 'Sonstiges'];
 const ZUSTAENDE = ['Sehr gut', 'Gut', 'Ausreichend', 'Defekt'];
@@ -53,8 +54,7 @@ export default function AusruestungForm({ ausruestung, mitglieder = [], onSave, 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-secondary border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <BottomModal onClose={onClose} cardClass="bg-secondary border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-oswald uppercase tracking-wide font-bold text-foreground">
             {isNew ? 'Neuer Gegenstand' : 'Gegenstand bearbeiten'}
@@ -286,7 +286,6 @@ export default function AusruestungForm({ ausruestung, mitglieder = [], onSave, 
             <Save size={14} /> {saving ? '...' : 'Speichern'}
           </button>
         </div>
-      </div>
-    </div>
+      </BottomModal>
   );
 }

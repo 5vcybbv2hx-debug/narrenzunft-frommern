@@ -7,6 +7,7 @@ import { X, Save, Trash2 } from 'lucide-react';
 import MobileSelect from '@/components/MobileSelect';
 import toast from 'react-hot-toast';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
+import BottomModal from '@/components/ui/BottomModal';
 
 const TERMINARTEN = ['Umzug','Abendveranstaltung','Arbeitsdienst','Ausschusssitzung','Vorstandssitzung','Jugendtermin','Gruppen-Termin','Intern','Sonstiges'];
 const SICHTBARKEITEN = [
@@ -62,8 +63,7 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-4 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-bold text-foreground text-lg">{isNew ? 'Neuer Termin' : 'Termin bearbeiten'}</h3>
           <button onClick={onClose} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary">
@@ -190,7 +190,6 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
             <Save size={14} /> {saving ? '...' : isNew ? 'Erstellen' : 'Speichern'}
           </button>
         </div>
-      </div>
-    </div>
+      </BottomModal>
   );
 }

@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { X, Save, Trash2, Search, Bookmark, UserPlus, AlertTriangle } from 'lucide-react';
 import MobileSelect from '../MobileSelect';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
+import BottomModal from '@/components/ui/BottomModal';
 
 const ZUWEISUNG_STATUS = ['Offen', 'Bestätigt', 'Erledigt', 'Abgesagt', 'Nicht erledigt'];
 
@@ -134,8 +135,7 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl w-full max-w-3xl max-h-[92vh] flex flex-col">
+    <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl w-full max-w-3xl max-h-[92vh] flex flex-col">
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
@@ -335,7 +335,6 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
             <Save size={14} /> {saving ? '...' : 'Speichern'}
           </button>
         </div>
-      </div>
-    </div>
+      </BottomModal>
   );
 }

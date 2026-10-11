@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
+import BottomModal from '@/components/ui/BottomModal';
 
 const STATUS_COLORS = {
   'Neu': 'bg-yellow-500/20 text-yellow-400',
@@ -166,8 +167,7 @@ export default function Mitgliedsantraege({ embedded = false }) {
 
       {/* Detail Modal */}
       {selected && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-5">
                 <div>
@@ -247,8 +247,7 @@ export default function Mitgliedsantraege({ embedded = false }) {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </BottomModal>
       )}
     </div>
   );

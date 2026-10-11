@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import MitgliedLiveSuche from '@/components/MitgliedLiveSuche';
 import MobileSelect from '@/components/MobileSelect';
+import BottomModal from '@/components/ui/BottomModal';
 
 const PRIO = ['Niedrig', 'Mittel', 'Hoch', 'Dringend'];
 const WIEDERHOLUNG = ['Jährlich', 'Einmalig'];
@@ -137,8 +138,7 @@ export default function JahresplanungTab({ plaene, mitglieder, canManage, onSave
       )}
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
+        <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold font-oswald uppercase tracking-wide text-foreground">{edit ? 'Plan bearbeiten' : 'Neuer Jahresplan-Punkt'}</h3>
               <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"><X size={16} /></button>
@@ -194,8 +194,7 @@ export default function JahresplanungTab({ plaene, mitglieder, canManage, onSave
               <button onClick={handleSave} disabled={saving || !form.titel}
                 className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 hover:bg-primary/90 transition-colors">{saving ? '…' : 'Speichern'}</button>
             </div>
-          </div>
-        </div>
+          </BottomModal>
       )}
     </div>
   );

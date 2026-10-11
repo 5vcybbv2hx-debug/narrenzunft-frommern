@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Save, X, Settings } from 'lucide-react';
+import BottomModal from '@/components/ui/BottomModal';
 
 const DEFAULT_SAETZE = {
   'Aktiv': 60,
@@ -42,8 +43,7 @@ export default function BeitraegeEinstellungen({ onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
+    <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
             <Settings size={18} className="text-primary" />
@@ -88,7 +88,6 @@ export default function BeitraegeEinstellungen({ onClose, onSaved }) {
             <Save size={14} /> {saving ? 'Speichern...' : 'Speichern'}
           </button>
         </div>
-      </div>
-    </div>
+      </BottomModal>
   );
 }

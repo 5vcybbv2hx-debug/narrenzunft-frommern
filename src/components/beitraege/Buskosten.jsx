@@ -5,6 +5,7 @@ import BuskostenEinstellungen from '@/components/beitraege/BuskostenEinstellunge
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
+import BottomModal from '@/components/ui/BottomModal';
 
 const STATUS_COLORS = {
   'Offen': 'bg-yellow-500/20 text-yellow-400',
@@ -243,8 +244,7 @@ export default function Buskosten({ isAdmin }) {
 
       {/* Modal: Beiträge erstellen */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
+        <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-foreground">Buskosten-Beiträge erstellen</h3>
               <button onClick={() => setShowAddModal(null)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground">
@@ -322,8 +322,7 @@ export default function Buskosten({ isAdmin }) {
                 {saving ? 'Erstelle...' : 'Beiträge erstellen'}
               </button>
             </div>
-          </div>
-        </div>
+          </BottomModal>
       )}
     </div>
   );

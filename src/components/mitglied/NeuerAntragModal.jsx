@@ -2,6 +2,7 @@ import DateSelect from '../ui/DateSelect';
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, ChevronRight, ChevronLeft, CheckCircle2, UserPlus, Loader2 } from 'lucide-react';
+import BottomModal from '@/components/ui/BottomModal';
 
 const SPARTEN = ['Brennnesseln', 'Hexen', 'Zäpfle Bomber', 'Garde'];
 const STEPS = ['Persönliches', 'Adresse & Kontakt', 'Sparte & SEPA', 'Abschluss'];
@@ -86,8 +87,7 @@ export default function NeuerAntragModal({ onClose, onMitgliedAngelegt }) {
   const canNext = step === 0 ? (form.vorname && form.nachname) : true;
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 pt-6 pb-4 border-b border-border">
           <div>
@@ -253,8 +253,7 @@ export default function NeuerAntragModal({ onClose, onMitgliedAngelegt }) {
             </>
           )}
         </div>
-      </div>
-    </div>
+      </BottomModal>
   );
 }
 

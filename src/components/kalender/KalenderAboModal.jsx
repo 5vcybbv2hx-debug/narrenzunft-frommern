@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
+import BottomModal from '@/components/ui/BottomModal';
 
 // Live-Kalender-Abo (iCal Subscription): Termin-Apps (iPhone, Google, Outlook)
 // rufen die URL regelmaessig selbst ab — ohne Login, der Token ist die Authentifizierung.
@@ -59,8 +60,7 @@ export default function KalenderAboModal({ onClose }) {
   const webcalUrl = aboUrl ? aboUrl.replace(/^https/, 'webcal') : '';
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+    <BottomModal onClose={onClose} onBackdropClick={onClose} cardClass="bg-card border border-border rounded-2xl p-4 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-bold text-foreground text-lg flex items-center gap-2">
             <Link2 size={18} className="text-primary" /> Live-Kalender abonnieren
@@ -131,7 +131,6 @@ export default function KalenderAboModal({ onClose }) {
             </p>
           </div>
         )}
-      </div>
-    </div>
+      </BottomModal>
   );
 }

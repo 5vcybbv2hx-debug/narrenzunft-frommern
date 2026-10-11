@@ -25,6 +25,7 @@ import AuditLogListe from '@/components/ausschuss/AuditLogListe';
 import { ausschussAktion } from '@/lib/ausschussAktionen';
 import { Gavel as GavelIcon } from 'lucide-react';
 import { LayoutDashboard, Repeat } from 'lucide-react';
+import BottomModal from '@/components/ui/BottomModal';
 
 const PRIO_FARBEN = {
   'Niedrig':  'bg-neutral-700 text-neutral-300',
@@ -439,8 +440,7 @@ export default function Ausschuss() {
       {/* Modals */}
       {/* Offenen Punkt in Tagesordnung verschieben */}
       {topVerschieben && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-white">In Tagesordnung verschieben</h3>
               <button onClick={() => setTopVerschieben(null)} className="p-1.5 rounded-lg text-muted-foreground hover:text-white">
@@ -493,8 +493,7 @@ export default function Ausschuss() {
                 </button>
               </div>
             </div>
-          </div>
-        </div>
+          </BottomModal>
       )}
 
       {/* MITGLIEDSANTRÄGE */}
@@ -623,8 +622,7 @@ function AufgabeModal({ aufgabe, mitglieder, termine, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
+    <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold font-oswald uppercase tracking-wide text-white">{isNew ? 'Neuer offener Punkt' : 'Offenen Punkt bearbeiten'}</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-white"><X size={16} /></button>
@@ -670,8 +668,7 @@ function AufgabeModal({ aufgabe, mitglieder, termine, onClose, onSaved }) {
             {saving ? '…' : 'Speichern'}
           </button>
         </div>
-      </div>
-    </div>
+      </BottomModal>
   );
 }
 
@@ -728,8 +725,7 @@ function AbstimmungModal({ abstimmung, termine, onClose, onSaved }) {
   const optionen = form.antwort_optionen || [];
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
+    <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold font-oswald uppercase tracking-wide text-white">{isNew ? 'Neue Abstimmung' : 'Abstimmung bearbeiten'}</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-white"><X size={16} /></button>
@@ -782,8 +778,7 @@ function AbstimmungModal({ abstimmung, termine, onClose, onSaved }) {
             {saving ? '…' : 'Speichern'}
           </button>
         </div>
-      </div>
-    </div>
+      </BottomModal>
   );
 }
 
@@ -820,8 +815,7 @@ function SitzungModal({ onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
+    <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold font-oswald uppercase tracking-wide text-white">Neue Sitzung</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-white"><X size={16} /></button>
@@ -848,8 +842,7 @@ function SitzungModal({ onClose, onSaved }) {
             {saving ? '…' : 'Erstellen'}
           </button>
         </div>
-      </div>
-    </div>
+      </BottomModal>
   );
 }
 
@@ -905,8 +898,7 @@ function BeschlussModal({ beschluss, termine, mitglieder, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
+    <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold font-oswald uppercase tracking-wide text-foreground">{isNew ? 'Neuer Beschluss' : 'Beschluss bearbeiten'}</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"><X size={16} /></button>
@@ -977,7 +969,6 @@ function BeschlussModal({ beschluss, termine, mitglieder, onClose, onSaved }) {
             {saving ? '…' : 'Speichern'}
           </button>
         </div>
-      </div>
-    </div>
+      </BottomModal>
   );
 }

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, Plus, Trash2, Save, LayoutTemplate, Edit, Bus, Clock, MapPin, Briefcase, ShoppingBasket } from 'lucide-react';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
+import BottomModal from '@/components/ui/BottomModal';
 
 const TYP_OPTIONEN = ['Umzug', 'Abendveranstaltung', 'Intern', 'Arbeitsdienst', 'Fest'];
 
@@ -147,8 +148,7 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
   const set = (f, v) => setForm(p => ({ ...p, [f]: v }));
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border sticky top-0 bg-card z-10">
           <div className="flex items-center gap-2">
@@ -394,7 +394,6 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </BottomModal>
   );
 }

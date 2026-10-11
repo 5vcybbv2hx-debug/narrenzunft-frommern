@@ -5,6 +5,7 @@ import {
   ShoppingCart, CheckSquare, FileEdit, FileText
 } from 'lucide-react';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
+import BottomModal from '@/components/ui/BottomModal';
 
 const TYPEN = ['Einkaufsliste', 'Checkliste', 'Notiz', 'Nachbericht', 'Sonstiges'];
 
@@ -64,8 +65,7 @@ export default function VorlagenModal({ vorlagen, onAnwenden, onClose, onVorlage
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
+    <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border sticky top-0 bg-card z-10">
           <div className="flex items-center gap-2">
@@ -185,7 +185,6 @@ export default function VorlagenModal({ vorlagen, onAnwenden, onClose, onVorlage
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </BottomModal>
   );
 }

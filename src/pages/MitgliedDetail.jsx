@@ -28,6 +28,7 @@ import { SelbstpflegeAntrag } from '@/components/mitglied/Aenderungsantraege';
 import { toast } from 'sonner';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import MobileSelect from '@/components/MobileSelect';
+import BottomModal from '@/components/ui/BottomModal';
 
 const ALLE_STATUS = ['Aktiv', 'Passiv', 'Passiv mit Häs', 'Leihäs', 'Jugendliche 11-14', 'Jungaktive 15-17', 'Kinder 4-10', 'Kleinkind 0-3', 'Ehrenmitglied'];
 
@@ -1289,8 +1290,7 @@ export default function MitgliedDetail() {
 
       {/* Häs Zuweisungs-Modal */}
       {showHaesModal && !isNew && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
+        <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-4 sm:p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-white">Häs zuweisen</h3>
               <button onClick={() => { setShowHaesModal(false); setHaessuche(''); setHaesError(null); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"><X size={16} /></button>
@@ -1343,8 +1343,7 @@ export default function MitgliedDetail() {
                 )}
               </div>
             </div>
-          </div>
-        </div>
+          </BottomModal>
       )}
     </div>
   );

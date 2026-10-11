@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Copy, RefreshCw, X, Loader2 } from 'lucide-react';
+import BottomModal from '@/components/ui/BottomModal';
 
 export default function HaesGroupTokenModal({ gruppe, onClose }) {
   const [token, setToken] = useState(null);
@@ -45,8 +46,7 @@ export default function HaesGroupTokenModal({ gruppe, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-lg max-h-[85vh] overflow-y-auto">
+    <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-lg max-h-[85vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-foreground">📅 Kalender-Feed: {gruppe.name}</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground">
@@ -103,7 +103,6 @@ export default function HaesGroupTokenModal({ gruppe, onClose }) {
         ) : (
           <p className="text-sm text-muted-foreground">Token konnte nicht geladen werden</p>
         )}
-      </div>
-    </div>
+      </BottomModal>
   );
 }

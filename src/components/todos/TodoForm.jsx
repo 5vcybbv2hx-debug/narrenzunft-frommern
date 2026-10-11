@@ -2,6 +2,7 @@ import DateSelect from '../ui/DateSelect';
 import { useState } from 'react';
 import { X, Save, Trash2, Search, AlertTriangle } from 'lucide-react';
 import MobileSelect from '@/components/MobileSelect';
+import BottomModal from '@/components/ui/BottomModal';
 
 const PRIORITAET_FARBEN = {
   'Niedrig':  'bg-border text-muted-foreground',
@@ -71,8 +72,7 @@ export default function TodoForm({ todo, mitglieder, onSave, onDelete, onClose }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold font-oswald uppercase tracking-wide text-white">{isNew ? 'Neue Aufgabe' : 'Aufgabe bearbeiten'}</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-white"><X size={16} /></button>
@@ -188,7 +188,6 @@ export default function TodoForm({ todo, mitglieder, onSave, onDelete, onClose }
         {form.verantwortliche_ids.length === 0 && form.titel && (
           <p className="text-xs text-red-400 mt-2 text-center">Bitte mindestens eine verantwortliche Person zuweisen.</p>
         )}
-      </div>
-    </div>
+      </BottomModal>
   );
 }

@@ -9,6 +9,7 @@ import HaesHistorieImportModal from '@/components/haes/HaesHistorieImportModal';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { toast } from 'sonner';
+import BottomModal from '@/components/ui/BottomModal';
 
 const STATUS_COLORS = {
   'Aktiv': 'bg-green-500/20 text-green-400',
@@ -595,8 +596,7 @@ export default function HaesDetail() {
 
       {/* Modal: Mitglied zuweisen */}
       {showAddMitglied && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
+        <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
             <h3 className="font-bold text-foreground mb-4">Mitglied zuweisen</h3>
             <div className="space-y-3">
               <div>
@@ -697,8 +697,7 @@ export default function HaesDetail() {
                 {saving ? 'Speichern...' : 'Zuweisen'}
               </button>
             </div>
-          </div>
-        </div>
+          </BottomModal>
       )}
 
       {/* Confirm Dialogs */}

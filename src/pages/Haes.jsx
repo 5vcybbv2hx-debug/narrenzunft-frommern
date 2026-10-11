@@ -10,6 +10,7 @@ import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 import { isAdmin } from '@/lib/roles';
 import { toast } from 'sonner';
 import MobileSelect from '@/components/MobileSelect';
+import BottomModal from '@/components/ui/BottomModal';
 
 const STATUS_COLORS = {
   'Aktiv': 'bg-green-500/20 text-green-400',
@@ -309,8 +310,7 @@ export default function Haes() {
 
       {/* New Gruppe Modal */}
       {showNewGruppe && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
+        <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
             <h3 className="font-oswald font-semibold text-foreground mb-4 tracking-wide">Neue Häsgruppe</h3>
             <input
               type="text"
@@ -330,14 +330,12 @@ export default function Haes() {
               <button onClick={() => setShowNewGruppe(false)} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium">Abbrechen</button>
               <button onClick={handleCreateGruppe} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold">Erstellen</button>
             </div>
-          </div>
-        </div>
+          </BottomModal>
       )}
 
       {/* New Häs Modal */}
       {showNewHaes && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
+        <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
             <h3 className="font-oswald font-semibold text-foreground mb-4 tracking-wide">Neues Häs</h3>
             <div className="space-y-3">
               <input
@@ -370,8 +368,7 @@ export default function Haes() {
               <button onClick={() => setShowNewHaes(false)} className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium">Abbrechen</button>
               <button onClick={handleCreateHaes} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold">Erstellen</button>
             </div>
-          </div>
-        </div>
+          </BottomModal>
       )}
 
       {/* Token Modal */}

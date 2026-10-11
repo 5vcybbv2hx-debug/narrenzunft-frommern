@@ -1,12 +1,12 @@
 import { X, QrCode, ExternalLink, Printer } from 'lucide-react';
+import BottomModal from '@/components/ui/BottomModal';
 
 export default function VerleihQrModal({ ausruestung, onClose }) {
   const url = `${window.location.origin}/verleih`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=12&data=${encodeURIComponent(url)}`;
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-secondary border border-border rounded-2xl p-6 w-full max-w-sm max-h-[90vh] overflow-y-auto">
+    <BottomModal onClose={onClose} cardClass="bg-secondary border border-border rounded-2xl p-6 w-full max-w-sm max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-oswald uppercase tracking-wide font-bold text-foreground flex items-center gap-2">
             <QrCode size={16} className="text-primary" /> QR-Code: Verleih-Übersicht
@@ -40,7 +40,6 @@ export default function VerleihQrModal({ ausruestung, onClose }) {
           <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Link</p>
           <p className="text-[11px] text-muted-foreground break-all mt-0.5">{url}</p>
         </div>
-      </div>
-    </div>
+      </BottomModal>
   );
 }

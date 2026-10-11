@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, Save, Trash2, Search, AlertTriangle, Users, UserPlus, Plus, AlertCircle } from 'lucide-react';
 import MobileSelect from '@/components/MobileSelect';
+import BottomModal from '@/components/ui/BottomModal';
 
 const STATUS_OPTIONEN = ['Reserviert', 'Ausgeliehen', 'Zurückgegeben', 'Abgesagt'];
 
@@ -126,8 +127,7 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-secondary border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <BottomModal onClose={onClose} cardClass="bg-secondary border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-oswald uppercase tracking-wide font-bold text-foreground">
             {isNew ? 'Ausleihe eintragen' : 'Ausleihe bearbeiten'}
@@ -438,7 +438,6 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
             <Save size={14} /> {saving ? '...' : 'Speichern'}
           </button>
         </div>
-      </div>
-    </div>
+      </BottomModal>
   );
 }

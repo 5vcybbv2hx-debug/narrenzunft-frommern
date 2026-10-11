@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, CheckCircle, Loader2, AlertTriangle } from 'lucide-react';
+import BottomModal from '@/components/ui/BottomModal';
 
 export default function UmzugAbschliessenModal({ veranstaltung, onClose, onAbgeschlossen }) {
   const [loading, setLoading] = useState(false);
@@ -40,8 +41,7 @@ export default function UmzugAbschliessenModal({ veranstaltung, onClose, onAbges
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
+    <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-bold text-foreground text-lg">Umzug abschließen</h3>
           <button onClick={onClose} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground">
@@ -179,7 +179,6 @@ export default function UmzugAbschliessenModal({ veranstaltung, onClose, onAbges
             </button>
           </div>
         )}
-      </div>
-    </div>
+      </BottomModal>
   );
 }

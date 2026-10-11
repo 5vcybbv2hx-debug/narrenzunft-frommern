@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, Check, Save } from 'lucide-react';
+import BottomModal from '@/components/ui/BottomModal';
 
 const SCHLUESSEL = 'busverantwortliche';
 
@@ -44,8 +45,7 @@ export default function BusverantwortlicheModal({ mitglieder, onClose }) {
   );
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col">
+    <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col">
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
@@ -129,7 +129,6 @@ export default function BusverantwortlicheModal({ mitglieder, onClose }) {
             <Save size={14} /> {saving ? 'Speichern...' : 'Speichern'}
           </button>
         </div>
-      </div>
-    </div>
+      </BottomModal>
   );
 }

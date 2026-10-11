@@ -7,6 +7,7 @@ import { de } from 'date-fns/locale';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import MobileSelect from '@/components/MobileSelect';
 import { ausschussAktion } from '@/lib/ausschussAktionen';
+import BottomModal from '@/components/ui/BottomModal';
 
 const EMPTY_FORM = {
   titel: '',
@@ -195,8 +196,7 @@ export function ProtokollModal({ protokoll, prefill = {}, termine, mitglieder, a
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-foreground">{isNew ? 'Neues Protokoll' : 'Protokoll bearbeiten'}</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"><X size={16} /></button>
@@ -323,7 +323,6 @@ export function ProtokollModal({ protokoll, prefill = {}, termine, mitglieder, a
             <Save size={14} /> {saving ? '...' : 'Speichern'}
           </button>
         </div>
-      </div>
-    </div>
+      </BottomModal>
   );
 }

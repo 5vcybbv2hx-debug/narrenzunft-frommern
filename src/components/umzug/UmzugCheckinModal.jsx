@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, Check, Search, QrCode, Users, CheckCircle2, UserPlus } from 'lucide-react';
+import BottomModal from '@/components/ui/BottomModal';
 
 export default function UmzugCheckinModal({ veranstaltung, onClose }) {
   const [teilnahmen, setTeilnahmen] = useState([]);
@@ -78,8 +79,7 @@ export default function UmzugCheckinModal({ veranstaltung, onClose }) {
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}`;
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+    <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
@@ -233,7 +233,6 @@ export default function UmzugCheckinModal({ veranstaltung, onClose }) {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </BottomModal>
   );
 }
