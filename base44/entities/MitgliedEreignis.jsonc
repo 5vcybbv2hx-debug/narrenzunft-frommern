@@ -35,11 +35,11 @@
     },
     "quelle_typ": {
       "type": "string",
-      "description": "Quell-Entität bei Migration (z.B. Mitglied, SpartenleiterHistorie). Leer bei neuen Ereignissen."
+      "description": "Quell-Entit\u00e4t bei Migration (z.B. Mitglied, SpartenleiterHistorie). Leer bei neuen Ereignissen."
     },
     "quelle_id": {
       "type": "string",
-      "description": "ID der Quell-Entität"
+      "description": "ID der Quell-Entit\u00e4t"
     },
     "alt_wert": {
       "type": "string",
@@ -51,8 +51,13 @@
     },
     "erstellt_von_id": {
       "type": "string",
-      "description": "Mitglied-ID des Ausführenden"
+      "description": "Mitglied-ID des Ausf\u00fchrenden"
     }
+  },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
   },
   "required": [
     "mitglied_id",

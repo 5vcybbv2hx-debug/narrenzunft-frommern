@@ -26,6 +26,11 @@
       "description": "Kurzbeschreibung wof\u00fcr die Vorlage gedacht ist"
     }
   },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
+  },
   "required": [
     "titel"
   ],

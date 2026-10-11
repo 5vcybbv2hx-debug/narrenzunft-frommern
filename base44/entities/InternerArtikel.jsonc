@@ -47,6 +47,11 @@
       "description": "Komma-getrennte Haesgruppe-IDs, f\u00fcr die der Artikel gedacht ist (z.B. Ersatzteile nur f\u00fcr die Garde); leer = allgemein f\u00fcr alle Sparten"
     }
   },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
+  },
   "required": [
     "name"
   ],

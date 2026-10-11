@@ -2,42 +2,168 @@
   "name": "VereinsDokument",
   "type": "object",
   "properties": {
-    "titel": { "type": "string", "description": "Anzeigename, z.B. 'Satzung (Stand Mai 2023)'" },
+    "titel": {
+      "type": "string",
+      "description": "Anzeigename, z.B. 'Satzung (Stand Mai 2023)'"
+    },
     "typ": {
       "type": "string",
-      "enum": ["Datei", "Text"],
+      "enum": [
+        "Datei",
+        "Text"
+      ],
       "default": "Datei",
-      "description": "Datei = PDF/Bild im privaten Speicher, Text = direkt in der App editierbarer Text (Absätze als JSON)"
+      "description": "Datei = PDF/Bild im privaten Speicher, Text = direkt in der App editierbarer Text (Abs\u00e4tze als JSON)"
     },
-    "absaetze": { "type": "string", "description": "Veröffentlichter Inhalt als JSON-Array [{nummer, titel, text}] (nur typ=Text)" },
-    "entwurf": { "type": "string", "description": "Nicht veröffentlichter Entwurf als JSON-Array (nur typ=Text)" },
-    "zustimmung_version": { "type": "number", "description": "Version, für die eine Datenschutz-Zustimmung nötig ist. Erhöht nur der Veröffentlichungs-Schritt mit Häkchen 'erneute Zustimmung'." },
+    "absaetze": {
+      "type": "string",
+      "description": "Ver\u00f6ffentlichter Inhalt als JSON-Array [{nummer, titel, text}] (nur typ=Text)"
+    },
+    "entwurf": {
+      "type": "string",
+      "description": "Nicht ver\u00f6ffentlichter Entwurf als JSON-Array (nur typ=Text)"
+    },
+    "zustimmung_version": {
+      "type": "number",
+      "description": "Version, f\u00fcr die eine Datenschutz-Zustimmung n\u00f6tig ist. Erh\u00f6ht nur der Ver\u00f6ffentlichungs-Schritt mit H\u00e4kchen 'erneute Zustimmung'."
+    },
     "kategorie": {
       "type": "string",
-      "enum": ["Satzung", "Ordnung", "Antragsformular", "Datenschutz", "Protokoll", "Sonstiges"],
+      "enum": [
+        "Satzung",
+        "Ordnung",
+        "Antragsformular",
+        "Datenschutz",
+        "Protokoll",
+        "Sonstiges"
+      ],
       "default": "Sonstiges"
     },
-    "beschreibung": { "type": "string" },
+    "beschreibung": {
+      "type": "string"
+    },
     "sichtbarkeit": {
       "type": "string",
-      "enum": ["alle", "ausschuss"],
+      "enum": [
+        "alle",
+        "ausschuss"
+      ],
       "default": "ausschuss",
       "description": "alle = jedes Mitglied darf lesen, ausschuss = nur Vorstand/Stv./Admin"
     },
-    "version": { "type": "number", "default": 1, "description": "Hochzählen bei neuer Fassung (Datenschutz: löst erneute Zustimmung aus)" },
-    "stand_datum": { "type": "string", "format": "date", "description": "Stand/Beschlussdatum des Dokuments" },
-    "file_uri": { "type": "string", "description": "Private Storage-URI. NIE öffentlich, Download nur per signierter URL." },
-    "dateiname": { "type": "string" },
-    "datei_groesse": { "type": "number" },
-    "ist_aktuell": { "type": "boolean", "default": true, "description": "false = ersetzte alte Fassung (Archiv)" },
-    "hochgeladen_von_id": { "type": "string" },
-    "sortierung": { "type": "number", "default": 100 }
+    "version": {
+      "type": "number",
+      "default": 1,
+      "description": "Hochz\u00e4hlen bei neuer Fassung (Datenschutz: l\u00f6st erneute Zustimmung aus)"
+    },
+    "stand_datum": {
+      "type": "string",
+      "format": "date",
+      "description": "Stand/Beschlussdatum des Dokuments"
+    },
+    "file_uri": {
+      "type": "string",
+      "description": "Private Storage-URI. NIE \u00f6ffentlich, Download nur per signierter URL."
+    },
+    "dateiname": {
+      "type": "string"
+    },
+    "datei_groesse": {
+      "type": "number"
+    },
+    "ist_aktuell": {
+      "type": "boolean",
+      "default": true,
+      "description": "false = ersetzte alte Fassung (Archiv)"
+    },
+    "hochgeladen_von_id": {
+      "type": "string"
+    },
+    "sortierung": {
+      "type": "number",
+      "default": 100
+    }
   },
-  "required": ["titel", "file_uri"],
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
+  },
+  "required": [
+    "titel",
+    "file_uri"
+  ],
   "rls": {
-    "create": { "$or": [ { "user_condition": { "role": "admin" } }, { "user_condition": { "role": "vorstand" } }, { "user_condition": { "role": "stellv_vorstand" } } ] },
-    "read":   { "$or": [ { "user_condition": { "role": "admin" } }, { "user_condition": { "role": "vorstand" } }, { "user_condition": { "role": "stellv_vorstand" } } ] },
-    "update": { "$or": [ { "user_condition": { "role": "admin" } }, { "user_condition": { "role": "vorstand" } }, { "user_condition": { "role": "stellv_vorstand" } } ] },
-    "delete": { "$or": [ { "user_condition": { "role": "admin" } }, { "user_condition": { "role": "vorstand" } } ] }
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    }
   }
 }

@@ -47,6 +47,11 @@
       "description": "true f\u00fcr alte antrag_pdf_url-Eintr\u00e4ge (\u00f6ffentliche URL, r\u00fcckw\u00e4rtskompatibel angezeigt)"
     }
   },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
+  },
   "required": [
     "mitglied_id",
     "typ",

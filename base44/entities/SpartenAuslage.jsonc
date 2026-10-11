@@ -81,6 +81,11 @@
       "type": "string"
     }
   },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
+  },
   "required": [
     "haesgruppe_id",
     "mitglied_id",

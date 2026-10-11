@@ -38,6 +38,11 @@
       "description": "Optionale Verkn\u00fcpfung mit einer Veranstaltung"
     }
   },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
+  },
   "required": [
     "titel",
     "datum"

@@ -36,12 +36,12 @@
     "anmeldung_start": {
       "type": "string",
       "format": "date",
-      "description": "Anmeldezeitfenster: ab diesem Tag ist die Anmeldung möglich"
+      "description": "Anmeldezeitfenster: ab diesem Tag ist die Anmeldung m\u00f6glich"
     },
     "anmeldung_ende": {
       "type": "string",
       "format": "date",
-      "description": "Anmeldezeitfenster: bis einschließlich dieses Tages ist die Anmeldung möglich"
+      "description": "Anmeldezeitfenster: bis einschlie\u00dflich dieses Tages ist die Anmeldung m\u00f6glich"
     },
     "max_teilnehmer": {
       "type": "number"
@@ -141,6 +141,11 @@
       "default": "Ausstehend",
       "description": "Status der Nachbereitung der Veranstaltung"
     }
+  },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
   },
   "required": [
     "titel",

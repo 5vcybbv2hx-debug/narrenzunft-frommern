@@ -59,6 +59,11 @@
       "description": "Enddatum der Wiederholung (nur wenn wiederkehrend=true)"
     }
   },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
+  },
   "required": [
     "haesgruppe_id",
     "titel",
