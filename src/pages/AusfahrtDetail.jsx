@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { meldeAnAusfahrtSicher } from '@/lib/ausfahrtAnmeldung';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannAusschussSehn, kannAusfahrtCheckin } from '@/lib/roles';
-import { Bus, MapPin, Clock, Calendar, Users, ArrowLeft, UserPlus, CheckCircle2, Download, X, Pencil, Trash2, Ban, AlertTriangle, QrCode, ScanLine, Search } from 'lucide-react';
+import { Bus, MapPin, Clock, Calendar, Users, ArrowLeft, UserPlus, CheckCircle2, Download, X, Pencil, Trash2, Ban, AlertTriangle, QrCode, ScanLine, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { clearEntityCache } from '../lib/entityCache';
 import AusfahrtEditModal from '@/components/ausfahrt/AusfahrtEditModal';
 import { format, parseISO, differenceInDays } from 'date-fns';
@@ -27,6 +27,11 @@ export default function AusfahrtDetail() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const [qrIndex, setQrIndex] = useState(0);
+  const swipeStartX = useRef(null);
+
+  // Reset der Karussell-Position beim Öffnen
+  useEffect(() => { if (showQR) setQrIndex(0); }, [showQR]);
   const [showBusVwModal, setShowBusVwModal] = useState(false);
   const [selectedBusVw, setSelectedBusVw] = useState([]);
   const [busVwSearch, setBusVwSearch] = useState('');
@@ -1465,62 +1470,100 @@ export default function AusfahrtDetail() {
         )}
       </div>
 
-      {/* QR Code Modal */}
-      {showQR && (myRegistration || meineFamilienAnmeldungen.length > 0) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setShowQR(false)}>
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold font-oswald uppercase tracking-wider text-foreground">Dein Check-in QR</h3>
-              <button onClick={() => setShowQR(false)} className="text-muted-foreground hover:text-foreground">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <p className="text-xs text-muted-foreground mb-4 text-center">
-              Zeige diesen Code dem Busverantwortlichen beim Einsteigen.
-            </p>
-            {myRegistration && (
-              <>
-                <div className="flex justify-center mb-4">
+      {/* QR Code Modal: großes Karussell, per Wischen navigierbar */}
+      {showQR && (myRegistration || meineFamilienAnmeldungen.length > 0) && (() => {
+        const qrAnmeldungen = myRegistration ? [myRegistration, ...meineFamilienAnmeldungen] : [...meineFamilienAnmeldungen];
+        const idx = Math.min(qrIndex, qrAnmeldungen.length - 1);
+        const reg = qrAnmeldungen[idx];
+        const istFamilie = reg !== myRegistration;
+        const swipeEnd = (clientX) => {
+          if (swipeStartX.current === null) return;
+          const dx = clientX - swipeStartX.current;
+          swipeStartX.current = null;
+          if (dx < -45 && idx < qrAnmeldungen.length - 1) setQrIndex(idx + 1);
+          else if (dx > 45 && idx > 0) setQrIndex(idx - 1);
+        };
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setShowQR(false)}>
+            <div className="bg-card border border-border rounded-2xl p-5 sm:p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold font-oswald uppercase tracking-wider text-foreground">Check-in QR{qrAnmeldungen.length > 1 ? 's' : ''}</h3>
+                <button onClick={() => setShowQR(false)} className="text-muted-foreground hover:text-foreground">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Großer QR mit Wisch-Navigation */}
+              <div
+                className="relative flex items-center justify-center touch-pan-y select-none"
+                onTouchStart={e => { swipeStartX.current = e.touches[0].clientX; }}
+                onTouchEnd={e => { swipeEnd(e.changedTouches[0].clientX); }}
+              >
+                {idx > 0 && (
+                  <button
+                    onClick={() => setQrIndex(idx - 1)}
+                    className="absolute left-0 z-10 p-2 rounded-full bg-secondary/80 border border-border text-foreground active:scale-95 transition-transform"
+                    aria-label="Vorheriger QR"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                )}
+                <div className="bg-white rounded-2xl p-3 shadow-lg">
                   <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&bgcolor=ffffff&data=${encodeURIComponent(myRegistration.id)}`}
-                    alt="QR Code"
-                    className="rounded-xl w-[200px] h-[200px] sm:w-[250px] sm:h-[250px] max-w-full"
+                    key={reg.id}
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=320x320&bgcolor=ffffff&data=${encodeURIComponent(reg.id)}`}
+                    alt={`QR ${getMitgliedName(reg.mitglied_id)}`}
+                    className="rounded-lg w-[250px] h-[250px] sm:w-[270px] sm:h-[270px] max-w-full"
+                    draggable={false}
                   />
                 </div>
-                <p className="text-center text-sm text-muted-foreground font-medium">{getMitgliedName(myRegistration.mitglied_id)}</p>
-                {myRegistration.transport && (
-                  <p className="text-center text-xs text-muted-foreground mt-1">
-                    {myRegistration.transport === 'Bus' ? '🚌 Bus' : '🚗 Privat'}
-                  </p>
+                {idx < qrAnmeldungen.length - 1 && (
+                  <button
+                    onClick={() => setQrIndex(idx + 1)}
+                    className="absolute right-0 z-10 p-2 rounded-full bg-secondary/80 border border-border text-foreground active:scale-95 transition-transform"
+                    aria-label="Nächster QR"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
                 )}
-              </>
-            )}
-            {/* QR-Codes der angemeldeten Familienmitglieder */}
-            {meineFamilienAnmeldungen.length > 0 && (
-              <div className={myRegistration ? 'border-t border-border mt-5 pt-4' : ''}>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide text-center mb-3">
-                  Familienmitglieder
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  {meineFamilienAnmeldungen.map(reg => (
-                    <div key={reg.id} className="bg-secondary/40 border border-border rounded-xl p-3 flex flex-col items-center gap-2">
-                      <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&bgcolor=ffffff&data=${encodeURIComponent(reg.id)}`}
-                        alt={`QR ${getMitgliedName(reg.mitglied_id)}`}
-                        className="rounded-lg w-[110px] h-[110px] sm:w-[130px] sm:h-[130px] max-w-full"
-                      />
-                      <div className="text-center min-w-0 w-full">
-                        <p className="text-xs font-medium text-foreground truncate">{getMitgliedName(reg.mitglied_id)}</p>
-                        <p className="text-[10px] text-muted-foreground">{reg.transport === 'Bus' ? '🚌 Bus' : '🚗 Privat'}</p>
-                      </div>
-                    </div>
-                  ))}
+              </div>
+
+              {/* Name + Transport */}
+              <div className="text-center mt-4">
+                <p className="text-base font-semibold text-foreground">{getMitgliedName(reg.mitglied_id)}</p>
+                <div className="flex items-center justify-center gap-2 mt-1">
+                  {istFamilie && <span className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground bg-secondary border border-border rounded-full px-2 py-0.5">Familie</span>}
+                  {reg.transport && (
+                    <span className="text-xs text-muted-foreground">{reg.transport === 'Bus' ? '🚌 Bus' : '🚗 Privat'}</span>
+                  )}
                 </div>
               </div>
-            )}
+
+              {/* Punkte-Leiste + Zähler */}
+              {qrAnmeldungen.length > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-4">
+                  {qrAnmeldungen.map((r, i) => (
+                    <button
+                      key={r.id}
+                      onClick={() => setQrIndex(i)}
+                      aria-label={`QR ${i + 1}`}
+                      className={`h-2 rounded-full transition-all ${i === idx ? 'w-6 bg-primary' : 'w-2 bg-border hover:bg-border/70'}`}
+                    />
+                  ))}
+                </div>
+              )}
+              {qrAnmeldungen.length > 1 && (
+                <p className="text-center text-xs text-muted-foreground mt-2">
+                  {idx + 1} / {qrAnmeldungen.length} · zum Wechseln wischen
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground mt-4 text-center">
+                Zeige {qrAnmeldungen.length > 1 ? 'die Codes nacheinander' : 'diesen Code'} dem Busverantwortlichen beim Einsteigen.
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Busverantwortliche Modal */}
       {showBusVwModal && (
