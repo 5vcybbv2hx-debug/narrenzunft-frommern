@@ -76,7 +76,7 @@ export default function TanzTab({ gruppeId, alleMitglieder, canEdit }) {
                   <Icon className="w-[18px] h-[18px]" />
                 </span>
                 <span className="flex-1 min-w-0">
-                  <span className="block text-sm font-semibold text-white">{label}</span>
+                  <span className="block text-sm font-semibold text-foreground">{label}</span>
                   <span className="block text-xs text-muted-foreground truncate">{sub}</span>
                 </span>
                 <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform shrink-0 ${istOffen ? 'rotate-180' : ''}`} />
@@ -102,7 +102,7 @@ export default function TanzTab({ gruppeId, alleMitglieder, canEdit }) {
       {musikLaeuft && offen !== 'musik' && (
         <div className="fixed left-1/2 -translate-x-1/2 bottom-20 md:bottom-6 z-40 flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full border border-primary/40 bg-card shadow-lg max-w-[92vw]">
           <Music className="w-4 h-4 text-primary shrink-0 animate-pulse" />
-          <button onClick={() => oeffne('musik')} className="text-xs font-medium text-white truncate max-w-[40vw]" title="Musik-Abschnitt öffnen">
+          <button onClick={() => oeffne('musik')} className="text-xs font-medium text-foreground truncate max-w-[40vw]" title="Musik-Abschnitt öffnen">
             {spielstand.titel}
           </button>
           <button
@@ -114,7 +114,7 @@ export default function TanzTab({ gruppeId, alleMitglieder, canEdit }) {
           </button>
           <button
             onClick={() => playerApi.current?.stop()}
-            className="w-8 h-8 rounded-full bg-secondary border border-border text-muted-foreground flex items-center justify-center shrink-0 hover:text-white"
+            className="w-8 h-8 rounded-full bg-secondary border border-border text-muted-foreground flex items-center justify-center shrink-0 hover:text-foreground"
             title="Stoppen"
           >
             <Square className="w-3 h-3" />

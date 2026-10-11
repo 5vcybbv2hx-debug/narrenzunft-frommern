@@ -31,12 +31,12 @@ export default function GruppenMitgliederListe({ mitglieder, gruppe }) {
               return (
                 <div key={m.id} className="bg-card border border-border rounded-xl p-4 flex items-center justify-between hover:bg-secondary/30 transition-colors">
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-full bg-secondary flex items-center justify-center font-bold text-white font-oswald border border-border">
+                    <div className="w-11 h-11 rounded-full bg-secondary flex items-center justify-center font-bold text-foreground font-oswald border border-border">
                       {m.vorname?.[0]}{m.nachname?.[0]}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <Link to={`/mitglieder/${m.id}`} className="font-semibold text-white text-sm hover:text-primary transition-colors">
+                        <Link to={`/mitglieder/${m.id}`} className="font-semibold text-foreground text-sm hover:text-primary transition-colors">
                           {m.vorname} {m.nachname}
                         </Link>
                         {isSplat && (

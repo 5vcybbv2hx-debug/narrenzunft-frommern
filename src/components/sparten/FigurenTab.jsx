@@ -251,7 +251,7 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
     return (
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-xl font-semibold text-white">Figuren &amp; Aufstellung</h2>
+          <h2 className="text-xl font-semibold text-foreground">Figuren &amp; Aufstellung</h2>
           <span className="text-sm text-muted-foreground">{figuren.length} {figuren.length === 1 ? 'Figur' : 'Figuren'}</span>
         </div>
 
@@ -262,7 +262,7 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
               onChange={e => setNeueFigur(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && figurAnlegen()}
               placeholder="Name der neuen Figur (z. B. Stern, Brücke)…"
-              className="flex-1 px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary"
+              className="flex-1 px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
             />
             <button onClick={figurAnlegen} disabled={busy || !neueFigur.trim()}
               className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
@@ -284,15 +284,15 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
                   {i + 1}
                 </span>
                 <button onClick={() => setGewaehlt(f)} className="min-w-0 flex-1 text-left">
-                  <span className="text-sm font-medium text-white block truncate">{f.name}</span>
+                  <span className="text-sm font-medium text-foreground block truncate">{f.name}</span>
                   <span className="text-xs text-muted-foreground">
                     {parseAufstellung(f.aufstellung).length} Tänzer:innen{f.pdf_url ? ' · PDF vorhanden' : ''}
                   </span>
                 </button>
                 {canEdit && (
                   <div className="flex items-center gap-1 shrink-0">
-                    <button disabled={i === 0} onClick={() => verschieben(f, -1)} className="p-1.5 rounded-lg text-muted-foreground hover:text-white disabled:opacity-30" title="Nach vorne"><ArrowUp className="w-3.5 h-3.5" /></button>
-                    <button disabled={i === figuren.length - 1} onClick={() => verschieben(f, 1)} className="p-1.5 rounded-lg text-muted-foreground hover:text-white disabled:opacity-30" title="Nach hinten"><ArrowDown className="w-3.5 h-3.5" /></button>
+                    <button disabled={i === 0} onClick={() => verschieben(f, -1)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30" title="Nach vorne"><ArrowUp className="w-3.5 h-3.5" /></button>
+                    <button disabled={i === figuren.length - 1} onClick={() => verschieben(f, 1)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30" title="Nach hinten"><ArrowDown className="w-3.5 h-3.5" /></button>
                     <button onClick={() => figurLoeschen(f)} className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-500/10" title="Löschen"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 )}
@@ -309,7 +309,7 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
 
   return (
     <div className="space-y-4">
-      <button onClick={() => setGewaehlt(null)} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-white">
+      <button onClick={() => setGewaehlt(null)} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="w-4 h-4" /> Alle Figuren
       </button>
 
@@ -321,19 +321,19 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
               value={nameDraft}
               onChange={e => setNameDraft(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && nameSpeichern()}
-              className="flex-1 text-xl font-semibold bg-transparent border-b border-border focus:border-primary outline-none text-white"
+              className="flex-1 text-xl font-semibold bg-transparent border-b border-border focus:border-primary outline-none text-foreground"
             />
             <button onClick={nameSpeichern} className="p-1.5 rounded-lg text-primary hover:bg-primary/10" title="Name speichern"><Check className="w-4 h-4" /></button>
           </div>
         ) : (
-          <h2 className="text-xl font-semibold text-white">{gewaehlt.name}</h2>
+          <h2 className="text-xl font-semibold text-foreground">{gewaehlt.name}</h2>
         )}
       </div>
 
       {/* PDF */}
       <div className="rounded-xl border border-border bg-card p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-sm font-medium text-white flex items-center gap-1.5"><FileText className="w-4 h-4 text-primary" /> Figuren-PDF</span>
+          <span className="text-sm font-medium text-foreground flex items-center gap-1.5"><FileText className="w-4 h-4 text-primary" /> Figuren-PDF</span>
           <div className="flex items-center gap-2">
             {gewaehlt.pdf_url && (
               <a href={gewaehlt.pdf_url} target="_blank" rel="noopener noreferrer"
@@ -364,7 +364,7 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
       {/* Aufstellung */}
       <div className="rounded-xl border border-border bg-card p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-sm font-medium text-white">Aufstellung</span>
+          <span className="text-sm font-medium text-foreground">Aufstellung</span>
           <div className="flex items-center gap-2">
             {dirty && <span className="text-xs text-yellow-400">Ungespeicherte Änderungen</span>}
             {canEdit && (
@@ -425,7 +425,7 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
                 <span className="text-xs text-muted-foreground italic">Alle aktiven Tänzer:innen sind platziert.</span>
               ) : nichtPlatziert.map(t => (
                 <button key={t.mitglied_id} onClick={() => hinzufuegenZurAufstellung(t)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary border border-border text-xs text-white hover:border-primary">
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary border border-border text-xs text-foreground hover:border-primary">
                   <Plus className="w-3 h-3 text-primary" /> {nameVon(t.mitglied_id)}
                 </button>
               ))}
@@ -439,7 +439,7 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
         const punkte = einsatzpunkteFuerFigur(musikListe, gewaehlt.id);
         return (
           <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-            <span className="text-sm font-medium text-white">Musik-Einsatzpunkte</span>
+            <span className="text-sm font-medium text-foreground">Musik-Einsatzpunkte</span>
             {punkte.length === 0 ? (
               <p className="text-xs text-muted-foreground italic">
                 Diese Figur ist noch mit keinem Musik-Zeitmarker verknüpft. Zeitmarker werden im Musik-Tab gesetzt{canEdit ? '' : ' (durch Vorstand oder Spartenleiter)'}.
@@ -449,7 +449,7 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
                 {punkte.map((p, idx) => (
                   <div key={idx} className="flex items-center gap-2">
                     <span className="px-2 py-1 rounded-lg bg-primary/15 border border-primary/30 text-primary text-xs font-mono">{fmtZeit(p.marker.zeit)}</span>
-                    <span className="text-sm text-white truncate flex-1 min-w-0">{p.musik.titel}{p.marker.label ? <span className="text-muted-foreground text-xs"> · {p.marker.label}</span> : null}</span>
+                    <span className="text-sm text-foreground truncate flex-1 min-w-0">{p.musik.titel}{p.marker.label ? <span className="text-muted-foreground text-xs"> · {p.marker.label}</span> : null}</span>
                     <button onClick={() => onUebeMusik?.(p.musik.id, p.marker.zeit)}
                       className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary text-white text-xs font-medium hover:bg-primary/90 shrink-0">
                       <PlayIcon /> Üben

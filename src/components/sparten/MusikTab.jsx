@@ -242,12 +242,12 @@ export default function MusikTab({ gruppeId, canEdit, uebungswunsch, onWunschVer
     return <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground text-sm">Lade Musik…</div>;
   }
 
-  const figurSelectCls = 'px-2 py-1 rounded-lg bg-secondary border border-border text-xs text-white focus:outline-none focus:border-primary max-w-[140px]';
+  const figurSelectCls = 'px-2 py-1 rounded-lg bg-secondary border border-border text-xs text-foreground focus:outline-none focus:border-primary max-w-[140px]';
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-xl font-semibold text-white">Musik &amp; Zeitmarker</h2>
+        <h2 className="text-xl font-semibold text-foreground">Musik &amp; Zeitmarker</h2>
         <span className="text-sm text-muted-foreground">{liste.length} {liste.length === 1 ? 'Stück' : 'Stücke'}</span>
       </div>
 
@@ -259,7 +259,7 @@ export default function MusikTab({ gruppeId, canEdit, uebungswunsch, onWunschVer
               value={titelDraft}
               onChange={e => setTitelDraft(e.target.value)}
               placeholder="Titel (leer lassen = Dateiname)…"
-              className="flex-1 px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary"
+              className="flex-1 px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
             />
             <label className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium cursor-pointer hover:bg-primary/90 ${ladet ? 'opacity-60 pointer-events-none' : ''}`}>
               {ladet ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
@@ -295,19 +295,19 @@ export default function MusikTab({ gruppeId, canEdit, uebungswunsch, onWunschVer
                           onChange={e => setEditTitel(e.target.value)}
                           onKeyDown={e => { if (e.key === 'Enter') umbenennen(m); if (e.key === 'Escape') setEditId(null); }}
                           autoFocus
-                          className="flex-1 px-2 py-1 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary"
+                          className="flex-1 px-2 py-1 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
                         />
                         <button onClick={() => umbenennen(m)} className="p-1 rounded text-primary hover:bg-primary/10" title="Speichern"><Check className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => setEditId(null)} className="p-1 rounded text-muted-foreground hover:text-white" title="Abbrechen"><X className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => setEditId(null)} className="p-1 rounded text-muted-foreground hover:text-foreground" title="Abbrechen"><X className="w-3.5 h-3.5" /></button>
                       </div>
                     ) : (
-                      <span className="text-sm font-medium text-white truncate block">{m.titel}</span>
+                      <span className="text-sm font-medium text-foreground truncate block">{m.titel}</span>
                     )}
                   </div>
                   {canEdit && (
                     <div className="flex items-center gap-0.5 shrink-0">
-                      <button disabled={i === 0} onClick={() => verschieben(m, -1)} className="p-1 rounded text-muted-foreground hover:text-white disabled:opacity-30" title="Nach vorne"><ArrowUp className="w-3.5 h-3.5" /></button>
-                      <button disabled={i === liste.length - 1} onClick={() => verschieben(m, 1)} className="p-1 rounded text-muted-foreground hover:text-white disabled:opacity-30" title="Nach hinten"><ArrowDown className="w-3.5 h-3.5" /></button>
+                      <button disabled={i === 0} onClick={() => verschieben(m, -1)} className="p-1 rounded text-muted-foreground hover:text-foreground disabled:opacity-30" title="Nach vorne"><ArrowUp className="w-3.5 h-3.5" /></button>
+                      <button disabled={i === liste.length - 1} onClick={() => verschieben(m, 1)} className="p-1 rounded text-muted-foreground hover:text-foreground disabled:opacity-30" title="Nach hinten"><ArrowDown className="w-3.5 h-3.5" /></button>
                       <button onClick={() => { setEditId(m.id); setEditTitel(m.titel || ''); }} className="p-1 rounded text-muted-foreground hover:text-primary" title="Umbenennen"><Pencil className="w-3.5 h-3.5" /></button>
                       <button onClick={() => entfernen(m)} className="p-1 rounded text-muted-foreground hover:text-red-400 hover:bg-red-500/10" title="Löschen"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div>
@@ -329,7 +329,7 @@ export default function MusikTab({ gruppeId, canEdit, uebungswunsch, onWunschVer
                 {istUebung && (
                   <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5">
                     <Play className="w-3.5 h-3.5 text-primary" />
-                    <span className="text-xs text-white">
+                    <span className="text-xs text-foreground">
                       Übt Abschnitt {fmtZeit(uebung.start)}–{uebung.ende != null ? fmtZeit(uebung.ende) : 'Ende'}
                     </span>
                     <button
@@ -339,7 +339,7 @@ export default function MusikTab({ gruppeId, canEdit, uebungswunsch, onWunschVer
                     >
                       <Repeat className="w-3 h-3" /> Loop {uebung.loop ? 'an' : 'aus'}
                     </button>
-                    <button onClick={() => stoppeUebung(m.id)} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary border border-border text-[11px] text-muted-foreground hover:text-white">
+                    <button onClick={() => stoppeUebung(m.id)} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary border border-border text-[11px] text-muted-foreground hover:text-foreground">
                       <Square className="w-3 h-3" /> Stop
                     </button>
                   </div>
@@ -353,7 +353,7 @@ export default function MusikTab({ gruppeId, canEdit, uebungswunsch, onWunschVer
                       <div className="flex items-center gap-1.5">
                         {draft.dirty && <span className="text-[11px] text-yellow-400">Ungespeichert</span>}
                         <button onClick={() => markerHinzufuegen(m)}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-secondary border border-border text-[11px] text-white hover:border-primary">
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-secondary border border-border text-[11px] text-foreground hover:border-primary">
                           <Plus className="w-3 h-3" /> Marker bei Play-Position
                         </button>
                         <button onClick={() => markerSpeichern(m)} disabled={!draft.dirty}
@@ -379,7 +379,7 @@ export default function MusikTab({ gruppeId, canEdit, uebungswunsch, onWunschVer
                                   if (Number.isNaN(t) || t < 0) { e.target.value = fmtZeit(mk.zeit); toast.error('Ungültige Zeit (z. B. 1:30)'); return; }
                                   markerPatch(m, idx, { zeit: Math.round(t * 10) / 10 });
                                 }}
-                                className="w-14 px-1.5 py-1 rounded-lg bg-secondary border border-border text-xs text-white focus:outline-none focus:border-primary text-center"
+                                className="w-14 px-1.5 py-1 rounded-lg bg-secondary border border-border text-xs text-foreground focus:outline-none focus:border-primary text-center"
                                 title="Zeit mm:ss"
                               />
                               <select value={mk.figur_id || ''} onChange={e => markerPatch(m, idx, { figur_id: e.target.value })} className={figurSelectCls}>
@@ -390,7 +390,7 @@ export default function MusikTab({ gruppeId, canEdit, uebungswunsch, onWunschVer
                                 defaultValue={mk.label}
                                 onBlur={e => markerPatch(m, idx, { label: e.target.value })}
                                 placeholder="Beschreibung (z. B. Einsatz)"
-                                className="flex-1 min-w-0 px-2 py-1 rounded-lg bg-secondary border border-border text-xs text-white focus:outline-none focus:border-primary"
+                                className="flex-1 min-w-0 px-2 py-1 rounded-lg bg-secondary border border-border text-xs text-foreground focus:outline-none focus:border-primary"
                               />
                               <button onClick={() => markerEntfernen(m, idx)} className="p-1 rounded text-muted-foreground hover:text-red-400" title="Marker entfernen"><Trash2 className="w-3.5 h-3.5" /></button>
                             </>
@@ -401,11 +401,11 @@ export default function MusikTab({ gruppeId, canEdit, uebungswunsch, onWunschVer
                                 title="Diesen Abschnitt einmal abspielen (bis zum nächsten Marker)">
                                 {fmtZeit(mk.zeit)}
                               </button>
-                              <span className="text-xs text-white truncate flex-1 min-w-0">
+                              <span className="text-xs text-foreground truncate flex-1 min-w-0">
                                 {mk.figur_id ? figurName(mk.figur_id) || 'Figur' : ''}{mk.figur_id && mk.label ? ' · ' : ''}{mk.label}
                               </span>
                               <button onClick={() => starteAbschnitt(m, mk, true)}
-                                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-secondary border border-border text-[11px] text-white hover:border-primary"
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-secondary border border-border text-[11px] text-foreground hover:border-primary"
                                 title="Abschnitt in Dauerschleife üben">
                                 <Repeat className="w-3 h-3" /> Üben
                               </button>

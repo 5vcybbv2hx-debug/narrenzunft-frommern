@@ -123,8 +123,8 @@ export default function AblaufTab({ gruppeId, canEdit, onUebeMusik }) {
     }
   };
 
-  const inputCls = 'w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary';
-  const figurSelectCls = 'px-2.5 py-2 rounded-lg bg-secondary border border-border text-xs text-white focus:outline-none focus:border-primary';
+  const inputCls = 'w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary';
+  const figurSelectCls = 'px-2.5 py-2 rounded-lg bg-secondary border border-border text-xs text-foreground focus:outline-none focus:border-primary';
 
   if (loading) {
     return <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground text-sm">Lade Tanzablauf…</div>;
@@ -133,7 +133,7 @@ export default function AblaufTab({ gruppeId, canEdit, onUebeMusik }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-xl font-semibold text-white">Tanzablauf</h2>
+        <h2 className="text-xl font-semibold text-foreground">Tanzablauf</h2>
         <span className="text-sm text-muted-foreground">{schritte.length} {schritte.length === 1 ? 'Schritt' : 'Schritte'}</span>
       </div>
 
@@ -179,20 +179,20 @@ export default function AblaufTab({ gruppeId, canEdit, onUebeMusik }) {
                         {figuren.map(f => <option key={f.id} value={f.id}>Figur: {f.name}</option>)}
                       </select>
                       <button onClick={() => speichern(s)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-primary/90"><Check className="w-3.5 h-3.5" /> Speichern</button>
-                      <button onClick={() => setEditId(null)} className="p-1.5 rounded-lg text-muted-foreground hover:text-white"><X className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => setEditId(null)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"><X className="w-3.5 h-3.5" /></button>
                     </div>
                   </div>
                 ) : (
                   <>
                     <p className="text-sm text-foreground whitespace-pre-wrap">{s.beschreibung}</p>
                     {s.figur_id && figurName(s.figur_id) && (
-                      <span className="mt-1 inline-block px-2 py-0.5 rounded-full bg-primary/15 border border-primary/30 text-[11px] text-white">
+                      <span className="mt-1 inline-block px-2 py-0.5 rounded-full bg-primary/15 border border-primary/30 text-[11px] text-foreground">
                         Figur: {figurName(s.figur_id)}
                       </span>
                     )}
                     {s.figur_id && einsatzpunkteFuerFigur(musikListe, s.figur_id).slice(0, 3).map((p, pi) => (
                       <button key={pi} onClick={() => onUebeMusik?.(p.musik.id, p.marker.zeit)}
-                        className="mt-1 mr-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary border border-border text-[11px] text-white hover:border-primary"
+                        className="mt-1 mr-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary border border-border text-[11px] text-foreground hover:border-primary"
                         title="Diesen Musik-Abschnitt im Musik-Tab üben">
                         <MusicIcon className="w-3 h-3 text-primary" /> {fmtZeit(p.marker.zeit)} · {p.musik.titel}
                       </button>
@@ -202,8 +202,8 @@ export default function AblaufTab({ gruppeId, canEdit, onUebeMusik }) {
               </div>
               {canEdit && (
                 <div className="flex items-center gap-1 shrink-0">
-                  <button disabled={i === 0} onClick={() => verschieben(s, -1)} className="p-1.5 rounded-lg text-muted-foreground hover:text-white disabled:opacity-30" title="Nach vorne"><ArrowUp className="w-3.5 h-3.5" /></button>
-                  <button disabled={i === schritte.length - 1} onClick={() => verschieben(s, 1)} className="p-1.5 rounded-lg text-muted-foreground hover:text-white disabled:opacity-30" title="Nach hinten"><ArrowDown className="w-3.5 h-3.5" /></button>
+                  <button disabled={i === 0} onClick={() => verschieben(s, -1)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30" title="Nach vorne"><ArrowUp className="w-3.5 h-3.5" /></button>
+                  <button disabled={i === schritte.length - 1} onClick={() => verschieben(s, 1)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30" title="Nach hinten"><ArrowDown className="w-3.5 h-3.5" /></button>
                   <button onClick={() => { setEditId(s.id); setEditText(s.beschreibung || ''); setEditFigur(s.figur_id || ''); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-primary" title="Bearbeiten"><Pencil className="w-3.5 h-3.5" /></button>
                   <button onClick={() => entfernen(s)} className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-500/10" title="Löschen"><Trash2 className="w-4 h-4" /></button>
                 </div>
