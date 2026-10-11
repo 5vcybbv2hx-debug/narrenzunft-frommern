@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { X, Save, Trash2, Search, AlertTriangle } from 'lucide-react';
 import MobileSelect from '@/components/MobileSelect';
 import BottomModal from '@/components/ui/BottomModal';
+import { base44 } from '@/api/base44Client';
 
 const PRIORITAET_FARBEN = {
   'Niedrig':  'bg-border text-muted-foreground',
@@ -31,6 +32,21 @@ export default function TodoForm({ todo, mitglieder, onSave, onDelete, onClose }
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const set = (f, v) => setForm(p => ({ ...p, [f]: v }));
+
+  // Optimistic status update: instantly update local form state, persist
+  // immediately for existing todos, and roll back on failure.
+  const handleStatusChange = async (newStatus) => {
+    const prevStatus = form.status;
+    set('status', newStatus); // Optimistic: instant UI update
+    if (!isNew) {
+      try {
+        await base44.entities.Todo.update(todo.id, { status: newStatus });
+      } catch (e) {
+        set('status', prevStatus); // Rollback on failure
+        console.error('Status update:', e);
+      }
+    }
+  };
 
   const addVerantwortlicher = (id) => {
     if (!form.verantwortliche_ids.includes(id)) {
@@ -95,7 +111,7 @@ export default function TodoForm({ todo, mitglieder, onSave, onDelete, onClose }
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={labelCls}>Status</label>
-              <MobileSelect value={form.status} onChange={v => set('status', v)}
+              <MobileSelect value={form.status} onChange={handleStatusChange}
                 options={['Offen', 'In Bearbeitung', 'Erledigt']} label="Status" />
             </div>
             <div>

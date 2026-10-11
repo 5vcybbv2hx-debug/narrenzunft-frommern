@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
+import MobileSelect from '@/components/MobileSelect';
 
 const TYPEN = ['Antrag', 'Einverständnis', 'Bescheinigung', 'Austritt', 'Sonstiges'];
 export default function MitgliedDokumente({ mitglied, canDelete = false }) {
@@ -55,7 +56,7 @@ export default function MitgliedDokumente({ mitglied, canDelete = false }) {
     {!docs.length && !error && <p className="text-xs text-muted-foreground">Keine privaten Dokumente vorhanden.</p>}
     {mitglied.antrag_pdf_url && <p className="text-xs text-muted-foreground mt-3">Älterer Antrag liegt noch unter dem bisherigen Link. Neue Dokumente werden privat gespeichert.</p>}
     <form onSubmit={upload} className="mt-4 flex gap-2 flex-wrap items-center">
-      <select value={typ} onChange={e => setTyp(e.target.value)} className="rounded-md border border-border bg-background p-2 text-sm text-foreground">{TYPEN.map(t => <option key={t}>{t}</option>)}</select>
+      <MobileSelect value={typ} onChange={setTyp} options={TYPEN} label="Dokumenttyp" className="rounded-md border border-border bg-background" />
       <input type="file" accept=".pdf,.png,.jpg,.jpeg,.docx" onChange={e => setFile(e.target.files?.[0] || null)} required className="text-xs text-foreground max-w-[210px]" />
       <button type="submit" disabled={!file || busy} className="rounded-md bg-primary px-3 py-2 text-sm text-white disabled:opacity-50">{busy ? 'Lädt…' : 'Privat hochladen'}</button>
     </form>

@@ -97,8 +97,16 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
   };
 
   const handleZuweisungStatus = async (z, newStatus) => {
-    await base44.entities.ArbeitsdienstZuweisung.update(z.id, { status: newStatus });
+    const prevStatus = z.status;
+    // Optimistisch: UI sofort aktualisieren für instantes Feedback
     setZuweisungen(prev => prev.map(zw => zw.id === z.id ? { ...zw, status: newStatus } : zw));
+    try {
+      await base44.entities.ArbeitsdienstZuweisung.update(z.id, { status: newStatus });
+    } catch (e) {
+      // Rollback bei Fehler
+      setZuweisungen(prev => prev.map(zw => zw.id === z.id ? { ...zw, status: prevStatus } : zw));
+      console.error('Status update:', e);
+    }
   };
 
   const handleSave = async () => {

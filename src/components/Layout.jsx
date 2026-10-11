@@ -10,7 +10,7 @@ import {
   AlertTriangle, Lock, CheckSquare, Package, ShoppingBag,
   ArrowLeft, LayoutGrid, FileText,
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import SecureSearch from './SecureSearch';
 import DatenschutzZustimmungModal from '@/components/dokumente/DatenschutzZustimmungModal';
 
@@ -140,6 +140,18 @@ export default function Layout() {
   const isRootPath = ROOT_PATHS.includes(location.pathname);
   const activeSection = getActiveSection(location.pathname);
   const [expandedSection, setExpandedSection] = useState(activeSection || 'aktiv');
+
+  // ── Navigation direction tracking for page transitions ──
+  // When navigating back (back button), the exit slides towards 100% (right)
+  // and the new page enters from -100% (left) — iOS-style back animation.
+  const isBackRef = useRef(false);
+
+  // Reset back-direction flag after the transition completes so subsequent
+  // forward navigations use the default right-to-left slide.
+  useEffect(() => {
+    const t = setTimeout(() => { isBackRef.current = false; }, 350);
+    return () => clearTimeout(t);
+  }, [location.pathname]);
 
   // Wenn sich die Route ändert, die entsprechende Sektion aufklappen
   useEffect(() => {
@@ -307,7 +319,7 @@ export default function Layout() {
           <div className="absolute bottom-0 left-0 right-0 h-px bg-primary/30" />
 
           {!isRootPath && (
-            <button onClick={() => navigate(-1)}
+            <button onClick={() => { isBackRef.current = true; navigate(-1); }}
               className="p-2.5 rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0"
               aria-label="Zurück">
               <ArrowLeft size={20} />
@@ -335,9 +347,9 @@ export default function Layout() {
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}
-              initial={{ x: '100%' }}
+              initial={{ x: isBackRef.current ? '-100%' : '100%' }}
               animate={{ x: 0 }}
-              exit={{ x: '100%' }}
+              exit={{ x: isBackRef.current ? '100%' : '-100%' }}
               transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
             >
               <Outlet />
