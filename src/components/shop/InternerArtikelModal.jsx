@@ -67,7 +67,7 @@ export default function InternerArtikelModal({ artikel, gruppen = [], onClose, o
     <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-4">
       <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-oswald font-bold text-white text-lg uppercase tracking-wide flex items-center gap-2">
+          <h3 className="font-oswald font-bold text-foreground text-lg uppercase tracking-wide flex items-center gap-2">
             <Package size={18} className="text-primary" />
             {artikel?.id ? 'Artikel bearbeiten' : 'Neuer Artikel'}
           </h3>

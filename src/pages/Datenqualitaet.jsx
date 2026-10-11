@@ -150,7 +150,7 @@ export default function Datenqualitaet() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Shield size={18} className="text-primary" />
-            <h1 className="text-2xl font-bold font-oswald uppercase tracking-wide text-white">Datenqualität</h1>
+            <h1 className="text-2xl font-bold font-oswald uppercase tracking-wide text-foreground">Datenqualität</h1>
           </div>
           <p className="text-sm text-muted-foreground">
             {probleme.length} Probleme · {mitglieder.length} Mitglieder · {haes.length} Häs · {beitraege.length} Beiträge geprüft
@@ -228,7 +228,7 @@ export default function Datenqualitaet() {
       {filteredProbleme.length === 0 ? (
         <div className="text-center py-16">
           <CheckCircle2 size={48} className="text-green-400 mx-auto mb-3" />
-          <p className="text-lg font-semibold text-white">
+          <p className="text-lg font-semibold text-foreground">
             {probleme.length === 0 ? 'Keine Probleme gefunden' : 'Keine Probleme in diesem Filter'}
           </p>
           <p className="text-sm text-muted-foreground mt-1">
@@ -250,7 +250,7 @@ export default function Datenqualitaet() {
               >
                 <AlertTriangle size={15} className={`${sev.color} shrink-0 mt-0.5`} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-white">{p.text}</p>
+                  <p className="text-sm text-foreground">{p.text}</p>
                 </div>
                 <span className={`text-xs font-medium shrink-0 ${sev.color}`}>{sev.label}</span>
               </a>

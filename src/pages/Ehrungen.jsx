@@ -225,7 +225,7 @@ export default function Ehrungen() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
         <Award size={40} className="text-muted-foreground mb-3" />
-        <h2 className="text-xl font-bold font-oswald uppercase tracking-wide text-white mb-2">Kein Zugriff</h2>
+        <h2 className="text-xl font-bold font-oswald uppercase tracking-wide text-foreground mb-2">Kein Zugriff</h2>
         <p className="text-sm text-muted-foreground">Diese Seite ist nur für Ehrungsverwalter.</p>
       </div>
     );
@@ -243,7 +243,7 @@ export default function Ehrungen() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold font-oswald uppercase tracking-wide text-white">Ehrungen</h1>
+          <h1 className="text-2xl font-bold font-oswald uppercase tracking-wide text-foreground">Ehrungen</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             {faelligeEhrungen.length} fällig · {geplanteEhrungen.length} geplant · {verlieheneEhrungen.length} verliehen
           </p>
@@ -255,17 +255,17 @@ export default function Ehrungen() {
           {kannVerwalten && (
             <div className="relative">
               <button onClick={() => setShowExport(v => !v)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary text-sm text-white hover:bg-border transition-colors">
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary text-sm text-foreground hover:bg-border transition-colors">
                 <Download size={14} /> Export
               </button>
               {showExport && (
                 <>
                   <div className="fixed inset-0 z-20" onClick={() => setShowExport(false)} />
                   <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-lg z-30 w-48 overflow-hidden">
-                    <button onClick={() => { exportFaellig(); setShowExport(false); }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-secondary transition-colors">Fällige (CSV)</button>
-                    <button onClick={() => { exportBaldFaellig(); setShowExport(false); }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-secondary transition-colors">Bald fällige (CSV)</button>
-                    <button onClick={() => { exportGeplant(); setShowExport(false); }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-secondary transition-colors">Geplante (CSV)</button>
-                    <button onClick={() => { exportVerliehen(); setShowExport(false); }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-secondary transition-colors">Verliehene (CSV)</button>
+                    <button onClick={() => { exportFaellig(); setShowExport(false); }} className="w-full px-4 py-2.5 text-left text-sm text-foreground hover:bg-secondary transition-colors">Fällige (CSV)</button>
+                    <button onClick={() => { exportBaldFaellig(); setShowExport(false); }} className="w-full px-4 py-2.5 text-left text-sm text-foreground hover:bg-secondary transition-colors">Bald fällige (CSV)</button>
+                    <button onClick={() => { exportGeplant(); setShowExport(false); }} className="w-full px-4 py-2.5 text-left text-sm text-foreground hover:bg-secondary transition-colors">Geplante (CSV)</button>
+                    <button onClick={() => { exportVerliehen(); setShowExport(false); }} className="w-full px-4 py-2.5 text-left text-sm text-foreground hover:bg-secondary transition-colors">Verliehene (CSV)</button>
                   </div>
                 </>
               )}
@@ -287,12 +287,12 @@ export default function Ehrungen() {
         <button onClick={() => setActiveTab('faellig')}
           className={`bg-card border rounded-xl p-4 text-left transition-all hover:border-yellow-600/50 ${faelligeEhrungen.length > 0 ? 'border-yellow-700/30' : 'border-border'}`}>
           <p className="text-xs text-muted-foreground">Fällig</p>
-          <p className={`text-2xl font-oswald font-semibold mt-1 ${faelligeEhrungen.length > 0 ? 'text-yellow-400' : 'text-white'}`}>{faelligeEhrungen.length}</p>
+          <p className={`text-2xl font-oswald font-semibold mt-1 ${faelligeEhrungen.length > 0 ? 'text-yellow-400' : 'text-foreground'}`}>{faelligeEhrungen.length}</p>
         </button>
         <button onClick={() => setActiveTab('bald')}
           className="bg-card border border-border rounded-xl p-4 text-left transition-all hover:border-primary/40">
           <p className="text-xs text-muted-foreground">Bald fällig</p>
-          <p className="text-2xl font-oswald font-semibold text-white mt-1">{baldFaellige.length}</p>
+          <p className="text-2xl font-oswald font-semibold text-foreground mt-1">{baldFaellige.length}</p>
         </button>
         <button onClick={() => setActiveTab('verliehen')}
           className="bg-card border border-green-700/30 rounded-xl p-4 text-left transition-all hover:border-green-600/50">
@@ -322,7 +322,7 @@ export default function Ehrungen() {
               }`}>
               {tab.label}
               {count > 0 && (
-                <span className={`text-[10px] font-bold px-1 rounded-full ${activeTab === tab.id ? 'bg-white/20' : 'bg-border text-muted-foreground'}`}>{count}</span>
+                <span className={`text-[10px] font-bold px-1 rounded-full ${activeTab === tab.id ? 'bg-foreground/10' : 'bg-border text-muted-foreground'}`}>{count}</span>
               )}
             </button>
           );
@@ -335,7 +335,7 @@ export default function Ehrungen() {
           {faelligeEhrungen.length === 0 ? (
             <div className="text-center py-12">
               <CheckCircle2 size={40} className="text-green-400 mx-auto mb-3" />
-              <p className="text-white font-medium">Keine fälligen Ehrungen</p>
+              <p className="text-foreground font-medium">Keine fälligen Ehrungen</p>
               <p className="text-sm text-muted-foreground mt-1">Alle Ehrungen sind auf dem aktuellen Stand.</p>
             </div>
           ) : (
@@ -347,10 +347,10 @@ export default function Ehrungen() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Link to={`/mitglieder/${item.mitglied.id}`} className="font-semibold text-white hover:text-primary transition-colors">{item.mitglied.vorname} {item.mitglied.nachname}</Link>
+                        <Link to={`/mitglieder/${item.mitglied.id}`} className="font-semibold text-foreground hover:text-primary transition-colors">{item.mitglied.vorname} {item.mitglied.nachname}</Link>
                         <EhrungsBadge typ={item.typ} wert={item.stufe} />
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">Aktuell: <span className="text-white font-medium">{item.stand}</span></p>
+                      <p className="text-sm text-muted-foreground mt-1">Aktuell: <span className="text-foreground font-medium">{item.stand}</span></p>
                     </div>
                   </div>
                   {kannVerwalten && (
@@ -378,7 +378,7 @@ export default function Ehrungen() {
           {baldFaellige.length === 0 ? (
             <div className="text-center py-12">
               <Clock size={36} className="text-muted-foreground/40 mx-auto mb-3" />
-              <p className="text-white font-medium">Keine bald fälligen Ehrungen</p>
+              <p className="text-foreground font-medium">Keine bald fälligen Ehrungen</p>
               <p className="text-sm text-muted-foreground mt-1">In nächster Zeit steht keine Ehrung an</p>
             </div>
           ) : (
@@ -389,7 +389,7 @@ export default function Ehrungen() {
                     <TrendingUp size={18} className="text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <Link to={`/mitglieder/${item.mitglied.id}`} className="font-semibold text-white hover:text-primary transition-colors">{item.mitglied.vorname} {item.mitglied.nachname}</Link>
+                    <Link to={`/mitglieder/${item.mitglied.id}`} className="font-semibold text-foreground hover:text-primary transition-colors">{item.mitglied.vorname} {item.mitglied.nachname}</Link>
                     <p className="text-sm text-muted-foreground mt-0.5">
                       <EhrungsBadge typ={item.typ} wert={item.naechsteStufe} />
                       <span className="ml-2 text-xs">{
@@ -412,7 +412,7 @@ export default function Ehrungen() {
           {geplanteEhrungen.length === 0 ? (
             <div className="text-center py-12">
               <Clock size={36} className="text-muted-foreground/40 mx-auto mb-3" />
-              <p className="text-white font-medium">Keine geplanten Ehrungen</p>
+              <p className="text-foreground font-medium">Keine geplanten Ehrungen</p>
               <p className="text-sm text-muted-foreground mt-1">Ehrungen, die als "Geplant" markiert wurden, erscheinen hier</p>
             </div>
           ) : (
@@ -424,10 +424,10 @@ export default function Ehrungen() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        {e.mitglied_id ? <Link to={`/mitglieder/${e.mitglied_id}`} className="font-semibold text-white hover:text-primary transition-colors">{getMitgliedName(e.mitglied_id)}</Link> : <p className="font-semibold text-white">{getMitgliedName(e.mitglied_id)}</p>}
+                        {e.mitglied_id ? <Link to={`/mitglieder/${e.mitglied_id}`} className="font-semibold text-foreground hover:text-primary transition-colors">{getMitgliedName(e.mitglied_id)}</Link> : <p className="font-semibold text-foreground">{getMitgliedName(e.mitglied_id)}</p>}
                         <EhrungsBadge typ={e.typ} wert={e.wert} />
                       </div>
-                      {e.datum && <p className="text-sm text-muted-foreground mt-1">Geplant für: <span className="text-white font-medium">{format(new Date(e.datum), 'dd.MM.yyyy', { locale: de })}</span></p>}
+                      {e.datum && <p className="text-sm text-muted-foreground mt-1">Geplant für: <span className="text-foreground font-medium">{format(new Date(e.datum), 'dd.MM.yyyy', { locale: de })}</span></p>}
                       {e.beschreibung && <p className="text-xs text-muted-foreground mt-1">{e.beschreibung}</p>}
                     </div>
                   </div>
@@ -456,7 +456,7 @@ export default function Ehrungen() {
           {verlieheneEhrungen.length === 0 ? (
             <div className="text-center py-12">
               <Award size={36} className="text-muted-foreground/40 mx-auto mb-3" />
-              <p className="text-white font-medium">Noch keine verliehenen Ehrungen</p>
+              <p className="text-foreground font-medium">Noch keine verliehenen Ehrungen</p>
               <p className="text-sm text-muted-foreground mt-1">Ehrungen werden hier nach Vergabe angezeigt</p>
             </div>
           ) : (
@@ -469,7 +469,7 @@ export default function Ehrungen() {
                     <Award size={18} className="text-green-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    {e.mitglied_id ? <Link to={`/mitglieder/${e.mitglied_id}`} className="font-semibold text-white hover:text-primary transition-colors">{getMitgliedName(e.mitglied_id)}</Link> : <p className="font-semibold text-white">{getMitgliedName(e.mitglied_id)}</p>}
+                    {e.mitglied_id ? <Link to={`/mitglieder/${e.mitglied_id}`} className="font-semibold text-foreground hover:text-primary transition-colors">{getMitgliedName(e.mitglied_id)}</Link> : <p className="font-semibold text-foreground">{getMitgliedName(e.mitglied_id)}</p>}
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       <EhrungsBadge typ={e.typ} wert={e.wert} />
                       {e.datum && <span className="text-xs text-muted-foreground">{format(new Date(e.datum), 'dd.MM.yyyy', { locale: de })}</span>}
@@ -503,7 +503,7 @@ export default function Ehrungen() {
             dataProbleme.map((p, idx) => (
               <div key={idx} className="bg-card border border-red-700/30 rounded-xl px-4 py-3 flex items-center gap-3">
                 <AlertTriangle size={16} className="text-red-400 shrink-0" />
-                <p className="text-sm text-white">{p.text}</p>
+                <p className="text-sm text-foreground">{p.text}</p>
               </div>
             ))
           )}

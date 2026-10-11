@@ -197,7 +197,7 @@ export default function UmzugCheckinModal({ veranstaltung, onClose }) {
                   <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
                     istAnwesend ? 'bg-green-500 border-green-500' : 'border-border bg-transparent'
                   }`}>
-                    {istAnwesend && <Check size={14} className="text-white" />}
+                    {istAnwesend && <Check size={14} className="text-foreground" />}
                   </div>
                 </button>
               );

@@ -112,7 +112,7 @@ export default function AbstimmungenTab({ abstimmungen, setAbstimmungen, mitglie
       {abstimmungen.length === 0 && (
         <div className="text-center py-12 bg-card border border-border rounded-xl">
           <Vote size={32} className="text-muted-foreground/40 mx-auto mb-2" />
-          <p className="text-sm text-white">Noch keine Abstimmungen erfasst</p>
+          <p className="text-sm text-foreground">Noch keine Abstimmungen erfasst</p>
         </div>
       )}
 
@@ -134,7 +134,7 @@ export default function AbstimmungenTab({ abstimmungen, setAbstimmungen, mitglie
               <div className="flex items-start gap-3 px-4 py-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <p className="text-sm font-semibold text-white">{abs.titel}</p>
+                    <p className="text-sm font-semibold text-foreground">{abs.titel}</p>
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${abgeschlossen ? 'bg-green-900/20 text-green-400 border border-green-700/30' : 'bg-yellow-900/20 text-yellow-400 border border-yellow-700/30'}`}>
                       {abs.status}
                     </span>
@@ -164,7 +164,7 @@ export default function AbstimmungenTab({ abstimmungen, setAbstimmungen, mitglie
                     <FileText size={14} />
                   </button>}
                   <button onClick={() => setExpandedId(expandedId === abs.id ? null : abs.id)}
-                    className="p-1 rounded text-muted-foreground hover:text-white shrink-0" title="Details">
+                    className="p-1 rounded text-muted-foreground hover:text-foreground shrink-0" title="Details">
                     {expandedId === abs.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                   </button>
                 </div>
@@ -183,7 +183,7 @@ export default function AbstimmungenTab({ abstimmungen, setAbstimmungen, mitglie
                         className={`flex-1 py-2.5 rounded-lg text-sm font-semibold border transition-all ${
                           myStimme === opt
                             ? `${STIMME_BTN[opt] || 'bg-primary text-white'} border-transparent`
-                            : 'bg-secondary text-muted-foreground border-border hover:border-primary/40 hover:text-white'
+                            : 'bg-secondary text-muted-foreground border-border hover:border-primary/40 hover:text-foreground'
                         }`}>
                         {opt === 'Enthaltung' ? '∼ Enthaltung' : opt === 'Ja' ? '✓ Ja' : opt === 'Nein' ? '✗ Nein' : opt}
                       </button>
@@ -221,7 +221,7 @@ export default function AbstimmungenTab({ abstimmungen, setAbstimmungen, mitglie
                           const stimme = absStimmen.find(s => s.mitglied_id === amId);
                           return (
                             <div key={amId} className="flex items-center gap-2">
-                              <span className="text-sm text-white flex-1 truncate">{m.vorname} {m.nachname}</span>
+                              <span className="text-sm text-foreground flex-1 truncate">{m.vorname} {m.nachname}</span>
                               {!abgeschlossen ? (
                                 <div className="flex gap-1 shrink-0">
                                   {['Ja', 'Nein', 'Enthaltung'].map(s => (
@@ -258,7 +258,7 @@ export default function AbstimmungenTab({ abstimmungen, setAbstimmungen, mitglie
                         </button>
                       ) : (
                         <button onClick={() => handleWiederOeffnen(abs)}
-                          className="flex-1 py-2 rounded-lg bg-secondary text-muted-foreground hover:text-white border border-border transition-colors text-sm font-semibold">
+                          className="flex-1 py-2 rounded-lg bg-secondary text-muted-foreground hover:text-foreground border border-border transition-colors text-sm font-semibold">
                           Wieder eröffnen
                         </button>
                       )}

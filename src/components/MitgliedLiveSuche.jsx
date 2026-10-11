@@ -88,7 +88,7 @@ export default function MitgliedLiveSuche({ mitglieder, value, onSelect, onClear
               className="w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-primary/10 border-b border-border last:border-0"
             >
               <User size={13} className="text-muted-foreground shrink-0" />
-              <span className="text-sm text-white truncate">
+              <span className="text-sm text-foreground truncate">
                 {(m.vorname || '')} {(m.nachname || '')}
               </span>
               {m.status && <span className="text-[10px] text-muted-foreground ml-auto shrink-0">{m.status}</span>}

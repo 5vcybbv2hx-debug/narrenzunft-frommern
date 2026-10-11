@@ -59,7 +59,7 @@ export default function AusruestungForm({ ausruestung, mitglieder = [], onSave, 
           <h3 className="font-oswald uppercase tracking-wide font-bold text-foreground">
             {isNew ? 'Neuer Gegenstand' : 'Gegenstand bearbeiten'}
           </h3>
-          <button onClick={onClose} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-white">
+          <button onClick={onClose} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground">
             <X size={16} />
           </button>
         </div>
@@ -71,7 +71,7 @@ export default function AusruestungForm({ ausruestung, mitglieder = [], onSave, 
               <p className="font-semibold">Fehler</p>
               <p className="text-xs mt-0.5">{error}</p>
             </div>
-            <button onClick={() => setError(null)} className="text-red-400 hover:text-white text-xs">Schließen</button>
+            <button onClick={() => setError(null)} className="text-red-400 hover:text-foreground text-xs">Schließen</button>
           </div>
         )}
 
@@ -178,7 +178,7 @@ export default function AusruestungForm({ ausruestung, mitglieder = [], onSave, 
           {/* Verleih per QR-Code */}
           <div className="border-t border-border pt-3 space-y-3">
             <button type="button" onClick={() => set('verleihbar', !form.verleihbar)}
-              className={`w-full px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center justify-between transition-colors ${form.verleihbar ? 'bg-primary/15 text-primary border border-primary/40' : 'bg-secondary text-muted-foreground border border-border hover:text-white'}`}>
+              className={`w-full px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center justify-between transition-colors ${form.verleihbar ? 'bg-primary/15 text-primary border border-primary/40' : 'bg-secondary text-muted-foreground border border-border hover:text-foreground'}`}>
               <span className="flex items-center gap-2"><QrCode size={15} /> Öffentlicher Verleih per QR-Code</span>
               <span className={`w-10 h-5 rounded-full relative transition-colors ${form.verleihbar ? 'bg-primary' : 'bg-border'}`}>
                 <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${form.verleihbar ? 'left-[22px]' : 'left-0.5'}`} />

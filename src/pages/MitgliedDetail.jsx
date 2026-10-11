@@ -93,11 +93,11 @@ function Field({ label, value, field, type = 'text', options, editing, mitglied,
             type={type}
             value={rawVal || ''}
             onChange={e => onChange(field, e.target.value)}
-            className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors"
+            className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-colors"
           />
         )
       ) : (
-        <p className="text-sm text-white py-1">{displayVal}</p>
+        <p className="text-sm text-foreground py-1">{displayVal}</p>
       )}
     </div>
   );
@@ -538,9 +538,9 @@ export default function MitgliedDetail() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
         <Lock size={40} className="text-muted-foreground mb-3" />
-        <h2 className="text-xl font-bold font-oswald uppercase tracking-wide text-white mb-2">Kein Zugriff</h2>
+        <h2 className="text-xl font-bold font-oswald uppercase tracking-wide text-foreground mb-2">Kein Zugriff</h2>
         <p className="text-sm text-muted-foreground mb-4">Du hast keine Berechtigung, dieses Mitgliederprofil zu öffnen.</p>
-        <button onClick={() => navigate(-1)} className="px-4 py-2 rounded-lg bg-secondary text-sm text-white hover:bg-border transition-colors">
+        <button onClick={() => navigate(-1)} className="px-4 py-2 rounded-lg bg-secondary text-sm text-foreground hover:bg-border transition-colors">
           Zurück
         </button>
       </div>
@@ -567,7 +567,7 @@ export default function MitgliedDetail() {
           </button>
         )}
         <div className="flex-1">
-          <h1 className="text-xl font-bold font-oswald uppercase tracking-wide text-white">
+          <h1 className="text-xl font-bold font-oswald uppercase tracking-wide text-foreground">
             {isNew ? 'Neues Mitglied' : `${mitglied.vorname} ${mitglied.nachname}`}
           </h1>
           {alter !== null && <p className="text-sm text-muted-foreground">{alter} Jahre alt</p>}
@@ -630,7 +630,7 @@ export default function MitgliedDetail() {
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-white text-lg">{mitglied.vorname} {mitglied.nachname}</p>
+            <p className="font-bold text-foreground text-lg">{mitglied.vorname} {mitglied.nachname}</p>
             {alter !== null && <p className="text-sm text-muted-foreground">{alter} Jahre alt</p>}
             {mitglied.mitgliedsnummer && <p className="text-xs text-muted-foreground">Mitglied #{mitglied.mitgliedsnummer}</p>}
             {haes.length > 0 && <p className="text-xs text-muted-foreground">Häs: {haes.map(h => h.haesnummer).filter(Boolean).join(', ')}</p>}
@@ -676,7 +676,7 @@ export default function MitgliedDetail() {
           ].map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeTab === tab.id ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-white hover:bg-border'
+                activeTab === tab.id ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-border'
               }`}>
               {tab.label}
             </button>
@@ -710,7 +710,7 @@ export default function MitgliedDetail() {
 
       {/* Persönliche Daten */}
       <div className="bg-card border border-border rounded-xl p-5 mb-4">
-        <h2 className="font-semibold text-white mb-4 flex items-center gap-2 font-oswald uppercase tracking-wide"><User size={16} className="text-primary" /> Persönliche Daten</h2>
+        <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2 font-oswald uppercase tracking-wide"><User size={16} className="text-primary" /> Persönliche Daten</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Vorname" field="vorname" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
           <Field label="Nachname" field="nachname" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
@@ -758,7 +758,7 @@ export default function MitgliedDetail() {
                 />
               </div>
             ) : (
-              <p className="text-sm text-white py-1">
+              <p className="text-sm text-foreground py-1">
                 {(mitglied.haesgruppen_ids || (mitglied.haesgruppe_id ? [mitglied.haesgruppe_id] : []))
                   .map(gid => haesgruppen.find(g => g.id === gid)?.name).filter(Boolean).join(', ') || '–'}
               </p>
@@ -769,9 +769,9 @@ export default function MitgliedDetail() {
             {admin && editing ? (
               <input type="number" min="0" value={mitglied.umzuege_vor_digitalisierung || 0}
                 onChange={e => handleFieldChange('umzuege_vor_digitalisierung', parseInt(e.target.value) || 0)}
-                className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-colors" />
             ) : (
-              <p className="text-sm text-white py-1">{mitglied.umzuege_vor_digitalisierung || 0} Umzüge (historisch)</p>
+              <p className="text-sm text-foreground py-1">{mitglied.umzuege_vor_digitalisierung || 0} Umzüge (historisch)</p>
             )}
             {admin && editing && <p className="text-xs text-muted-foreground mt-1">Anzahl Erwachsenen-Umzüge vor Einführung dieser App</p>}
           </div>
@@ -781,14 +781,14 @@ export default function MitgliedDetail() {
       {/* Kontakt */}
       {!isNew && !editing && (
         <div className="bg-card border border-border rounded-xl p-5 mb-4">
-          <h2 className="font-semibold text-white mb-4 flex items-center gap-2 font-oswald uppercase tracking-wide"><Phone size={16} className="text-primary" /> Kontakt</h2>
+          <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2 font-oswald uppercase tracking-wide"><Phone size={16} className="text-primary" /> Kontakt</h2>
           <div className="flex flex-col gap-2">
             {mitglied.email && (
               <a href={`mailto:${mitglied.email}`} className="flex items-center gap-3 px-4 py-3 rounded-lg bg-secondary/50 border border-border hover:border-primary/50 hover:bg-primary/10 transition-all">
                 <Mail size={18} className="text-primary shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground">E-Mail</p>
-                  <p className="text-sm font-medium text-white truncate">{mitglied.email}</p>
+                  <p className="text-sm font-medium text-foreground truncate">{mitglied.email}</p>
                 </div>
                 <ChevronRight size={16} className="text-muted-foreground shrink-0" />
               </a>
@@ -799,7 +799,7 @@ export default function MitgliedDetail() {
                   <Phone size={18} className="text-primary shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-muted-foreground">Telefon</p>
-                    <p className="text-sm font-medium text-white truncate">{mitglied.telefon}</p>
+                    <p className="text-sm font-medium text-foreground truncate">{mitglied.telefon}</p>
                   </div>
                   <ChevronRight size={16} className="text-muted-foreground shrink-0" />
                 </a>
@@ -826,7 +826,7 @@ export default function MitgliedDetail() {
 
       {/* Adresse */}
       <div className="bg-card border border-border rounded-xl p-5 mb-4">
-        <h2 className="font-semibold text-white mb-4 flex items-center gap-2 font-oswald uppercase tracking-wide"><MapPin size={16} className="text-primary" /> Adresse</h2>
+        <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2 font-oswald uppercase tracking-wide"><MapPin size={16} className="text-primary" /> Adresse</h2>
         {admin && editing ? (
           <div className="space-y-3">
             <div>
@@ -848,8 +848,8 @@ export default function MitgliedDetail() {
           </div>
         ) : (
           <div className="space-y-1">
-            {mitglied.strasse && <p className="text-sm text-white">{mitglied.strasse}</p>}
-            {(mitglied.plz || mitglied.ort) && <p className="text-sm text-white">{[mitglied.plz, mitglied.ort].filter(Boolean).join(' ')}</p>}
+            {mitglied.strasse && <p className="text-sm text-foreground">{mitglied.strasse}</p>}
+            {(mitglied.plz || mitglied.ort) && <p className="text-sm text-foreground">{[mitglied.plz, mitglied.ort].filter(Boolean).join(' ')}</p>}
             {!mitglied.strasse && !mitglied.ort && <p className="text-sm text-muted-foreground">–</p>}
             {mitglied.strasse && (
               <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([mitglied.strasse, mitglied.plz, mitglied.ort].filter(Boolean).join(' '))}`}
@@ -864,7 +864,7 @@ export default function MitgliedDetail() {
 
       {/* Notfallkontakt */}
       <div className="bg-card border border-border rounded-xl p-5 mb-4">
-        <h2 className="font-semibold text-white mb-4 flex items-center gap-2 font-oswald uppercase tracking-wide"><AlertTriangle size={16} className="text-red-400" /> Notfallkontakt</h2>
+        <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2 font-oswald uppercase tracking-wide"><AlertTriangle size={16} className="text-red-400" /> Notfallkontakt</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Name" field="notfallkontakt_name" editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
           <div>
@@ -880,19 +880,19 @@ export default function MitgliedDetail() {
 
       {/* Notizen */}
       <div className="bg-card border border-border rounded-xl p-5 mb-4">
-        <h2 className="font-semibold text-white mb-4 font-oswald uppercase tracking-wide">Notizen</h2>
+        <h2 className="font-semibold text-foreground mb-4 font-oswald uppercase tracking-wide">Notizen</h2>
         {admin && editing ? (
           <textarea value={mitglied.notizen || ''} onChange={e => setMitglied(p => ({ ...p, notizen: e.target.value }))} rows={4}
-            className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary resize-none transition-colors" />
+            className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary resize-none transition-colors" />
         ) : (
-          <p className="text-sm text-white whitespace-pre-wrap">{mitglied.notizen || 'Keine Notizen'}</p>
+          <p className="text-sm text-foreground whitespace-pre-wrap">{mitglied.notizen || 'Keine Notizen'}</p>
         )}
       </div>
 
       {/* Bankverbindung */}
       {kannBank && (
         <div className="bg-card border border-border rounded-xl p-5 mb-4">
-          <h2 className="font-semibold text-white mb-4 flex items-center gap-2 font-oswald uppercase tracking-wide"><CreditCard size={16} className="text-primary" /> Bankverbindung (SEPA)</h2>
+          <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2 font-oswald uppercase tracking-wide"><CreditCard size={16} className="text-primary" /> Bankverbindung (SEPA)</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Kontoinhaber" field="kontoinhaber" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
             <Field label="Bank" field="bankname" editing={editing} mitglied={mitglied} onChange={handleFieldChange} />
@@ -907,7 +907,7 @@ export default function MitgliedDetail() {
       {!isNew && (
         <div className="bg-card border border-border rounded-xl p-5 mb-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-white flex items-center gap-2 font-oswald uppercase tracking-wide"><Shirt size={16} className="text-primary" /> Häs ({haes.length})</h2>
+            <h2 className="font-semibold text-foreground flex items-center gap-2 font-oswald uppercase tracking-wide"><Shirt size={16} className="text-primary" /> Häs ({haes.length})</h2>
             {admin && (
               <button onClick={() => setShowHaesModal(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-red-700 transition-colors">
@@ -922,7 +922,7 @@ export default function MitgliedDetail() {
               const inhalt = (
                 <>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-white">Nr. {h.haesnummer}</p>
+                    <p className="text-sm font-medium text-foreground">Nr. {h.haesnummer}</p>
                     <p className="text-xs text-muted-foreground">{h.bezeichnung}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
@@ -943,7 +943,7 @@ export default function MitgliedDetail() {
       {/* App-Zugang & Rolle */}
       {admin && !isNew && (
         <div className="bg-card border border-border rounded-xl p-5 mb-4">
-          <h2 className="font-semibold text-white mb-1 flex items-center gap-2 font-oswald uppercase tracking-wide"><Shield size={16} className="text-primary" /> App-Zugang & Rolle</h2>
+          <h2 className="font-semibold text-foreground mb-1 flex items-center gap-2 font-oswald uppercase tracking-wide"><Shield size={16} className="text-primary" /> App-Zugang & Rolle</h2>
           <p className="text-xs text-muted-foreground mb-4">Rolle jetzt festlegen – wird beim ersten Login automatisch übernommen.</p>
 
           {linkedUser && (
@@ -952,7 +952,7 @@ export default function MitgliedDetail() {
                 {linkedUser.full_name?.[0] || '?'}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white truncate">{linkedUser.full_name}</p>
+                <p className="text-sm font-semibold text-foreground truncate">{linkedUser.full_name}</p>
                 <p className="text-xs text-muted-foreground truncate">{linkedUser.email}</p>
               </div>
               <span className="text-xs px-2 py-0.5 rounded-full bg-green-900/20 text-green-400 border border-green-700/30 font-medium shrink-0">Aktiv</span>
@@ -976,7 +976,7 @@ export default function MitgliedDetail() {
               return (
                 <button key={rolle.value} onClick={() => handleAppRolleChange(rolle.value)} disabled={roleSaving}
                   className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all disabled:opacity-50 overflow-hidden ${
-                    isSelected ? 'bg-primary/10 border-primary' : 'bg-secondary/40 border-border text-muted-foreground hover:border-primary/40 hover:text-white'
+                    isSelected ? 'bg-primary/10 border-primary' : 'bg-secondary/40 border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'
                   }`}>
                   <Icon size={16} className="shrink-0" />
                   <div className="min-w-0">
@@ -1120,7 +1120,7 @@ export default function MitgliedDetail() {
       {/* Austritt & Todesfall Verwaltung */}
       {admin && !isNew && (
         <div className="bg-card border border-border rounded-xl p-5 mt-4">
-          <h2 className="font-oswald uppercase tracking-wide text-white mb-4 flex items-center gap-2">
+          <h2 className="font-oswald uppercase tracking-wide text-foreground mb-4 flex items-center gap-2">
             <Shield size={16} className="text-primary" /> Mitgliedschaft verwalten
           </h2>
 
@@ -1189,7 +1189,7 @@ export default function MitgliedDetail() {
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setShowAustrittModal(false)}>
           <div className="bg-card border border-border rounded-xl max-w-md w-full p-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-oswald uppercase tracking-wide text-lg text-white flex items-center gap-2">
+              <h2 className="font-oswald uppercase tracking-wide text-lg text-foreground flex items-center gap-2">
                 <LogOut size={18} className="text-yellow-400" /> Austritt erfassen
               </h2>
               <button onClick={() => setShowAustrittModal(false)} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
@@ -1205,18 +1205,18 @@ export default function MitgliedDetail() {
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Austrittsdatum</label>
                 <DateSelect value={austrittDatum} onChange={e => setAustrittDatum(e.target.value)} required
-                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary" />
+                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
               </div>
               <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 border border-border">
                 <input type="checkbox" id="haeFreiAustritt" checked={haeFreigeben} onChange={e => setHaeFreigeben(e.target.checked)}
                   className="w-4 h-4 rounded accent-primary" />
-                <label htmlFor="haeFreiAustritt" className="text-xs text-white flex-1 cursor-pointer">
+                <label htmlFor="haeFreiAustritt" className="text-xs text-foreground flex-1 cursor-pointer">
                   Zugewiesene Häs zurücknehmen (an den Häs-Bestand zurückgeben)
                 </label>
               </div>
               <div className="flex gap-2 pt-2">
                 <button onClick={() => setShowAustrittModal(false)}
-                  className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground hover:text-white text-sm font-medium transition-colors">
+                  className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground hover:text-foreground text-sm font-medium transition-colors">
                   Abbrechen
                 </button>
                 <button onClick={handleAustritt} disabled={!austrittDatum || processingExit}
@@ -1234,7 +1234,7 @@ export default function MitgliedDetail() {
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setShowTodesfallModal(false)}>
           <div className="bg-card border border-border rounded-xl max-w-md w-full p-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-oswald uppercase tracking-wide text-lg text-white flex items-center gap-2">
+              <h2 className="font-oswald uppercase tracking-wide text-lg text-foreground flex items-center gap-2">
                 <Heart size={18} className="text-red-400" /> Todesfall erfassen
               </h2>
               <button onClick={() => setShowTodesfallModal(false)} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
@@ -1250,18 +1250,18 @@ export default function MitgliedDetail() {
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Todesdatum</label>
                 <DateSelect value={todesfallDatum} onChange={e => setTodesfallDatum(e.target.value)} required
-                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary" />
+                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
               </div>
               <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 border border-border">
                 <input type="checkbox" id="haeFreiTod" checked={haeFreigeben} onChange={e => setHaeFreigeben(e.target.checked)}
                   className="w-4 h-4 rounded accent-primary" />
-                <label htmlFor="haeFreiTod" className="text-xs text-white flex-1 cursor-pointer">
+                <label htmlFor="haeFreiTod" className="text-xs text-foreground flex-1 cursor-pointer">
                   <span className="font-medium text-red-400">Achtung:</span> Häs aus dem Familienbesitz zurücknehmen. Nur wenn die Familie das Häs bereits zurückgegeben hat!
                 </label>
               </div>
               <div className="flex gap-2 pt-2">
                 <button onClick={() => setShowTodesfallModal(false)}
-                  className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground hover:text-white text-sm font-medium transition-colors">
+                  className="flex-1 py-2.5 rounded-lg bg-secondary text-muted-foreground hover:text-foreground text-sm font-medium transition-colors">
                   Abbrechen
                 </button>
                 <button onClick={handleTodesfall} disabled={!todesfallDatum || processingExit}
@@ -1292,7 +1292,7 @@ export default function MitgliedDetail() {
       {showHaesModal && !isNew && (
         <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-4 sm:p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-white">Häs zuweisen</h3>
+              <h3 className="font-bold text-foreground">Häs zuweisen</h3>
               <button onClick={() => { setShowHaesModal(false); setHaessuche(''); setHaesError(null); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"><X size={16} /></button>
             </div>
             {haesError && (
@@ -1305,7 +1305,7 @@ export default function MitgliedDetail() {
               <div className="relative">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input type="text" placeholder="Häs-Nummer oder Bezeichnung…" value={haessuche} onChange={e => setHaessuche(e.target.value)} autoFocus
-                  className="w-full pl-8 pr-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors" />
+                  className="w-full pl-8 pr-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors" />
               </div>
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {[...allHaes]
@@ -1331,7 +1331,7 @@ export default function MitgliedDetail() {
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary border border-border text-left transition-colors disabled:opacity-50">
                       <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">{h.haesnummer[0]}</div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-white">#{h.haesnummer}</p>
+                        <p className="text-sm font-medium text-foreground">#{h.haesnummer}</p>
                         {h.bezeichnung && <p className="text-xs text-muted-foreground truncate">{h.bezeichnung}</p>}
                       </div>
                       <span className={`text-xs px-2 py-0.5 rounded-full ${HAES_STATUS_COLORS[h.status] || 'bg-secondary text-muted-foreground'}`}>{h.status}</span>

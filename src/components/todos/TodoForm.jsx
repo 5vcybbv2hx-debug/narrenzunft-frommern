@@ -74,8 +74,8 @@ export default function TodoForm({ todo, mitglieder, onSave, onDelete, onClose }
   return (
     <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold font-oswald uppercase tracking-wide text-white">{isNew ? 'Neue Aufgabe' : 'Aufgabe bearbeiten'}</h3>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-white"><X size={16} /></button>
+          <h3 className="font-bold font-oswald uppercase tracking-wide text-foreground">{isNew ? 'Neue Aufgabe' : 'Aufgabe bearbeiten'}</h3>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"><X size={16} /></button>
         </div>
 
         <div className="space-y-3">
@@ -147,7 +147,7 @@ export default function TodoForm({ todo, mitglieder, onSave, onDelete, onClose }
                     <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[10px] font-bold shrink-0">
                       {m.vorname?.[0]}{m.nachname?.[0]}
                     </div>
-                    <span className="text-white">{m.vorname} {m.nachname}</span>
+                    <span className="text-foreground">{m.vorname} {m.nachname}</span>
                     <span className="text-xs text-muted-foreground ml-auto">{m.mitgliedsstatus}</span>
                   </button>
                 ))}
@@ -167,7 +167,7 @@ export default function TodoForm({ todo, mitglieder, onSave, onDelete, onClose }
           <div className="flex items-center gap-2 p-3 rounded-lg bg-red-900/20 border border-red-700/30 mt-3">
             <AlertTriangle size={14} className="text-red-400 shrink-0" />
             <span className="text-xs text-red-400 flex-1">Aufgabe wirklich löschen?</span>
-            <button onClick={() => setConfirmDelete(false)} className="text-xs px-2 py-1 rounded text-muted-foreground hover:text-white">Abbrechen</button>
+            <button onClick={() => setConfirmDelete(false)} className="text-xs px-2 py-1 rounded text-muted-foreground hover:text-foreground">Abbrechen</button>
             <button onClick={handleDelete} className="text-xs px-3 py-1 rounded bg-red-900/80 text-white font-medium">Löschen</button>
           </div>
         )}

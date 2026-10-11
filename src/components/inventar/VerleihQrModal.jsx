@@ -11,7 +11,7 @@ export default function VerleihQrModal({ ausruestung, onClose }) {
           <h3 className="font-oswald uppercase tracking-wide font-bold text-foreground flex items-center gap-2">
             <QrCode size={16} className="text-primary" /> QR-Code: Verleih-Übersicht
           </h3>
-          <button onClick={onClose} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-white">
+          <button onClick={onClose} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground">
             <X size={16} />
           </button>
         </div>

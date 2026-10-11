@@ -364,10 +364,10 @@ export default function Dashboard() {
                 return (
                   <Link key={`${isAusfahrt ? 'a' : 'v'}-${event.id}`} to={event.link} className="flex items-center gap-3 group">
                     <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex flex-col items-center justify-center ${isToday ? 'bg-primary' : isAusfahrt ? 'bg-blue-500/10' : 'bg-primary/10'}`}>
-                      <span className={`text-[10px] font-medium leading-none uppercase ${isToday ? 'text-white/80' : 'text-muted-foreground'}`}>
+                      <span className={`text-[10px] font-medium leading-none uppercase ${isToday ? 'text-foreground/80' : 'text-muted-foreground'}`}>
                         {format(new Date(event.datum), 'MMM', { locale: de })}
                       </span>
-                      <span className={`text-sm font-bold leading-none ${isToday ? 'text-white' : isAusfahrt ? 'text-blue-400' : 'text-primary'}`}>
+                      <span className={`text-sm font-bold leading-none ${isToday ? 'text-foreground' : isAusfahrt ? 'text-blue-400' : 'text-primary'}`}>
                         {format(new Date(event.datum), 'd')}
                       </span>
                     </div>
@@ -408,7 +408,7 @@ export default function Dashboard() {
                 return (
                   <div key={m.id} className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${istHeute ? 'bg-primary' : 'bg-primary/10'}`}>
-                      <span className={`text-xs ${istHeute ? 'text-white' : 'text-primary'}`}>🎂</span>
+                      <span className={`text-xs ${istHeute ? 'text-foreground' : 'text-primary'}`}>🎂</span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{m.vorname} {m.nachname}</p>

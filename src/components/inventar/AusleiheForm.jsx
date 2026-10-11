@@ -132,7 +132,7 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
           <h3 className="font-oswald uppercase tracking-wide font-bold text-foreground">
             {isNew ? 'Ausleihe eintragen' : 'Ausleihe bearbeiten'}
           </h3>
-          <button onClick={onClose} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-white">
+          <button onClick={onClose} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground">
             <X size={16} />
           </button>
         </div>
@@ -144,7 +144,7 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
               <p className="font-semibold">Fehler</p>
               <p className="text-xs mt-0.5">{error}</p>
             </div>
-            <button onClick={() => setError(null)} className="text-red-400 hover:text-white text-xs">Schließen</button>
+            <button onClick={() => setError(null)} className="text-red-400 hover:text-foreground text-xs">Schließen</button>
           </div>
         )}
 
@@ -166,14 +166,14 @@ export default function AusleiheForm({ ausleihe, ausruestung, ausruestungen, mit
               <button
                 type="button"
                 onClick={() => set('ausleiher_typ', 'mitglied')}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-sm font-medium transition-all ${form.ausleiher_typ === 'mitglied' ? 'bg-secondary text-foreground shadow-sm' : 'text-muted-foreground hover:text-white'}`}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-sm font-medium transition-all ${form.ausleiher_typ === 'mitglied' ? 'bg-secondary text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
               >
                 <Users size={14} /> Mitglied
               </button>
               <button
                 type="button"
                 onClick={() => set('ausleiher_typ', 'extern')}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-sm font-medium transition-all ${form.ausleiher_typ === 'extern' ? 'bg-secondary text-foreground shadow-sm' : 'text-muted-foreground hover:text-white'}`}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-sm font-medium transition-all ${form.ausleiher_typ === 'extern' ? 'bg-secondary text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
               >
                 <UserPlus size={14} /> Externe Person
               </button>

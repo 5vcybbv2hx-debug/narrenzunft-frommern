@@ -69,7 +69,7 @@ export default function InterneBestellModal({ artikel, runde, profil, gruppen, o
     <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-4">
       <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-1">
-          <h3 className="font-oswald font-bold text-white text-lg uppercase tracking-wide">{artikel.name}</h3>
+          <h3 className="font-oswald font-bold text-foreground text-lg uppercase tracking-wide">{artikel.name}</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
             <X size={16} />
           </button>

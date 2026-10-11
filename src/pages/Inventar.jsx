@@ -302,7 +302,7 @@ export default function Inventar() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
         <Lock size={40} className="text-muted-foreground mb-3" />
-        <h2 className="text-xl font-oswald uppercase text-white mb-2">Kein Zugriff</h2>
+        <h2 className="text-xl font-oswald uppercase text-foreground mb-2">Kein Zugriff</h2>
         <p className="text-sm text-muted-foreground">Dieser Bereich ist nur für Vorstand und berechtigte Personen.</p>
       </div>
     );
@@ -324,13 +324,13 @@ export default function Inventar() {
             <p className="font-semibold">Fehler aufgetreten</p>
             <p className="text-xs mt-0.5">{error}</p>
           </div>
-          <button onClick={() => setError(null)} className="text-red-400 hover:text-white text-xs">Schließen</button>
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-foreground text-xs">Schließen</button>
         </div>
       )}
 
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-oswald uppercase tracking-wide text-white flex items-center gap-2">
+          <h1 className="text-2xl font-oswald uppercase tracking-wide text-foreground flex items-center gap-2">
             <Package size={22} className="text-primary" /> Inventar & Verleih
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
@@ -358,7 +358,7 @@ export default function Inventar() {
           const Icon = tab.icon;
           return (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${activeTab === tab.id ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-white'}`}>
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${activeTab === tab.id ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
               <Icon size={14} />
               {tab.label}
             </button>
@@ -429,7 +429,7 @@ export default function Inventar() {
             <div key={an.id} className="bg-card border border-primary/30 rounded-xl p-4">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white">{an.ausruestung_name}</p>
+                  <p className="text-sm font-semibold text-foreground">{an.ausruestung_name}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {an.von_datum} → {an.bis_datum} · {tage} Tag(e)
                   </p>
@@ -438,7 +438,7 @@ export default function Inventar() {
               </div>
 
               <div className="mt-2.5 px-3 py-2 rounded-lg bg-secondary border border-border text-xs space-y-1">
-                <p className="text-white font-medium">{an.name}</p>
+                <p className="text-foreground font-medium">{an.name}</p>
                 <div className="flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground">
                   {an.telefon && <a href={`tel:${an.telefon}`} className="flex items-center gap-1 hover:text-primary"><Phone size={11} /> {an.telefon}</a>}
                   {an.email && <a href={`mailto:${an.email}`} className="flex items-center gap-1 hover:text-primary truncate"><Mail size={11} /> {an.email}</a>}
@@ -461,7 +461,7 @@ export default function Inventar() {
                               type="number" min="0" step="0.5" inputMode="decimal"
                               value={entscheidung.preisTag ?? ''}
                               onChange={(e) => setEntscheidung(p => ({ ...p, preisTag: e.target.value }))}
-                              className="w-20 px-2 py-1 rounded-md bg-neutral-900 border border-border text-xs text-white text-right focus:outline-none focus:border-primary"
+                              className="w-20 px-2 py-1 rounded-md bg-neutral-900 border border-border text-xs text-foreground text-right focus:outline-none focus:border-primary"
                             />
                             <span className="text-xs text-muted-foreground">€ / Tag</span>
                           </div>
@@ -489,7 +489,7 @@ export default function Inventar() {
                       {entscheidung.typ === 'genehmigen' ? 'Genehmigen' : 'Ablehnen'}
                     </button>
                     <button onClick={() => setEntscheidung(null)} disabled={entscheideBusy}
-                      className="py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-muted-foreground text-xs font-semibold hover:text-white">
+                      className="py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-muted-foreground text-xs font-semibold hover:text-foreground">
                       Abbrechen
                     </button>
                   </div>
@@ -517,7 +517,7 @@ export default function Inventar() {
                 <div key={an.id} className="bg-card border border-border rounded-xl p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-white">{an.ausruestung_name} · {an.name}</p>
+                      <p className="text-xs font-semibold text-foreground">{an.ausruestung_name} · {an.name}</p>
                       <p className="text-[11px] text-muted-foreground mt-0.5">{an.von_datum} → {an.bis_datum}</p>
                       {an.antwort_notiz && <p className="text-[11px] text-muted-foreground mt-0.5 italic">{an.antwort_notiz}</p>}
                     </div>
@@ -628,15 +628,15 @@ function AusleiheKarte({ ausleihe, ausruestung, ausleiherName, today, onClick, v
     <button onClick={onClick} className={`w-full bg-card border rounded-xl p-4 text-left hover:border-primary/40 transition-all ${istUeberfaellig ? 'border-red-700/40' : 'border-border'}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-white">{ausruestung?.name || '–'}</p>
+          <p className="text-sm font-semibold text-foreground">{ausruestung?.name || '–'}</p>
           <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
             {ausleihe.ausleiher_typ === 'extern' ? <Globe size={13} className="inline" /> : <User size={13} className="inline" />}
-            <span className="text-white">{ausleiherName}</span>
-            {ausleihe.zweck && <span className="text-white">· {ausleihe.zweck}</span>}
+            <span className="text-foreground">{ausleiherName}</span>
+            {ausleihe.zweck && <span className="text-foreground">· {ausleihe.zweck}</span>}
           </div>
           <div className="text-xs text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
             <Calendar size={13} className="inline" />
-            <span className="text-white">{ausleihe.von_datum} → {ausleihe.bis_datum}</span>
+            <span className="text-foreground">{ausleihe.von_datum} → {ausleihe.bis_datum}</span>
             {istUeberfaellig && (
               <span className="flex items-center gap-1 text-red-400 font-medium">
                 <AlertTriangle size={12} /> Überfällig!

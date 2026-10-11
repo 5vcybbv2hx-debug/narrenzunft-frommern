@@ -389,10 +389,10 @@ export default function Arbeitsdienste() {
               >
                 {event ? (
                   <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex flex-col items-center justify-center ${event.datum === today ? 'bg-primary' : 'bg-primary/10'}`}>
-                    <span className={`text-[9px] uppercase leading-none font-medium ${event.datum === today ? 'text-white/80' : 'text-muted-foreground'}`}>
+                    <span className={`text-[9px] uppercase leading-none font-medium ${event.datum === today ? 'text-foreground/80' : 'text-muted-foreground'}`}>
                       {format(new Date(event.datum), 'MMM', { locale: de })}
                     </span>
-                    <span className={`text-base font-oswald font-bold leading-tight ${event.datum === today ? 'text-white' : 'text-primary'}`}>
+                    <span className={`text-base font-oswald font-bold leading-tight ${event.datum === today ? 'text-foreground' : 'text-primary'}`}>
                       {format(new Date(event.datum), 'd')}
                     </span>
                   </div>

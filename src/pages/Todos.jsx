@@ -276,7 +276,7 @@ export default function Todos() {
 
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
-              <p className={`text-sm font-semibold ${istErledigt ? 'line-through text-muted-foreground' : 'text-white'}`}>
+              <p className={`text-sm font-semibold ${istErledigt ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
                 {todo.titel}
               </p>
               {kannVerwalten && (
@@ -308,7 +308,7 @@ export default function Todos() {
                   className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1 transition-colors ${
                     todo.status === 'In Bearbeitung'
                       ? 'bg-blue-900/30 text-blue-400 border border-blue-700/30 hover:bg-blue-900/50'
-                      : 'bg-secondary text-muted-foreground hover:text-white'
+                      : 'bg-secondary text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   {todo.status === 'In Bearbeitung' ? <Clock size={9} /> : <Circle size={9} className="fill-current" />}
@@ -356,7 +356,7 @@ export default function Todos() {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-bold font-oswald uppercase tracking-wide text-white flex items-center gap-2">
+          <h1 className="text-2xl font-bold font-oswald uppercase tracking-wide text-foreground flex items-center gap-2">
             <CheckSquare size={22} className="text-primary" /> Aufgaben
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
@@ -378,7 +378,7 @@ export default function Todos() {
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-red-900/20 border border-red-700/40 text-sm text-red-400 flex items-center justify-between">
           <span>{error}</span>
-          <button onClick={loadData} className="shrink-0 ml-2 underline hover:text-white">Erneut versuchen</button>
+          <button onClick={loadData} className="shrink-0 ml-2 underline hover:text-foreground">Erneut versuchen</button>
         </div>
       )}
 
@@ -394,7 +394,7 @@ export default function Todos() {
                 : 'bg-card border-border text-muted-foreground hover:border-primary/50'
             } ${!k.active && k.warn && k.count > 0 ? 'border-red-700/40' : ''}`}
           >
-            <p className={`text-xl font-bold font-oswald ${k.active ? 'text-primary' : k.warn && k.count > 0 ? 'text-red-400' : 'text-white'}`}>
+            <p className={`text-xl font-bold font-oswald ${k.active ? 'text-primary' : k.warn && k.count > 0 ? 'text-red-400' : 'text-foreground'}`}>
               {k.count}
             </p>
             <p className="text-[11px] uppercase tracking-wide font-oswald">{k.label}</p>
@@ -410,7 +410,7 @@ export default function Todos() {
           placeholder="Aufgaben durchsuchen…"
           value={suche}
           onChange={e => setSuche(e.target.value)}
-          className="w-full pl-9 pr-3 py-2.5 rounded-lg bg-card border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+          className="w-full pl-9 pr-3 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
         />
       </div>
 
@@ -418,7 +418,7 @@ export default function Todos() {
       {keineErgebnisse ? (
         <div className="text-center py-12">
           <ListChecks size={40} className="text-muted-foreground/40 mx-auto mb-3" />
-          <p className="text-white text-sm mb-1">
+          <p className="text-foreground text-sm mb-1">
             {suche.trim() ? 'Keine Treffer für deine Suche' :
              filter === 'Erledigt' ? 'Noch nichts erledigt' :
              filter === 'Überfällig' ? 'Nichts überfällig — top!' :
@@ -445,7 +445,7 @@ export default function Todos() {
         <div className="mt-5">
           <button
             onClick={() => setShowErledigt(p => !p)}
-            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-secondary/60 border border-border text-xs text-muted-foreground hover:text-white transition-colors"
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-secondary/60 border border-border text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             <ChevronDown size={14} className={`transition-transform ${showErledigt ? 'rotate-180' : ''}`} />
             {showErledigt ? 'Erledigte ausblenden' : `${gefilterteTodos.erledigt.length} erledigte anzeigen`}

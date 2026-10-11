@@ -146,7 +146,7 @@ export default function FamilienDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 sm:p-6 text-white">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 sm:p-6 text-foreground">
         <div className="w-10 h-10 border-[3px] border-border border-t-primary rounded-full animate-spin" />
         <p className="mt-4 text-sm font-medium tracking-wide font-oswald uppercase text-muted-foreground">Familie wird geladen...</p>
       </div>
@@ -154,7 +154,7 @@ export default function FamilienDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-white font-sans pb-20">
+    <div className="min-h-screen bg-background text-foreground font-sans pb-20">
       {/* Header */}
       <div className="border-b border-border bg-background sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
@@ -209,7 +209,7 @@ export default function FamilienDashboard() {
                     : `${ehepartner.vorname?.[0] || ''}${ehepartner.nachname?.[0] || ''}`}
                 </div>
                 <div className="min-w-0">
-                  <h3 className="font-semibold text-white group-hover:text-primary transition-colors">
+                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
                     {ehepartner.vorname} {ehepartner.nachname}
                   </h3>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -285,7 +285,7 @@ export default function FamilienDashboard() {
                             : `${kind.vorname?.[0] || ''}${kind.nachname?.[0] || ''}`}
                         </div>
                         <div className="min-w-0">
-                          <h3 className="font-semibold text-white group-hover:text-primary transition-colors truncate">
+                          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">
                             {kind.vorname} {kind.nachname}
                           </h3>
                           <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
@@ -326,13 +326,13 @@ export default function FamilienDashboard() {
                     <div className="flex gap-2 mt-3 pt-3 border-t border-border/50">
                       <Link
                         to={`/mitglieder/${kind.id}?edit=1`}
-                        className="flex-1 flex items-center justify-center gap-1.5 bg-secondary hover:bg-border text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-secondary hover:bg-border text-foreground text-xs font-medium py-2 px-3 rounded-lg transition-colors"
                       >
                         <Pencil className="w-3.5 h-3.5" /> Profil bearbeiten
                       </Link>
                       <Link
                         to="/ausfahrten"
-                        className="flex-1 flex items-center justify-center gap-1.5 bg-secondary hover:bg-border text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-secondary hover:bg-border text-foreground text-xs font-medium py-2 px-3 rounded-lg transition-colors"
                       >
                         <Calendar className="w-3.5 h-3.5" /> An Ausfahrt
                       </Link>
@@ -365,7 +365,7 @@ export default function FamilienDashboard() {
                       {v.vorname?.[0] || ''}{v.nachname?.[0] || ''}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-white group-hover:text-primary transition-colors truncate">
+                      <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors truncate">
                         {v.vorname} {v.nachname}
                       </p>
                       <span className="text-xs text-muted-foreground">{v.beziehung}</span>
@@ -479,7 +479,7 @@ export default function FamilienDashboard() {
                   placeholder="Name eingeben..."
                   value={suchbegriff}
                   onChange={e => handleSuche(e.target.value)}
-                  className="w-full bg-secondary border border-border rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-primary/50"
+                  className="w-full bg-secondary border border-border rounded-xl pl-9 pr-4 py-2.5 text-sm text-foreground placeholder-neutral-500 focus:outline-none focus:border-primary/50"
                   autoFocus
                 />
               </div>

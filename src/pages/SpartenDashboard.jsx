@@ -686,11 +686,11 @@ export default function SpartenDashboard() {
               className="p-2 hover:bg-secondary rounded-lg transition-colors"
               title="Zurück zu Sparten"
             >
-              <ArrowLeft className="w-5 h-5 text-white" />
+              <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl md:text-2xl sm:text-3xl font-oswald uppercase tracking-wide text-white font-bold">
+                <h1 className="text-2xl md:text-2xl sm:text-3xl font-oswald uppercase tracking-wide text-foreground font-bold">
                   {gruppe.name}
                 </h1>
                 {gruppe.farbe && (
@@ -777,21 +777,21 @@ export default function SpartenDashboard() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:p-6">
               <div className="bg-card border border-border rounded-xl p-4 sm:p-6 md:col-span-2 space-y-4">
-                <h3 className="text-xl font-oswald uppercase tracking-wide text-white border-b border-border pb-2">
+                <h3 className="text-xl font-oswald uppercase tracking-wide text-foreground border-b border-border pb-2">
                   Gruppen-Details
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-muted-foreground">
                   <div>
                     <span className="text-muted-foreground block text-xs uppercase tracking-wider">Name</span>
-                    <span className="text-white font-semibold text-base">{gruppe.name}</span>
+                    <span className="text-foreground font-semibold text-base">{gruppe.name}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground block text-xs uppercase tracking-wider">Typ</span>
-                    <span className="text-white font-semibold text-base">{gruppe.typ || 'Häsgruppe'}</span>
+                    <span className="text-foreground font-semibold text-base">{gruppe.typ || 'Häsgruppe'}</span>
                   </div>
                   <div className="sm:col-span-2">
                     <span className="text-muted-foreground block text-xs uppercase tracking-wider">Beschreibung</span>
-                    <p className="text-white mt-1 leading-relaxed">{gruppe.beschreibung || 'Keine Beschreibung hinterlegt.'}</p>
+                    <p className="text-foreground mt-1 leading-relaxed">{gruppe.beschreibung || 'Keine Beschreibung hinterlegt.'}</p>
                   </div>
                 </div>
 
@@ -835,7 +835,7 @@ export default function SpartenDashboard() {
                   <div className="pt-4 border-t border-border flex justify-end">
                     <button 
                       onClick={handleOpenVerantwortlicherModal}
-                      className="flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary/50 border border-border rounded-lg text-sm text-white font-semibold transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary/50 border border-border rounded-lg text-sm text-foreground font-semibold transition-colors"
                     >
                       <UserCheck className="w-4 h-4 text-primary" /> Verantwortliche zuweisen
                     </button>
@@ -844,7 +844,7 @@ export default function SpartenDashboard() {
               </div>
 
               <div className="bg-card border border-border rounded-xl p-4 sm:p-6 space-y-4">
-                <h3 className="text-xl font-oswald uppercase tracking-wide text-white border-b border-border pb-2">
+                <h3 className="text-xl font-oswald uppercase tracking-wide text-foreground border-b border-border pb-2">
                   Verantwortliche
                 </h3>
                 {alleMitglieder.filter(m => gruppe.verantwortliche_ids?.includes(m.id)).length === 0 ? (
@@ -862,7 +862,7 @@ export default function SpartenDashboard() {
                               {leader.vorname?.[0]}{leader.nachname?.[0]}
                             </div>
                             <div className="min-w-0">
-                              <div className="font-semibold text-white text-sm">{leader.vorname} {leader.nachname}</div>
+                              <div className="font-semibold text-foreground text-sm">{leader.vorname} {leader.nachname}</div>
                               <div className="text-xs text-muted-foreground">Spartenleiter</div>
                             </div>
                           </Link>
@@ -892,7 +892,7 @@ export default function SpartenDashboard() {
                       {isAdmin(user) && (
                         <button
                           onClick={handleOpenHistorieNeu}
-                          className="flex items-center gap-1 text-xs text-primary hover:text-white font-semibold transition-colors"
+                          className="flex items-center gap-1 text-xs text-primary hover:text-foreground font-semibold transition-colors"
                         >
                           <Plus className="w-3.5 h-3.5" /> Verwalten
                         </button>
@@ -906,7 +906,7 @@ export default function SpartenDashboard() {
                         const aktiv = !h.bis_datum;
                         return (
                           <div key={h.id} className="flex items-center justify-between gap-2 text-xs">
-                            <span className={aktiv ? 'text-white font-semibold' : 'text-muted-foreground'}>
+                            <span className={aktiv ? 'text-foreground font-semibold' : 'text-muted-foreground'}>
                               {aktiv && <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5" />}
                               {h.mitglied_name || 'Unbekannt'}
                             </span>
@@ -927,11 +927,11 @@ export default function SpartenDashboard() {
             <div className={`grid grid-cols-2 gap-4 ${canEdit ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
               <div className="bg-card border border-border rounded-xl p-5">
                 <span className="text-muted-foreground text-xs block uppercase tracking-wider font-semibold mb-1">Mitglieder</span>
-                <span className="text-2xl sm:text-3xl font-bold text-white font-oswald">{stats.mitgliederCount}</span>
+                <span className="text-2xl sm:text-3xl font-bold text-foreground font-oswald">{stats.mitgliederCount}</span>
               </div>
               <div className="bg-card border border-border rounded-xl p-5">
                 <span className="text-muted-foreground text-xs block uppercase tracking-wider font-semibold mb-1">Nächster Termin</span>
-                <span className="text-xl font-bold text-white font-oswald">
+                <span className="text-xl font-bold text-foreground font-oswald">
                   {stats.naechsterTermin !== 'Keiner' 
                     ? new Date(stats.naechsterTermin).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
                     : 'Keiner'
@@ -963,7 +963,7 @@ export default function SpartenDashboard() {
         {activeTab === 'termine' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-oswald uppercase tracking-wide text-white">
+              <h2 className="text-2xl font-oswald uppercase tracking-wide text-foreground">
                 Sparten-Termine
               </h2>
               {canEdit && (
@@ -1001,7 +1001,7 @@ export default function SpartenDashboard() {
                                 <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block">
                                   {t.typ}
                                 </span>
-                                <h4 className="text-lg font-bold text-white leading-snug mt-0.5">{t.titel}</h4>
+                                <h4 className="text-lg font-bold text-foreground leading-snug mt-0.5">{t.titel}</h4>
                               </div>
                             </div>
 
@@ -1026,7 +1026,7 @@ export default function SpartenDashboard() {
                             {t.ort && (
                               <div className="flex items-center gap-2">
                                 <MapPin className="w-4 h-4 text-muted-foreground" />
-                                <span className="text-white font-medium">{t.ort}</span>
+                                <span className="text-foreground font-medium">{t.ort}</span>
                               </div>
                             )}
                             {t.beschreibung && (
@@ -1041,7 +1041,7 @@ export default function SpartenDashboard() {
                           <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-border/60">
                             <button 
                               onClick={() => handleOpenTerminModal(t)}
-                              className="p-1.5 text-muted-foreground hover:text-white hover:bg-secondary rounded-lg transition-colors"
+                              className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
                               title="Termin bearbeiten"
                             >
                               <Edit className="w-4 h-4" />
@@ -1073,7 +1073,7 @@ export default function SpartenDashboard() {
         {canEdit && activeTab === 'auslagen' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-oswald uppercase tracking-wide text-white">
+              <h2 className="text-2xl font-oswald uppercase tracking-wide text-foreground">
                 Umlagen & Auslagen
               </h2>
               {canEdit && (
@@ -1126,9 +1126,9 @@ export default function SpartenDashboard() {
                               </span>
                             </div>
 
-                            <h4 className="text-lg font-bold text-white mt-1">{a.beschreibung}</h4>
+                            <h4 className="text-lg font-bold text-foreground mt-1">{a.beschreibung}</h4>
                             <div className="text-xs text-muted-foreground">
-                              Verauslagt von <span className="text-white font-medium">{payer ? `${payer.vorname} ${payer.nachname}` : 'Unbekannt'}</span> am {new Date(a.datum).toLocaleDateString('de-DE')}
+                              Verauslagt von <span className="text-foreground font-medium">{payer ? `${payer.vorname} ${payer.nachname}` : 'Unbekannt'}</span> am {new Date(a.datum).toLocaleDateString('de-DE')}
                             </div>
                             {a.notizen && (
                               <p className="text-xs text-muted-foreground italic mt-2">"{a.notizen}"</p>
@@ -1136,7 +1136,7 @@ export default function SpartenDashboard() {
                           </div>
 
                           <div className="flex flex-col items-end gap-1">
-                            <span className="text-2xl font-bold text-white font-oswald">
+                            <span className="text-2xl font-bold text-foreground font-oswald">
                               {Number(a.betrag).toFixed(2)} €
                             </span>
                             
@@ -1160,7 +1160,7 @@ export default function SpartenDashboard() {
                                 )}
                                 <button 
                                   onClick={() => handleOpenAuslageModal(a)}
-                                  className="p-1 text-muted-foreground hover:text-white hover:bg-secondary rounded-lg transition-colors"
+                                  className="p-1 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
                                   title="Bearbeiten"
                                 >
                                   <Edit className="w-4 h-4" />
@@ -1196,7 +1196,7 @@ export default function SpartenDashboard() {
                                     key={mId} 
                                     className="flex items-center justify-between p-2 bg-secondary/60 rounded-lg border border-border/80 text-xs"
                                   >
-                                    <span className="text-white truncate max-w-[120px]" title={`${targetMitglied.vorname} ${targetMitglied.nachname}`}>
+                                    <span className="text-foreground truncate max-w-[120px]" title={`${targetMitglied.vorname} ${targetMitglied.nachname}`}>
                                       {targetMitglied.vorname} {targetMitglied.nachname[0]}.
                                     </span>
                                     <div className="flex items-center gap-2">
@@ -1230,7 +1230,7 @@ export default function SpartenDashboard() {
         {canEdit && activeTab === 'mitglieder' && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <h2 className="text-2xl font-oswald uppercase tracking-wide text-white">
+              <h2 className="text-2xl font-oswald uppercase tracking-wide text-foreground">
                 Gruppenmitglieder
               </h2>
               {canEdit && (
@@ -1250,7 +1250,7 @@ export default function SpartenDashboard() {
         {/* TAB 5: NACHRICHT */}
         {canEdit && activeTab === 'nachricht' && (
           <div className="max-w-2xl mx-auto bg-card border border-border rounded-xl p-4 sm:p-6 space-y-6">
-            <h2 className="text-2xl font-oswald uppercase tracking-wide text-white border-b border-border pb-2">
+            <h2 className="text-2xl font-oswald uppercase tracking-wide text-foreground border-b border-border pb-2">
               Nachricht an die Gruppe
             </h2>
 
@@ -1262,7 +1262,7 @@ export default function SpartenDashboard() {
                   value={nachrichtText}
                   onChange={(e) => setNachrichtText(e.target.value)}
                   placeholder="Schreibe hier wichtige Infos, Treffpunkte, Probe-Änderungen oder Sonstiges..."
-                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-xl p-4 text-white text-sm placeholder-neutral-600 transition-colors resize-none"
+                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-xl p-4 text-foreground text-sm placeholder-neutral-600 transition-colors resize-none"
                 />
               </div>
 
@@ -1283,7 +1283,7 @@ export default function SpartenDashboard() {
               )}
 
               <div className="text-xs text-muted-foreground bg-secondary/60 p-3 rounded-lg border border-border/80">
-                Die Nachricht wird an <span className="text-white font-bold">{mitglieder.length} Gruppenmitglieder</span> adressiert. Jedes Mitglied erhält eine In-App Benachrichtigung direkt auf das Handy.
+                Die Nachricht wird an <span className="text-foreground font-bold">{mitglieder.length} Gruppenmitglieder</span> adressiert. Jedes Mitglied erhält eine In-App Benachrichtigung direkt auf das Handy.
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
@@ -1312,12 +1312,12 @@ export default function SpartenDashboard() {
           <div className="bg-card border border-border rounded-xl w-full max-w-lg p-4 sm:p-6 relative">
             <button 
               onClick={() => setShowTerminModal(false)}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-white transition-colors"
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="text-xl font-oswald uppercase tracking-wide text-white border-b border-border pb-3 mb-4">
+            <h3 className="text-xl font-oswald uppercase tracking-wide text-foreground border-b border-border pb-3 mb-4">
               {editingTermin ? 'Termin bearbeiten' : 'Neuer Sparten-Termin'}
             </h3>
 
@@ -1330,7 +1330,7 @@ export default function SpartenDashboard() {
                   value={terminForm.titel}
                   onChange={(e) => setTerminForm({ ...terminForm, titel: e.target.value })}
                   placeholder="z.B. Marsch-Probe"
-                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-foreground text-sm transition-colors"
                 />
               </div>
 
@@ -1349,7 +1349,7 @@ export default function SpartenDashboard() {
                     required
                     value={terminForm.datum}
                     onChange={(e) => setTerminForm({ ...terminForm, datum: e.target.value })}
-                    className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                    className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-foreground text-sm transition-colors"
                   />
                 </div>
               </div>
@@ -1362,7 +1362,7 @@ export default function SpartenDashboard() {
                     placeholder="19:00"
                     value={terminForm.uhrzeit}
                     onChange={(e) => setTerminForm({ ...terminForm, uhrzeit: e.target.value })}
-                    className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                    className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-foreground text-sm transition-colors"
                   />
                 </div>
                 <div>
@@ -1372,7 +1372,7 @@ export default function SpartenDashboard() {
                     placeholder="21:00"
                     value={terminForm.endzeit}
                     onChange={(e) => setTerminForm({ ...terminForm, endzeit: e.target.value })}
-                    className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                    className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-foreground text-sm transition-colors"
                   />
                 </div>
               </div>
@@ -1384,7 +1384,7 @@ export default function SpartenDashboard() {
                   placeholder="z.B. Zunftheim, Frommern"
                   value={terminForm.ort}
                   onChange={(e) => setTerminForm({ ...terminForm, ort: e.target.value })}
-                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-foreground text-sm transition-colors"
                 />
               </div>
 
@@ -1395,7 +1395,7 @@ export default function SpartenDashboard() {
                   placeholder="Optionale Details zum Termin..."
                   value={terminForm.beschreibung}
                   onChange={(e) => setTerminForm({ ...terminForm, beschreibung: e.target.value })}
-                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors resize-none"
+                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-foreground text-sm transition-colors resize-none"
                 />
               </div>
 
@@ -1429,7 +1429,7 @@ export default function SpartenDashboard() {
                       <DateSelect
                         value={terminForm.enddatum}
                         onChange={(e) => setTerminForm({ ...terminForm, enddatum: e.target.value })}
-                        className="w-full bg-background border border-border text-white text-xs rounded-lg px-2 py-1.5"
+                        className="w-full bg-background border border-border text-foreground text-xs rounded-lg px-2 py-1.5"
                       />
                     </div>
                   </div>
@@ -1440,7 +1440,7 @@ export default function SpartenDashboard() {
                 <button
                   type="button"
                   onClick={() => setShowTerminModal(false)}
-                  className="flex-1 py-2 border border-border hover:bg-secondary text-white font-semibold text-sm rounded-lg transition-colors"
+                  className="flex-1 py-2 border border-border hover:bg-secondary text-foreground font-semibold text-sm rounded-lg transition-colors"
                 >
                   Abbrechen
                 </button>
@@ -1461,12 +1461,12 @@ export default function SpartenDashboard() {
           <div className="bg-card border border-border rounded-xl w-full max-w-lg p-4 sm:p-6 relative">
             <button 
               onClick={() => setShowAuslageModal(false)}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-white transition-colors"
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="text-xl font-oswald uppercase tracking-wide text-white border-b border-border pb-3 mb-4">
+            <h3 className="text-xl font-oswald uppercase tracking-wide text-foreground border-b border-border pb-3 mb-4">
               {editingAuslage ? 'Auslage bearbeiten' : 'Neue Auslage eintragen'}
             </h3>
 
@@ -1491,7 +1491,7 @@ export default function SpartenDashboard() {
                     placeholder="0.00"
                     value={auslageForm.betrag}
                     onChange={(e) => setAuslageForm({ ...auslageForm, betrag: e.target.value })}
-                    className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                    className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-foreground text-sm transition-colors"
                   />
                 </div>
                 <div>
@@ -1500,7 +1500,7 @@ export default function SpartenDashboard() {
                     required
                     value={auslageForm.datum}
                     onChange={(e) => setAuslageForm({ ...auslageForm, datum: e.target.value })}
-                    className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                    className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-foreground text-sm transition-colors"
                   />
                 </div>
               </div>
@@ -1513,7 +1513,7 @@ export default function SpartenDashboard() {
                   placeholder="z.B. Notenständer, Bastelmaterial..."
                   value={auslageForm.beschreibung}
                   onChange={(e) => setAuslageForm({ ...auslageForm, beschreibung: e.target.value })}
-                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-foreground text-sm transition-colors"
                 />
               </div>
 
@@ -1550,7 +1550,7 @@ export default function SpartenDashboard() {
                             }}
                             className="rounded border-border text-primary focus:ring-primary bg-background"
                           />
-                          <span className="text-white truncate">
+                          <span className="text-foreground truncate">
                             {m.vorname} {m.nachname}
                           </span>
                         </label>
@@ -1562,7 +1562,7 @@ export default function SpartenDashboard() {
                     <span className="text-muted-foreground">
                       Gewählt: {Object.values(auslageForm.selectedAnteile).filter(Boolean).length} Personen
                     </span>
-                    <span className="text-white font-bold">
+                    <span className="text-foreground font-bold">
                       Pro Person:{' '}
                       {Object.values(auslageForm.selectedAnteile).filter(Boolean).length > 0
                         ? (Number(auslageForm.betrag || 0) / Object.values(auslageForm.selectedAnteile).filter(Boolean).length).toFixed(2)
@@ -1580,7 +1580,7 @@ export default function SpartenDashboard() {
                   placeholder="Zusätzliche Infos, Kassennotizen..."
                   value={auslageForm.notizen}
                   onChange={(e) => setAuslageForm({ ...auslageForm, notizen: e.target.value })}
-                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors resize-none"
+                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-foreground text-sm transition-colors resize-none"
                 />
               </div>
 
@@ -1588,7 +1588,7 @@ export default function SpartenDashboard() {
                 <button
                   type="button"
                   onClick={() => setShowAuslageModal(false)}
-                  className="flex-1 py-2 border border-border hover:bg-secondary text-white font-semibold text-sm rounded-lg transition-colors"
+                  className="flex-1 py-2 border border-border hover:bg-secondary text-foreground font-semibold text-sm rounded-lg transition-colors"
                 >
                   Abbrechen
                 </button>
@@ -1610,12 +1610,12 @@ export default function SpartenDashboard() {
           <div className="bg-card border border-border rounded-xl w-full max-w-lg p-4 sm:p-6 relative">
             <button 
               onClick={() => setShowVerantwortlicherModal(false)}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-white transition-colors"
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="text-xl font-oswald uppercase tracking-wide text-white border-b border-border pb-3 mb-4">
+            <h3 className="text-xl font-oswald uppercase tracking-wide text-foreground border-b border-border pb-3 mb-4">
               Verantwortliche (Spartenleiter) zuweisen
             </h3>
 
@@ -1655,7 +1655,7 @@ export default function SpartenDashboard() {
                   placeholder="Mitglied suchen (mind. 2 Zeichen)…"
                   value={memberSearchTerm}
                   onChange={(e) => setMemberSearchTerm(e.target.value)}
-                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg pl-9 pr-3 py-2 text-white text-sm transition-colors"
+                  className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg pl-9 pr-3 py-2 text-foreground text-sm transition-colors"
                   autoComplete="off"
                 />
                 {memberSearchTerm.trim().length >= 2 && (
@@ -1676,7 +1676,7 @@ export default function SpartenDashboard() {
                             }}
                             className="w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-primary/10 border-b border-border last:border-0 transition-colors">
                             <User size={13} className="text-muted-foreground shrink-0" />
-                            <span className="text-sm text-white truncate">{m.vorname} {m.nachname}</span>
+                            <span className="text-sm text-foreground truncate">{m.vorname} {m.nachname}</span>
                             {m.ort && <span className="text-xs text-muted-foreground ml-auto shrink-0">{m.ort}</span>}
                             {isSelected && <UserCheck size={13} className="text-primary shrink-0" />}
                           </button>
@@ -1691,7 +1691,7 @@ export default function SpartenDashboard() {
                 <button
                   type="button"
                   onClick={() => setShowVerantwortlicherModal(false)}
-                  className="flex-1 py-2 border border-border hover:bg-secondary text-white font-semibold text-sm rounded-lg transition-colors"
+                  className="flex-1 py-2 border border-border hover:bg-secondary text-foreground font-semibold text-sm rounded-lg transition-colors"
                 >
                   Abbrechen
                 </button>
@@ -1719,12 +1719,12 @@ export default function SpartenDashboard() {
           <div className="relative bg-card border border-border rounded-xl p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setShowHistorieModal(false)}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-white transition-colors"
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="text-xl font-oswald uppercase tracking-wide text-white border-b border-border pb-3 mb-4">
+            <h3 className="text-xl font-oswald uppercase tracking-wide text-foreground border-b border-border pb-3 mb-4">
               Spartenleiter-Historie
             </h3>
 
@@ -1733,12 +1733,12 @@ export default function SpartenDashboard() {
               <div className="flex gap-2">
                 <button type="button"
                   onClick={() => setHistForm(f => ({ ...f, modus: 'mitglied' }))}
-                  className={`flex-1 py-1.5 text-sm font-semibold rounded-lg border transition-colors ${histForm.modus === 'mitglied' ? 'bg-primary text-white border-primary' : 'bg-secondary/50 text-muted-foreground border-border hover:text-white'}`}>
+                  className={`flex-1 py-1.5 text-sm font-semibold rounded-lg border transition-colors ${histForm.modus === 'mitglied' ? 'bg-primary text-white border-primary' : 'bg-secondary/50 text-muted-foreground border-border hover:text-foreground'}`}>
                   Mitglied
                 </button>
                 <button type="button"
                   onClick={() => setHistForm(f => ({ ...f, modus: 'freitext' }))}
-                  className={`flex-1 py-1.5 text-sm font-semibold rounded-lg border transition-colors ${histForm.modus === 'freitext' ? 'bg-primary text-white border-primary' : 'bg-secondary/50 text-muted-foreground border-border hover:text-white'}`}>
+                  className={`flex-1 py-1.5 text-sm font-semibold rounded-lg border transition-colors ${histForm.modus === 'freitext' ? 'bg-primary text-white border-primary' : 'bg-secondary/50 text-muted-foreground border-border hover:text-foreground'}`}>
                   Freitext
                 </button>
               </div>
@@ -1750,7 +1750,7 @@ export default function SpartenDashboard() {
                     placeholder="Mitglied suchen..."
                     value={histSearchTerm}
                     onChange={(e) => setHistSearchTerm(e.target.value)}
-                    className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                    className="w-full bg-background border border-border hover:border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-foreground text-sm transition-colors"
                   />
                   <div className="max-h-44 overflow-y-auto space-y-1 pr-2">
                     {histFilteredMembers.length === 0 ? (
@@ -1762,7 +1762,7 @@ export default function SpartenDashboard() {
                         <button type="button" key={m.id}
                           onClick={() => setHistForm(f => ({ ...f, mitglied_id: m.id }))}
                           className={`w-full flex items-center justify-between p-2 rounded transition-colors text-sm text-left ${histForm.mitglied_id === m.id ? 'bg-primary/20 border border-primary/50' : 'border border-transparent hover:bg-secondary/40'}`}>
-                          <span className="text-white font-medium truncate">{m.vorname} {m.nachname}</span>
+                          <span className="text-foreground font-medium truncate">{m.vorname} {m.nachname}</span>
                           <span className="text-xs text-muted-foreground shrink-0 ml-2">{m.archiviert ? 'Ehemalig' : (m.ort || '')}</span>
                         </button>
                       ))
@@ -1777,7 +1777,7 @@ export default function SpartenDashboard() {
                     placeholder="z. B. Max Mustermann"
                     value={histForm.mitglied_name}
                     onChange={(e) => setHistForm(f => ({ ...f, mitglied_name: e.target.value }))}
-                    className="w-full bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-white text-sm transition-colors"
+                    className="w-full bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-2 text-foreground text-sm transition-colors"
                   />
                   <p className="text-xs text-muted-foreground mt-1">Für frühere Spartenleiter ohne Mitgliedsdatensatz (z. B. ausgetreten oder verstorben).</p>
                 </div>
@@ -1788,21 +1788,21 @@ export default function SpartenDashboard() {
                   <label className="text-xs text-muted-foreground block mb-1">Amt seit *</label>
                   <DateSelect name="von_datum" value={histForm.von_datum}
                     onChange={(e) => setHistForm(f => ({ ...f, von_datum: e.target.value }))}
-                    className="w-full bg-background border border-border focus:border-primary rounded-lg px-2 py-1.5 text-white text-sm"
+                    className="w-full bg-background border border-border focus:border-primary rounded-lg px-2 py-1.5 text-foreground text-sm"
                     minYear={1950} maxYear={new Date().getFullYear() + 1} />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground block mb-1">Amt bis (leer = heute)</label>
                   <DateSelect name="bis_datum" value={histForm.bis_datum}
                     onChange={(e) => setHistForm(f => ({ ...f, bis_datum: e.target.value }))}
-                    className="w-full bg-background border border-border focus:border-primary rounded-lg px-2 py-1.5 text-white text-sm"
+                    className="w-full bg-background border border-border focus:border-primary rounded-lg px-2 py-1.5 text-foreground text-sm"
                     minYear={1950} maxYear={new Date().getFullYear() + 1} />
                 </div>
               </div>
 
               <div className="flex gap-3 pt-2 border-t border-border">
                 <button type="button" onClick={() => setShowHistorieModal(false)}
-                  className="flex-1 py-2 border border-border hover:bg-secondary text-white font-semibold text-sm rounded-lg transition-colors">
+                  className="flex-1 py-2 border border-border hover:bg-secondary text-foreground font-semibold text-sm rounded-lg transition-colors">
                   Abbrechen
                 </button>
                 <button type="button" onClick={handleSaveHistorieEintrag} disabled={savingHistorie}
@@ -1828,7 +1828,7 @@ export default function SpartenDashboard() {
                     return (
                       <div key={h.id} className="flex items-center justify-between gap-2">
                         <div className="min-w-0 flex items-center gap-1.5">
-                          <span className={`text-sm truncate ${aktiv ? 'text-white font-semibold' : 'text-muted-foreground'}`}>
+                          <span className={`text-sm truncate ${aktiv ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>
                             {aktiv && <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 shrink-0" />}
                             {h.mitglied_name || 'Unbekannt'}
                           </span>
@@ -1840,7 +1840,7 @@ export default function SpartenDashboard() {
                             {aktiv ? 'heute' : (h.bis_datum ? new Date(h.bis_datum).toLocaleDateString('de-DE', { month: '2-digit', year: 'numeric' }) : '?')}
                           </span>
                           <button type="button" onClick={() => handleOpenHistorieEdit(h)}
-                            className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-white transition-colors">
+                            className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
                             <Edit className="w-3.5 h-3.5" />
                           </button>
                           <button type="button" onClick={() => handleDeleteHistorieEintrag(h.id)}

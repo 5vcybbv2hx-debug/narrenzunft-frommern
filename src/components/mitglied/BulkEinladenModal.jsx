@@ -146,7 +146,7 @@ export default function BulkEinladenModal({ onClose, onDone }) {
     <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-4">
       <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-white text-lg flex items-center gap-2">
+          <h3 className="font-bold text-foreground text-lg flex items-center gap-2">
             <Send size={18} className="text-primary" /> Mitglieder einladen
           </h3>
           <button onClick={onClose} disabled={running} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40">
@@ -226,7 +226,7 @@ export default function BulkEinladenModal({ onClose, onDone }) {
               <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
                 <Check size={24} className="text-green-400" />
               </div>
-              <p className="text-sm font-medium text-white text-center">
+              <p className="text-sm font-medium text-foreground text-center">
                 {result.ok} Einladung{result.ok !== 1 && 'en'} erfolgreich versendet
                 {result.fehler.length > 0 && ` · ${result.fehler.length} fehlgeschlagen`}
               </p>

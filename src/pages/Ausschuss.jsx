@@ -154,7 +154,7 @@ export default function Ausschuss() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
         <Lock size={40} className="text-muted-foreground mb-3" />
-        <h2 className="text-xl font-bold font-oswald uppercase tracking-wide text-white mb-2">Kein Zugriff</h2>
+        <h2 className="text-xl font-bold font-oswald uppercase tracking-wide text-foreground mb-2">Kein Zugriff</h2>
         <p className="text-sm text-muted-foreground">Dieser Bereich ist nur für Vorstand und Ausschuss zugänglich.</p>
       </div>
     );
@@ -207,7 +207,7 @@ export default function Ausschuss() {
             <Shield size={14} className="text-primary" />
             <span className="text-xs text-primary font-semibold uppercase tracking-wide">Vertraulich</span>
           </div>
-          <h1 className="text-2xl font-bold font-oswald uppercase tracking-wide text-white">Ausschussbereich</h1>
+          <h1 className="text-2xl font-bold font-oswald uppercase tracking-wide text-foreground">Ausschussbereich</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Nur für Vorstand & Ausschuss</p>
         </div>
       </div>
@@ -227,7 +227,7 @@ export default function Ausschuss() {
           const badge = tabBadges[tab.id];
           return (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id ? 'bg-card text-white shadow' : 'text-muted-foreground hover:text-white'}`}>
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}>
               <Icon size={14} />
               {tab.label}
               {badge ? <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary text-white font-bold">{badge}</span> : null}
@@ -276,7 +276,7 @@ export default function Ausschuss() {
           {kommendeSitzungen.length === 0 && (
             <div className="text-center py-10 bg-card border border-border rounded-xl">
               <ClipboardList size={32} className="text-muted-foreground/40 mx-auto mb-2" />
-              <p className="text-sm text-white">Keine kommenden Sitzungen</p>
+              <p className="text-sm text-foreground">Keine kommenden Sitzungen</p>
               <p className="text-xs text-muted-foreground mt-1">Sitzungen im Kalender als „Ausschusssitzung" anlegen</p>
             </div>
           )}
@@ -350,7 +350,7 @@ export default function Ausschuss() {
               <div key={a.id} className={`bg-card border border-border rounded-xl px-4 py-3 flex items-center gap-3 ${a.status === 'Erledigt' ? 'opacity-50' : ''}`}>
                 <div className="shrink-0">{STATUS_ICONS[a.status] || STATUS_ICONS['Offen']}</div>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium ${a.status === 'Erledigt' ? 'line-through text-muted-foreground' : 'text-white'}`}>{a.titel}</p>
+                  <p className={`text-sm font-medium ${a.status === 'Erledigt' ? 'line-through text-muted-foreground' : 'text-foreground'}`}>{a.titel}</p>
                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${PRIO_FARBEN[a.prioritaet] || ''}`}>{a.prioritaet}</span>
                     {a.faellig_am && <span className="text-xs text-muted-foreground flex items-center gap-1"><Calendar size={10} /> {format(new Date(a.faellig_am), 'dd.MM.yyyy')}</span>}
@@ -442,8 +442,8 @@ export default function Ausschuss() {
       {topVerschieben && (
         <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-white">In Tagesordnung verschieben</h3>
-              <button onClick={() => setTopVerschieben(null)} className="p-1.5 rounded-lg text-muted-foreground hover:text-white">
+              <h3 className="font-bold text-foreground">In Tagesordnung verschieben</h3>
+              <button onClick={() => setTopVerschieben(null)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground">
                 <X size={16} />
               </button>
             </div>
@@ -466,7 +466,7 @@ export default function Ausschuss() {
                 <input
                   type="text" value={topVerschieben.titel}
                   onChange={e => setTopVerschieben(p => ({ ...p, titel: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary"
+                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary"
                 />
               </div>
               <div>
@@ -475,7 +475,7 @@ export default function Ausschuss() {
                   value={topVerschieben.beschreibung}
                   onChange={e => setTopVerschieben(p => ({ ...p, beschreibung: e.target.value }))}
                   rows={3}
-                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary resize-y"
+                  className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary resize-y"
                 />
               </div>
               <p className="text-xs text-muted-foreground">
@@ -547,7 +547,7 @@ function SitzungsKarte({ termin, aufgaben, vergangen, hatProtokoll }) {
           <span className="text-sm font-bold text-primary font-oswald">{format(new Date(termin.datum + 'T12:00:00'), 'd')}</span>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-white truncate">{termin.titel}</p>
+          <p className="text-sm font-semibold text-foreground truncate">{termin.titel}</p>
           <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 flex-wrap">
             {termin.startzeit && <span className="flex items-center gap-1"><Clock size={10} /> {termin.startzeit}{termin.endzeit ? `–${termin.endzeit}` : ''}</span>}
             {termin.ort && <span className="flex items-center gap-1"><MapPin size={10} /> {termin.ort}</span>}
@@ -573,7 +573,7 @@ function DeleteBar({ show, onConfirm, onCancel, deleting }) {
     <div className="flex items-center gap-2 p-3 rounded-lg bg-red-900/20 border border-red-700/30">
       <AlertTriangle size={14} className="text-red-400 shrink-0" />
       <span className="text-xs text-red-400 flex-1">Wirklich löschen?</span>
-      <button onClick={onCancel} className="text-xs px-2 py-1 rounded text-muted-foreground hover:text-white">Abbrechen</button>
+      <button onClick={onCancel} className="text-xs px-2 py-1 rounded text-muted-foreground hover:text-foreground">Abbrechen</button>
       <button onClick={onConfirm} disabled={deleting} className="text-xs px-3 py-1 rounded bg-red-900/80 text-white font-medium disabled:opacity-50">{deleting ? '…' : 'Löschen'}</button>
     </div>
   );
@@ -624,8 +624,8 @@ function AufgabeModal({ aufgabe, mitglieder, termine, onClose, onSaved }) {
   return (
     <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold font-oswald uppercase tracking-wide text-white">{isNew ? 'Neuer offener Punkt' : 'Offenen Punkt bearbeiten'}</h3>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-white"><X size={16} /></button>
+          <h3 className="font-bold font-oswald uppercase tracking-wide text-foreground">{isNew ? 'Neuer offener Punkt' : 'Offenen Punkt bearbeiten'}</h3>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"><X size={16} /></button>
         </div>
         <div className="space-y-3">
           <input type="text" placeholder="Titel *" value={form.titel} onChange={e => set('titel', e.target.value)} className={inputCls} />
@@ -662,7 +662,7 @@ function AufgabeModal({ aufgabe, mitglieder, termine, onClose, onSaved }) {
         {confirmDelete && <div className="mt-3"><DeleteBar show={true} onConfirm={handleDelete} onCancel={() => setConfirmDelete(false)} deleting={deleting} /></div>}
         <div className="flex gap-2 mt-4">
           {!isNew && !confirmDelete && <button onClick={() => setConfirmDelete(true)} className="p-2.5 rounded-lg bg-red-900/20 text-red-400 hover:bg-red-900/30 transition-colors"><Trash2 size={16} /></button>}
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-neutral-800 text-muted-foreground text-sm hover:text-white transition-colors">Abbrechen</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-neutral-800 text-muted-foreground text-sm hover:text-foreground transition-colors">Abbrechen</button>
           <button onClick={handleSave} disabled={saving || !form.titel}
             className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 hover:bg-red-700 transition-colors">
             {saving ? '…' : 'Speichern'}
@@ -727,8 +727,8 @@ function AbstimmungModal({ abstimmung, termine, onClose, onSaved }) {
   return (
     <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold font-oswald uppercase tracking-wide text-white">{isNew ? 'Neue Abstimmung' : 'Abstimmung bearbeiten'}</h3>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-white"><X size={16} /></button>
+          <h3 className="font-bold font-oswald uppercase tracking-wide text-foreground">{isNew ? 'Neue Abstimmung' : 'Abstimmung bearbeiten'}</h3>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"><X size={16} /></button>
         </div>
         <div className="space-y-3">
           <input type="text" placeholder="Titel *" value={form.titel} onChange={e => set('titel', e.target.value)} className={inputCls} />
@@ -772,7 +772,7 @@ function AbstimmungModal({ abstimmung, termine, onClose, onSaved }) {
         {confirmDelete && <div className="mt-3"><DeleteBar show={true} onConfirm={handleDelete} onCancel={() => setConfirmDelete(false)} deleting={deleting} /></div>}
         <div className="flex gap-2 mt-4">
           {!isNew && !confirmDelete && <button onClick={() => setConfirmDelete(true)} className="p-2.5 rounded-lg bg-red-900/20 text-red-400 hover:bg-red-900/30 transition-colors"><Trash2 size={16} /></button>}
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-neutral-800 text-muted-foreground text-sm hover:text-white transition-colors">Abbrechen</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-neutral-800 text-muted-foreground text-sm hover:text-foreground transition-colors">Abbrechen</button>
           <button onClick={handleSave} disabled={saving || !form.titel}
             className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 hover:bg-red-700 transition-colors">
             {saving ? '…' : 'Speichern'}
@@ -817,8 +817,8 @@ function SitzungModal({ onClose, onSaved }) {
   return (
     <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold font-oswald uppercase tracking-wide text-white">Neue Sitzung</h3>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-white"><X size={16} /></button>
+          <h3 className="font-bold font-oswald uppercase tracking-wide text-foreground">Neue Sitzung</h3>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"><X size={16} /></button>
         </div>
         {error && <div className="mb-3 p-3 rounded-lg bg-red-900/20 border border-red-700/30 text-sm text-red-400">{error}</div>}
         <div className="space-y-3">
@@ -836,7 +836,7 @@ function SitzungModal({ onClose, onSaved }) {
           <textarea placeholder="Beschreibung (optional)" value={form.beschreibung} onChange={e => set('beschreibung', e.target.value)} rows={2} className={`${inputCls} resize-none`} />
         </div>
         <div className="flex gap-2 mt-4">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-neutral-800 text-muted-foreground text-sm hover:text-white transition-colors">Abbrechen</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-neutral-800 text-muted-foreground text-sm hover:text-foreground transition-colors">Abbrechen</button>
           <button onClick={handleSave} disabled={saving || !form.datum}
             className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 hover:bg-red-700 transition-colors">
             {saving ? '…' : 'Erstellen'}

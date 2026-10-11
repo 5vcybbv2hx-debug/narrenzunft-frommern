@@ -76,7 +76,7 @@ export default function Mehr() {
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                     active ? 'bg-primary border border-primary/40' : 'bg-primary/10 border border-primary/25'
                   }`}>
-                    <Icon size={19} className="text-white" strokeWidth={active ? 2.2 : 1.9} />
+                    <Icon size={19} className="text-foreground" strokeWidth={active ? 2.2 : 1.9} />
                   </div>
                   <span className="text-[13px] font-medium text-foreground leading-tight">{item.label}</span>
                 </Link>

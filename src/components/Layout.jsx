@@ -355,7 +355,7 @@ export default function Layout() {
               return (
                 <button key={item.path} onClick={() => navigate(destination)}
                   className={`flex flex-col items-center gap-0.5 px-2 py-2 rounded-lg transition-all min-w-[48px] ${
-                    active ? 'text-primary' : 'text-muted-foreground hover:text-white'
+                    active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
                   }`}>
                   <Icon size={20} strokeWidth={active ? 2.4 : 1.7} />
                   <span className={`text-[10px] font-medium leading-none mt-0.5 ${active ? 'text-primary' : ''}`}>{item.label}</span>
@@ -366,7 +366,7 @@ export default function Layout() {
             {/* Mehr-Button öffnet die Hub-Seite */}
             <button onClick={() => navigate('/mehr')} aria-label="Mehr-Menü öffnen"
               className={`flex flex-col items-center gap-0.5 px-2 py-2 rounded-lg transition-all min-w-[48px] ${
-                location.pathname.startsWith('/mehr') ? 'text-primary' : 'text-muted-foreground hover:text-white'
+                location.pathname.startsWith('/mehr') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               }`}>
               <LayoutGrid size={20} strokeWidth={location.pathname.startsWith('/mehr') ? 2.4 : 1.7} />
               <span className={`text-[10px] font-medium leading-none mt-0.5 ${location.pathname.startsWith('/mehr') ? 'text-primary' : ''}`}>Mehr</span>

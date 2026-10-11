@@ -528,7 +528,7 @@ export default function AusfahrtScanner() {
     return (
       <div className="min-h-[60vh] p-6">
         <div className="max-w-2xl mx-auto">
-          <Link to={`/ausfahrten/${id}`} className="inline-flex items-center text-muted-foreground hover:text-white mb-6">
+          <Link to={`/ausfahrten/${id}`} className="inline-flex items-center text-muted-foreground hover:text-foreground mb-6">
             <ArrowLeft className="w-4 h-4 mr-2" /> Zurück zur Ausfahrt
           </Link>
           <div className="bg-card border border-border rounded-xl p-8 text-center">
@@ -545,12 +545,12 @@ export default function AusfahrtScanner() {
     return (
       <div className="min-h-[60vh] p-6">
         <div className="max-w-2xl mx-auto">
-          <Link to={`/ausfahrten/${id}`} className="inline-flex items-center text-muted-foreground hover:text-white mb-6">
+          <Link to={`/ausfahrten/${id}`} className="inline-flex items-center text-muted-foreground hover:text-foreground mb-6">
             <ArrowLeft className="w-4 h-4 mr-2" /> Zurück zur Ausfahrt
           </Link>
           <div className="bg-card border border-border rounded-xl p-8 text-center">
             <AlertTriangle className="w-10 h-10 text-yellow-500 mx-auto mb-4" />
-            <p className="text-white font-semibold mb-2">
+            <p className="text-foreground font-semibold mb-2">
               {isBusButNotToday ? 'Noch nicht möglich' : 'Keine Berechtigung'}
             </p>
             {isBusButNotToday ? (
@@ -583,17 +583,17 @@ export default function AusfahrtScanner() {
             flash.erfolg ? 'bg-green-600 border-green-300' : 'bg-red-600 border-red-300'
           }`}>
             {flash.erfolg
-              ? <CheckCircle2 className="w-7 h-7 shrink-0 text-white" />
-              : <XCircle className="w-7 h-7 shrink-0 text-white" />}
+              ? <CheckCircle2 className="w-7 h-7 shrink-0 text-foreground" />
+              : <XCircle className="w-7 h-7 shrink-0 text-foreground" />}
             <div className="min-w-0">
-              <p className="font-oswald uppercase font-bold text-lg leading-tight text-white truncate">{flash.name}</p>
-              <p className="text-sm text-white/80">{flash.erfolg ? 'Eingecheckt' : 'Nicht eingecheckt'}</p>
+              <p className="font-oswald uppercase font-bold text-lg leading-tight text-foreground truncate">{flash.name}</p>
+              <p className="text-sm text-foreground/80">{flash.erfolg ? 'Eingecheckt' : 'Nicht eingecheckt'}</p>
             </div>
           </div>
         </div>
       )}
       <div className="max-w-2xl mx-auto px-4 pt-8">
-        <Link to={`/ausfahrten/${id}`} className="inline-flex items-center text-muted-foreground hover:text-white mb-6 transition-colors">
+        <Link to={`/ausfahrten/${id}`} className="inline-flex items-center text-muted-foreground hover:text-foreground mb-6 transition-colors">
           <ArrowLeft className="w-4 h-4 mr-2" /> Zurück zur Ausfahrt
         </Link>
 
@@ -605,7 +605,7 @@ export default function AusfahrtScanner() {
               <QrCode className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold font-oswald uppercase tracking-wide text-white">
+              <h1 className="text-2xl font-bold font-oswald uppercase tracking-wide text-foreground">
                 QR Check-in
               </h1>
               <p className="text-muted-foreground text-sm">{ausfahrt.titel}</p>
@@ -631,7 +631,7 @@ export default function AusfahrtScanner() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
           <div className="bg-card border border-border rounded-xl p-4 text-center">
-            <p className="text-2xl font-bold font-oswald text-white">{gesamtCount}</p>
+            <p className="text-2xl font-bold font-oswald text-foreground">{gesamtCount}</p>
             <p className="text-xs text-muted-foreground mt-1">Angemeldet</p>
           </div>
           <div className="bg-green-950/30 border border-green-800/40 rounded-xl p-4 text-center">
@@ -695,7 +695,7 @@ export default function AusfahrtScanner() {
         {/* Scan Results */}
         {scanResults.length > 0 && (
           <div className="bg-card border border-border rounded-xl p-5 mb-6">
-            <h2 className="text-sm font-bold font-oswald uppercase tracking-wider text-white mb-4">
+            <h2 className="text-sm font-bold font-oswald uppercase tracking-wider text-foreground mb-4">
               Scan-Ergebnisse ({scanResults.length})
             </h2>
             <div className="space-y-2 max-h-[400px] overflow-y-auto">
@@ -714,7 +714,7 @@ export default function AusfahrtScanner() {
                     <XCircle className="w-5 h-5 text-red-400 shrink-0" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">{result.name}</p>
+                    <p className="text-sm font-medium text-foreground truncate">{result.name}</p>
                     <p className={`text-xs ${result.erfolg ? 'text-green-500' : 'text-red-500'}`}>
                       {result.erfolg ? 'Erfolgreich eingecheckt' : result.fehler || 'Fehler'}
                     </p>
@@ -730,7 +730,7 @@ export default function AusfahrtScanner() {
         {canScan && (
           <div className="bg-card border border-border rounded-xl p-5 mt-6">
             <div className="flex items-center justify-between mb-1">
-              <h2 className="text-sm font-bold font-oswald uppercase tracking-wider text-white">
+              <h2 className="text-sm font-bold font-oswald uppercase tracking-wider text-foreground">
                 Spontan mitnehmen
               </h2>
               <span className="text-xs text-muted-foreground shrink-0">🚌 {busCount} im Bus</span>
@@ -761,7 +761,7 @@ export default function AusfahrtScanner() {
                     value={spontanSuche}
                     onChange={(e) => setSpontanSuche(e.target.value)}
                     placeholder="Mitglied nach Name suchen…"
-                    className="w-full pl-9 pr-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                    className="w-full pl-9 pr-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                   />
                 </div>
                 {spontanSuche.trim() && (
@@ -777,7 +777,7 @@ export default function AusfahrtScanner() {
                         disabled={spontanLaeuft}
                         className="w-full flex items-center justify-between gap-2 bg-secondary/50 hover:bg-secondary border border-border rounded-lg px-3 py-2.5 min-h-[44px] text-left transition-colors disabled:opacity-50"
                       >
-                        <span className="text-sm text-white truncate">
+                        <span className="text-sm text-foreground truncate">
                           {m.vorname} {m.nachname}
                         </span>
                         <span className="text-xs text-primary font-semibold shrink-0">
@@ -795,7 +795,7 @@ export default function AusfahrtScanner() {
                   value={spontanExternName}
                   onChange={(e) => setSpontanExternName(e.target.value)}
                   placeholder="Name der externen Person…"
-                  className="flex-1 px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                  className="flex-1 px-3 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                 />
                 <button
                   onClick={handleSpontanExtern}
@@ -812,7 +812,7 @@ export default function AusfahrtScanner() {
         {/* Anmeldungs-Liste (Fallback) */}
         <div className="bg-card border border-border rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-bold font-oswald uppercase tracking-wider text-white">
+            <h2 className="text-sm font-bold font-oswald uppercase tracking-wider text-foreground">
               Manuelle Check-in Liste
             </h2>
             <span className="text-xs text-muted-foreground">{eingechecktCount} / {gesamtCount} eingecheckt</span>
@@ -824,7 +824,7 @@ export default function AusfahrtScanner() {
               value={manuellerFilter}
               onChange={(e) => setManuellerFilter(e.target.value)}
               placeholder="Name suchen…"
-              className="w-full pl-9 pr-8 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+              className="w-full pl-9 pr-8 py-2.5 min-h-[44px] rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
             />
             {manuellerFilter && (
               <button
@@ -865,7 +865,7 @@ export default function AusfahrtScanner() {
                       }
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium truncate ${isEingecheckt ? 'text-muted-foreground' : 'text-white'}`}>
+                      <p className={`text-sm font-medium truncate ${isEingecheckt ? 'text-muted-foreground' : 'text-foreground'}`}>
                         {name}
                       </p>
                       <p className="text-xs text-muted-foreground">

@@ -34,7 +34,7 @@ export default function VerleihUebersicht() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background text-white flex flex-col items-center">
+    <div className="min-h-screen bg-background text-foreground flex flex-col items-center">
       {/* Top-Bar mit Zurück-Button */}
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b border-border w-full">
         <div className="max-w-md mx-auto flex items-center px-4 h-14">
@@ -50,12 +50,12 @@ export default function VerleihUebersicht() {
         <div className="w-14 h-14 mx-auto rounded-xl bg-primary flex items-center justify-center shadow-xl shadow-red-900/30">
           <span className="text-2xl">🎭</span>
         </div>
-        <p className="font-oswald font-semibold text-white text-lg uppercase tracking-widest mt-2">Narrenzunft</p>
+        <p className="font-oswald font-semibold text-foreground text-lg uppercase tracking-widest mt-2">Narrenzunft</p>
         <p className="text-primary text-[10px] font-semibold uppercase tracking-[0.3em]">Frommern</p>
       </div>
 
       <div className="w-full max-w-md">
-        <h1 className="font-oswald uppercase text-xl text-white text-center mb-1">Verleih-Anfrage</h1>
+        <h1 className="font-oswald uppercase text-xl text-foreground text-center mb-1">Verleih-Anfrage</h1>
         <p className="text-sm text-muted-foreground text-center mb-5">
           Wählt einen Gegenstand aus und stellt eine Anfrage — der Vorstand meldet sich bei euch.
         </p>
@@ -102,7 +102,7 @@ export default function VerleihUebersicht() {
                     <div className="flex-1 p-4 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <h2 className="font-oswald uppercase text-base text-white leading-tight truncate">{item.name}</h2>
+                          <h2 className="font-oswald uppercase text-base text-foreground leading-tight truncate">{item.name}</h2>
                           <p className="text-xs text-muted-foreground">{item.kategorie}</p>
                         </div>
                         <ChevronRight size={16} className="text-muted-foreground group-hover:text-primary shrink-0 mt-0.5 transition-colors" />

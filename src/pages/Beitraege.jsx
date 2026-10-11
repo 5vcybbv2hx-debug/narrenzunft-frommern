@@ -11,7 +11,7 @@ const STATUS_COLORS = {
   'Offen':      'bg-yellow-900/20 text-yellow-400 border border-yellow-700/30',
   'Bezahlt':    'bg-green-900/20 text-green-400 border border-green-700/30',
   'Überfällig': 'bg-red-900/20 text-red-400 border border-red-700/30',
-  'Erlassen':   'bg-secondary text-neutral-300',
+  'Erlassen':   'bg-secondary text-secondary-foreground',
 };
 
 const DEFAULT_BEITRAEGE_SATZ = {
@@ -142,12 +142,12 @@ export default function Beitraege() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold font-oswald uppercase tracking-wide text-white">Beiträge</h1>
+          <h1 className="text-2xl font-bold font-oswald uppercase tracking-wide text-foreground">Beiträge</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{beitraege.filter(b => b.jahr === selectedYear).length} Einträge · {selectedYear}</p>
         </div>
         {isAdminUser && activeTab === 'jahresbeitraege' && (
           <button onClick={() => setShowEinstellungen(true)}
-            className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-white hover:bg-secondary transition-colors"
+            className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
             title="Beitragssätze anpassen">
             <Settings size={18} />
           </button>
@@ -165,11 +165,11 @@ export default function Beitraege() {
       {/* Tabs */}
       <div className="flex gap-1.5 mb-5">
         <button onClick={() => setActiveTab('jahresbeitraege')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'jahresbeitraege' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-white'}`}>
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'jahresbeitraege' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
           <CreditCard size={14} /> Jahresbeiträge
         </button>
         <button onClick={() => setActiveTab('buskosten')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'buskosten' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-white'}`}>
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'buskosten' ? 'bg-primary text-white shadow-sm' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
           <Bus size={14} /> Buskosten
         </button>
       </div>
@@ -182,7 +182,7 @@ export default function Beitraege() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           <div className="bg-card border border-border rounded-xl p-4">
             <p className="text-xs text-muted-foreground">Gesamt {selectedYear}</p>
-            <p className="text-xl font-oswald font-semibold text-white mt-1">{stats.total.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
+            <p className="text-xl font-oswald font-semibold text-foreground mt-1">{stats.total.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
           </div>
           <div className="bg-card border border-green-700/30 rounded-xl p-4">
             <p className="text-xs text-muted-foreground">Bezahlt</p>
@@ -204,7 +204,7 @@ export default function Beitraege() {
             <div className="flex items-center gap-2">
               <label className="text-sm text-muted-foreground">Jahr:</label>
               <input type="number" value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))}
-                className="w-24 px-3 py-1.5 rounded-lg bg-secondary border border-border text-sm text-white focus:outline-none focus:border-primary transition-colors" />
+                className="w-24 px-3 py-1.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-colors" />
             </div>
             <button onClick={() => setConfirmCreate(true)} disabled={creating}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50">
@@ -215,7 +215,7 @@ export default function Beitraege() {
                 <AlertTriangle size={14} className="text-red-400 shrink-0" />
                 <span className="text-xs text-red-400">Für {selectedYear} erstellen?</span>
                 <button onClick={handleJahresbeitraegeErstellen} className="text-xs px-2 py-1 rounded bg-red-900/80 text-white font-medium">Ja</button>
-                <button onClick={() => setConfirmCreate(false)} className="text-xs px-2 py-1 rounded text-muted-foreground hover:text-white">Abbrechen</button>
+                <button onClick={() => setConfirmCreate(false)} className="text-xs px-2 py-1 rounded text-muted-foreground hover:text-foreground">Abbrechen</button>
               </div>
             )}
           </div>
@@ -225,7 +225,7 @@ export default function Beitraege() {
         <div className="relative mb-3">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input type="text" placeholder="Mitglied suchen…" value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-card border border-border text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors" />
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors" />
         </div>
 
         <div className="flex gap-2 overflow-x-auto pb-1 mb-4 scrollbar-hide">
@@ -244,7 +244,7 @@ export default function Beitraege() {
                   filter === f ? 'bg-primary text-white' : 'bg-card border border-border text-muted-foreground hover:border-primary/50'
                 }`}>
                 {f}
-                <span className={`text-[10px] font-bold px-1 rounded-full ${filter === f ? 'bg-white/20' : 'bg-secondary'}`}>
+                <span className={`text-[10px] font-bold px-1 rounded-full ${filter === f ? 'bg-foreground/10' : 'bg-secondary'}`}>
                   {fc[f] ?? 0}
                 </span>
               </button>
@@ -260,7 +260,7 @@ export default function Beitraege() {
             return (
               <div key={b.id} className="flex items-center gap-3 px-4 py-3.5 min-h-[64px] border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-white truncate">{m ? `${m.vorname} ${m.nachname}` : '–'}</p>
+                  <p className="text-sm font-medium text-foreground truncate">{m ? `${m.vorname} ${m.nachname}` : '–'}</p>
                   <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                     <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[b.zahlungsstatus] || ''}`}>
                       {b.zahlungsstatus}
@@ -268,7 +268,7 @@ export default function Beitraege() {
                     <span className="text-xs text-muted-foreground">{b.mitgliedsstatus} · {b.jahr}</span>
                   </div>
                 </div>
-                <span className="text-sm font-semibold text-white shrink-0">{b.betrag} €</span>
+                <span className="text-sm font-semibold text-foreground shrink-0">{b.betrag} €</span>
                 {isAdminUser && !istErledigt && (
                   <button onClick={() => handleMarkBezahlt(b)}
                     title="Als bezahlt markieren"
@@ -291,7 +291,7 @@ export default function Beitraege() {
         {filteredBeitraege.length === 0 && (
           <div className="text-center py-12">
             <CreditCard size={36} className="text-muted-foreground/40 mx-auto mb-3" />
-            <p className="text-white font-medium">Keine Beiträge für {selectedYear}</p>
+            <p className="text-foreground font-medium">Keine Beiträge für {selectedYear}</p>
             <p className="text-sm text-muted-foreground mt-1">
               {filter !== 'Alle' ? `Keine Einträge mit Status „${filter}"` : `Noch keine Jahresbeiträge für ${selectedYear} erstellt`}
             </p>

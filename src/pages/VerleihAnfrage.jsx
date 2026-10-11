@@ -74,7 +74,7 @@ export default function VerleihAnfrage() {
   const IconComponent = item ? (KATEGORIE_ICONS[item.kategorie] || Package) : Package;
 
   return (
-    <div className="min-h-screen bg-background text-white flex flex-col items-center">
+    <div className="min-h-screen bg-background text-foreground flex flex-col items-center">
       {/* Top-Bar mit Zurück-Button */}
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b border-border w-full">
         <div className="max-w-md mx-auto flex items-center px-4 h-14">
@@ -90,7 +90,7 @@ export default function VerleihAnfrage() {
         <div className="w-14 h-14 mx-auto rounded-xl bg-primary flex items-center justify-center shadow-xl shadow-red-900/30">
           <span className="text-2xl">🎭</span>
         </div>
-        <p className="font-oswald font-semibold text-white text-lg uppercase tracking-widest mt-2">Narrenzunft</p>
+        <p className="font-oswald font-semibold text-foreground text-lg uppercase tracking-widest mt-2">Narrenzunft</p>
         <p className="text-primary text-[10px] font-semibold uppercase tracking-[0.3em]">Frommern</p>
       </div>
 
@@ -118,9 +118,9 @@ export default function VerleihAnfrage() {
       {submitted && (
         <div className="max-w-md w-full bg-card border border-border rounded-2xl p-6 text-center">
           <CheckCircle2 size={48} className="text-green-400 mx-auto mb-3" />
-          <h1 className="font-oswald uppercase text-xl text-white">Anfrage erhalten!</h1>
+          <h1 className="font-oswald uppercase text-xl text-foreground">Anfrage erhalten!</h1>
           <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-            Vielen Dank, <strong className="text-white">{form.name}</strong>! Eure Anfrage zu <strong className="text-white">{item?.name}</strong> ist bei uns eingegangen.
+            Vielen Dank, <strong className="text-foreground">{form.name}</strong>! Eure Anfrage zu <strong className="text-foreground">{item?.name}</strong> ist bei uns eingegangen.
           </p>
           <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
             Der Vorstand prüft die Anfrage und meldet sich dann bei euch unter der angegebenen Nummer.
@@ -152,7 +152,7 @@ export default function VerleihAnfrage() {
                   </div>
                 )}
                 <div>
-                  <h1 className="font-oswald uppercase text-xl text-white leading-tight">{item.name}</h1>
+                  <h1 className="font-oswald uppercase text-xl text-foreground leading-tight">{item.name}</h1>
                   <p className="text-xs text-muted-foreground">{item.kategorie}</p>
                 </div>
               </div>
@@ -162,13 +162,13 @@ export default function VerleihAnfrage() {
                 {item.preis > 0 && (
                   <div className="px-3 py-2.5 rounded-xl bg-black/30 border border-border">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide flex items-center gap-1"><Euro size={11}/> Miete pro Tag</p>
-                    <p className="text-lg font-semibold text-white mt-0.5">{euro(item.preis)}</p>
+                    <p className="text-lg font-semibold text-foreground mt-0.5">{euro(item.preis)}</p>
                   </div>
                 )}
                 {item.kaution > 0 && (
                   <div className="px-3 py-2.5 rounded-xl bg-black/30 border border-border">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide flex items-center gap-1"><Euro size={11}/> Kaution</p>
-                    <p className="text-lg font-semibold text-white mt-0.5">{euro(item.kaution)}</p>
+                    <p className="text-lg font-semibold text-foreground mt-0.5">{euro(item.kaution)}</p>
                   </div>
                 )}
               </div>
@@ -183,7 +183,7 @@ export default function VerleihAnfrage() {
 
           {/* Anfrage-Formular */}
           <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
-            <h2 className="font-oswald uppercase text-base text-white flex items-center gap-2">
+            <h2 className="font-oswald uppercase text-base text-foreground flex items-center gap-2">
               <CalendarDays size={16} className="text-primary" /> Ausleihanfrage stellen
             </h2>
 
@@ -234,7 +234,7 @@ export default function VerleihAnfrage() {
 
             {item.preis > 0 && tage() > 0 && (
               <div className="px-3 py-2.5 rounded-xl bg-black/30 border border-border text-xs text-muted-foreground">
-                <span className="text-muted-foreground">Geschätzte Miete:</span> {tage()} Tag(e) × {euro(item.preis)} = <span className="text-white font-semibold">{euro(tage() * item.preis)}</span>
+                <span className="text-muted-foreground">Geschätzte Miete:</span> {tage()} Tag(e) × {euro(item.preis)} = <span className="text-foreground font-semibold">{euro(tage() * item.preis)}</span>
                 {item.kaution > 0 && <> + {euro(item.kaution)} Kaution</>}
               </div>
             )}

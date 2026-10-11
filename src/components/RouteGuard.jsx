@@ -41,7 +41,7 @@ export function Guard({ roles, zusatz, children }) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
         <Lock size={40} className="text-muted-foreground mb-3" />
-        <h2 className="text-xl font-bold font-oswald uppercase tracking-wide text-white mb-2">Kein Zugriff</h2>
+        <h2 className="text-xl font-bold font-oswald uppercase tracking-wide text-foreground mb-2">Kein Zugriff</h2>
         <p className="text-sm text-muted-foreground">Du hast keine Berechtigung für diese Seite.</p>
       </div>
     );

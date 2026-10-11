@@ -235,7 +235,7 @@ export default function PlanungTab({ veranstaltung, isAdmin }) {
       {vorjahr ? (
         <div className="flex items-center gap-2.5 bg-primary/10 border border-primary/25 rounded-xl px-4 py-3">
           <History size={16} className="text-primary shrink-0" />
-          <p className="text-sm text-white">
+          <p className="text-sm text-foreground">
             <span className="text-muted-foreground">Vorjahr gefunden: </span>
             <span className="font-semibold">{vorjahr.veranstaltung.titel}</span>
             <span className="text-muted-foreground"> ({vorjahr.veranstaltung.datum?.split('-').reverse().join('.')})</span>
@@ -267,7 +267,7 @@ export default function PlanungTab({ veranstaltung, isAdmin }) {
           <div key={bereich.id} className="bg-card border border-border rounded-xl p-4">
             {/* Kopf */}
             <div className="flex flex-wrap items-center gap-2 mb-3">
-              <h3 className="font-oswald uppercase tracking-wide text-white text-base flex-1 min-w-[120px]">{bereich.name}</h3>
+              <h3 className="font-oswald uppercase tracking-wide text-foreground text-base flex-1 min-w-[120px]">{bereich.name}</h3>
               <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_FARBEN[bereich.status] || STATUS_FARBEN['Offen']}`}>
                 {bereich.status}
               </span>
@@ -292,7 +292,7 @@ export default function PlanungTab({ veranstaltung, isAdmin }) {
                     />
                   </div>
                 ) : (
-                  <span className="text-sm text-white">
+                  <span className="text-sm text-foreground">
                     {bereich.verantwortlicher_name || '– Niemand –'}
                     {istMeinBereich(bereich) && <span className="text-primary text-xs ml-1.5">(du)</span>}
                   </span>
@@ -341,7 +341,7 @@ export default function PlanungTab({ veranstaltung, isAdmin }) {
                         </button>
                       </>
                     ) : (
-                      <span className="text-sm text-white">
+                      <span className="text-sm text-foreground">
                         {p.artikel}{p.menge ? ` · ${p.menge} ${p.einheit || ''}` : ''}
                       </span>
                     )}
@@ -361,7 +361,7 @@ export default function PlanungTab({ veranstaltung, isAdmin }) {
             {kannBereichBearbeiten(bereich) && (
               <div className="flex flex-wrap items-center gap-2 mt-3">
                 <button onClick={() => addPosition(bereich.id)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary border border-border text-xs text-white hover:border-primary/50">
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary border border-border text-xs text-foreground hover:border-primary/50">
                   <Plus size={13} /> Position
                 </button>
                 {vjB && vjB.liste.length > 0 && (
@@ -398,7 +398,7 @@ export default function PlanungTab({ veranstaltung, isAdmin }) {
           <div className="flex flex-wrap gap-1.5 mt-2">
             {VORSCHLAEGE.map(v => (
               <button key={v} onClick={() => addBereich(v)}
-                className="px-2.5 py-1 rounded-full bg-secondary border border-border text-xs text-muted-foreground hover:text-white hover:border-primary/40">
+                className="px-2.5 py-1 rounded-full bg-secondary border border-border text-xs text-muted-foreground hover:text-foreground hover:border-primary/40">
                 + {v}
               </button>
             ))}

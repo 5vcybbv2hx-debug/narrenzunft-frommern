@@ -126,7 +126,7 @@ export default function NachbereitungTab({ veranstaltung, isAdmin, onVeranstaltu
       <div className={`rounded-xl px-4 py-3 border ${abgeschlossen ? 'bg-green-500/10 border-green-500/30' : 'bg-yellow-500/10 border-yellow-500/30'}`}>
         <div className="flex items-center gap-2">
           {abgeschlossen ? <CheckCircle2 size={16} className="text-green-400" /> : <Circle size={16} className="text-yellow-400" />}
-          <p className="text-sm text-white flex-1">
+          <p className="text-sm text-foreground flex-1">
             {abgeschlossen ? 'Nachbesprechung abgeschlossen' : 'Nachbesprechung noch offen'}{datumText && <span className="text-muted-foreground"> · {datumText}</span>}
           </p>
         </div>
@@ -151,7 +151,7 @@ export default function NachbereitungTab({ veranstaltung, isAdmin, onVeranstaltu
 
       {bereiche.map(bereich => (
         <div key={bereich.id} className="bg-card border border-border rounded-xl p-4">
-          <h3 className="font-oswald uppercase tracking-wide text-white text-base mb-3">
+          <h3 className="font-oswald uppercase tracking-wide text-foreground text-base mb-3">
             {bereich.name}
             {bereich.verantwortlicher_name && <span className="text-muted-foreground font-sans text-sm tracking-normal"> · {bereich.verantwortlicher_name}</span>}
           </h3>
@@ -168,7 +168,7 @@ export default function NachbereitungTab({ veranstaltung, isAdmin, onVeranstaltu
             {bereich.liste.length === 0 && <p className="text-xs text-muted-foreground py-1">Keine Positionen in diesem Bereich.</p>}
             {bereich.liste.map((p, idx) => (
               <div key={idx} className="rounded-lg border border-border bg-secondary/40 p-2.5">
-                <p className="text-sm text-white font-medium mb-2">
+                <p className="text-sm text-foreground font-medium mb-2">
                   {p.artikel || '(ohne Namen)'}
                   {p.menge ? <span className="text-muted-foreground font-normal"> · geplant: {p.menge} {p.einheit || ''}</span> : null}
                 </p>
