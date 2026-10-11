@@ -328,7 +328,7 @@ export default function DokumenteTab({ veranstaltung, isAdmin, veranstaltungsNam
 
       {/* Formular Modal */}
       {showForm && (
-        <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-lg max-h-[85vh] overflow-y-auto">
+        <BottomModal onClose={() => setShowForm(false)} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-lg max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-foreground">{editDoc ? 'Dokument bearbeiten' : 'Neues Dokument'}</h3>
               <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"><X size={16} /></button>

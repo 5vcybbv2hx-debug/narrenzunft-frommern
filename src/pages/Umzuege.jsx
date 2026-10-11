@@ -464,7 +464,7 @@ export default function Umzuege() {
 
       {/* Erstellen / Bearbeiten Modal */}
       {showForm && (
-        <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <BottomModal onClose={() => setShowForm(false)} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
               <h3 className="font-bold text-foreground text-lg">{editItem ? 'Termin bearbeiten' : 'Neuer auswärtiger Termin'}</h3>
               <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">

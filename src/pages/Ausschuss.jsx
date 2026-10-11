@@ -440,7 +440,7 @@ export default function Ausschuss() {
       {/* Modals */}
       {/* Offenen Punkt in Tagesordnung verschieben */}
       {topVerschieben && (
-        <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <BottomModal onClose={() => setTopVerschieben(null)} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-foreground">In Tagesordnung verschieben</h3>
               <button onClick={() => setTopVerschieben(null)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground">

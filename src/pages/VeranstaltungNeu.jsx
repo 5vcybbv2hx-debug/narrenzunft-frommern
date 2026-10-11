@@ -410,7 +410,7 @@ export default function VeranstaltungNeu() {
 
       {/* Modal: Als Vorlage speichern */}
       {showSaveVorlage && (
-        <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-sm">
+        <BottomModal onClose={() => setShowSaveVorlage(false)} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-sm">
             <h3 className="font-bold text-foreground mb-1">Als Vorlage speichern</h3>
             <p className="text-xs text-muted-foreground mb-4">Typ, Ort, Zeiten und Arbeitsdienste werden gespeichert.</p>
             <input

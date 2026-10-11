@@ -596,7 +596,7 @@ export default function HaesDetail() {
 
       {/* Modal: Mitglied zuweisen */}
       {showAddMitglied && (
-        <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
+        <BottomModal onClose={() => setShowAddMitglied(false)} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
             <h3 className="font-bold text-foreground mb-4">Mitglied zuweisen</h3>
             <div className="space-y-3">
               <div>

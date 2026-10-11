@@ -310,7 +310,7 @@ export default function Haes() {
 
       {/* New Gruppe Modal */}
       {showNewGruppe && (
-        <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
+        <BottomModal onClose={() => setShowNewGruppe(false)} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
             <h3 className="font-oswald font-semibold text-foreground mb-4 tracking-wide">Neue Häsgruppe</h3>
             <input
               type="text"
@@ -335,7 +335,7 @@ export default function Haes() {
 
       {/* New Häs Modal */}
       {showNewHaes && (
-        <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
+        <BottomModal onClose={() => setShowNewHaes(false)} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
             <h3 className="font-oswald font-semibold text-foreground mb-4 tracking-wide">Neues Häs</h3>
             <div className="space-y-3">
               <input

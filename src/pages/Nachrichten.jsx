@@ -71,7 +71,7 @@ export default function Nachrichten() {
 
       {/* Formular Modal */}
       {showForm && (
-        <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <BottomModal onClose={() => setShowForm(false)} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
               <h3 className="font-bold text-foreground text-lg">Neue Nachricht</h3>
               <button

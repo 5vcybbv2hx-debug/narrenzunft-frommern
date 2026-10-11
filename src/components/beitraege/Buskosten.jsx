@@ -244,7 +244,7 @@ export default function Buskosten({ isAdmin }) {
 
       {/* Modal: Beiträge erstellen */}
       {showAddModal && (
-        <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
+        <BottomModal onClose={() => setShowAddModal(null)} cardClass="bg-card border border-border rounded-2xl p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-foreground">Buskosten-Beiträge erstellen</h3>
               <button onClick={() => setShowAddModal(null)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground">

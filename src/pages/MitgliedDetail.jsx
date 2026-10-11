@@ -1290,7 +1290,7 @@ export default function MitgliedDetail() {
 
       {/* Häs Zuweisungs-Modal */}
       {showHaesModal && !isNew && (
-        <BottomModal onClose={onClose} cardClass="bg-card border border-border rounded-2xl p-4 sm:p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
+        <BottomModal onClose={() => { setShowHaesModal(false); setHaessuche(''); setHaesError(null); }} cardClass="bg-card border border-border rounded-2xl p-4 sm:p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-foreground">Häs zuweisen</h3>
               <button onClick={() => { setShowHaesModal(false); setHaessuche(''); setHaesError(null); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground"><X size={16} /></button>
