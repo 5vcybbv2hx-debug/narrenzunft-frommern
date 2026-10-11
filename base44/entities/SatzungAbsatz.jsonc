@@ -1,0 +1,118 @@
+{
+  "name": "SatzungAbsatz",
+  "type": "object",
+  "properties": {
+    "vereinsdokument_id": {
+      "type": "string",
+      "description": "ID des VereinsDokuments (z.B. Satzung), zu dem dieser Absatz geh\u00f6rt"
+    },
+    "nummer": {
+      "type": "string",
+      "description": "Paragraf, z.B. '\u00a7 14' (leer = Pr\u00e4ambel)"
+    },
+    "titel": {
+      "type": "string",
+      "description": "\u00dcberschrift des Absatzes"
+    },
+    "text": {
+      "type": "string",
+      "description": "Absatztext"
+    },
+    "sortierung": {
+      "type": "number",
+      "default": 100
+    },
+    "ist_entwurf": {
+      "type": "boolean",
+      "default": false,
+      "description": "true = unver\u00f6ffentlichter Entwurf (nur Verwaltung sichtbar)"
+    },
+    "revision": {
+      "type": "number",
+      "default": 1,
+      "description": "Dokument-Version, zu der dieser Absatz geh\u00f6rt (Archiv)"
+    }
+  },
+  "required": [
+    "vereinsdokument_id",
+    "text"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    }
+  }
+}

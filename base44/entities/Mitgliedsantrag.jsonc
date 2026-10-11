@@ -30,6 +30,31 @@
     "email": {
       "type": "string"
     },
+    "antrag_typ": {
+      "type": "string",
+      "enum": [
+        "Aktiv",
+        "Passiv",
+        "Wechsel_zu_Aktiv",
+        "Wechsel_zu_Passiv",
+        "Junggarde"
+      ],
+      "default": "Aktiv",
+      "description": "Art des Antrags"
+    },
+    "kind_vorname": {
+      "type": "string",
+      "description": "Junggarde: Vorname des Kindes"
+    },
+    "kind_nachname": {
+      "type": "string",
+      "description": "Junggarde: Nachname des Kindes"
+    },
+    "kind_geburtsdatum": {
+      "type": "string",
+      "format": "date",
+      "description": "Junggarde: Geburtsdatum des Kindes"
+    },
     "sparte": {
       "type": "string",
       "enum": [
