@@ -68,130 +68,25 @@ export default function MitgliedDashboard() {
   const loadData = async () => {
     setLoading(true);
     try {
-      // Sichere Backend-Function statt direktem Frontend-Query, da die
-      // Mitglied-Records beim Import von einem Admin-Account erstellt wurden
-      // und RLS sonst den eigenen Datensatz blockiert.
-      const profilRes = await base44.functions.invoke('getMeinProfilSicher', {});
-      if (!profilRes.data?.gefunden || !profilRes.data?.mitglied) { setLoading(false); return; }
+      // EIN gebuendelter Backend-Aufruf statt ~40 Einzel-Calls (Performance bei
+      // vielen gleichzeitigen Nutzern). Serverseitiger Cache: 60s.
+      const res = await base44.functions.invoke('getMitgliedDashboardSicher', {});
+      const d = res.data;
+      if (!d?.gefunden || !d?.mitglied) { setLoading(false); return; }
 
-      const mitglied = profilRes.data.mitglied;
-      setMyMitglied(mitglied);
-
-      // Parallele Abfragen
-      const [teilnahmen, zuweisungen, beitraege, alleAufgaben, ausfahrtAnmeldungen] = await Promise.all([
-        base44.entities.Teilnahme.filter({ mitglied_id: mitglied.id }),
-        base44.entities.ArbeitsdienstZuweisung.filter({ mitglied_id: mitglied.id }),
-        base44.entities.Beitrag.filter({ mitglied_id: mitglied.id }),
-        base44.entities.Todo.list('-created_date', 500).catch(() => []),
-        base44.entities.AusfahrtAnmeldung.filter({ mitglied_id: mitglied.id }).catch(() => []),
-      ]);
-
-      // Eigene offene Aufgaben: überfällig zuerst, dann Priorität, dann Fälligkeit
-      const heuteStr = today;
-      const prioRang = { 'Dringend': 0, 'Hoch': 1, 'Mittel': 2, 'Niedrig': 3 };
-      const meineOffenenAufgaben = (alleAufgaben || [])
-        .filter(t => (t.verantwortliche_ids || []).includes(mitglied.id) && t.status !== 'Erledigt')
-        .sort((a, b) => {
-          const ueA = a.faellig_am && a.faellig_am < heuteStr ? 0 : 1;
-          const ueB = b.faellig_am && b.faellig_am < heuteStr ? 0 : 1;
-          if (ueA !== ueB) return ueA - ueB;
-          const pA = prioRang[a.prioritaet] ?? 3;
-          const pB = prioRang[b.prioritaet] ?? 3;
-          if (pA !== pB) return pA - pB;
-          return (a.faellig_am || '9999-12-31').localeCompare(b.faellig_am || '9999-12-31');
-        })
-        .slice(0, 5);
-      setMeineAufgaben(meineOffenenAufgaben);
-
-      // Veranstaltungen nur für angemeldete IDs laden
-      const veranstaltungIds = [...new Set(teilnahmen.map(t => t.veranstaltung_id).filter(Boolean))];
-      const events = veranstaltungIds.length > 0
-        ? (await Promise.all(veranstaltungIds.map(id => base44.entities.Veranstaltung.filter({ id })))).flat()
-        : [];
-
-      // Ausfahrten nur für aktive Anmeldungen laden (Status !== 'Abgemeldet')
-      const ausfahrtIds = [...new Set((ausfahrtAnmeldungen || []).filter(a => a.status !== 'Abgemeldet').map(a => a.ausfahrt_id).filter(Boolean))];
-      const ausfahrtenListe = ausfahrtIds.length > 0
-        ? (await Promise.all(ausfahrtIds.map(id => base44.entities.Ausfahrt.filter({ id }).catch(() => [])))).flat()
-        : [];
-
-      // Arbeitsdienste nur für zugewiesene IDs laden
-      const dienstIds = [...new Set(zuweisungen.map(z => z.arbeitsdienst_id).filter(Boolean))];
-      const dienste = dienstIds.length > 0
-        ? (await Promise.all(dienstIds.map(id => base44.entities.Arbeitsdienst.filter({ id })))).flat()
-        : [];
-
-      // Sparten-Termine: nur für Gruppen, in denen das Mitglied ist
-      const gruppenIds = mitglied.haesgruppen_ids || (mitglied.haesgruppe_id ? [mitglied.haesgruppe_id] : []);
-      if (gruppenIds.length > 0) {
-        const [alleTermineArr, gruppen] = await Promise.all([
-          Promise.all(gruppenIds.map(gid => base44.entities.SpartenTermin.filter({ haesgruppe_id: gid }))),
-          Promise.all(gruppenIds.map(gid => base44.entities.Haesgruppe.filter({ id: gid }))),
-        ]);
-        const meineTermine = alleTermineArr.flat()
-          .filter(t => t.datum >= today)
-          .sort((a, b) => a.datum.localeCompare(b.datum) || (a.uhrzeit || '').localeCompare(b.uhrzeit || ''))
-          .slice(0, 5);
-        setSpartenTermine(meineTermine);
-        setMeineSpartenGruppen(gruppen.flat().filter(Boolean));
-      }
-
-      // Familienübersicht: alle Verwandten anzeigen (Kinder, Ehepartner/in, Geschwister, etc.)
-      if (mitglied?.id) {
-        try {
-          const [vDirect, vReverse] = await Promise.all([
-            base44.entities.Verwandtschaft.filter({ mitglied_id: mitglied.id }),
-            base44.entities.Verwandtschaft.filter({ verwandter_id: mitglied.id }),
-          ]);
-          const alleVerwandten = [...vDirect, ...vReverse];
-          if (alleVerwandten.length > 0) {
-            const verwandteIds = [...new Set(alleVerwandten.map(v =>
-              v.mitglied_id === mitglied.id ? v.verwandter_id : v.mitglied_id
-            ).filter(Boolean))];
-            const verwandteMitglieder = await Promise.all(verwandteIds.map(id => base44.entities.Mitglied.get(id)));
-            setFamilienMitglieder(verwandteMitglieder.filter(Boolean));
-          }
-        } catch (e) {
-          console.error('Familienübersicht:', e);
-        }
-      }
-
-      setVeranstaltungen(events);
-      setArbeitsdienste(dienste);
-
-      // Kommende Anmeldungen: Veranstaltungen + Ausfahrten chronologisch gemischt
-      const kommendeVeranstaltungen = teilnahmen
-        .filter(t => ['Angemeldet', 'Bestätigt', 'Anwesend'].includes(t.status))
-        .map(t => {
-          const ev = events.find(e => e.id === t.veranstaltung_id);
-          if (!ev || ev.datum < today) return null;
-          return { key: `v-${t.id}`, typ: 'veranstaltung', datum: ev.datum, titel: ev.titel, uhrzeit: ev.uhrzeit, ort: ev.ort, bus: t.bus, link: `/veranstaltungen/${ev.id}` };
-        })
-        .filter(Boolean);
-      const kommendeAusfahrten = (ausfahrtAnmeldungen || [])
-        .filter(a => a.status !== 'Abgemeldet')
-        .map(a => {
-          const f = ausfahrtenListe.find(x => x.id === a.ausfahrt_id);
-          if (!f || f.datum < today) return null;
-          return { key: `a-${a.id}`, typ: 'ausfahrt', datum: f.datum, titel: f.titel, uhrzeit: f.abfahrt_zeit || f.veranstaltungsbeginn, ort: f.ort, bus: a.transport === 'Bus', transport: a.transport, link: `/ausfahrten/${f.id}` };
-        })
-        .filter(Boolean);
-      setMeineAnmeldungen([...kommendeVeranstaltungen, ...kommendeAusfahrten].sort((a, b) => a.datum.localeCompare(b.datum) || (a.uhrzeit || '').localeCompare(b.uhrzeit || '')).slice(0, 6));
-
-      // Offene Arbeitsdienste
-      const offeneDienste = zuweisungen
-        .filter(z => ['Offen', 'Bestätigt'].includes(z.status))
-        .filter(z => {
-          const d = dienste.find(d => d.id === z.arbeitsdienst_id);
-          return d && d.datum >= today;
-        })
-        .slice(0, 5);
-      setMeineArbeitsdienste(offeneDienste);
-
-      // Offene Beiträge
-      setMeineBeitraege(beitraege.filter(b => ['Offen', 'Überfällig'].includes(b.zahlungsstatus)));
-
-    } catch (e) { console.error('Error:', e); }
+      setMyMitglied(d.mitglied);
+      setMeineAufgaben(d.aufgaben || []);
+      setSpartenTermine(d.spartenTermine || []);
+      setMeineSpartenGruppen(d.spartenGruppen || []);
+      setFamilienMitglieder(d.familienMitglieder || []);
+      setVeranstaltungen(d.veranstaltungen || []);
+      setArbeitsdienste(d.arbeitsdienste || []);
+      setMeineAnmeldungen(d.meineAnmeldungen || []);
+      setMeineArbeitsdienste(d.meineArbeitsdienste || []);
+      setMeineBeitraege(d.meineBeitraege || []);
+    } catch (e) {
+      console.error('MitgliedDashboard:', e);
+    }
     setLoading(false);
   };
 

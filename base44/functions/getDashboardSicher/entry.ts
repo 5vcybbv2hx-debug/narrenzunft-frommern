@@ -10,24 +10,30 @@ Deno.serve(async (req) => {
 
     // Admin-Dashboard
     if (isAdminUser) {
-      const [mitglieder, veranstaltungen, arbeitsdienste, ehrungen, beitraege, haesgruppen] = await Promise.all([
+      const [mitgliederRaw, veranstaltungenRaw, arbeitsdiensteRaw] = await Promise.all([
         base44.asServiceRole.entities.Mitglied.list('nachname', 1000),
         base44.asServiceRole.entities.Veranstaltung.list('-datum', 100),
         base44.asServiceRole.entities.Arbeitsdienst.list('-datum', 100),
-        base44.asServiceRole.entities.Ehrung.list('-created_date', 100),
-        base44.asServiceRole.entities.Beitrag.list('-jahr', 300),
-        base44.asServiceRole.entities.Haesgruppe.list('name', 100),
       ]);
 
+      // Feld-Projektion: Das Frontend nutzt nur diese Felder — das Antwort-Payload
+      // sinkt damit von mehreren MB auf wenige KB (wichtig bei vielen Nutzern).
+      // Ehrungen/Beitraege/Haesgruppen wurden im Frontend nie verwendet (totes Gewicht).
       return Response.json({
         erfolg: true,
         dashboard: 'admin',
-        mitglieder,
-        veranstaltungen,
-        arbeitsdienste,
-        ehrungen,
-        beitraege,
-        haesgruppen,
+        mitglieder: mitgliederRaw.map(m => ({
+          id: m.id, vorname: m.vorname, nachname: m.nachname,
+          geburtsdatum: m.geburtsdatum, archiviert: m.archiviert,
+          mitgliedsstatus: m.mitgliedsstatus, user_id: m.user_id,
+        })),
+        veranstaltungen: veranstaltungenRaw.map(v => ({
+          id: v.id, titel: v.titel, datum: v.datum, ort: v.ort, typ: v.typ,
+        })),
+        arbeitsdienste: arbeitsdiensteRaw.map(d => ({
+          id: d.id, titel: d.titel, datum: d.datum, uhrzeit: d.uhrzeit,
+          ort: d.ort, benoetigte_personen: d.benoetigte_personen, status: d.status,
+        })),
       });
     }
 
@@ -54,15 +60,13 @@ Deno.serve(async (req) => {
     const alleAnmeldungen = await base44.asServiceRole.entities.KalenderAnmeldung.filter({
       mitglied_id: myMitglied.id,
     });
-    const terminIds = [...new Set(alleAnmeldungen.map(a => a.termin_id))];
+    // Bulk-Load statt einer Abfrage pro Termin-ID (weniger Runden bei Last)
+    const terminIds = new Set(alleAnmeldungen.map(a => a.termin_id));
     let termine = [];
-    if (terminIds.length > 0) {
-      const termineResp = await Promise.all(
-        terminIds.slice(0, 20).map(tid => base44.asServiceRole.entities.KalenderTermin.filter({ id: tid }))
-      );
-      termine = termineResp
-        .map(r => r[0])
-        .filter(t => t && t.datum >= heute)
+    if (terminIds.size > 0) {
+      const alleTermine = await base44.asServiceRole.entities.KalenderTermin.list('datum', 500);
+      termine = alleTermine
+        .filter(t => terminIds.has(t.id) && t.datum >= heute)
         .slice(0, 10);
     }
 
@@ -70,15 +74,12 @@ Deno.serve(async (req) => {
     const zuweisungen = await base44.asServiceRole.entities.ArbeitsdienstZuweisung.filter({
       mitglied_id: myMitglied.id,
     });
-    const dienstIds = [...new Set(zuweisungen.map(z => z.arbeitsdienst_id))];
+    const dienstIds = new Set(zuweisungen.map(z => z.arbeitsdienst_id));
     let dienste = [];
-    if (dienstIds.length > 0) {
-      const diensteResp = await Promise.all(
-        dienstIds.slice(0, 10).map(did => base44.asServiceRole.entities.Arbeitsdienst.filter({ id: did }))
-      );
-      dienste = diensteResp
-        .map(r => r[0])
-        .filter(d => d && d.datum >= heute)
+    if (dienstIds.size > 0) {
+      const alleDienste = await base44.asServiceRole.entities.Arbeitsdienst.list('-datum', 300);
+      dienste = alleDienste
+        .filter(d => dienstIds.has(d.id) && d.datum >= heute)
         .slice(0, 10);
     }
 
