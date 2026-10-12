@@ -17,7 +17,7 @@ import { loeseMeinMitglied } from "../../shared/mitgliedBerechtigung.ts";
  *    meineBeitraege
  */
 
-const CACHE_TTL_MS = 60 * 1000; // Dashboard-Daten duerfen 60s alt sein
+const CACHE_TTL_MS = 60 * 1000; // Dashboard-Daten duerfen 60s alt sein (warmes Isolat)
 const dashboardCache = new Map(); // userId -> { ts, data }
 
 const PRIO_RANG = { 'Dringend': 0, 'Hoch': 1, 'Mittel': 2, 'Niedrig': 3 };
