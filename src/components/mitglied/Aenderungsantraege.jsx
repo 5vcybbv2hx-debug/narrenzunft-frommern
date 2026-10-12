@@ -51,7 +51,7 @@ export function SelbstpflegeAntrag({ mitglied }) {
   </section>;
 }
 
-export function AenderungsantraegeVerwaltung() {
+export function AenderungsantraegeVerwaltung({ versteckeWennLeer = false } = {}) {
   const [antraege, setAntraege] = useState([]);
   const [namen, setNamen] = useState({});
   const [busy, setBusy] = useState(null);
@@ -76,6 +76,7 @@ export function AenderungsantraegeVerwaltung() {
     } catch (e) { console.error('Änderungsantrag entscheiden:', e); toast.error('Aktion fehlgeschlagen.'); }
     finally { setBusy(null); }
   }
+  if (versteckeWennLeer && !antraege.length && !error) return null;
   return <section className="rounded-lg border border-border bg-card p-4 mb-5" aria-label="Offene Profiländerungen">
     <div className="flex justify-between items-center"><h2 className="font-oswald text-lg text-foreground">Profiländerungen zur Freigabe</h2><button onClick={reload} className="text-xs text-primary">Aktualisieren</button></div>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}

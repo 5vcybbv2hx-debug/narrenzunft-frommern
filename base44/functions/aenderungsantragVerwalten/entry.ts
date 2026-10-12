@@ -1,6 +1,6 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.49";
 import {
-  istVerwaltung, istVorstand, loeseMeinMitglied, istElternVon,
+  istVerwaltung, loeseMeinMitglied, istElternVon,
   ERLAUBTE_AENDERUNGS_FELDER,
 } from "../../shared/mitgliedBerechtigung.ts";
 
@@ -89,7 +89,7 @@ export default async function (req) {
         return Response.json({ antraege: liste, namen });
       }
       case "genehmigen": {
-        if (!istVorstand(user)) {
+        if (!istVerwaltung(user)) {
           return Response.json({ error: "Nur Vorstand/Admin" }, { status: 403 });
         }
         const { antrag_id, notiz } = body;
@@ -121,7 +121,7 @@ export default async function (req) {
         return Response.json({ ok: true, antrag_id });
       }
       case "ablehnen": {
-        if (!istVorstand(user)) {
+        if (!istVerwaltung(user)) {
           return Response.json({ error: "Nur Vorstand/Admin" }, { status: 403 });
         }
         const { antrag_id, notiz } = body;

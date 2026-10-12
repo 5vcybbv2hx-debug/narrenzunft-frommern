@@ -17,6 +17,7 @@ import MitgliedDashboard from '@/components/dashboard/MitgliedDashboard';
 import { useBegruessung } from '@/lib/begruessung';
 import StatuswechselWidget from '@/components/vorstand/StatuswechselWidget';
 import VerleihAnfragenWidget from '@/components/dashboard/VerleihAnfragenWidget';
+import { AenderungsantraegeVerwaltung } from '@/components/mitglied/Aenderungsantraege';
 
 // ── Hilfsfunktionen ──────────────────────────────────────────────────────────
 
@@ -343,6 +344,13 @@ export default function Dashboard() {
       <div className="mb-4">
         <VerleihAnfragenWidget />
       </div>
+
+      {/* Offene Profiländerungen (Vorstand entscheidet direkt auf dem Dashboard) */}
+      {isAdminUser && (
+        <div className="mb-4">
+          <AenderungsantraegeVerwaltung versteckeWennLeer />
+        </div>
+      )}
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

@@ -68,7 +68,7 @@ export default function Mitglieder() {
   const kannListe = kannMitgliederlisteSehn(user);
   const kannStatistik = kannAusschussSehn(user);
   const darfVerwalten = ['admin', 'vorstand', 'stellv_vorstand'].includes(user?.role);
-  const darfEntscheiden = ['admin', 'vorstand'].includes(user?.role);
+  const darfEntscheiden = ['admin', 'vorstand', 'stellv_vorstand'].includes(user?.role);
   useEffect(() => { sessionStorage.setItem(stateKey, JSON.stringify({ search, statusFilter, gruppeFilter, zeigeArchiviert, sortBy })); }, [stateKey, search, statusFilter, gruppeFilter, zeigeArchiviert, sortBy]);
   useEffect(() => { localStorage.setItem(viewKey, JSON.stringify(views)); }, [viewKey, views]);
 
