@@ -139,6 +139,26 @@ export default function VeranstaltungDetail() {
     }
   };
 
+  /** Vorstand: Anmeldung der Veranstaltung per Klick aktivieren/deaktivieren. */
+  const handleToggleAnmeldung = async (aktiv) => {
+    try {
+      const patch = { anmeldung_aktiv: aktiv };
+      // Beim Aktivieren: abgelaufenes/zukuenftiges Fenster zuruecksetzen, damit die Anmeldung wirklich aufgeht
+      if (aktiv && veranstaltung.anmeldung_ende && new Date(veranstaltung.anmeldung_ende + 'T23:59:59.999') < new Date()) {
+        patch.anmeldung_ende = '';
+      }
+      if (aktiv && veranstaltung.anmeldung_start && new Date(veranstaltung.anmeldung_start + 'T00:00:00') > new Date()) {
+        patch.anmeldung_start = '';
+      }
+      await base44.entities.Veranstaltung.update(veranstaltung.id, patch);
+      setVeranstaltung(prev => ({ ...prev, ...patch }));
+      toast.success(aktiv ? 'Anmeldung aktiviert.' : 'Anmeldung deaktiviert.');
+    } catch (e) {
+      console.error('Anmeldung umschalten fehlgeschlagen:', e);
+      toast.error('Umschalten fehlgeschlagen');
+    }
+  };
+
   const handleAbsagen = async () => {
     if (!meineTeilnahme) return;
     if (!(await confirmDialog('Möchtest du deine Teilnahme wirklich absagen?'))) return;
@@ -347,6 +367,15 @@ export default function VeranstaltungDetail() {
                       >
                         Anmelden
                       </button>
+                      {isAdmin && (
+                        <button
+                          onClick={() => handleToggleAnmeldung(false)}
+                          title="Anmeldung für alle schließen"
+                          className="px-3 py-2.5 rounded-lg bg-secondary border border-border text-muted-foreground text-xs hover:text-foreground transition-colors"
+                        >
+                          Schließen
+                        </button>
+                      )}
                       {veranstaltung.bus_erforderlich && (
                         <button
                           onClick={() => handleAnmelden(true)}
@@ -363,8 +392,13 @@ export default function VeranstaltungDetail() {
                     <p className="text-sm text-muted-foreground font-medium">
                       ⏰ {veranstaltungAnmeldeText(veranstaltung) || 'Anmeldung geschlossen'}
                     </p>
-                    {isAdmin && (
-                      <p className="text-xs text-primary mt-0.5">Admins können weiterhin manuell hinzufügen</p>
+                    {isAdmin && !veranstaltung.anmeldung_aktiv && (
+                      <button
+                        onClick={() => handleToggleAnmeldung(true)}
+                        className="mt-2 px-4 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors"
+                      >
+                        Anmeldung aktivieren
+                      </button>
                     )}
                   </div>
                 );
@@ -430,8 +464,9 @@ export default function VeranstaltungDetail() {
                   <p className="text-sm text-foreground py-1">{veranstaltung.ort || '–'}</p>
                 )}
               </div>
-              {editing && <Field label="Anmeldung ab" field="anmeldung_start" type="date" />}
-              {editing && <Field label="Anmeldung bis" field="anmeldung_ende" type="date" />}
+              {editing && <Field label="Anmeldung aktiv" field="anmeldung_aktiv" type="checkbox" />}
+              {editing && veranstaltung.anmeldung_aktiv !== false && <Field label="Anmeldung ab" field="anmeldung_start" type="date" />}
+              {editing && veranstaltung.anmeldung_aktiv !== false && <Field label="Anmeldung bis" field="anmeldung_ende" type="date" />}
               {!editing && veranstaltung.anmeldung_start && <Field label="Anmeldung ab" field="anmeldung_start" type="date" />}
               {!editing && veranstaltung.anmeldung_ende && <Field label="Anmeldung bis" field="anmeldung_ende" type="date" />}
               {!editing && !veranstaltung.anmeldung_ende && veranstaltung.anmeldeschluss && <Field label="Anmeldeschluss" field="anmeldeschluss" type="date" />}
