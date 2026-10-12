@@ -3,8 +3,9 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, CheckCircle2, RefreshCw, Shield, Filter } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, RefreshCw, Shield, Filter, FolderOpen } from 'lucide-react';
 import { differenceInYears } from 'date-fns';
+import FaelleSektion from '@/components/datenqualitaet/FaelleSektion';
 
 function pruefeStatusAlter(m) {
   if (!m.geburtsdatum || !m.mitgliedsstatus) return null;
@@ -36,6 +37,7 @@ export default function Datenqualitaet() {
   const [historien, setHistorien] = useState([]);
   const [beitraege, setBeitraege] = useState([]);
   const [filter, setFilter] = useState('all'); // all | error | warning | info
+  const [offeneFaelle, setOffeneFaelle] = useState(0);
 
   useEffect(() => {
     if (!admin) { navigate('/'); return; }
@@ -173,7 +175,7 @@ export default function Datenqualitaet() {
       )}
 
       {/* Übersichtskacheln als Filter */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         <button
           onClick={() => setFilter(filter === 'error' ? 'all' : 'error')}
           className={`rounded-xl p-4 text-center border transition-all ${
@@ -209,6 +211,16 @@ export default function Datenqualitaet() {
           <p className="text-2xl font-bold font-oswald text-blue-400">{infos.length}</p>
           <p className="text-xs text-muted-foreground mt-0.5">Hinweise</p>
         </button>
+        <div
+          className={`rounded-xl p-4 text-center border transition-all ${
+            offeneFaelle > 0
+              ? 'bg-primary/10 border-primary/30'
+              : 'bg-card border-border'
+          }`}
+        >
+          <p className={`text-2xl font-bold font-oswald ${offeneFaelle > 0 ? 'text-primary' : 'text-green-400'}`}>{offeneFaelle}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Offene Fälle</p>
+        </div>
       </div>
 
       {/* Filter-Indikator */}
@@ -258,6 +270,9 @@ export default function Datenqualitaet() {
           })}
         </div>
       )}
+
+      {/* Offene Fälle – manuell erfasste Datenqualitäts-Fälle */}
+      <FaelleSektion onOpenCountChange={setOffeneFaelle} />
     </div>
   );
 }

@@ -1,0 +1,119 @@
+{
+  "name": "DatenqualitaetFall",
+  "type": "object",
+  "properties": {
+    "titel": {
+      "type": "string",
+      "description": "Kurze Bezeichnung des Falls (z.B. \"Familienzuordnung: Winterholer\")"
+    },
+    "kategorie": {
+      "type": "string",
+      "default": "Familienzuordnung",
+      "description": "Kategorie des Datenqualit\u00e4ts-Falls"
+    },
+    "beschreibung": {
+      "type": "string",
+      "description": "Fallbeschreibung: betroffene Kinder + mutma\u00dfliche Eltern + Hinweise"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Offen",
+        "In Bearbeitung",
+        "Erledigt"
+      ],
+      "default": "Offen",
+      "description": "Bearbeitungsstatus des Falls"
+    },
+    "notizen": {
+      "type": "string",
+      "description": "Bearbeitungsvermerke des Vorstands"
+    }
+  },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
+  },
+  "required": [
+    "titel"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    }
+  }
+}
