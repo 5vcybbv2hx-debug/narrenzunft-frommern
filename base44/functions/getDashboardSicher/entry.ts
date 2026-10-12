@@ -1,5 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
+// Redeploy-Trigger: Feld-Projektion im Admin-Pfad + Bulk-Loads im Mitglied-Pfad (Commit 89d228b)
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
