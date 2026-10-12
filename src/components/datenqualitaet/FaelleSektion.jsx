@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
-import { FolderOpen, Search, Loader2, Check } from 'lucide-react';
+import { FolderOpen, Search, Loader2, Check, X, Plus, User } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 const STATUS_STYLES = {
   'Offen': 'bg-yellow-900/20 text-yellow-400 border border-yellow-700/30',
@@ -17,25 +18,36 @@ const STATUS_ACTIVE_STYLES = {
 const STATUS_ORDER = ['Offen', 'In Bearbeitung', 'Erledigt'];
 const STATUS_SHORT = { 'Offen': 'Offen', 'In Bearbeitung': 'In Bearb.', 'Erledigt': 'Erledigt' };
 
+const ROLLEN = ['Kind', 'Vater', 'Mutter', 'Sonstige'];
+const ROLLEN_STYLES = {
+  'Kind': 'bg-pink-500/15 text-pink-400 border border-pink-500/30',
+  'Vater': 'bg-blue-500/15 text-blue-400 border border-blue-500/30',
+  'Mutter': 'bg-purple-500/15 text-purple-400 border border-purple-500/30',
+  'Sonstige': 'bg-gray-500/15 text-gray-400 border border-gray-500/30',
+};
+
 /**
  * FaelleSektion – verwaltet DatenqualitaetFall-Einträge auf der Datenqualitäts-Seite.
  *
  * Mobile-first: Live-Suche, große Tap-Targets für Status-Wechsel (3-Button-
- * Segment-Steuerung), Auto-Save für Notizen beim Verlassen des Felds.
+ * Segment-Steuerung), editierbare Personen-Chips (Kind/Vater/Mutter/Sonstige),
+ * Auto-Save für Notizen, animiertes Verschwinden erledigter Fälle.
  */
 export default function FaelleSektion({ onOpenCountChange }) {
   const [faelle, setFaelle] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Filter: Standard = nur Offen + In Bearbeitung
   const [statusFilter, setStatusFilter] = useState('aktiv');
   const [suche, setSuche] = useState('');
 
-  // Notiz-Bearbeitung
   const [editNotizen, setEditNotizen] = useState({});
   const [savingId, setSavingId] = useState(null);
   const [statusChangeId, setStatusChangeId] = useState(null);
+  const [personSavingId, setPersonSavingId] = useState(null);
+
+  // Inline-Form zum Hinzufügen neuer Personen pro Fall
+  const [neuePerson, setNeuePerson] = useState({}); // { [fallId]: { name, rolle } }
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -56,13 +68,12 @@ export default function FaelleSektion({ onOpenCountChange }) {
   useEffect(() => { loadData(); }, [loadData]);
 
   const gefiltert = faelle.filter(f => {
-    // Status-Filter
     if (statusFilter === 'aktiv' && f.status === 'Erledigt') return false;
     if (statusFilter !== 'aktiv' && statusFilter !== 'alle' && f.status !== statusFilter) return false;
-    // Such-Filter
     if (suche.trim()) {
       const q = suche.toLowerCase();
-      const haystack = `${f.titel || ''} ${f.beschreibung || ''} ${f.notizen || ''} ${f.kategorie || ''}`.toLowerCase();
+      const personenText = (f.personen || []).map(p => p.name).join(' ');
+      const haystack = `${f.titel || ''} ${f.beschreibung || ''} ${f.notizen || ''} ${f.kategorie || ''} ${personenText}`.toLowerCase();
       if (!haystack.includes(q)) return false;
     }
     return true;
@@ -103,6 +114,33 @@ export default function FaelleSektion({ onOpenCountChange }) {
     setSavingId(null);
   };
 
+  const addPerson = async (fall) => {
+    const np = neuePerson[fall.id];
+    if (!np?.name?.trim()) return;
+    const personen = [...(fall.personen || []), { name: np.name.trim(), rolle: np.rolle || 'Sonstige' }];
+    setPersonSavingId(fall.id);
+    try {
+      const updated = await base44.entities.DatenqualitaetFall.update(fall.id, { personen });
+      setFaelle(prev => prev.map(f => f.id === fall.id ? { ...f, ...updated } : f));
+      setNeuePerson(prev => { const c = { ...prev }; delete c[fall.id]; return c; });
+    } catch (e) {
+      console.error('Person hinzufügen:', e);
+    }
+    setPersonSavingId(null);
+  };
+
+  const removePerson = async (fall, index) => {
+    const personen = (fall.personen || []).filter((_, i) => i !== index);
+    setPersonSavingId(fall.id);
+    try {
+      const updated = await base44.entities.DatenqualitaetFall.update(fall.id, { personen });
+      setFaelle(prev => prev.map(f => f.id === fall.id ? { ...f, ...updated } : f));
+    } catch (e) {
+      console.error('Person entfernen:', e);
+    }
+    setPersonSavingId(null);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-10">
@@ -113,7 +151,6 @@ export default function FaelleSektion({ onOpenCountChange }) {
 
   return (
     <div className="mt-8">
-      {/* Sektionskopf */}
       <div className="flex items-center gap-2 mb-1">
         <FolderOpen size={18} className="text-primary" />
         <h2 className="text-xl font-bold font-oswald uppercase tracking-wide text-foreground">Fälle</h2>
@@ -140,7 +177,7 @@ export default function FaelleSektion({ onOpenCountChange }) {
         />
       </div>
 
-      {/* Status-Filter (horizontal scrollbar) */}
+      {/* Status-Filter */}
       <div className="flex items-center gap-2 mb-4 overflow-x-auto -mx-4 px-4 pb-1" style={{ scrollbarWidth: 'none' }}>
         {[
           { key: 'aktiv', label: 'Offen + In Bearb.' },
@@ -163,81 +200,150 @@ export default function FaelleSektion({ onOpenCountChange }) {
         ))}
       </div>
 
-      {/* Fall-Liste */}
+      {/* Fall-Liste mit AnimatePresence für erledigte Fälle */}
       {gefiltert.length === 0 ? (
         <div className="text-center py-10 text-sm text-muted-foreground">
           {suche ? 'Keine Fälle gefunden.' : 'Keine Fälle in diesem Filter.'}
         </div>
       ) : (
         <div className="space-y-3">
-          {gefiltert.map(fall => {
-            const status = fall.status || 'Offen';
-            const notizWert = editNotizen[fall.id] ?? fall.notizen ?? '';
-            const notizDirty = editNotizen[fall.id] !== undefined && editNotizen[fall.id] !== (fall.notizen ?? '');
-            const saving = savingId === fall.id;
-            return (
-              <div key={fall.id} className="bg-card border border-border rounded-xl p-4">
-                {/* Titel + Kategorie */}
-                <div className="mb-2">
-                  <h3 className="text-sm font-semibold text-foreground">{fall.titel}</h3>
-                  {fall.kategorie && (
-                    <span className="inline-block mt-1 text-[11px] font-medium bg-primary/10 text-primary border border-primary/25 rounded-full px-2 py-0.5">
-                      {fall.kategorie}
-                    </span>
-                  )}
-                </div>
-
-                {/* Beschreibung */}
-                {fall.beschreibung && (
-                  <p className="text-sm text-muted-foreground whitespace-pre-line mb-3">{fall.beschreibung}</p>
-                )}
-
-                {/* Status: 3-Button Segment-Steuerung (große Tap-Targets) */}
-                <div className="grid grid-cols-3 gap-1.5 mb-3">
-                  {STATUS_ORDER.map(s => {
-                    const isActive = status === s;
-                    const isChanging = statusChangeId === fall.id;
-                    return (
-                      <button
-                        key={s}
-                        onClick={() => setStatus(fall, s)}
-                        disabled={isChanging}
-                        className={`py-2.5 rounded-lg text-xs font-bold transition-all active:scale-95 disabled:opacity-50 min-h-[44px] ${
-                          isActive ? STATUS_ACTIVE_STYLES[s] : 'bg-secondary text-muted-foreground border border-border'
-                        }`}
-                      >
-                        {isChanging && isActive ? '…' : STATUS_SHORT[s]}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Notiz-Feld mit Auto-Save on Blur */}
-                <div className="border-t border-border pt-3">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-medium text-muted-foreground">Bearbeitungsvermerke</label>
-                    {saving && <Loader2 size={12} className="text-primary animate-spin" />}
-                    {notizDirty && !saving && (
-                      <button
-                        onClick={() => saveNotiz(fall)}
-                        className="flex items-center gap-1 text-xs font-bold text-primary px-3 py-1.5 rounded-lg bg-primary/10 active:scale-95 transition-all min-h-[36px]"
-                      >
-                        <Check size={12} /> Speichern
-                      </button>
+          <AnimatePresence>
+            {gefiltert.map(fall => {
+              const status = fall.status || 'Offen';
+              const notizWert = editNotizen[fall.id] ?? fall.notizen ?? '';
+              const notizDirty = editNotizen[fall.id] !== undefined && editNotizen[fall.id] !== (fall.notizen ?? '');
+              const saving = savingId === fall.id;
+              const personSaving = personSavingId === fall.id;
+              const np = neuePerson[fall.id] || { name: '', rolle: 'Kind' };
+              const personen = fall.personen || [];
+              return (
+                <motion.div
+                  key={fall.id}
+                  layout
+                  initial={{ opacity: 1 }}
+                  exit={{ opacity: 0, height: 0, marginBottom: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3 }}
+                  className="bg-card border border-border rounded-xl p-4 overflow-hidden"
+                >
+                  {/* Titel + Kategorie */}
+                  <div className="mb-2">
+                    <h3 className="text-sm font-semibold text-foreground">{fall.titel}</h3>
+                    {fall.kategorie && (
+                      <span className="inline-block mt-1 text-[11px] font-medium bg-primary/10 text-primary border border-primary/25 rounded-full px-2 py-0.5">
+                        {fall.kategorie}
+                      </span>
                     )}
                   </div>
-                  <textarea
-                    value={notizWert}
-                    onChange={e => setEditNotizen(prev => ({ ...prev, [fall.id]: e.target.value }))}
-                    onBlur={() => saveNotiz(fall)}
-                    placeholder="Notizen des Vorstands…"
-                    rows={2}
-                    className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary resize-y min-h-[48px]"
-                  />
-                </div>
-              </div>
-            );
-          })}
+
+                  {/* Personen-Chips */}
+                  <div className="mb-3">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <User size={12} className="text-muted-foreground" />
+                      <span className="text-xs font-medium text-muted-foreground">Personen</span>
+                      {personSaving && <Loader2 size={11} className="text-primary animate-spin" />}
+                    </div>
+                    {/* Bestehende Chips */}
+                    {personen.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {personen.map((p, i) => (
+                          <span
+                            key={i}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium ${ROLLEN_STYLES[p.rolle] || ROLLEN_STYLES['Sonstige']}`}
+                          >
+                            <span className="text-[10px] uppercase tracking-wide opacity-70">{p.rolle}</span>
+                            <span>{p.name}</span>
+                            <button
+                              onClick={() => removePerson(fall, i)}
+                              disabled={personSaving}
+                              className="ml-0.5 -mr-0.5 p-0.5 rounded hover:bg-foreground/10 active:scale-90 transition-all disabled:opacity-30"
+                              aria-label="Person entfernen"
+                            >
+                              <X size={12} />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {/* Inline-Form: Neue Person hinzufügen */}
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        value={np.name || ''}
+                        onChange={e => setNeuePerson(prev => ({ ...prev, [fall.id]: { name: e.target.value, rolle: np.rolle || 'Kind' } }))}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPerson(fall); } }}
+                        placeholder="Name…"
+                        className="flex-1 min-w-0 px-2.5 py-2 rounded-lg bg-secondary border border-border text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary min-h-[36px]"
+                      />
+                      <select
+                        value={np.rolle || 'Kind'}
+                        onChange={e => setNeuePerson(prev => ({ ...prev, [fall.id]: { name: np.name || '', rolle: e.target.value } }))}
+                        className="px-2 py-2 rounded-lg bg-secondary border border-border text-xs text-foreground focus:outline-none focus:border-primary min-h-[36px]"
+                      >
+                        {ROLLEN.map(r => <option key={r} value={r}>{r}</option>)}
+                      </select>
+                      <button
+                        onClick={() => addPerson(fall)}
+                        disabled={personSaving || !np.name?.trim()}
+                        className="shrink-0 w-9 h-9 rounded-lg bg-primary text-white flex items-center justify-center active:scale-95 transition-all disabled:opacity-30"
+                        aria-label="Person hinzufügen"
+                      >
+                        <Plus size={16} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Beschreibung (nur wenn vorhanden und keine Personen) */}
+                  {fall.beschreibung && personen.length === 0 && (
+                    <p className="text-sm text-muted-foreground whitespace-pre-line mb-3">{fall.beschreibung}</p>
+                  )}
+
+                  {/* Status: 3-Button Segment */}
+                  <div className="grid grid-cols-3 gap-1.5 mb-3">
+                    {STATUS_ORDER.map(s => {
+                      const isActive = status === s;
+                      const isChanging = statusChangeId === fall.id;
+                      return (
+                        <button
+                          key={s}
+                          onClick={() => setStatus(fall, s)}
+                          disabled={isChanging}
+                          className={`py-2.5 rounded-lg text-xs font-bold transition-all active:scale-95 disabled:opacity-50 min-h-[44px] ${
+                            isActive ? STATUS_ACTIVE_STYLES[s] : 'bg-secondary text-muted-foreground border border-border'
+                          }`}
+                        >
+                          {isChanging && isActive ? '…' : STATUS_SHORT[s]}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Notiz-Feld mit Auto-Save */}
+                  <div className="border-t border-border pt-3">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-medium text-muted-foreground">Bearbeitungsvermerke</label>
+                      {saving && <Loader2 size={12} className="text-primary animate-spin" />}
+                      {notizDirty && !saving && (
+                        <button
+                          onClick={() => saveNotiz(fall)}
+                          className="flex items-center gap-1 text-xs font-bold text-primary px-3 py-1.5 rounded-lg bg-primary/10 active:scale-95 transition-all min-h-[36px]"
+                        >
+                          <Check size={12} /> Speichern
+                        </button>
+                      )}
+                    </div>
+                    <textarea
+                      value={notizWert}
+                      onChange={e => setEditNotizen(prev => ({ ...prev, [fall.id]: e.target.value }))}
+                      onBlur={() => saveNotiz(fall)}
+                      placeholder="Notizen des Vorstands…"
+                      rows={2}
+                      className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary resize-y min-h-[48px]"
+                    />
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
         </div>
       )}
     </div>

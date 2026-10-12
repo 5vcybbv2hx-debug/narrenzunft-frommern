@@ -15,6 +15,33 @@
       "type": "string",
       "description": "Fallbeschreibung: betroffene Kinder + mutma\u00dfliche Eltern + Hinweise"
     },
+    "personen": {
+      "type": "array",
+      "description": "Beteiligte Personen (Kinder, Vater, Mutter, Sonstige) als \u00e4nderbare Chips",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name der Person"
+          },
+          "rolle": {
+            "type": "string",
+            "enum": [
+              "Kind",
+              "Vater",
+              "Mutter",
+              "Sonstige"
+            ],
+            "default": "Sonstige",
+            "description": "Rolle der Person im Fall"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      }
+    },
     "status": {
       "type": "string",
       "enum": [
