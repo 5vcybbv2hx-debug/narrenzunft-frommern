@@ -3,6 +3,7 @@ import { loeseMeinMitglied } from "../../shared/mitgliedBerechtigung.ts";
 
 /**
  * Status einer Arbeitsdienst-Zuweisung aendern — RLS-sicher.
+ * (Redeploy-Trigger)
  *
  * Problem: Die RLS-Regeln der ArbeitsdienstZuweisung erlauben Updates nur dem
  * Ersteller (i.d.R. Vorstand/Admin). Ein zugewiesenes Mitglied konnte seine
