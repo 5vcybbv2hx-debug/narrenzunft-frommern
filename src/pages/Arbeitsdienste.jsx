@@ -80,7 +80,9 @@ export default function Arbeitsdienste() {
 
   const handleStatusChange = async (zuweisung, newStatus) => {
     try {
-      await base44.entities.ArbeitsdienstZuweisung.update(zuweisung.id, { status: newStatus });
+      // RLS-sicher: Mitglieder duerfen ihre Zuweisung nicht direkt updaten
+      const res = await base44.functions.invoke('zuweisungStatusSicher', { zuweisung_id: zuweisung.id, status: newStatus });
+      if (!res.data?.ok) throw new Error(res.data?.error || 'Update fehlgeschlagen');
       setZuweisungen(prev => prev.map(z => z.id === zuweisung.id ? { ...z, status: newStatus } : z));
     } catch (e) {
       console.error('Status ändern:', e);

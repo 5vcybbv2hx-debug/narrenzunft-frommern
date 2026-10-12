@@ -17,6 +17,8 @@ const STATUS_COLORS = {
   'Nicht erledigt': 'bg-primary/20 text-primary',
 };
 
+import { toast } from 'sonner';
+
 export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen: initialZuweisungen, onClose, onSaved }) {
   const [form, setForm] = useState({ ...dienst });
   const [saving, setSaving] = useState(false);
@@ -111,13 +113,19 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
 
   const handleSave = async () => {
     setSaving(true);
-    await base44.entities.Arbeitsdienst.update(dienst.id, {
-      titel: form.titel, datum: form.datum, uhrzeit: form.uhrzeit,
-      ort: form.ort, beschreibung: form.beschreibung,
-      benoetigte_personen: form.benoetigte_personen, status: form.status,
-    });
-    setSaving(false);
-    onSaved();
+    try {
+      await base44.entities.Arbeitsdienst.update(dienst.id, {
+        titel: form.titel, datum: form.datum, uhrzeit: form.uhrzeit,
+        ort: form.ort, beschreibung: form.beschreibung,
+        benoetigte_personen: form.benoetigte_personen, status: form.status,
+      });
+      setSaving(false);
+      onSaved();
+    } catch (e) {
+      console.error('Arbeitsdienst speichern:', e);
+      setSaving(false);
+      toast.error('Speichern fehlgeschlagen: ' + (e instanceof Error ? e.message : e));
+    }
   };
 
   const handleDelete = async () => {
