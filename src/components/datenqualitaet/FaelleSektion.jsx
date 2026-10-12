@@ -48,6 +48,7 @@ export default function FaelleSektion({ onOpenCountChange }) {
   const [elternwahl, setElternwahl] = useState({});       // { [familie]: { vater: m, mutter: m } }
   const [sucheFeld, setSucheFeld] = useState({});          // { [familie_vater]: 'text' }
   const [kindAbgewaehlt, setKindAbgewaehlt] = useState({}); // { [familie]: { [kindId]: true } }
+  const [geschwisterAus, setGeschwisterAus] = useState({});   // { [familie]: true } wenn KEINE Geschwister-Verknuepfung
   const [actionFamilie, setActionFamilie] = useState(null);
 
   const ladeDaten = useCallback(async () => {
@@ -133,10 +134,12 @@ export default function FaelleSektion({ onOpenCountChange }) {
           neu.push({ mitglied_id: p.id, verwandter_id: c.id, beziehung: 'Kind' });
         }
       }));
-      for (let i = 0; i < kinder.length; i++) {
-        for (let j = i + 1; j < kinder.length; j++) {
-          if (!paarExistiert(kinder[i].id, kinder[j].id)) {
-            neu.push({ mitglied_id: kinder[i].id, verwandter_id: kinder[j].id, beziehung: 'Geschwister' });
+      if (geschwisterAus[fam.name] !== true) {
+        for (let i = 0; i < kinder.length; i++) {
+          for (let j = i + 1; j < kinder.length; j++) {
+            if (!paarExistiert(kinder[i].id, kinder[j].id)) {
+              neu.push({ mitglied_id: kinder[i].id, verwandter_id: kinder[j].id, beziehung: 'Geschwister' });
+            }
           }
         }
       }
@@ -155,6 +158,7 @@ export default function FaelleSektion({ onOpenCountChange }) {
       setElternwahl(prev => { const c = { ...prev }; delete c[fam.name]; return c; });
       setSucheFeld(prev => { const c = { ...prev }; delete c[`${fam.name}_vater`]; delete c[`${fam.name}_mutter`]; return c; });
       setKindAbgewaehlt(prev => { const c = { ...prev }; delete c[fam.name]; return c; });
+      setGeschwisterAus(prev => { const c = { ...prev }; delete c[fam.name]; return c; });
     } catch (e) {
       console.error('Verknüpfen:', e);
       setError('Verknüpfung fehlgeschlagen – bitte erneut versuchen.');
@@ -329,7 +333,7 @@ export default function FaelleSektion({ onOpenCountChange }) {
                 : `${kinderOffen} ${kinderOffen === 1 ? 'Kind' : 'Kinder'} in ${familien.length} ${familien.length === 1 ? 'Familie' : 'Familien'} noch ohne Elternteil`}
             </p>
             <p className="text-xs text-muted-foreground">
-              Nach der Verknüpfung werden Geschwister automatisch miteinander verknüpft.
+              Gleicher Nachname heißt nicht automatisch Geschwister! Nicht zusammengehörige Kinder antippen (ausgrauen) und separat verknüpfen – sie bleiben dann als eigener Fall offen.
             </p>
           </div>
         </div>
@@ -406,7 +410,7 @@ export default function FaelleSektion({ onOpenCountChange }) {
                   {/* Kinder (antippen zum Ab-/Auswählen) */}
                   <div className="mb-3">
                     <p className="text-xs font-medium text-muted-foreground mb-1.5">
-                      Kinder ({fam.kinder.length === 1 ? '1 Kind' : `${fam.kinder.length} Kinder`}) — antippen zum Abwählen
+                      Kinder ({fam.kinder.length === 1 ? '1 Kind' : `${fam.kinder.length} Kinder`}) — antippen zum Ausschließen
                     </p>
                     <div className="flex flex-wrap gap-1.5">
                       {fam.kinder.map(k => {
@@ -433,6 +437,22 @@ export default function FaelleSektion({ onOpenCountChange }) {
                     <p className="text-xs text-muted-foreground whitespace-pre-line mb-3 pl-3 border-l-2 border-primary/30">
                       {fall.beschreibung}
                     </p>
+                  )}
+
+                  {/* Geschwister-Toggle */}
+                  {fam.kinder.length > 1 && (
+                    <div className="mb-3 flex items-center justify-between bg-secondary rounded-lg border border-border px-3 py-2">
+                      <span className="text-xs text-muted-foreground">
+                        {fam.kinder.length} Kinder als <span className="font-semibold text-foreground">Geschwister</span> verknüpfen
+                      </span>
+                      <button
+                        onClick={() => setGeschwisterAus(prev => ({ ...prev, [fam.name]: prev[fam.name] === true ? false : true }))}
+                        className={`relative w-12 h-7 rounded-full transition-all shrink-0 ${geschwisterAus[fam.name] === true ? 'bg-border' : 'bg-primary'}`}
+                        aria-label="Geschwister-Verknüpfung umschalten"
+                      >
+                        <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${geschwisterAus[fam.name] === true ? 'left-1' : 'right-1'}`} />
+                      </button>
+                    </div>
                   )}
 
                   {/* Eltern-Auswahl */}
