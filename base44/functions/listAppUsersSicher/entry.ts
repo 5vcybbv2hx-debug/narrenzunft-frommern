@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 /**
- * Listet alle App-Konten (id, E-Mail, Name, Rolle) für den Vorstand/Admin.
+ * Listet alle App-Konten (id, E-Mail, Name, Rolle) für den Vorstand/admin.
  * Dient der Fehlersuche, wenn ein Login kein Mitgliederprofil findet
  * (z.B. abweichende E-Mail-Adresse bei der Registrierung).
  */
