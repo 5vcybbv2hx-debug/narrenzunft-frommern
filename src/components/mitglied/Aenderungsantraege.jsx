@@ -66,8 +66,10 @@ export function AenderungsantraegeVerwaltung({ versteckeWennLeer = false } = {})
   }
   useEffect(() => { reload(); }, []);
   async function decide(a, aktion) {
-    const text = aktion === 'genehmigen' ? 'Änderungen nach Prüfung ins Mitgliedsprofil übernehmen?' : 'Änderungsantrag ablehnen?';
-    if (!(await confirmDialog(text))) return;
+    const dialog = aktion === 'genehmigen'
+      ? { title: 'Änderungen übernehmen?', message: 'Die Änderungen werden ins Mitgliedsprofil übernommen.', confirmLabel: 'Übernehmen', danger: false }
+      : { title: 'Antrag ablehnen?', message: 'Das Mitglied behält seine bisherigen Daten.', confirmLabel: 'Ablehnen' };
+    if (!(await confirmDialog(dialog))) return;
     setBusy(a.id);
     try {
       await base44.functions.invoke('aenderungsantragVerwalten', { aktion, antrag_id: a.id });
