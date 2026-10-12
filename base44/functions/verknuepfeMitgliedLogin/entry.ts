@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
     }
 
     if (!mitglied && user.email) {
-      // Nur eindeutige E-Mail, inklusive Groß-/Kleinschreibvarianten.
+      // Nur eindeutige E-Mail, inklusive Groß-/Kleinschreibvarianten (case-insensitive).
       const alle = await base44.asServiceRole.entities.Mitglied.list({ limit: 500 });
       if (alle.length < 500) {
         const norm = String(user.email).trim().toLowerCase();
