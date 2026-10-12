@@ -419,12 +419,13 @@ export default function VeranstaltungDetail() {
                     <button
                       key={t}
                       type="button"
-                      onClick={() => setVeranstaltung(p => ({ ...p, typ: t }))}
+                      disabled={!editing}
+                      onClick={() => editing && setVeranstaltung(p => ({ ...p, typ: t }))}
                       className={`flex-1 min-w-[120px] py-2.5 rounded-lg text-sm font-medium transition-all border ${
                         veranstaltung.typ === t
                           ? 'bg-primary/20 text-primary border-primary/40'
-                          : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'
-                      }`}
+                          : 'bg-secondary text-muted-foreground border-border'
+                      } ${editing ? 'hover:border-primary/40' : 'cursor-default'}`}
                     >
                       {t}
                     </button>
@@ -438,12 +439,13 @@ export default function VeranstaltungDetail() {
                     <button
                       key={s}
                       type="button"
-                      onClick={() => setVeranstaltung(p => ({ ...p, status: s }))}
+                      disabled={!editing}
+                      onClick={() => editing && setVeranstaltung(p => ({ ...p, status: s }))}
                       className={`flex-1 min-w-[100px] py-2.5 rounded-lg text-sm font-medium transition-all border ${
                         veranstaltung.status === s
                           ? 'bg-primary/20 text-primary border-primary/40'
-                          : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'
-                      }`}
+                          : 'bg-secondary text-muted-foreground border-border'
+                      } ${editing ? 'hover:border-primary/40' : 'cursor-default'}`}
                     >
                       {s}
                     </button>
