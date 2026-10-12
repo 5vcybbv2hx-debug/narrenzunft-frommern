@@ -1,144 +1,287 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
-import { FolderOpen, Search, Loader2, Check, X, Plus, User } from 'lucide-react';
+import {
+  Search, Loader2, X, Users, Link2, PauseCircle, RotateCcw,
+  AlertTriangle, CheckCircle2, UserPlus, Baby
+} from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-const STATUS_STYLES = {
-  'Offen': 'bg-yellow-900/20 text-yellow-400 border border-yellow-700/30',
-  'In Bearbeitung': 'bg-blue-900/20 text-blue-400 border border-blue-700/30',
-  'Erledigt': 'bg-green-900/20 text-green-400 border border-green-700/30',
+const HEUTE = new Date();
+
+const istMinderjaehrig = (geb) => {
+  if (!geb) return false;
+  const d = new Date(geb);
+  if (isNaN(d.getTime())) return false;
+  const volljaehrig = new Date(d);
+  volljaehrig.setFullYear(volljaehrig.getFullYear() + 18);
+  return volljaehrig > HEUTE;
 };
 
-const STATUS_ACTIVE_STYLES = {
-  'Offen': 'bg-yellow-500 text-black border border-yellow-400',
-  'In Bearbeitung': 'bg-blue-500 text-black border border-blue-400',
-  'Erledigt': 'bg-green-500 text-black border border-green-400',
-};
-
-const STATUS_ORDER = ['Offen', 'In Bearbeitung', 'Erledigt'];
-const STATUS_SHORT = { 'Offen': 'Offen', 'In Bearbeitung': 'In Bearb.', 'Erledigt': 'Erledigt' };
-
-const ROLLEN = ['Kind', 'Vater', 'Mutter', 'Sonstige'];
-const ROLLEN_STYLES = {
-  'Kind': 'bg-pink-500/15 text-pink-400 border border-pink-500/30',
-  'Vater': 'bg-blue-500/15 text-blue-400 border border-blue-500/30',
-  'Mutter': 'bg-purple-500/15 text-purple-400 border border-purple-500/30',
-  'Sonstige': 'bg-gray-500/15 text-gray-400 border border-gray-500/30',
+const alterVon = (geb) => {
+  if (!geb) return '?';
+  const d = new Date(geb);
+  if (isNaN(d.getTime())) return '?';
+  let a = HEUTE.getFullYear() - d.getFullYear();
+  const m = HEUTE.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && HEUTE.getDate() < d.getDate())) a -= 1;
+  return a;
 };
 
 /**
- * FaelleSektion – verwaltet DatenqualitaetFall-Einträge auf der Datenqualitäts-Seite.
+ * FaelleSektion – Live berechnete Familienzuordnung auf der Datenqualitäts-Seite.
  *
- * Mobile-first: Live-Suche, große Tap-Targets für Status-Wechsel (3-Button-
- * Segment-Steuerung), editierbare Personen-Chips (Kind/Vater/Mutter/Sonstige),
- * Auto-Save für Notizen, animiertes Verschwinden erledigter Fälle.
+ * Die Fälle entstehen automatisch aus der Datenlage: Jedes Mitglied unter 18
+ * ohne Elternteil-Verknüpfung ist ein Fall (gruppiert nach Nachname).
+ * Der Vorstand wählt Vater/Mutter per Namenssuche und tippt „Verknüpfen“ –
+ * die App legt die Verwandtschafts-Records an (Kind beidseitig, Geschwister
+ * automatisch) und der Fall verschwindet. Nichts muss gepflegt werden.
  */
 export default function FaelleSektion({ onOpenCountChange }) {
+  const [mitglieder, setMitglieder] = useState([]);
+  const [verwandtschaften, setVerwandtschaften] = useState([]);
   const [faelle, setFaelle] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const [statusFilter, setStatusFilter] = useState('aktiv');
   const [suche, setSuche] = useState('');
+  const [zeigeZurueckgestellt, setZeigeZurueckgestellt] = useState(false);
 
-  const [editNotizen, setEditNotizen] = useState({});
-  const [savingId, setSavingId] = useState(null);
-  const [statusChangeId, setStatusChangeId] = useState(null);
-  const [personSavingId, setPersonSavingId] = useState(null);
+  const [elternwahl, setElternwahl] = useState({});       // { [familie]: { vater: m, mutter: m } }
+  const [sucheFeld, setSucheFeld] = useState({});          // { [familie_vater]: 'text' }
+  const [kindAbgewaehlt, setKindAbgewaehlt] = useState({}); // { [familie]: { [kindId]: true } }
+  const [actionFamilie, setActionFamilie] = useState(null);
 
-  // Inline-Form zum Hinzufügen neuer Personen pro Fall
-  const [neuePerson, setNeuePerson] = useState({}); // { [fallId]: { name, rolle } }
-
-  const loadData = useCallback(async () => {
+  const ladeDaten = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await base44.entities.DatenqualitaetFall.filter({}, { sort: '-created_date', limit: 500 });
-      const items = res.items || res || [];
-      setFaelle(items);
-      const offen = items.filter(f => f.status !== 'Erledigt').length;
-      onOpenCountChange?.(offen);
+      const [mRes, vRes, fRes] = await Promise.all([
+        base44.entities.Mitglied.filter({}, { limit: 1000, sort: 'nachname' }),
+        base44.entities.Verwandtschaft.filter({}, { limit: 1000 }),
+        base44.entities.DatenqualitaetFall.filter({}, { limit: 500 }),
+      ]);
+      setMitglieder(mRes.items || mRes || []);
+      setVerwandtschaften(vRes.items || vRes || []);
+      setFaelle(fRes.items || fRes || []);
     } catch (e) {
       console.error('Fälle laden:', e);
-      setError('Fälle konnten nicht geladen werden.');
+      setError('Daten konnten nicht geladen werden.');
     }
     setLoading(false);
-  }, [onOpenCountChange]);
+  }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { ladeDaten(); }, [ladeDaten]);
 
-  const gefiltert = faelle.filter(f => {
-    if (statusFilter === 'aktiv' && f.status === 'Erledigt') return false;
-    if (statusFilter !== 'aktiv' && statusFilter !== 'alle' && f.status !== statusFilter) return false;
-    if (suche.trim()) {
-      const q = suche.toLowerCase();
-      const personenText = (f.personen || []).map(p => p.name).join(' ');
-      const haystack = `${f.titel || ''} ${f.beschreibung || ''} ${f.notizen || ''} ${f.kategorie || ''} ${personenText}`.toLowerCase();
-      if (!haystack.includes(q)) return false;
+  // Alle Kinder, die bereits ein Elternteil haben (beide Blickrichtungen)
+  const kinderMitEltern = useMemo(() => {
+    const set = new Set();
+    verwandtschaften.forEach(v => {
+      if (v.beziehung === 'Kind') set.add(v.verwandter_id);
+      if (v.beziehung === 'Elternteil') set.add(v.mitglied_id);
+    });
+    return set;
+  }, [verwandtschaften]);
+
+  const paarExistiert = useCallback((a, b) =>
+    verwandtschaften.some(v =>
+      (v.mitglied_id === a && v.verwandter_id === b) ||
+      (v.mitglied_id === b && v.verwandter_id === a)
+    ), [verwandtschaften]);
+
+  // Offene Fälle: Minderjährige ohne Elternteil, gruppiert nach Nachname
+  const familien = useMemo(() => {
+    const offen = mitglieder.filter(m => istMinderjaehrig(m.geburtsdatum) && !kinderMitEltern.has(m.id));
+    const gruppen = {};
+    offen.forEach(m => {
+      const name = (m.nachname || 'Ohne Nachname').trim();
+      (gruppen[name] = gruppen[name] || []).push(m);
+    });
+    return Object.entries(gruppen)
+      .map(([name, kinder]) => ({
+        name,
+        kinder: kinder.sort((a, b) => (a.geburtsdatum || '') < (b.geburtsdatum || '') ? 1 : -1)
+      }))
+      .sort((a, b) => b.kinder.length - a.kinder.length || a.name.localeCompare(b.name));
+  }, [mitglieder, kinderMitEltern]);
+
+  useEffect(() => {
+    onOpenCountChange?.(familien.reduce((s, f) => s + f.kinder.length, 0));
+  }, [familien, onOpenCountChange]);
+
+  const erwachsenePool = useMemo(
+    () => mitglieder.filter(m => !istMinderjaehrig(m.geburtsdatum)),
+    [mitglieder]
+  );
+
+  const fallFuerFamilie = useCallback((name) =>
+    faelle.find(f => (f.titel || '').includes(name)), [faelle]);
+
+  const istZurueckgestellt = useCallback((name) =>
+    fallFuerFamilie(name)?.status === 'In Bearbeitung', [fallFuerFamilie]);
+
+  const verknuepfen = async (fam) => {
+    const wahl = elternwahl[fam.name] || {};
+    const eltern = [wahl.vater, wahl.mutter].filter(Boolean);
+    const abgewaehlt = kindAbgewaehlt[fam.name] || {};
+    const kinder = fam.kinder.filter(k => !abgewaehlt[k.id]);
+    if (!eltern.length || !kinder.length) return;
+
+    setActionFamilie(fam.name);
+    try {
+      const neu = [];
+      eltern.forEach(p => kinder.forEach(c => {
+        if (!paarExistiert(p.id, c.id)) {
+          neu.push({ mitglied_id: p.id, verwandter_id: c.id, beziehung: 'Kind' });
+        }
+      }));
+      for (let i = 0; i < kinder.length; i++) {
+        for (let j = i + 1; j < kinder.length; j++) {
+          if (!paarExistiert(kinder[i].id, kinder[j].id)) {
+            neu.push({ mitglied_id: kinder[i].id, verwandter_id: kinder[j].id, beziehung: 'Geschwister' });
+          }
+        }
+      }
+      await Promise.all(neu.map(r => base44.entities.Verwandtschaft.create(r)));
+      setVerwandtschaften(prev => [...prev, ...neu]);
+
+      // Passenden Fall-Datensatz (Hinweis-Store) abschließen, wenn die Familie komplett ist
+      const fall = fallFuerFamilie(fam.name);
+      if (fall && kinder.length === fam.kinder.length) {
+        try {
+          await base44.entities.DatenqualitaetFall.update(fall.id, { status: 'Erledigt' });
+          setFaelle(prev => prev.map(f => f.id === fall.id ? { ...f, status: 'Erledigt' } : f));
+        } catch (e) { console.error('Fall abschließen:', e); }
+      }
+
+      setElternwahl(prev => { const c = { ...prev }; delete c[fam.name]; return c; });
+      setSucheFeld(prev => { const c = { ...prev }; delete c[`${fam.name}_vater`]; delete c[`${fam.name}_mutter`]; return c; });
+      setKindAbgewaehlt(prev => { const c = { ...prev }; delete c[fam.name]; return c; });
+    } catch (e) {
+      console.error('Verknüpfen:', e);
+      setError('Verknüpfung fehlgeschlagen – bitte erneut versuchen.');
     }
-    return true;
-  });
-
-  const recalcOffen = (list, excludeId, newStatus) => {
-    const offen = list.filter(f => f.id !== excludeId && f.status !== 'Erledigt').length + (newStatus !== 'Erledigt' ? 1 : 0);
-    onOpenCountChange?.(offen);
+    setActionFamilie(null);
   };
 
-  const setStatus = async (fall, neuerStatus) => {
-    if (neuerStatus === fall.status) return;
-    setStatusChangeId(fall.id);
+  const zurueckstellen = async (fam) => {
+    setActionFamilie(fam.name);
     try {
-      const updated = await base44.entities.DatenqualitaetFall.update(fall.id, { status: neuerStatus });
-      setFaelle(prev => prev.map(f => f.id === fall.id ? { ...f, ...updated } : f));
-      recalcOffen(faelle, fall.id, neuerStatus);
+      const fall = fallFuerFamilie(fam.name);
+      if (fall) {
+        await base44.entities.DatenqualitaetFall.update(fall.id, { status: 'In Bearbeitung' });
+        setFaelle(prev => prev.map(f => f.id === fall.id ? { ...f, status: 'In Bearbeitung' } : f));
+      } else {
+        const neu = await base44.entities.DatenqualitaetFall.create({
+          titel: `Familienzuordnung: ${fam.name}`,
+          kategorie: 'Familienzuordnung',
+          status: 'In Bearbeitung'
+        });
+        setFaelle(prev => [...prev, neu]);
+      }
     } catch (e) {
-      console.error('Status ändern:', e);
+      console.error('Zurückstellen:', e);
+      setError('Zurückstellen fehlgeschlagen.');
     }
-    setStatusChangeId(null);
+    setActionFamilie(null);
   };
 
-  const saveNotiz = async (fall) => {
-    const text = editNotizen[fall.id] ?? fall.notizen ?? '';
-    if (text === (fall.notizen ?? '')) {
-      setEditNotizen(prev => { const c = { ...prev }; delete c[fall.id]; return c; });
-      return;
-    }
-    setSavingId(fall.id);
+  const wiederOeffnen = async (fam) => {
+    setActionFamilie(fam.name);
     try {
-      const updated = await base44.entities.DatenqualitaetFall.update(fall.id, { notizen: text });
-      setFaelle(prev => prev.map(f => f.id === fall.id ? { ...f, ...updated } : f));
-      setEditNotizen(prev => { const c = { ...prev }; delete c[fall.id]; return c; });
+      const fall = fallFuerFamilie(fam.name);
+      if (fall) {
+        await base44.entities.DatenqualitaetFall.update(fall.id, { status: 'Offen' });
+        setFaelle(prev => prev.map(f => f.id === fall.id ? { ...f, status: 'Offen' } : f));
+      }
     } catch (e) {
-      console.error('Notiz speichern:', e);
+      console.error('Wieder öffnen:', e);
+      setError('Wieder öffnen fehlgeschlagen.');
     }
-    setSavingId(null);
+    setActionFamilie(null);
   };
 
-  const addPerson = async (fall) => {
-    const np = neuePerson[fall.id];
-    if (!np?.name?.trim()) return;
-    const personen = [...(fall.personen || []), { name: np.name.trim(), rolle: np.rolle || 'Sonstige' }];
-    setPersonSavingId(fall.id);
-    try {
-      const updated = await base44.entities.DatenqualitaetFall.update(fall.id, { personen });
-      setFaelle(prev => prev.map(f => f.id === fall.id ? { ...f, ...updated } : f));
-      setNeuePerson(prev => { const c = { ...prev }; delete c[fall.id]; return c; });
-    } catch (e) {
-      console.error('Person hinzufügen:', e);
-    }
-    setPersonSavingId(null);
+  const waehleElternteil = (fam, rolle, m) => {
+    setElternwahl(prev => ({ ...prev, [fam.name]: { ...(prev[fam.name] || {}), [rolle]: m } }));
+    setSucheFeld(prev => { const c = { ...prev }; delete c[`${fam.name}_${rolle}`]; return c; });
   };
 
-  const removePerson = async (fall, index) => {
-    const personen = (fall.personen || []).filter((_, i) => i !== index);
-    setPersonSavingId(fall.id);
-    try {
-      const updated = await base44.entities.DatenqualitaetFall.update(fall.id, { personen });
-      setFaelle(prev => prev.map(f => f.id === fall.id ? { ...f, ...updated } : f));
-    } catch (e) {
-      console.error('Person entfernen:', e);
-    }
-    setPersonSavingId(null);
+  const entferneElternteil = (fam, rolle) => {
+    setElternwahl(prev => {
+      const c = { ...prev, [fam.name]: { ...(prev[fam.name] || {}) } };
+      delete c[fam.name][rolle];
+      return c;
+    });
+  };
+
+  const toggleKind = (fam, kindId) => {
+    setKindAbgewaehlt(prev => {
+      const famState = { ...(prev[fam.name] || {}) };
+      if (famState[kindId]) delete famState[kindId];
+      else famState[kindId] = true;
+      return { ...prev, [fam.name]: famState };
+    });
+  };
+
+  const elternPicker = (fam, rolle) => {
+    const key = `${fam.name}_${rolle}`;
+    const wahl = (elternwahl[fam.name] || {})[rolle];
+    const q = (sucheFeld[key] || '').trim().toLowerCase();
+    const kindIds = new Set(fam.kinder.map(k => k.id));
+    const vorschlaege = q && !wahl
+      ? erwachsenePool
+          .filter(m => !kindIds.has(m.id))
+          .filter(m => `${m.vorname || ''} ${m.nachname || ''}`.toLowerCase().includes(q))
+          .slice(0, 6)
+      : [];
+
+    return (
+      <div>
+        <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+          {rolle === 'vater' ? 'Vater' : 'Mutter'}
+        </label>
+        {wahl ? (
+          <div className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-primary/10 border border-primary/30 min-h-[48px]">
+            <span className="text-sm font-semibold text-foreground">
+              {wahl.vorname} {wahl.nachname}
+            </span>
+            <button
+              onClick={() => entferneElternteil(fam, rolle)}
+              className="p-1.5 rounded-lg bg-secondary active:scale-95"
+              aria-label="Auswahl entfernen"
+            >
+              <X size={14} className="text-muted-foreground" />
+            </button>
+          </div>
+        ) : (
+          <div className="relative">
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              <input
+                type="text"
+                value={sucheFeld[key] || ''}
+                onChange={e => setSucheFeld(prev => ({ ...prev, [key]: e.target.value }))}
+                placeholder={`${rolle === 'vater' ? 'Vater' : 'Mutter'} in Mitglieder suchen…`}
+                className="w-full pl-10 pr-4 py-3 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary min-h-[48px]"
+              />
+            </div>
+            {vorschlaege.length > 0 && (
+              <div className="absolute z-20 left-0 right-0 mt-1 rounded-lg bg-secondary border border-border shadow-xl overflow-hidden">
+                {vorschlaege.map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => waehleElternteil(fam, rolle, m)}
+                    className="w-full flex items-center gap-2 px-3 py-3 text-left text-sm text-foreground hover:bg-accent active:bg-accent"
+                  >
+                    <UserPlus size={14} className="text-primary shrink-0" />
+                    <span className="flex-1">{m.vorname} {m.nachname}</span>
+                    <span className="text-xs text-muted-foreground">{alterVon(m.geburtsdatum) !== '?' ? `${alterVon(m.geburtsdatum)}` : ''}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
   };
 
   if (loading) {
@@ -149,196 +292,186 @@ export default function FaelleSektion({ onOpenCountChange }) {
     );
   }
 
+  const q = suche.trim().toLowerCase();
+  const sichtbareFamilien = familien.filter(f =>
+    (!q || f.name.toLowerCase().includes(q)) &&
+    (zeigeZurueckgestellt || !istZurueckgestellt(f.name))
+  );
+  const zurueckgestelltCount = familien.filter(f => istZurueckgestellt(f.name)).length;
+  const kinderOffen = familien.reduce((s, f) => s + f.kinder.length, 0);
+
   return (
     <div className="mt-8">
       <div className="flex items-center gap-2 mb-1">
-        <FolderOpen size={18} className="text-primary" />
-        <h2 className="text-xl font-bold font-oswald uppercase tracking-wide text-foreground">Fälle</h2>
+        <Baby size={18} className="text-primary" />
+        <h2 className="text-xl font-bold font-oswald uppercase tracking-wide text-foreground">
+          Familienzuordnung
+        </h2>
       </div>
       <p className="text-sm text-muted-foreground mb-4">
-        Manuell erfasste Datenqualitäts-Fälle (z.B. Familienzuordnungen)
+        Live ermittelt: Mitglieder unter 18 ohne Elternteil. Verknüpfen entfernt den Fall automatisch.
       </p>
 
       {error && (
-        <div className="mb-3 p-3 rounded-lg bg-red-900/20 border border-red-700/40 text-sm text-red-400">
-          {error}
+        <div className="mb-3 p-3 rounded-lg bg-red-900/20 border border-red-700/40 text-sm text-red-400 flex items-center gap-2">
+          <AlertTriangle size={14} /> {error}
         </div>
       )}
 
-      {/* Live-Suche */}
-      <div className="relative mb-3">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-        <input
-          type="text"
-          value={suche}
-          onChange={e => setSuche(e.target.value)}
-          placeholder="Fälle durchsuchen…"
-          className="w-full pl-10 pr-4 py-3 rounded-xl bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary min-h-[48px]"
-        />
+      {/* Zusammenfassung */}
+      <div className="mb-4 p-4 rounded-xl bg-secondary border border-border">
+        <div className="flex items-center gap-3">
+          <CheckCircle2 size={20} className={kinderOffen === 0 ? 'text-green-400' : 'text-primary'} />
+          <div>
+            <p className="text-sm font-semibold text-foreground">
+              {kinderOffen === 0
+                ? 'Alle minderjährigen Mitglieder haben ein Elternteil.'
+                : `${kinderOffen} ${kinderOffen === 1 ? 'Kind' : 'Kinder'} in ${familien.length} ${familien.length === 1 ? 'Familie' : 'Familien'} noch ohne Elternteil`}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Nach der Verknüpfung werden Geschwister automatisch miteinander verknüpft.
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Status-Filter */}
-      <div className="flex items-center gap-2 mb-4 overflow-x-auto -mx-4 px-4 pb-1" style={{ scrollbarWidth: 'none' }}>
-        {[
-          { key: 'aktiv', label: 'Offen + In Bearb.' },
-          { key: 'alle', label: 'Alle' },
-          { key: 'Offen', label: 'Offen' },
-          { key: 'In Bearbeitung', label: 'In Bearb.' },
-          { key: 'Erledigt', label: 'Erledigt' },
-        ].map(s => (
-          <button
-            key={s.key}
-            onClick={() => setStatusFilter(s.key)}
-            className={`shrink-0 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all min-h-[40px] ${
-              statusFilter === s.key
-                ? 'bg-primary text-white'
-                : 'bg-secondary text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {s.label}
-          </button>
-        ))}
-      </div>
+      {/* Suche + Filter */}
+      {familien.length > 0 && (
+        <>
+          <div className="relative mb-3">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            <input
+              type="text"
+              value={suche}
+              onChange={e => setSuche(e.target.value)}
+              placeholder="Familie suchen…"
+              className="w-full pl-10 pr-4 py-3 rounded-xl bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary min-h-[48px]"
+            />
+          </div>
 
-      {/* Fall-Liste mit AnimatePresence für erledigte Fälle */}
-      {gefiltert.length === 0 ? (
+          {zurueckgestelltCount > 0 && (
+            <button
+              onClick={() => setZeigeZurueckgestellt(v => !v)}
+              className={`mb-4 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all min-h-[40px] ${
+                zeigeZurueckgestellt ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground'
+              }`}
+            >
+              Zurückgestellt ({zurueckgestelltCount}) {zeigeZurueckgestellt ? 'ausblenden' : 'anzeigen'}
+            </button>
+          )}
+        </>
+      )}
+
+      {sichtbareFamilien.length === 0 ? (
         <div className="text-center py-10 text-sm text-muted-foreground">
-          {suche ? 'Keine Fälle gefunden.' : 'Keine Fälle in diesem Filter.'}
+          {familien.length === 0
+            ? 'Nichts zu tun — alle Familien sind verknüpft.'
+            : (suche ? 'Keine Familie gefunden.' : 'Keine offenen Fälle mehr.')}
         </div>
       ) : (
         <div className="space-y-3">
           <AnimatePresence>
-            {gefiltert.map(fall => {
-              const status = fall.status || 'Offen';
-              const notizWert = editNotizen[fall.id] ?? fall.notizen ?? '';
-              const notizDirty = editNotizen[fall.id] !== undefined && editNotizen[fall.id] !== (fall.notizen ?? '');
-              const saving = savingId === fall.id;
-              const personSaving = personSavingId === fall.id;
-              const np = neuePerson[fall.id] || { name: '', rolle: 'Kind' };
-              const personen = fall.personen || [];
+            {sichtbareFamilien.map(fam => {
+              const abgewaehlt = kindAbgewaehlt[fam.name] || {};
+              const wahl = elternwahl[fam.name] || {};
+              const elternGewaehlt = !!(wahl.vater || wahl.mutter);
+              const kinderAktiv = fam.kinder.filter(k => !abgewaehlt[k.id]);
+              const busy = actionFamilie === fam.name;
+              const fall = fallFuerFamilie(fam.name);
+              const zurueckgestellt = istZurueckgestellt(fam.name);
               return (
                 <motion.div
-                  key={fall.id}
+                  key={fam.name}
                   layout
                   initial={{ opacity: 1 }}
                   exit={{ opacity: 0, height: 0, marginBottom: 0, scale: 0.95 }}
                   transition={{ duration: 0.3 }}
                   className="bg-card border border-border rounded-xl p-4 overflow-hidden"
                 >
-                  {/* Titel + Kategorie */}
-                  <div className="mb-2">
-                    <h3 className="text-sm font-semibold text-foreground">{fall.titel}</h3>
-                    {fall.kategorie && (
-                      <span className="inline-block mt-1 text-[11px] font-medium bg-primary/10 text-primary border border-primary/25 rounded-full px-2 py-0.5">
-                        {fall.kategorie}
+                  {/* Kopf */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Users size={16} className="text-primary" />
+                      <h3 className="text-sm font-bold font-oswald uppercase tracking-wide text-foreground">
+                        {fam.name}
+                      </h3>
+                    </div>
+                    {zurueckgestellt && (
+                      <span className="text-[11px] font-medium bg-blue-900/20 text-blue-400 border border-blue-700/30 rounded-full px-2 py-0.5">
+                        Zurückgestellt
                       </span>
                     )}
                   </div>
 
-                  {/* Personen-Chips */}
+                  {/* Kinder (antippen zum Ab-/Auswählen) */}
                   <div className="mb-3">
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <User size={12} className="text-muted-foreground" />
-                      <span className="text-xs font-medium text-muted-foreground">Personen</span>
-                      {personSaving && <Loader2 size={11} className="text-primary animate-spin" />}
-                    </div>
-                    {/* Bestehende Chips */}
-                    {personen.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mb-2">
-                        {personen.map((p, i) => (
-                          <span
-                            key={i}
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium ${ROLLEN_STYLES[p.rolle] || ROLLEN_STYLES['Sonstige']}`}
+                    <p className="text-xs font-medium text-muted-foreground mb-1.5">
+                      Kinder ({fam.kinder.length === 1 ? '1 Kind' : `${fam.kinder.length} Kinder`}) — antippen zum Abwählen
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {fam.kinder.map(k => {
+                        const aktiv = !abgewaehlt[k.id];
+                        return (
+                          <button
+                            key={k.id}
+                            onClick={() => toggleKind(fam, k.id)}
+                            className={`px-3 py-2 rounded-full text-xs font-semibold transition-all active:scale-95 ${
+                              aktiv
+                                ? 'bg-primary/15 text-foreground border border-primary/40'
+                                : 'bg-secondary text-muted-foreground border border-border line-through'
+                            }`}
                           >
-                            <span className="text-[10px] uppercase tracking-wide opacity-70">{p.rolle}</span>
-                            <span>{p.name}</span>
-                            <button
-                              onClick={() => removePerson(fall, i)}
-                              disabled={personSaving}
-                              className="ml-0.5 -mr-0.5 p-0.5 rounded hover:bg-foreground/10 active:scale-90 transition-all disabled:opacity-30"
-                              aria-label="Person entfernen"
-                            >
-                              <X size={12} />
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    {/* Inline-Form: Neue Person hinzufügen */}
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        type="text"
-                        value={np.name || ''}
-                        onChange={e => setNeuePerson(prev => ({ ...prev, [fall.id]: { name: e.target.value, rolle: np.rolle || 'Kind' } }))}
-                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPerson(fall); } }}
-                        placeholder="Name…"
-                        className="flex-1 min-w-0 px-2.5 py-2 rounded-lg bg-secondary border border-border text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary min-h-[36px]"
-                      />
-                      <select
-                        value={np.rolle || 'Kind'}
-                        onChange={e => setNeuePerson(prev => ({ ...prev, [fall.id]: { name: np.name || '', rolle: e.target.value } }))}
-                        className="px-2 py-2 rounded-lg bg-secondary border border-border text-xs text-foreground focus:outline-none focus:border-primary min-h-[36px]"
-                      >
-                        {ROLLEN.map(r => <option key={r} value={r}>{r}</option>)}
-                      </select>
-                      <button
-                        onClick={() => addPerson(fall)}
-                        disabled={personSaving || !np.name?.trim()}
-                        className="shrink-0 w-9 h-9 rounded-lg bg-primary text-white flex items-center justify-center active:scale-95 transition-all disabled:opacity-30"
-                        aria-label="Person hinzufügen"
-                      >
-                        <Plus size={16} />
-                      </button>
+                            {k.vorname} ({alterVon(k.geburtsdatum)})
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  {/* Beschreibung (nur wenn vorhanden und keine Personen) */}
-                  {fall.beschreibung && personen.length === 0 && (
-                    <p className="text-sm text-muted-foreground whitespace-pre-line mb-3">{fall.beschreibung}</p>
+                  {/* Hinweis aus dem Fall-Store */}
+                  {fall?.beschreibung && (
+                    <p className="text-xs text-muted-foreground whitespace-pre-line mb-3 pl-3 border-l-2 border-primary/30">
+                      {fall.beschreibung}
+                    </p>
                   )}
 
-                  {/* Status: 3-Button Segment */}
-                  <div className="grid grid-cols-3 gap-1.5 mb-3">
-                    {STATUS_ORDER.map(s => {
-                      const isActive = status === s;
-                      const isChanging = statusChangeId === fall.id;
-                      return (
-                        <button
-                          key={s}
-                          onClick={() => setStatus(fall, s)}
-                          disabled={isChanging}
-                          className={`py-2.5 rounded-lg text-xs font-bold transition-all active:scale-95 disabled:opacity-50 min-h-[44px] ${
-                            isActive ? STATUS_ACTIVE_STYLES[s] : 'bg-secondary text-muted-foreground border border-border'
-                          }`}
-                        >
-                          {isChanging && isActive ? '…' : STATUS_SHORT[s]}
-                        </button>
-                      );
-                    })}
+                  {/* Eltern-Auswahl */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                    {elternPicker(fam, 'vater')}
+                    {elternPicker(fam, 'mutter')}
                   </div>
 
-                  {/* Notiz-Feld mit Auto-Save */}
-                  <div className="border-t border-border pt-3">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-medium text-muted-foreground">Bearbeitungsvermerke</label>
-                      {saving && <Loader2 size={12} className="text-primary animate-spin" />}
-                      {notizDirty && !saving && (
-                        <button
-                          onClick={() => saveNotiz(fall)}
-                          className="flex items-center gap-1 text-xs font-bold text-primary px-3 py-1.5 rounded-lg bg-primary/10 active:scale-95 transition-all min-h-[36px]"
-                        >
-                          <Check size={12} /> Speichern
-                        </button>
-                      )}
-                    </div>
-                    <textarea
-                      value={notizWert}
-                      onChange={e => setEditNotizen(prev => ({ ...prev, [fall.id]: e.target.value }))}
-                      onBlur={() => saveNotiz(fall)}
-                      placeholder="Notizen des Vorstands…"
-                      rows={2}
-                      className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary resize-y min-h-[48px]"
-                    />
+                  {/* Aktionen */}
+                  <div className="grid grid-cols-1 gap-2">
+                    <button
+                      onClick={() => verknuepfen(fam)}
+                      disabled={busy || !elternGewaehlt || kinderAktiv.length === 0}
+                      className={`flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold transition-all active:scale-[0.98] min-h-[48px] ${
+                        elternGewaehlt && !busy && kinderAktiv.length > 0
+                          ? 'bg-primary text-white'
+                          : 'bg-secondary text-muted-foreground border border-border'
+                      }`}
+                    >
+                      {busy ? <Loader2 size={16} className="animate-spin" /> : <Link2 size={16} />}
+                      {busy ? 'Verknüpfe…' : `Verknüpfen${kinderAktiv.length > 1 ? ` (${kinderAktiv.length} Kinder)` : ''}`}
+                    </button>
+                    {zurueckgestellt ? (
+                      <button
+                        onClick={() => wiederOeffnen(fam)}
+                        disabled={busy}
+                        className="flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold bg-secondary text-muted-foreground border border-border active:scale-95 min-h-[40px]"
+                      >
+                        <RotateCcw size={14} /> Wieder öffnen
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => zurueckstellen(fam)}
+                        disabled={busy}
+                        className="flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold bg-secondary text-muted-foreground border border-border active:scale-95 min-h-[40px]"
+                      >
+                        <PauseCircle size={14} /> Zurückstellen (Eltern nicht in der DB)
+                      </button>
+                    )}
                   </div>
                 </motion.div>
               );
