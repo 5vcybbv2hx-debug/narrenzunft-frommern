@@ -389,7 +389,7 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
           onPointerLeave={endeDrag}
           data-no-swipe
           style={canEdit ? { touchAction: 'none' } : undefined}
-          className="relative w-full aspect-square sm:aspect-[16/10] rounded-lg border border-dashed border-border bg-secondary/40 overflow-hidden select-none"
+          className="relative w-full aspect-[5/4] sm:aspect-[16/10] rounded-lg border border-dashed border-border bg-secondary/40 overflow-hidden select-none"
         >
           <span className="absolute top-1.5 left-3 text-[10px] uppercase tracking-wide text-muted-foreground">Vorne</span>
           <span className="absolute bottom-1.5 left-3 text-[10px] uppercase tracking-wide text-muted-foreground">Hinten</span>
