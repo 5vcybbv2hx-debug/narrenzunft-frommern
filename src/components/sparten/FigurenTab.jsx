@@ -37,7 +37,11 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
   const nameVon = (mitgliedId) => {
     const m = (alleMitglieder || []).find(x => x.id === mitgliedId);
     if (!m) return 'Unbekannt';
-    return `${m.vorname || ''} ${m.nachname || ''}`.trim();
+    // Nur Vorname + Anfangsbuchstabe des Nachnamens — spart Platz auf der
+    // Bühne und vermeidet überlappende Tags bei langen Namen.
+    const vorname = m.vorname || '';
+    const nachname = m.nachname || '';
+    return nachname ? `${vorname} ${nachname[0]}.`.trim() : vorname;
   };
 
   const [musikListe, setMusikListe] = useState([]);
