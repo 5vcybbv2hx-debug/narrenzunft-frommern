@@ -404,7 +404,7 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
               style={{ left: `${m.x}%`, top: `${m.y}%` }}
               className={`absolute -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 ${canEdit ? 'cursor-grab active:cursor-grabbing' : ''}`}
             >
-              <span className="px-2 py-0.5 rounded-full bg-primary text-white text-[10px] font-medium max-w-[110px] truncate shadow-md border border-white/20">
+              <span className="px-1.5 py-0.5 rounded-full bg-primary text-white text-[9px] font-medium max-w-[90px] truncate shadow-md border border-white/20">
                 {nameVon(m.mitglied_id)}
               </span>
               {canEdit && (
@@ -429,8 +429,8 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
                 <span className="text-xs text-muted-foreground italic">Alle aktiven Tänzer:innen sind platziert.</span>
               ) : nichtPlatziert.map(t => (
                 <button key={t.mitglied_id} onClick={() => hinzufuegenZurAufstellung(t)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary border border-border text-xs text-foreground hover:border-primary">
-                  <Plus className="w-3 h-3 text-primary" /> {nameVon(t.mitglied_id)}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary border border-border text-[11px] text-foreground hover:border-primary">
+                  <Plus className="w-2.5 h-2.5 text-primary" /> {nameVon(t.mitglied_id)}
                 </button>
               ))}
             </div>
