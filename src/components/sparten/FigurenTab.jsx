@@ -385,7 +385,7 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
           onPointerLeave={endeDrag}
           data-no-swipe
           style={canEdit ? { touchAction: 'none' } : undefined}
-          className="relative w-full aspect-[16/10] rounded-lg border border-dashed border-border bg-secondary/40 overflow-hidden select-none"
+          className="relative w-full aspect-square sm:aspect-[16/10] rounded-lg border border-dashed border-border bg-secondary/40 overflow-hidden select-none"
         >
           <span className="absolute top-1.5 left-3 text-[10px] uppercase tracking-wide text-muted-foreground">Vorne</span>
           <span className="absolute bottom-1.5 left-3 text-[10px] uppercase tracking-wide text-muted-foreground">Hinten</span>
@@ -400,7 +400,7 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
               style={{ left: `${m.x}%`, top: `${m.y}%` }}
               className={`absolute -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 ${canEdit ? 'cursor-grab active:cursor-grabbing' : ''}`}
             >
-              <span className="px-2.5 py-1 rounded-full bg-primary text-white text-[11px] font-medium whitespace-nowrap shadow-md border border-white/20">
+              <span className="px-2 py-0.5 rounded-full bg-primary text-white text-[10px] font-medium max-w-[110px] truncate shadow-md border border-white/20">
                 {nameVon(m.mitglied_id)}
               </span>
               {canEdit && (
