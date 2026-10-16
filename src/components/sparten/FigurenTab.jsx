@@ -394,26 +394,34 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
               {canEdit ? 'Tänzer:innen aus der Liste unten hinzufügen und per Drag & Drop platzieren' : 'Noch niemand platziert'}
             </span>
           )}
-          {marker.map((m, i) => (
-            <div key={m.mitglied_id}
-              onPointerDown={e => startDrag(e, i)}
-              style={{ left: `${m.x}%`, top: `${m.y}%` }}
-              className={`absolute -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 ${canEdit ? 'cursor-grab active:cursor-grabbing' : ''}`}
-            >
-              <span className="px-2 py-0.5 rounded-full bg-primary text-white text-[10px] font-medium max-w-[110px] truncate shadow-md border border-white/20">
-                {nameVon(m.mitglied_id)}
-              </span>
-              {canEdit && (
-                <button
-                  onPointerDown={e => { e.stopPropagation(); entfernenAusAufstellung(m.mitglied_id); }}
-                  className="w-4 h-4 rounded-full bg-secondary border border-border text-muted-foreground hover:text-red-400 flex items-center justify-center shrink-0"
-                  title="Von Aufstellung entfernen"
-                >
-                  <X className="w-2.5 h-2.5" />
-                </button>
-              )}
-            </div>
-          ))}
+          {marker.map((m, i) => {
+            const voll = nameVon(m.mitglied_id);
+            const teile = voll.split(' ').filter(Boolean);
+            const init = ((teile[0]?.[0] || '') + (teile[teile.length - 1]?.[0] || '')).toUpperCase();
+            return (
+              <div key={m.mitglied_id}
+                onPointerDown={e => startDrag(e, i)}
+                style={{ left: `${m.x}%`, top: `${m.y}%` }}
+                title={voll}
+                className={`absolute -translate-x-1/2 -translate-y-1/2 ${canEdit ? 'cursor-grab active:cursor-grabbing' : ''}`}
+              >
+                <div className="relative">
+                  <span className="w-8 h-8 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center shadow-md border border-white/20">
+                    {init}
+                  </span>
+                  {canEdit && (
+                    <button
+                      onPointerDown={e => { e.stopPropagation(); entfernenAusAufstellung(m.mitglied_id); }}
+                      className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-secondary border border-border text-muted-foreground hover:text-red-400 flex items-center justify-center shrink-0"
+                      title="Von Aufstellung entfernen"
+                    >
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Nicht platzierte aktive Tänzer:innen */}
