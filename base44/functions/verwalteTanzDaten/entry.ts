@@ -72,7 +72,7 @@ export default async function(req) {
       return { value: JSON.stringify(sauber) };
     };
 
-    // ── Linien-JSON validieren: [{x1, y1, x2, y2}] ──
+    // ── Linien-JSON validieren: [{a, b}] (jeweils mitglied_id) ──
     const pruefeLinien = (raw) => {
       let arr;
       try {
@@ -85,10 +85,9 @@ export default async function(req) {
       const sauber = [];
       for (const l of arr) {
         if (!l || typeof l !== 'object') return { invalid: true };
-        const v = [l.x1, l.y1, l.x2, l.y2].map(Number);
-        if (v.some((n) => !Number.isFinite(n))) return { invalid: true };
-        const [x1, y1, x2, y2] = v.map((n) => Math.min(100, Math.max(0, Math.round(n * 10) / 10)));
-        sauber.push({ x1, y1, x2, y2 });
+        const a = String(l.a || ''), b = String(l.b || '');
+        if (!a || !b) return { invalid: true };
+        sauber.push({ a, b });
       }
       return { value: JSON.stringify(sauber) };
     };

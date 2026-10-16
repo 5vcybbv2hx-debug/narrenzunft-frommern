@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowUp, ArrowDown, Plus, X, Check, Upload, Loader2, FileTex
 import { base44 } from '@/api/base44Client';
 import { fmtZeit, einsatzpunkteFuerFigur } from '@/lib/tanzMarker';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
-import { parseLinien, snapPunkt, chipFontSize } from '@/lib/figurenLinien';
+import { parseLinien, snapPerson, snapZuPerson, chipFontSize } from '@/lib/figurenLinien';
 
 /**
  * FigurenTab – Figuren der Tanzgruppe mit zugehörigen Figuren-PDFs und
@@ -34,7 +34,7 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
   const [dirty, setDirty] = useState(false);
   const canvasRef = useRef(null);
   const dragIdx = useRef(null);
-  const [linien, setLinien] = useState([]); // feste Linien [{x1,y1,x2,y2}]
+  const [linien, setLinien] = useState([]); // Verbindungen [{a, b}] je mitglied_id
   const [modus, setModus] = useState('personen'); // 'personen' | 'linien'
   const [entwurf, setEntwurf] = useState(null);
   const entwurfRef = useRef(null);
@@ -219,35 +219,41 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
     };
   };
 
-  const snap = (p, extra = []) => snapPunkt(p, linien, canvasRef.current.getBoundingClientRect(), extra);
-
   const startDrag = (e, idx) => {
     if (!canEdit || modus === 'linien') return;
     e.preventDefault();
     e.stopPropagation();
     dragIdx.current = idx;
-    setMarker(v => v.map((m, i) => (i === idx ? { ...m, ...snap(posAusEvent(e)) } : m)));
+    const p = snapPerson(posAusEvent(e), linien, marker, canvasRef.current.getBoundingClientRect());
+    setMarker(v => v.map((m, i) => (i === idx ? { ...m, ...p } : m)));
     setDirty(true);
   };
 
-  // Linie zeichnen: Start-/Endpunkt rasten an Linien-Enden und Personen ein
+  // Linie zeichnen: Start an einer Person, Ende an einer anderen Person
   const startLinie = (e) => {
     if (!canEdit || modus !== 'linien') return;
     e.preventDefault();
-    const p = snap(posAusEvent(e), marker);
-    entwurfRef.current = { x1: p.x, y1: p.y, x2: p.x, y2: p.y };
-    setEntwurf(entwurfRef.current);
+    const hit = snapZuPerson(posAusEvent(e), marker, canvasRef.current.getBoundingClientRect());
+    if (hit) {
+      entwurfRef.current = { a: hit.mitglied_id, x1: hit.x, y1: hit.y, x2: hit.x, y2: hit.y, bId: undefined };
+      setEntwurf(entwurfRef.current);
+    }
   };
 
   const aufDrag = (e) => {
     if (entwurfRef.current) {
-      const p = snap(posAusEvent(e), marker);
-      entwurfRef.current = { ...entwurfRef.current, x2: p.x, y2: p.y };
+      const hit = snapZuPerson(posAusEvent(e), marker, canvasRef.current.getBoundingClientRect());
+      if (hit && hit.mitglied_id !== entwurfRef.current.a) {
+        entwurfRef.current = { ...entwurfRef.current, x2: hit.x, y2: hit.y, bId: hit.mitglied_id };
+      } else {
+        const p = posAusEvent(e);
+        entwurfRef.current = { ...entwurfRef.current, x2: p.x, y2: p.y, bId: undefined };
+      }
       setEntwurf(entwurfRef.current);
       return;
     }
     if (dragIdx.current === null) return;
-    const p = snap(posAusEvent(e));
+    const p = snapPerson(posAusEvent(e), linien, marker, canvasRef.current.getBoundingClientRect());
     const idx = dragIdx.current;
     setMarker(v => v.map((m, i) => (i === idx ? { ...m, ...p } : m)));
   };
@@ -258,8 +264,9 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
     if (l) {
       entwurfRef.current = null;
       setEntwurf(null);
-      if (Math.hypot(l.x2 - l.x1, l.y2 - l.y1) > 2) {
-        setLinien(v => [...v, l]);
+      if (l.bId && l.bId !== l.a) {
+        setLinien(v => v.some(x => (x.a === l.a && x.b === l.bId) || (x.a === l.bId && x.b === l.a))
+          ? v : [...v, { a: l.a, b: l.bId }]);
         setDirty(true);
       }
     }
@@ -429,7 +436,7 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
                 className={`px-3 py-1.5 ${modus === 'linien' ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground'}`}>Linien zeichnen</button>
             </div>
             <span className="text-[11px] text-muted-foreground">
-              {modus === 'linien' ? 'Auf der Bühne ziehen, um eine feste Linie zu zeichnen. Mit ✕ löschen.' : 'Personen rasten an den Linien ein.'}
+              {modus === 'linien' ? 'Von einer Person zur anderen ziehen, um sie zu verbinden. Mit ✕ löschen.' : 'Personen rasten am Raster und an Linien ein.'}
             </span>
           </div>
         )}
@@ -449,24 +456,32 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
           <span className="absolute top-1.5 left-3 text-[10px] uppercase tracking-wide text-muted-foreground">Vorne</span>
           <span className="absolute bottom-1.5 left-3 text-[10px] uppercase tracking-wide text-muted-foreground">Hinten</span>
           <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
-            {linien.map((l, i) => (
-              <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke="currentColor" strokeWidth="1.5"
-                vectorEffect="non-scaling-stroke" className="text-foreground/70" />
-            ))}
+            {linien.map((l, i) => {
+              const a = marker.find(m => m.mitglied_id === l.a);
+              const b = marker.find(m => m.mitglied_id === l.b);
+              if (!a || !b) return null;
+              return <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="currentColor" strokeWidth="1.5"
+                vectorEffect="non-scaling-stroke" className="text-foreground/70" />;
+            })}
             {entwurf && (
               <line x1={entwurf.x1} y1={entwurf.y1} x2={entwurf.x2} y2={entwurf.y2} stroke="hsl(var(--primary))"
                 strokeWidth="1.5" strokeDasharray="4 3" vectorEffect="non-scaling-stroke" />
             )}
           </svg>
-          {canEdit && modus === 'linien' && linien.map((l, i) => (
-            <button key={`del-${i}`}
-              onPointerDown={e => { e.stopPropagation(); linieLoeschen(i); }}
-              style={{ left: `${(l.x1 + l.x2) / 2}%`, top: `${(l.y1 + l.y2) / 2}%` }}
-              className="absolute -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-secondary border border-border text-muted-foreground hover:text-red-400 flex items-center justify-center z-10"
-              title="Linie löschen">
-              <X className="w-2.5 h-2.5" />
-            </button>
-          ))}
+          {canEdit && modus === 'linien' && linien.map((l, i) => {
+            const a = marker.find(m => m.mitglied_id === l.a);
+            const b = marker.find(m => m.mitglied_id === l.b);
+            if (!a || !b) return null;
+            return (
+              <button key={`del-${i}`}
+                onPointerDown={e => { e.stopPropagation(); linieLoeschen(i); }}
+                style={{ left: `${(a.x + b.x) / 2}%`, top: `${(a.y + b.y) / 2}%` }}
+                className="absolute -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-secondary border border-border text-muted-foreground hover:text-red-400 flex items-center justify-center z-10"
+                title="Linie löschen">
+                <X className="w-2.5 h-2.5" />
+              </button>
+            );
+          })}
           {marker.length === 0 && (
             <span className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground italic">
               {canEdit ? 'Tänzer:innen aus der Liste unten hinzufügen und per Drag & Drop platzieren' : 'Noch niemand platziert'}

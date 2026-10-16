@@ -1,35 +1,49 @@
-// Hilfsfunktionen für feste Linien + Einrasten in der Figuren-Aufstellung.
+// Hilfsfunktionen für feste Linien (Person↔Person) + Einrasten in der Figuren-Aufstellung.
 // Alle Koordinaten sind Prozent (0-100) der Bühne.
+// Eine Linie verbindet zwei Personen: { a: mitglied_id, b: mitglied_id }.
+// Gezeichnet wird immer von Chipmitte zu Chipmitte.
 
 export const parseLinien = (raw) => {
   try {
     const a = JSON.parse(raw || '[]');
-    return Array.isArray(a) ? a : [];
+    if (!Array.isArray(a)) return [];
+    return a
+      .filter((l) => l && l.a && l.b)
+      .map((l) => ({ a: String(l.a), b: String(l.b) }));
   } catch {
     return [];
   }
 };
 
 const r1 = (n) => Math.round(n * 10) / 10;
+const GRID = 5; // sauberes 5%-Raster, beide Achsen, an 0 ausgerichtet
+
+// Rechnet die Personen-Linien in konkrete Strecken um (für Snap & Render).
+export function linienSegmente(linien, marker) {
+  const m = (id) => marker.find((x) => x.mitglied_id === id);
+  const segs = [];
+  linien.forEach((l) => {
+    const a = m(l.a), b = m(l.b);
+    if (a && b) segs.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y });
+  });
+  return segs;
+}
 
 /**
- * Rastet einen Punkt p ({x,y} in %) ein:
- *  1. an Linien-Endpunkten und Personen (Zusatzpunkte)
- *  2. sonst an die nächstgelegene Stelle auf einer Linie
- *  3. sonst an ein unsichtbares quadratisches Raster (5% der kürzeren Seite)
- * rect = Bühnenmaße in px (für pixelgenaue Fangradien + quadratisches Raster).
+ * Einrasten beim Verschieben einer Person:
+ *  1. an Enden anderer Linien (also andere Personen)
+ *  2. sonst an die nächste Stelle auf einer Linie
+ *  3. sonst ans 5%-Raster
  */
-export function snapPunkt(p, linien, rect, extra = []) {
+export function snapPerson(p, linien, marker, rect) {
   const toPx = (q) => ({ x: (q.x * rect.width) / 100, y: (q.y * rect.height) / 100 });
   const pp = toPx(p);
+  const segs = linienSegmente(linien, marker);
 
-  // 1) Endpunkte / Zusatzpunkte
-  const punkte = [...extra];
-  linien.forEach((l) => {
-    punkte.push({ x: l.x1, y: l.y1 }, { x: l.x2, y: l.y2 });
-  });
-  let best = null;
-  let bestD = 16;
+  // 1) Linien-Enden
+  const punkte = [];
+  segs.forEach((s) => { punkte.push({ x: s.x1, y: s.y1 }, { x: s.x2, y: s.y2 }); });
+  let best = null, bestD = 14;
   punkte.forEach((q) => {
     const qp = toPx(q);
     const d = Math.hypot(qp.x - pp.x, qp.y - pp.y);
@@ -38,32 +52,33 @@ export function snapPunkt(p, linien, rect, extra = []) {
   if (best) return { x: r1(best.x), y: r1(best.y) };
 
   // 2) Entlang einer Linie
-  let bestSeg = null;
-  let segD = 11;
-  linien.forEach((l) => {
-    const a = toPx({ x: l.x1, y: l.y1 });
-    const b = toPx({ x: l.x2, y: l.y2 });
-    const vx = b.x - a.x, vy = b.y - a.y;
-    const len2 = vx * vx + vy * vy;
-    if (len2 === 0) return;
-    const t = Math.max(0, Math.min(1, ((pp.x - a.x) * vx + (pp.y - a.y) * vy) / len2));
+  let bs = null, sd = 10;
+  segs.forEach((s) => {
+    const a = toPx({ x: s.x1, y: s.y1 }), b = toPx({ x: s.x2, y: s.y2 });
+    const vx = b.x - a.x, vy = b.y - a.y, L2 = vx * vx + vy * vy;
+    if (!L2) return;
+    const t = Math.max(0, Math.min(1, ((pp.x - a.x) * vx + (pp.y - a.y) * vy) / L2));
     const fx = a.x + t * vx, fy = a.y + t * vy;
     const d = Math.hypot(fx - pp.x, fy - pp.y);
-    if (d < segD) {
-      segD = d;
-      bestSeg = { x: (fx / rect.width) * 100, y: (fy / rect.height) * 100 };
-    }
+    if (d < sd) { sd = d; bs = { x: (fx / rect.width) * 100, y: (fy / rect.height) * 100 }; }
   });
-  if (bestSeg) return { x: r1(bestSeg.x), y: r1(bestSeg.y) };
+  if (bs) return { x: r1(bs.x), y: r1(bs.y) };
 
-  // 3) Unsichtbares quadratisches Raster (5% der kürzeren Seite)
-  const cell = Math.min(rect.width, rect.height) * 0.05;
-  if (cell > 0) {
-    const gx = (Math.round(pp.x / cell) * cell / rect.width) * 100;
-    const gy = (Math.round(pp.y / cell) * cell / rect.height) * 100;
-    return { x: r1(gx), y: r1(gy) };
-  }
-  return p;
+  // 3) Raster
+  return { x: r1(Math.round(p.x / GRID) * GRID), y: r1(Math.round(p.y / GRID) * GRID) };
+}
+
+/** Einrasten beim Linien-Zeichnen: nächste Person innerhalb Fangradius. */
+export function snapZuPerson(p, marker, rect) {
+  const toPx = (q) => ({ x: (q.x * rect.width) / 100, y: (q.y * rect.height) / 100 });
+  const pp = toPx(p);
+  let best = null, bd = 24;
+  marker.forEach((m) => {
+    const qp = toPx(m);
+    const d = Math.hypot(qp.x - pp.x, qp.y - pp.y);
+    if (d < bd) { bd = d; best = m; }
+  });
+  return best ? { x: r1(best.x), y: r1(best.y), mitglied_id: best.mitglied_id } : null;
 }
 
 /** Schriftgröße für Namen-Chip je nach Namenslänge (kürzere Namen = größer). */
