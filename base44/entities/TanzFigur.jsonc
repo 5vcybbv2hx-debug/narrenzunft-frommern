@@ -22,6 +22,10 @@
     "aufstellung": {
       "type": "string",
       "description": "Aufstellungs-JSON: [{mitglied_id, x, y}] mit x/y in 0-100"
+    },
+    "linien": {
+      "type": "string",
+      "description": "Feste Linien der Figur als JSON: [{x1, y1, x2, y2}] mit Werten in 0-100"
     }
   },
   "description": {

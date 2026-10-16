@@ -72,6 +72,27 @@ export default async function(req) {
       return { value: JSON.stringify(sauber) };
     };
 
+    // ── Linien-JSON validieren: [{x1, y1, x2, y2}] ──
+    const pruefeLinien = (raw) => {
+      let arr;
+      try {
+        arr = raw === undefined || raw === null ? undefined : JSON.parse(raw);
+      } catch {
+        return { invalid: true };
+      }
+      if (arr === undefined) return { value: undefined };
+      if (!Array.isArray(arr) || arr.length > 300) return { invalid: true };
+      const sauber = [];
+      for (const l of arr) {
+        if (!l || typeof l !== 'object') return { invalid: true };
+        const v = [l.x1, l.y1, l.x2, l.y2].map(Number);
+        if (v.some((n) => !Number.isFinite(n))) return { invalid: true };
+        const [x1, y1, x2, y2] = v.map((n) => Math.min(100, Math.max(0, Math.round(n * 10) / 10)));
+        sauber.push({ x1, y1, x2, y2 });
+      }
+      return { value: JSON.stringify(sauber) };
+    };
+
     // ── Musik-Marker-JSON validieren: [{zeit, figur_id?, label?}] ──
     const pruefeMarker = (raw) => {
       let arr;
@@ -132,6 +153,11 @@ export default async function(req) {
           const aufst = pruefeAufstellung(body.aufstellung);
           if (aufst.invalid) return Response.json({ error: 'Ungültiges Aufstellungs-Format' }, { status: 400 });
           patch.aufstellung = aufst.value ?? JSON.stringify([]);
+        }
+        if (body.linien !== undefined) {
+          const li = pruefeLinien(body.linien);
+          if (li.invalid) return Response.json({ error: 'Ungültiges Linien-Format' }, { status: 400 });
+          patch.linien = li.value ?? JSON.stringify([]);
         }
         const t = await ENT.update(figurId, patch);
         return Response.json({ erfolg: true, eintrag: t });
