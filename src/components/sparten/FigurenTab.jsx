@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowUp, ArrowDown, Plus, X, Check, Upload, Loader2, FileTex
 import { base44 } from '@/api/base44Client';
 import { fmtZeit, einsatzpunkteFuerFigur } from '@/lib/tanzMarker';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
-import { parseLinien, snapPunkt } from '@/lib/figurenLinien';
+import { parseLinien, snapPunkt, chipFontSize } from '@/lib/figurenLinien';
 
 /**
  * FigurenTab – Figuren der Tanzgruppe mit zugehörigen Figuren-PDFs und
@@ -478,7 +478,8 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
               style={{ left: `${m.x}%`, top: `${m.y}%` }}
               className={`absolute -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 ${canEdit ? 'cursor-grab active:cursor-grabbing' : ''}`}
             >
-              <span className="px-1.5 py-0.5 rounded-full bg-primary text-white text-[9px] font-medium max-w-[90px] truncate shadow-md border border-white/20">
+              <span className="px-2 py-0.5 rounded-full bg-primary text-white font-medium min-w-[68px] max-w-[112px] truncate text-center inline-block shadow-md border border-white/20"
+                style={{ fontSize: chipFontSize(nameVon(m.mitglied_id)) }}>
                 {nameVon(m.mitglied_id)}
               </span>
               {canEdit && (
@@ -503,8 +504,9 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
                 <span className="text-xs text-muted-foreground italic">Alle aktiven Tänzer:innen sind platziert.</span>
               ) : nichtPlatziert.map(t => (
                 <button key={t.mitglied_id} onClick={() => hinzufuegenZurAufstellung(t)}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary border border-border text-[11px] text-foreground hover:border-primary">
-                  <Plus className="w-2.5 h-2.5 text-primary" /> {nameVon(t.mitglied_id)}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary border border-border min-w-[68px] justify-center text-foreground hover:border-primary"
+                  style={{ fontSize: chipFontSize(nameVon(t.mitglied_id)) }}>
+                  <Plus className="w-2.5 h-2.5 text-primary shrink-0" /> <span className="truncate max-w-[96px]">{nameVon(t.mitglied_id)}</span>
                 </button>
               ))}
             </div>

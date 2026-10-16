@@ -1,5 +1,5 @@
 // Hilfsfunktionen für feste Linien + Einrasten in der Figuren-Aufstellung.
-// Alle Koordinaten sind Prozent (0-100) der bühne.
+// Alle Koordinaten sind Prozent (0-100) der Bühne.
 
 export const parseLinien = (raw) => {
   try {
@@ -14,9 +14,10 @@ const r1 = (n) => Math.round(n * 10) / 10;
 
 /**
  * Rastet einen Punkt p ({x,y} in %) ein:
- *  1. an Linien-Endpunkten (und optional weiteren Punkten, z. B. Personen)
+ *  1. an Linien-Endpunkten und Personen (Zusatzpunkte)
  *  2. sonst an die nächstgelegene Stelle auf einer Linie
- * rect = Bühnenmaße in px (für pixelgenauen Fangradius).
+ *  3. sonst an ein unsichtbares quadratisches Raster (5% der kürzeren Seite)
+ * rect = Bühnenmaße in px (für pixelgenaue Fangradien + quadratisches Raster).
  */
 export function snapPunkt(p, linien, rect, extra = []) {
   const toPx = (q) => ({ x: (q.x * rect.width) / 100, y: (q.y * rect.height) / 100 });
@@ -54,5 +55,21 @@ export function snapPunkt(p, linien, rect, extra = []) {
     }
   });
   if (bestSeg) return { x: r1(bestSeg.x), y: r1(bestSeg.y) };
+
+  // 3) Unsichtbares quadratisches Raster (5% der kürzeren Seite)
+  const cell = Math.min(rect.width, rect.height) * 0.05;
+  if (cell > 0) {
+    const gx = (Math.round(pp.x / cell) * cell / rect.width) * 100;
+    const gy = (Math.round(pp.y / cell) * cell / rect.height) * 100;
+    return { x: r1(gx), y: r1(gy) };
+  }
   return p;
+}
+
+/** Schriftgröße für Namen-Chip je nach Namenslänge (kürzere Namen = größer). */
+export function chipFontSize(name) {
+  const n = (name || '').length;
+  if (n <= 7) return '10px';
+  if (n <= 11) return '9px';
+  return '8px';
 }
