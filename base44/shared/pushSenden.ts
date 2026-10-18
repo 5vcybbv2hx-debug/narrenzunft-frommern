@@ -36,7 +36,7 @@ export async function sendePush(mitgliedIds, titel, nachricht, data = {}, sendAf
   const payload = {
     app_id: ONESIGNAL_APP_ID,
     include_aliases: { external_id: ids },
-    target_channels: ["push"],
+    target_channel: "push",
     headings: { en: String(titel || "Narrenzunft Frommern") },
     contents: { en: String(nachricht || "") },
     data: data || {},
