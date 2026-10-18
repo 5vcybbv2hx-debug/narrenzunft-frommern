@@ -7,7 +7,7 @@
  * Secret ONESIGNAL_API_KEY in den App-Settings (nie im Code).
  */
 
-export const ONESIGNAL_APP_ID = ""; // TODO: gleiche App-ID wie src/lib/pushConfig.js eintragen
+export const ONESIGNAL_APP_ID = "cdf8032c-18f1-4e2d-9805-3276ef60e1c7"; // gleich wie src/lib/pushConfig.js
 const ONESIGNAL_API_URL = "https://api.onesignal.com/notifications";
 
 function holeApiKey() {
