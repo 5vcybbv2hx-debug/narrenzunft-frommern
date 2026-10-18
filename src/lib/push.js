@@ -13,6 +13,7 @@
 
 import { toast } from 'sonner';
 import { ONESIGNAL_APP_ID, PUSH_AKTIV } from '@/lib/pushConfig';
+export { PUSH_AKTIV };
 
 let initGestartet = false;
 let oneSignalReady = null; // Promise<OneSignal | null>

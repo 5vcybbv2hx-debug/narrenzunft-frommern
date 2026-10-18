@@ -36,6 +36,10 @@
     "veranstaltung_id": {
       "type": "string",
       "description": "Optionale Verkn\u00fcpfung mit einer Veranstaltung"
+    },
+    "push_erinnerung_id": {
+      "type": "string",
+      "description": "OneSignal-Notification-ID der geplanten 2h-Erinnerung (zum Ersetzen/Stornieren)"
     }
   },
   "description": {
