@@ -67,11 +67,12 @@ export async function sendePush(mitgliedIds, titel, nachricht, data = {}, sendAf
   } else if (errs?.invalid_external_ids) {
     invalid.push(...errs.invalid_external_ids);
   }
-  // HTTP 200 + Notification-ID = angenommen. Achtung: 'recipients' kann beim
-  // Anlegen 0 sein, obwohl asynchron zugestellt wird (Live-Test 18.10.:
-  // recipients=0, successful=1). Nur ungültige Aliasse zählen als Info.
+  // Erfolg anhand HTTP 200 + Notification-ID. 'recipients' lagt beim
+  // Alias-Versand (war 0 trotz erfolgreicher Zustellung, successful=1) und
+  // darf NICHT über Erfolg entscheiden. Nur ungültige Aliasse sind Info.
+  const notificationId = json?.id || "";
   const erreicht = Number(json?.recipients || 0);
-  return { erfolg: true, erreicht, invalid, notification_id: json?.id || "" };
+  return { erfolg: !!notificationId, erreicht, invalid, notification_id: notificationId };
 }
 
 /** Plant/Ersetzt eine geplante Notification (Notification-ID merken, um zu stornieren). */

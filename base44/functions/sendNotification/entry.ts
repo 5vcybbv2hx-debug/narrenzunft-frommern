@@ -3,7 +3,7 @@ import { loeseMeinMitglied, istVerwaltung } from "../../shared/mitgliedBerechtig
 import {
   sendePush, planePush, stornierePush,
   holeAusschussIds, holeIdsMitAppKonto,
-} from "../../shared/pushSenden.ts"; // redeploy 2026-10-18 20:08: target_channel singular (OneSignal alias-API)
+} from "../../shared/pushSenden.ts"; // redeploy 2026-10-18 20:35: erfolg an HTTP200+notification_id (commit 65ea295)
 
 /**
  * ZENTRALE Push-Funktion. ALLE Features rufen NUR diese Funktion auf,
