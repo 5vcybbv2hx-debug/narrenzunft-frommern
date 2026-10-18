@@ -1,6 +1,6 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.49";
 import { istVerwaltung } from "../../shared/mitgliedBerechtigung.ts";
-import { sendePush } from "../../shared/pushSenden.ts"; // redeploy 2026-10-18: OneSignal App-ID aktiv
+import { sendePush } from "../../shared/pushSenden.ts"; // redeploy 2026-10-18 20:08: target_channel singular (OneSignal alias-API)
 
 /**
  * Tägliche Push-Erinnerungen (per Automation/Auftrag einmal täglich ~19:00 aufrufen).
