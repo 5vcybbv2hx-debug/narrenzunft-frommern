@@ -12,6 +12,10 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me().catch(() => null);
     if (!user) return Response.json({ error: 'Nicht angemeldet.' }, { status: 401 });
+    // Nur Verwaltung darf Bestätigungsmails versenden (verhindert Spam-/Phishing-Missbrauch).
+    if (!['admin', 'vorstand', 'stellv_vorstand'].includes(user.role)) {
+      return Response.json({ error: 'Keine Berechtigung.' }, { status: 403 });
+    }
 
     const body = await req.json().catch(() => ({}));
     const { ausleihe_id, email_override, notiz } = body;

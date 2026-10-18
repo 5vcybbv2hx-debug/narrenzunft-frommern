@@ -47,6 +47,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Ungültige E-Mail-Adresse.' }, { status: 400 });
     }
 
+    // Minimaler Missbrauchsschutz: gleiche Anfrage (Name+Telefon) in letzter Stunde blockieren
+    const kuerzlich = await base44.asServiceRole.entities.VerleihAnfrage.filter({ name: n, telefon: tel });
+    const vor15Min = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    if ((kuerzlich || []).some(r => (r.created_date || '') >= vor15Min)) {
+      return Response.json({ ok: true }); // still erfolgsreich, kein Duplikat
+    }
+
     // Gegenstand prüfen (muss öffentlich verleihbar sein)
     const treffer = await base44.asServiceRole.entities.Ausruestung.filter({ id });
     const a = treffer?.[0];

@@ -1,4 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.48";
+import { hashToken } from "../../shared/tokenHash.ts";
 
 /**
  * Öffentlicher Kalender-Feed (ICS) für eine Häsgruppe basierend auf Token.
@@ -16,10 +17,11 @@ Deno.serve(async (req) => {
 
     const base44 = createClientFromRequest(req);
 
-    // Token in AppEinstellung suchen (format: "haesgroup_<ID>")
+    // Token-Hash verifizieren (Klartext wird nie gespeichert)
+    const tokenHash = await hashToken(token);
     const einstellungen = await base44.asServiceRole.entities.AppEinstellung.list();
     const haesEinstellung = einstellungen.find(e =>
-      e.schluessel?.startsWith('haesgroup_') && e.wert_ids?.[0] === token
+      e.schluessel?.startsWith('haesgroup_') && e.wert_ids?.[0] === tokenHash
     );
 
     if (!haesEinstellung) {

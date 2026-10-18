@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { hashToken } from '../../shared/tokenHash.ts';
 
 // App-ID für Feed-URLs: Im internen Dispatcher-Pfad fehlt die App-ID (apps//functions),
 // daher als Fallback fest hinterlegt.
@@ -6,19 +7,13 @@ const APP_ID_FALLBACK = '69f263f56f0ba624a7c9355c';
 
 const generateRandomToken = () => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const arr = new Uint8Array(64);
+  crypto.getRandomValues(arr);
   let token = '';
   for (let i = 0; i < 64; i++) {
-    token += chars.charAt(Math.floor(Math.random() * chars.length));
+    token += chars.charAt(arr[i] % chars.length);
   }
   return token;
-};
-
-const hashToken = async (token) => {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(token);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 };
 
 Deno.serve(async (req) => {

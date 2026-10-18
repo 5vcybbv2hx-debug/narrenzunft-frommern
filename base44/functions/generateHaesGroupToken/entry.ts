@@ -1,4 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.25";
+import { hashToken } from "../../shared/tokenHash.ts";
 
 /**
  * Generiert einen eindeutigen Token für eine Häsgruppe
@@ -25,28 +26,29 @@ Deno.serve(async (req) => {
     let einstellungen = await base44.entities.AppEinstellung.filter({ schluessel: tokenSchluessel });
 
     if (einstellungen.length > 0 && !regenerate) {
-      // Existierender Token - zurückgeben
+      // Token existiert — Klartext ist nicht rekonstruierbar (nur Hash gespeichert).
       return Response.json({
         success: true,
-        token: einstellungen[0].wert_ids?.[0],
+        existing: true,
+        token: null,
         created_at: einstellungen[0].created_date,
-        url: `${Deno.env.get('BASE44_APP_URL')}/api/calendar/haesgroup/${einstellungen[0].wert_ids?.[0]}.ics`
+        message: 'Token existiert bereits. Mit regenerate=true neu generieren, um einen neuen Link zu erhalten.'
       });
     }
 
-    // Neuen Token generieren (UUID-ähnlich)
+    // Neuen Token generieren (kryptografisch sicher)
     const newToken = crypto.getRandomValues(new Uint8Array(16))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
+    // NUR den Hash speichern — AppEinstellung ist für alle Mitglieder lesbar.
+    const tokenHash = await hashToken(newToken);
 
     if (einstellungen.length > 0) {
-      // Existierenden Token aktualisieren
-      await base44.entities.AppEinstellung.update(einstellungen[0].id, { wert_ids: [newToken] });
+      await base44.entities.AppEinstellung.update(einstellungen[0].id, { wert_ids: [tokenHash] });
     } else {
-      // Neuen Eintrag erstellen
       await base44.entities.AppEinstellung.create({
         schluessel: tokenSchluessel,
-        wert_ids: [newToken]
+        wert_ids: [tokenHash]
       });
     }
 

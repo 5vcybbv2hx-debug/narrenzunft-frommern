@@ -37,6 +37,22 @@ Deno.serve(async (req) => {
     const haes = haesListe[0];
     if (!haes) return Response.json({ error: 'Häs nicht gefunden' }, { status: 404 });
 
+    // Spartenscope: Spartenleiter dürfen nur Häs ihrer eigenen Gruppe bearbeiten.
+    if (user.role === 'spartenleiter') {
+      const meineMitglieder = await base44.asServiceRole.entities.Mitglied.filter({ user_id: user.id });
+      const meinMitglied = meineMitglieder?.[0];
+      if (meinMitglied && haes.haesgruppe_id) {
+        const gruppen = await base44.asServiceRole.entities.Haesgruppe.filter({ id: haes.haesgruppe_id });
+        const g = gruppen?.[0];
+        const verantwortliche = g?.verantwortliche_ids || (g?.verantwortlicher_id ? [g.verantwortlicher_id] : []);
+        if (!verantwortliche.includes(meinMitglied.id)) {
+          return Response.json({ error: 'Keine Berechtigung für diese Gruppe.' }, { status: 403 });
+        }
+      } else {
+        return Response.json({ error: 'Keine Berechtigung für diese Gruppe.' }, { status: 403 });
+      }
+    }
+
     // Zielmitglied prüfen (falls angegeben)
     if (mitglied_id) {
       const mitglieder = await base44.asServiceRole.entities.Mitglied.filter({ id: mitglied_id });

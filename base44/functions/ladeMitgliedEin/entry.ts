@@ -9,7 +9,6 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const email = (body.email || '').trim();
-    const rolle = body.rolle === 'admin' ? 'admin' : 'user';
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return Response.json({ error: 'Ungültige oder fehlende E-Mail-Adresse' }, { status: 400 });
@@ -20,6 +19,9 @@ Deno.serve(async (req) => {
     if (!user || !['admin', 'vorstand', 'stellv_vorstand'].includes(user.role)) {
       return Response.json({ error: 'Keine Berechtigung' }, { status: 403 });
     }
+
+    // Nur Admins dürfen Admin-Konten einladen; Vorstand/Stellv. nur 'user'.
+    const rolle = (body.rolle === 'admin' && user.role === 'admin') ? 'admin' : 'user';
 
     const result = await base44.users.inviteUser(email, rolle);
     return Response.json({ success: true, email, rolle, result });
