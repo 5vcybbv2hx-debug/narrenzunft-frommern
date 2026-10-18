@@ -182,25 +182,31 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
   // ── Aufstellungs-Editor ──
   const inAufstellung = useMemo(() => new Set(marker.map(m => m.mitglied_id)), [marker]);
 
+  const [tanzliste, setTanzliste] = useState([]);
+
   // Figuren-Zähler pro aktiver Tänzer:in (nur canEdit, Liste-Ansicht).
   // Aufsteigend sortiert — wenigste Einsätze zuerst (Gerechtigkeit);
-  // 0-Figuren heben sich amber ab.
+  // 0-Figuren heben sich amber ab. Verwaiste Platzierungen (Person steht
+  // noch in einer Aufstellung, ist aber nicht mehr aktiv) werden als
+  // Hinweis gezählt. (Tanzliste wird in laden() geladen.)
   const figurenProTaenzer = useMemo(() => {
-    if (!figuren.length || !tanzliste.length) return [];
+    if (!figuren.length || !tanzliste.length) return { eintraege: [], verwaist: [] };
     const counts = new Map();
     for (const t of tanzliste) counts.set(String(t.mitglied_id), 0);
+    const aktivIds = new Set(tanzliste.map(t => String(t.mitglied_id)));
+    const verwaist = [];
     for (const f of figuren) {
       for (const m of parseAufstellung(f.aufstellung)) {
         const id = String(m.mitglied_id);
         if (counts.has(id)) counts.set(id, counts.get(id) + 1);
+        else if (id && id !== "undefined" && !verwaist.includes(id)) verwaist.push(id);
       }
     }
-    return tanzliste
+    const eintraege = tanzliste
       .map((t) => ({ mitglied_id: t.mitglied_id, name: nameVon(t.mitglied_id), anzahl: counts.get(String(t.mitglied_id)) || 0 }))
       .sort((a, b) => a.anzahl - b.anzahl || a.name.localeCompare(b.name));
+    return { eintraege, verwaist };
   }, [figuren, tanzliste, alleMitglieder]);
-
-  const [tanzliste, setTanzliste] = useState([]);
 
   const hinzufuegenZurAufstellung = (t) => {
     if (inAufstellung.has(t.mitglied_id)) return;
@@ -316,14 +322,14 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
           <span className="text-sm text-muted-foreground">{figuren.length} {figuren.length === 1 ? 'Figur' : 'Figuren'}</span>
         </div>
 
-        {canEdit && figuren.length > 0 && figurenProTaenzer.length > 0 && (
+        {canEdit && figuren.length > 0 && figurenProTaenzer.eintraege.length > 0 && (
           <div className="rounded-xl border border-border bg-card p-3 space-y-2">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span className="font-medium text-foreground">Figuren-Einsätze</span>
               <span>· wenigste zuerst</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {figurenProTaenzer.map((t) => (
+              {figurenProTaenzer.eintraege.map((t) => (
                 <span key={t.mitglied_id}
                   className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border ${
                     t.anzahl === 0
@@ -336,9 +342,14 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
                 </span>
               ))}
             </div>
-            {figurenProTaenzer.some((t) => t.anzahl === 0) && (
+            {figurenProTaenzer.eintraege.some((t) => t.anzahl === 0) && (
               <p className="text-[11px] text-amber-400">
-                {figurenProTaenzer.filter((t) => t.anzahl === 0).length} Tänzer:innen noch in keiner Figur platziert.
+                {figurenProTaenzer.eintraege.filter((t) => t.anzahl === 0).length} Tänzer:innen noch in keiner Figur platziert.
+              </p>
+            )}
+            {figurenProTaenzer.verwaist.length > 0 && (
+              <p className="text-[11px] text-muted-foreground">
+                {figurenProTaenzer.verwaist.length} platzierte {figurenProTaenzer.verwaist.length === 1 ? 'Person' : 'Personen'} nicht mehr aktiv.
               </p>
             )}
           </div>

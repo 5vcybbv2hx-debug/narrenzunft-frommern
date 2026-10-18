@@ -4,14 +4,19 @@ import { loeseMeinMitglied, istVerwaltung } from "../../shared/mitgliedBerechtig
 /**
  * Anwesenheit für Trainings-Termine (KalenderAnmeldung.anwesend).
  *
- * Darf setzen: Gruppen-Verantwortliche des Termins
- *  (termin.verantwortliche_ids ODER Haesgruppe.verantwortliche_ids/
- *   verantwortlicher_id) ODER Vorstand/Admin.
+ * Mitglieder melden sich selbst an/ab (KalenderAnmeldung). Die ANWESENHEIT
+ * darf nur setzen:
+ *   - Vorstand / Stellv. / Admin
+ *   - Eintragung im Termin (KalenderTermin.verantwortliche_ids)
+ *   - Verantwortliche der Gruppe (haesgruppe_id -> Haesgruppe.verantwortliche_ids
+ *     / verantwortlicher_id)
+ * RLS erlaubt KalenderAnmeldung-Updates nur dem Owner — deshalb service-role.
  *
  * Aktionen:
  *  - "liste"  : alle Anmeldungen eines Termins (mit anwesend-Status)
  *  - "setzen" : anwesend true/false für eine anmeldung_id
- *               (oder termin_id + mitglied_id)
+ *               (oder termin_id + mitglied_id); legt ggf. eine
+ *               Anmeldung an (implizit angemeldet)
  */
 export default async function (req) {
   try {
@@ -47,20 +52,33 @@ export default async function (req) {
     if (aktion === "setzen") {
       const { anmeldung_id, termin_id, mitglied_id, anwesend } = body;
       let anm;
+      let terminId = termin_id;
       if (anmeldung_id) {
         anm = await S.KalenderAnmeldung.get(anmeldung_id).catch(() => null);
+        if (anm) terminId = anm.termin_id;
       } else if (termin_id && mitglied_id) {
         const list = await S.KalenderAnmeldung.filter({ termin_id, mitglied_id });
         anm = (list || [])[0];
       }
-      if (!anm) return Response.json({ error: "Anmeldung nicht gefunden" }, { status: 404 });
-      const termin = await S.KalenderTermin.get(anm.termin_id).catch(() => null);
+      if (!terminId) return Response.json({ error: "termin_id fehlt" }, { status: 400 });
+      const termin = await S.KalenderTermin.get(terminId).catch(() => null);
       if (!termin) return Response.json({ error: "Termin nicht gefunden" }, { status: 404 });
       if (!(await darfSetzen(termin))) {
-        return Response.json({ error: "Keine Berechtigung (nur Gruppen-Verantwortliche/Vorstand)" }, { status: 403 });
+        return Response.json({ error: "Nur Verantwortliche der Gruppe oder Vorstand" }, { status: 403 });
       }
-      await S.KalenderAnmeldung.update(anm.id, { anwesend: !!anwesend });
-      return Response.json({ ok: true, anmeldung_id: anm.id, anwesend: !!anwesend });
+      if (anm) {
+        await S.KalenderAnmeldung.update(anm.id, { anwesend: anwesend === true });
+      } else if (termin_id && mitglied_id) {
+        anm = await S.KalenderAnmeldung.create({
+          termin_id,
+          mitglied_id,
+          status: "Angemeldet", // durch Anwesenheit implizit angemeldet
+          anwesend: anwesend === true,
+        });
+      } else {
+        return Response.json({ error: "Anmeldung nicht gefunden" }, { status: 404 });
+      }
+      return Response.json({ ok: true, anmeldung_id: anm.id, anwesend: anwesend === true });
     }
 
     return Response.json({ error: "Unbekannte Aktion: " + aktion }, { status: 400 });

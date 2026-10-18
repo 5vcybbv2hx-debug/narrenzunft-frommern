@@ -2,19 +2,24 @@ import { createClientFromRequest } from "npm:@base44/sdk@0.8.49";
 import { loeseMeinMitglied, istVerwaltung, istElternVon } from "../../shared/mitgliedBerechtigung.ts";
 
 /**
- * U18-Begleitbestätigung (U18Begleitung-Entity).
+ * U18-Begleitbestätigung (U18Begleitung-Entity) für Termine/Ausfahrten/
+ * Veranstaltungen mit Pflicht-Flag (u18_begleitung_erforderlich).
  *
- * Getrennte Bestätigung: Eltern (via Verwandtschafts-Prüfung) UND
- * Begleitperson (Selbstbestätigung). Status wird erst „Bestätigt", wenn
- * beide vorliegen. Updates laufen im service-role (RLS update =
- * vorstand/admin; service-role bypasses RLS).
- *
- * Aktionen:
- *  - "anlegen"               : Begleitung anlegen (Duplikat-Catch)
- *  - "eltern_bestaetigen"    : Eltern bestätigen (Verwandtschafts-Prüfung)
- *  - "begleitung_bestaetigen": Begleitperson bestätigt selbst
- *  - "liste"                 : Begleitungen eines Termins (optional typ)
+ * Ablauf:
+ *   1. 'anlegen': Bei Anmeldung einer U18-Person wird ein Datensatz mit
+ *      Begleitperson (Mitglied oder externer Name) angelegt (Status: Ausstehend).
+ *      Anlegen darf: die/der U18 selbst, ein Elternteil oder Verwaltung.
+ *   2. 'eltern_bestaetigen': Erziehungsberechtigte/r bestätigt
+ *      (Verwandtschafts-Prüfung via istElternVon) — mit Zeitstempel.
+ *   3. 'begleitung_bestaetigen': Die Begleitperson bestätigt selbst (falls
+ *      Mitglied); bei externer Begleitung nur Vorstand (manuell, z. B. vor Ort).
+ *   4. 'liste': Begleitungen eines Termins (optional typ).
+ * Erst wenn Eltern UND Begleitperson bestätigt haben, ist der Status 'Bestätigt'.
+ * Updates laufen im service-role (RLS update = vorstand/admin; service-role
+ * bypasses RLS). _von-Felder speichern die Mitglieds-ID (verfolgbar).
  */
+const jetztISO = () => new Date().toISOString();
+
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
@@ -24,22 +29,50 @@ export default async function (req) {
     const body = await req.json().catch(() => ({}));
     const { aktion } = body;
 
+    async function nameVon(id) {
+      if (!id) return "";
+      const m = await S.Mitglied.get(id).catch(() => null);
+      return m ? `${m.vorname || ""} ${m.nachname || ""}`.trim() : "";
+    }
+
+    function statusVon(e) {
+      const eltern = !!e.eltern_bestaetigt_am;
+      const begl = !!e.begleitung_bestaetigt_am;
+      return eltern && begl ? "Bestätigt" : "Ausstehend";
+    }
+
     if (aktion === "anlegen") {
-      const { typ, termin_id, u18_mitglied_id, u18_name, begleit_mitglied_id, begleit_name, notiz } = body;
-      if (!termin_id || !u18_mitglied_id) {
-        return Response.json({ error: "termin_id und u18_mitglied_id erforderlich" }, { status: 400 });
+      const { typ, termin_id, u18_mitglied_id, begleit_mitglied_id, begleit_name, notiz } = body;
+      if (!termin_id || !u18_mitglied_id || !typ) {
+        return Response.json({ error: "typ, termin_id und u18_mitglied_id fehlen" }, { status: 400 });
       }
-      const exist = await S.U18Begleitung.filter({ typ: typ || "kalender", termin_id, u18_mitglied_id });
-      if ((exist || []).length) {
-        return Response.json({ ok: true, existierend: true, id: exist[0].id, begleitung: exist[0] });
+      if (!begleit_mitglied_id && !String(begleit_name || "").trim()) {
+        return Response.json({ error: "Begleitperson fehlt (Mitglied oder Name)" }, { status: 400 });
+      }
+      const mein = await loeseMeinMitglied(base44, user);
+      const darf = istVerwaltung(user)
+        || (mein && mein.id === u18_mitglied_id)
+        || (await istElternVon(base44, mein?.id, u18_mitglied_id));
+      if (!darf) {
+        return Response.json({ error: "Nur U18-Person selbst, Erziehungsberechtigte/r oder Verwaltung" }, { status: 403 });
+      }
+      // Doppel-Anlage vermeiden: bestehenden Eintrag aktualisieren
+      const bestehende = await S.U18Begleitung.filter({ typ, termin_id, u18_mitglied_id }).catch(() => []);
+      const aktiv = (bestehende || [])[0];
+      if (aktiv) {
+        const erg = await S.U18Begleitung.update(aktiv.id, {
+          begleit_mitglied_id: begleit_mitglied_id || "",
+          begleit_name: begleit_mitglied_id ? await nameVon(begleit_mitglied_id) : String(begleit_name || "").trim(),
+        });
+        return Response.json({ ok: true, existierend: true, id: aktiv.id, begleitung: erg });
       }
       const rec = await S.U18Begleitung.create({
-        typ: typ || "kalender",
+        typ,
         termin_id,
         u18_mitglied_id,
-        u18_name: u18_name || "",
+        u18_name: await nameVon(u18_mitglied_id),
         begleit_mitglied_id: begleit_mitglied_id || "",
-        begleit_name: begleit_name || "",
+        begleit_name: begleit_mitglied_id ? await nameVon(begleit_mitglied_id) : String(begleit_name || "").trim(),
         status: "Ausstehend",
         notiz: notiz || "",
       });
@@ -47,37 +80,35 @@ export default async function (req) {
     }
 
     if (aktion === "eltern_bestaetigen") {
-      const { begleitung_id } = body;
-      const b = await S.U18Begleitung.get(begleitung_id).catch(() => null);
-      if (!b) return Response.json({ error: "Begleitung nicht gefunden" }, { status: 404 });
+      const bid = body.eintrag_id || body.begleitung_id;
+      const e = bid ? await S.U18Begleitung.get(bid).catch(() => null) : null;
+      if (!e) return Response.json({ error: "Eintrag nicht gefunden" }, { status: 404 });
       const mein = await loeseMeinMitglied(base44, user);
       if (!mein) return Response.json({ error: "Kein Mitglied verknüpft" }, { status: 403 });
-      const ok = istVerwaltung(user) || (await istElternVon(base44, mein.id, b.u18_mitglied_id));
-      if (!ok) return Response.json({ error: "Nur die Eltern des U18 dürfen bestätigen" }, { status: 403 });
-      const jetzt = new Date().toISOString();
-      await S.U18Begleitung.update(b.id, {
-        eltern_bestaetigt_am: jetzt,
+      const ok = istVerwaltung(user) || (await istElternVon(base44, mein.id, e.u18_mitglied_id));
+      if (!ok) return Response.json({ error: "Nur Erziehungsberechtigte/r oder Verwaltung" }, { status: 403 });
+      const erg = await S.U18Begleitung.update(bid, {
+        eltern_bestaetigt_am: jetztISO(),
         eltern_bestaetigt_von: mein.id,
-        status: b.begleitung_bestaetigt_am ? "Bestätigt" : "Ausstehend",
+        status: statusVon({ ...e, eltern_bestaetigt_am: jetztISO() }),
       });
-      return Response.json({ ok: true, id: b.id });
+      return Response.json({ ok: true, id: bid, begleitung: erg });
     }
 
     if (aktion === "begleitung_bestaetigen") {
-      const { begleitung_id } = body;
-      const b = await S.U18Begleitung.get(begleitung_id).catch(() => null);
-      if (!b) return Response.json({ error: "Begleitung nicht gefunden" }, { status: 404 });
+      const bid = body.eintrag_id || body.begleitung_id;
+      const e = bid ? await S.U18Begleitung.get(bid).catch(() => null) : null;
+      if (!e) return Response.json({ error: "Eintrag nicht gefunden" }, { status: 404 });
       const mein = await loeseMeinMitglied(base44, user);
-      if (!mein) return Response.json({ error: "Kein Mitglied verknüpft" }, { status: 403 });
-      const ok = istVerwaltung(user) || b.begleit_mitglied_id === mein.id;
-      if (!ok) return Response.json({ error: "Nur die eingetragene Begleitperson darf bestätigen" }, { status: 403 });
-      const jetzt = new Date().toISOString();
-      await S.U18Begleitung.update(b.id, {
-        begleitung_bestaetigt_am: jetzt,
-        begleitung_bestaetigt_von: mein.id,
-        status: b.eltern_bestaetigt_am ? "Bestätigt" : "Ausstehend",
+      // Bei externer Begleitung (kein Mitglied) darf nur die Verwaltung bestätigen
+      const ok = istVerwaltung(user) || (mein && e.begleit_mitglied_id === mein.id);
+      if (!ok) return Response.json({ error: "Nur die Begleitperson selbst oder Verwaltung" }, { status: 403 });
+      const erg = await S.U18Begleitung.update(bid, {
+        begleitung_bestaetigt_am: jetztISO(),
+        begleitung_bestaetigt_von: mein?.id || "",
+        status: statusVon({ ...e, begleitung_bestaetigt_am: jetztISO() }),
       });
-      return Response.json({ ok: true, id: b.id });
+      return Response.json({ ok: true, id: bid, begleitung: erg });
     }
 
     if (aktion === "liste") {

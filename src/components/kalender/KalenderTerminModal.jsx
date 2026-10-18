@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import BottomModal from '@/components/ui/BottomModal';
 
-const TERMINARTEN = ['Umzug','Abendveranstaltung','Arbeitsdienst','Ausschusssitzung','Vorstandssitzung','Jugendtermin','Gruppen-Termin','Training','Intern','Sonstiges'];
+const TERMINARTEN = ['Umzug','Abendveranstaltung','Arbeitsdienst','Ausschusssitzung','Vorstandssitzung','Jugendtermin','Training','Gruppen-Termin','Intern','Sonstiges'];
 const SICHTBARKEITEN = [
   { value: 'alle', label: 'Alle Mitglieder' },
   { value: 'admin', label: 'Nur Admin/Vorstand' },
@@ -102,7 +102,11 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
             <label className="text-xs text-muted-foreground font-medium block mb-1.5">Terminart</label>
             <div className="flex flex-wrap gap-1.5">
               {TERMINARTEN.map(art => (
-                <button key={art} type="button" onClick={() => set('terminart', art)}
+                <button key={art} type="button" onClick={() => {
+                  set('terminart', art);
+                  // Trainings sind Gruppen-Termine mit Anmeldung: sinnvolle Defaults
+                  if (art === 'Training' && !form.haesgruppe_id) { set('sichtbarkeit', 'haesgruppe'); set('anmeldbar', true); }
+                }}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${form.terminart === art ? 'bg-primary text-white border-primary' : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'}`}>
                   {art}
                 </button>
@@ -180,7 +184,7 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
               Anmeldung möglich
             </label>
             <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground">
-              <input type="checkbox" checked={form.u18_begleitung_erforderlich} onChange={e => set('u18_begleitung_erforderlich', e.target.checked)} className="rounded" />
+              <input type="checkbox" checked={!!form.u18_begleitung_erforderlich} onChange={e => set('u18_begleitung_erforderlich', e.target.checked)} className="rounded" />
               U18-Begleitung erforderlich
             </label>
           </div>
