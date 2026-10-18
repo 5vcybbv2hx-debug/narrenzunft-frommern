@@ -97,6 +97,13 @@ export async function verknuepfePushMitglied(mitgliedId) {
     const login = async () => {
       await OneSignal.login(externalId);
       try { localStorage.setItem('nz_push_external_id', externalId); } catch { /* privat-Modus */ }
+      // Selbstheilung: Erlaubnis erteilt, aber Token nie abgeschlossen
+      // (typischer iOS-PWA-Zustand) -> Subscription nachziehen.
+      try {
+        if (OneSignal.Notifications?.permission === true && OneSignal.User?.PushSubscription?.optedIn !== true) {
+          await OneSignal.User.PushSubscription.optIn();
+        }
+      } catch (e) { console.warn('[Push] Subscription-Nachzug:', e); }
     };
     try {
       await login();
@@ -138,7 +145,12 @@ export async function getPushStatus() {
   if (!PUSH_AKTIV) return status;
   const OneSignal = await oneSignalReady;
   if (!OneSignal) return status;
-  try { status.abonniert = OneSignal.Notifications?.permission === true; } catch { /* egal */ }
+  try {
+    // ECHTES Abonnement (Token vorhanden), nicht nur Erlaubnis — sonst zeigt
+    // die Diagnose 'aktiv' obwohl iOS nie einen Token abgeschlossen hat.
+    const echt = OneSignal.User?.PushSubscription?.optedIn;
+    status.abonniert = echt === true || (echt === undefined && OneSignal.Notifications?.permission === true);
+  } catch { /* egal */ }
   try { status.externalId = OneSignal.User?.externalId ? String(OneSignal.User.externalId) : status.externalId; } catch { /* egal */ }
   return status;
 }
