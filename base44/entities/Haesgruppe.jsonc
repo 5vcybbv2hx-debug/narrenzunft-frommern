@@ -39,6 +39,10 @@
     "whatsapp_gruppe_name": {
       "type": "string",
       "description": "Name der verkn\u00fcpften WhatsApp-Gruppe"
+    },
+    "ordnung": {
+      "type": "string",
+      "description": "H\u00e4sordnung: JSON-Array der mitglied_ids in Reihenfolge (f\u00fcr Aufstellung & Umzug)"
     }
   },
   "description": {
