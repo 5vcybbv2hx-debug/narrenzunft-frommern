@@ -1,3 +1,4 @@
+import DienstAbfrage from '@/components/arbeitsdienst/DienstAbfrage';
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
@@ -499,6 +500,16 @@ export default function Arbeitsdienste() {
                               </div>
                             </div>
                           )}
+
+                          {/* Abfrage mit Frist: Mitglieder antworten, Verwaltung wertet aus */}
+                          <DienstAbfrage
+                            dienst={d}
+                            kannVerwalten={kannVerwalten}
+                            mitglieder={mitglieder}
+                            myMitglied={myMitglied}
+                            bereitsEingeteiltIds={zuws.map(z => z.mitglied_id)}
+                            onDatenGeaendert={loadData}
+                          />
 
                           {/* Zugewiesene Personen – nur für Verwalter mit Namen, für andere nur Anzahl */}
                           {zuws.length > 0 && (

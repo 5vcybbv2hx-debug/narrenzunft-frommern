@@ -17,6 +17,9 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth,
   addMonths, subMonths, parseISO, isToday, isSameDay, startOfDay, isBefore, isAfter, differenceInDays } from 'date-fns';
 import { de } from 'date-fns/locale';
 import KalenderTerminModal from '@/components/kalender/KalenderTerminModal';
+import TrainingAnwesenheit from '@/components/kalender/TrainingAnwesenheit';
+import { istU18 } from '@/lib/u18Begleitung';
+import { U18BegleitungModal } from '@/components/veranstaltung/U18Begleitung';
 import VeranstaltungBearbeitenModal from '@/components/kalender/VeranstaltungBearbeitenModal';
 import VeranstaltungsvorlagenModal from '@/components/veranstaltung/VeranstaltungsvorlagenModal';
 import { toast } from 'sonner';
@@ -31,6 +34,7 @@ const TERMINART_FARBEN = {
   'Ausschusssitzung':  'bg-red-500/20 text-red-400 border-red-500/30',
   'Vorstandssitzung':  'bg-red-600/20 text-red-300 border-red-600/30',
   'Jugendtermin':      'bg-green-500/20 text-green-400 border-green-500/30',
+  'Training':          'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
   'Gruppen-Termin':    'bg-teal-500/20 text-teal-400 border-teal-500/30',
   'Intern':            'bg-gray-500/20 text-muted-foreground border-gray-500/30',
   'Sonstiges':         'bg-secondary text-muted-foreground border-border',
@@ -45,6 +49,7 @@ const TERMINART_DOT = {
   'Ausschusssitzung':  'bg-red-400',
   'Vorstandssitzung':  'bg-red-300',
   'Jugendtermin':      'bg-green-400',
+  'Training':          'bg-emerald-400',
   'Gruppen-Termin':    'bg-teal-400',
   'Intern':            'bg-gray-400',
   'Sonstiges':         'bg-muted-foreground',
@@ -60,7 +65,7 @@ const ROLLE_ERLAUBTE_SICHTBARKEIT = {
   admin:           ['alle', 'verantwortliche', 'ausschuss', 'admin', 'eingeladen', 'haesgruppe'],
 };
 
-const ALLE_TERMINARTEN = ['Umzug','Abendveranstaltung','Ausfahrt-Umzug','Ausfahrt-Veranstaltung','Arbeitsdienst','Ausschusssitzung','Vorstandssitzung','Jugendtermin','Gruppen-Termin','Intern','Sonstiges'];
+const ALLE_TERMINARTEN = ['Umzug','Abendveranstaltung','Ausfahrt-Umzug','Ausfahrt-Veranstaltung','Arbeitsdienst','Ausschusssitzung','Vorstandssitzung','Jugendtermin','Training','Gruppen-Termin','Intern','Sonstiges'];
 
 export default function Kalender({ nur = 'alle' }) {
   const { user } = useAuth();
@@ -71,6 +76,7 @@ export default function Kalender({ nur = 'alle' }) {
   const [monat, setMonat] = useState(new Date());
   const [termine, setTermine] = useState([]);
   const [myMitglied, setMyMitglied] = useState(null);
+  const [u18Offen, setU18Offen] = useState(null); // { terminId, mitgliedId, name }
   const [anmeldungen, setAnmeldungen] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -272,6 +278,14 @@ export default function Kalender({ nur = 'alle' }) {
       }
       const anm = await base44.entities.KalenderAnmeldung.filter({ mitglied_id: myMitglied.id });
       setAnmeldungen(anm || []);
+      // U18-Begleitbestätigung fuer gekennzeichnete Termine
+      if (termin.u18_begleitung_erforderlich && istU18(myMitglied.geburtsdatum, termin.datum)) {
+        setU18Offen({
+          terminId: termin.id,
+          mitgliedId: myMitglied.id,
+          name: `${myMitglied.vorname || ''} ${myMitglied.nachname || ''}`.trim(),
+        });
+      }
     } catch (e) {
       console.error('Kalender-Anmeldung:', e);
       toast.error('Anmeldung konnte nicht geändert werden.');
@@ -767,6 +781,7 @@ export default function Kalender({ nur = 'alle' }) {
                   teilnahme={t._veranstaltung_id ? (meineTeilnahmen.find(x => x.veranstaltung_id === t._veranstaltung_id && !['Abgesagt'].includes(x.status)) || null) : null}
                   onAnmelden={() => handleAnmelden(t)}
                   submittingKalender={submittingKalenderId === t.id}
+                  myMitglied={myMitglied}
                   angemeldetePersonen={terminUmfang === 'familie' ? angemeldetePersonen(t) : []}
                   onEdit={admin ? () => { setEditTermin(t); setShowModal(true); } : null}
                   onEditVeranstaltung={admin ? (v) => { setEditVeranstaltung(v); setShowVeranstaltungModal(true); } : null}
@@ -798,6 +813,7 @@ export default function Kalender({ nur = 'alle' }) {
                   teilnahme={t._veranstaltung_id ? (meineTeilnahmen.find(x => x.veranstaltung_id === t._veranstaltung_id && !['Abgesagt'].includes(x.status)) || null) : null}
                   onAnmelden={() => handleAnmelden(t)}
                   submittingKalender={submittingKalenderId === t.id}
+                  myMitglied={myMitglied}
                   angemeldetePersonen={terminUmfang === 'familie' ? angemeldetePersonen(t) : []}
                   onEdit={admin ? () => { setEditTermin(t); setShowModal(true); } : null}
                   onEditVeranstaltung={admin ? (v) => { setEditVeranstaltung(v); setShowVeranstaltungModal(true); } : null}
@@ -846,6 +862,7 @@ export default function Kalender({ nur = 'alle' }) {
                   teilnahme={t._veranstaltung_id ? (meineTeilnahmen.find(x => x.veranstaltung_id === t._veranstaltung_id && !['Abgesagt'].includes(x.status)) || null) : null}
                   onAnmelden={() => handleAnmelden(t)}
                   submittingKalender={submittingKalenderId === t.id}
+                  myMitglied={myMitglied}
                   angemeldetePersonen={terminUmfang === 'familie' ? angemeldetePersonen(t) : []}
                   onEdit={admin ? () => { setEditTermin(t); setShowModal(true); } : null}
                   onEditVeranstaltung={admin ? (v) => { setEditVeranstaltung(v); setShowVeranstaltungModal(true); } : null}
@@ -899,11 +916,23 @@ export default function Kalender({ nur = 'alle' }) {
       {showNeuDropdown && <div className="fixed inset-0 z-20" onClick={() => setShowNeuDropdown(false)} />}
       {showAboModal && <KalenderAboModal onClose={() => setShowAboModal(false)} />}
 
+      {/* U18-Begleitperson nach Anmeldung einer U18-Person */}
+      {u18Offen && (
+        <U18BegleitungModal
+          typ="kalender"
+          terminId={u18Offen.terminId}
+          u18MitgliedId={u18Offen.mitgliedId}
+          u18Name={u18Offen.name}
+          onClose={() => setU18Offen(null)}
+          onAngelegt={() => loadData()}
+        />
+      )}
+
     </div>
   );
 }
 
-function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditVeranstaltung, ausfahrtAnmeldung, ausfahrtAnmeldeCount, isAusfahrtOpen, canUnregisterAusfahrt, onAusfahrtRegister, onAusfahrtUnregister, submittingAusfahrt, submittingKalender = false, angemeldetePersonen = [] }) {
+function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditVeranstaltung, ausfahrtAnmeldung, ausfahrtAnmeldeCount, isAusfahrtOpen, canUnregisterAusfahrt, onAusfahrtRegister, onAusfahrtUnregister, submittingAusfahrt, submittingKalender = false, angemeldetePersonen = [], myMitglied = null }) {
   const farbeClass = TERMINART_FARBEN[termin.terminart] || TERMINART_FARBEN['Sonstiges'];
   const isAngemeldet = anmeldung?.status === 'Angemeldet';
   const istVonVeranstaltung = termin._quelle === 'veranstaltung';
@@ -974,6 +1003,11 @@ function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditV
 
           {angemeldetePersonen.length > 0 && (
             <p className="text-xs text-primary">Mit Anmeldung: {angemeldetePersonen.join(', ')}</p>
+          )}
+
+          {/* Training: Anwesenheit + Push-Abfrage für Verantwortliche */}
+          {termin.terminart === 'Training' && (
+            <TrainingAnwesenheit termin={termin} myMitglied={myMitglied} />
           )}
           {termin.beschreibung && (
             <p className="text-xs text-muted-foreground whitespace-pre-line">{termin.beschreibung}</p>
