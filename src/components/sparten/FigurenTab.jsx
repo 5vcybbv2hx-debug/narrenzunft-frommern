@@ -180,6 +180,26 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
   // ── Aufstellungs-Editor ──
   const inAufstellung = useMemo(() => new Set(marker.map(m => m.mitglied_id)), [marker]);
 
+  // Figuren-Zaehler fuer Verantwortliche: Wer steht in wie vielen Figuren?
+  // Aufsteigend sortiert — die wenigsten Einsaetze zuerst (Gerechtigkeit),
+  // 0-Figuren-Personen heben sich farblich ab. Verwaiste Platzierungen
+  // (Person steht noch in einer Aufstellung, ist aber nicht mehr aktiv)
+  // werden als Hinweis gezaehlt.
+  const figurenZaehler = useMemo(() => {
+    const counts = new Map();
+    for (const f of figuren) {
+      for (const m of parseAufstellung(f.aufstellung)) {
+        if (m?.mitglied_id) counts.set(m.mitglied_id, (counts.get(m.mitglied_id) || 0) + 1);
+      }
+    }
+    const aktivIds = new Set(tanzliste.map(t => t.mitglied_id));
+    const verwaist = [...counts.keys()].filter(id => !aktivIds.has(id));
+    const eintraege = tanzliste
+      .map(t => ({ id: t.mitglied_id, zaehler: counts.get(t.mitglied_id) || 0 }))
+      .sort((a, b) => a.zaehler - b.zaehler || String(a.id).localeCompare(String(b.id)));
+    return { eintraege, verwaist };
+  }, [figuren, tanzliste]);
+
   const tanzlisteLaden = async () => {
     try {
       const t = await base44.entities.GruppenTeilnehmer.filter({ haesgruppe_id: gruppeId });
@@ -189,9 +209,8 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
   const [tanzliste, setTanzliste] = useState([]);
 
   useEffect(() => {
-    if (!gewaehlt) return;
-    tanzlisteLaden().then(setTanzliste);
-  }, [gewaehlt?.id]);
+    if (gruppeId) tanzlisteLaden().then(setTanzliste);
+  }, [gruppeId]);
 
   const hinzufuegenZurAufstellung = (t) => {
     if (inAufstellung.has(t.mitglied_id)) return;
@@ -305,6 +324,29 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
           <h2 className="text-xl font-semibold text-foreground">Figuren &amp; Aufstellung</h2>
           <span className="text-sm text-muted-foreground">{figuren.length} {figuren.length === 1 ? 'Figur' : 'Figuren'}</span>
         </div>
+
+        {canEdit && figuren.length > 0 && tanzliste.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5" aria-label="Beteiligung an Figuren">
+            <span className="text-xs text-muted-foreground shrink-0">Beteiligung:</span>
+            {figurenZaehler.eintraege.map(e => (
+              <span
+                key={e.id}
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border ${
+                  e.zaehler === 0
+                    ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                    : 'bg-secondary text-muted-foreground border-border'
+                }`}
+              >
+                {nameVon(e.id)}<b className="font-semibold text-foreground">{e.zaehler}</b>
+              </span>
+            ))}
+            {figurenZaehler.verwaist.length > 0 && (
+              <span className="text-xs text-muted-foreground">
+                · {figurenZaehler.verwaist.length} platzierte {figurenZaehler.verwaist.length === 1 ? 'Person' : 'Personen'} nicht mehr aktiv
+              </span>
+            )}
+          </div>
+        )}
 
         {canEdit && (
           <div className="rounded-xl border border-border bg-card p-4 flex flex-col sm:flex-row gap-2">
