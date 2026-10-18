@@ -43,6 +43,14 @@
     "ordnung": {
       "type": "string",
       "description": "H\u00e4sordnung: JSON-Array der mitglied_ids in Reihenfolge (f\u00fcr Aufstellung & Umzug)"
+    },
+    "eltern_info": {
+      "type": "string",
+      "description": "Eltern-Infoseite: freier Text mit Informationen f\u00fcr Eltern/Interessierte"
+    },
+    "kosten_info": {
+      "type": "string",
+      "description": "Kosten\u00fcbersicht f\u00fcr Eltern/Interessierte (freier Text)"
     }
   },
   "description": {

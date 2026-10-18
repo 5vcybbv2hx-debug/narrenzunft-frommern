@@ -1,0 +1,91 @@
+{
+  "name": "HaesTeilVergessen",
+  "type": "object",
+  "properties": {
+    "haesgruppe_id": {
+      "type": "string",
+      "description": "ID der Gruppe, in der das H\u00e4steil vergessen wurde"
+    },
+    "mitglied_id": {
+      "type": "string",
+      "description": "ID des Mitglieds, das das H\u00e4steil vergessen hat"
+    },
+    "teil": {
+      "type": "string",
+      "description": "Welches H\u00e4steil vergessen wurde (z. B. Handschuhe, Hut)"
+    },
+    "datum": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum des Vorfalls"
+    },
+    "notiz": {
+      "type": "string",
+      "description": "Optionale Notiz"
+    }
+  },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
+  },
+  "required": [
+    "haesgruppe_id",
+    "mitglied_id",
+    "teil"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    },
+    "read": null,
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    }
+  }
+}

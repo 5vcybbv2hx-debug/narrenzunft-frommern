@@ -1,5 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
 
+// redeploy 6887876 — typs: figur/schritt/musik/ordnung/info/warteliste/haesteil
+
 /**
  * Sichere Verwaltung der Tanzgruppen-Daten: Figuren (mit Aufstellung),
  * Tanzablauf-Schritte und Musik.

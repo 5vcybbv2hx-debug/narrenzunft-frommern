@@ -1,0 +1,108 @@
+{
+  "name": "Warteliste",
+  "type": "object",
+  "properties": {
+    "haesgruppe_id": {
+      "type": "string",
+      "description": "ID der Gruppe, f\u00fcr die der Interessent auf der Warteliste steht"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name des/der Interessent:in"
+    },
+    "kontakt": {
+      "type": "string",
+      "description": "Kontakt (Telefon oder E-Mail)"
+    },
+    "geburtsdatum": {
+      "type": "string",
+      "format": "date",
+      "description": "Geburtsdatum (bei Kindern)"
+    },
+    "eltern_name": {
+      "type": "string",
+      "description": "Erziehungsberechtigte:r (bei U18)"
+    },
+    "position": {
+      "type": "number",
+      "description": "Warteposition (1 = vorn)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Wartend",
+        "Aufgenommen",
+        "Abgelehnt"
+      ],
+      "default": "Wartend",
+      "description": "Bearbeitungsstatus der Anmeldung"
+    },
+    "notiz": {
+      "type": "string",
+      "description": "Freie Notiz (z. B. Erfahrungen, Wunschtermin)"
+    }
+  },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
+  },
+  "required": [
+    "haesgruppe_id",
+    "name"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    },
+    "read": null,
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    }
+  }
+}
