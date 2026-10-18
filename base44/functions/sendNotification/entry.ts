@@ -55,6 +55,13 @@ export default async function (req) {
       if (empfaenger === "mitglieder") {
         return (body.mitglied_ids || []).map(String).filter(Boolean);
       }
+      if (empfaenger === "gruppe") {
+        // Personenbezogen je Gruppe: aktive GruppenTeilnehmer der Häsgruppe
+        if (!body.haesgruppe_id) return [];
+        const t = await S.GruppenTeilnehmer.filter({ haesgruppe_id: body.haesgruppe_id });
+        const ids = new Set((t || []).filter(x => x.aktiv !== false && x.mitglied_id).map(x => String(x.mitglied_id)));
+        return holeIdsMitAppKonto(S, [...ids]);
+      }
       return [];
     }
 
