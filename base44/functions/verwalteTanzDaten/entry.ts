@@ -12,6 +12,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
  *  - 'figur'  : TanzFigur  (name, reihenfolge, pdf_url, aufstellung als JSON-String)
  *  - 'schritt': TanzSchritt (nr, beschreibung, figur_id)
  *  - 'musik'  : TanzMusik  (titel, datei_url, sortierung)
+ *  - 'ordnung': Haesgruppe.ordnung (JSON-Array mitglied_ids — Häsordnung, ALLE Gruppen)
  *
  * Aktionen: 'create' | 'update' | 'delete'
  */
@@ -210,6 +211,22 @@ export default async function(req) {
     }
 
     // ══════════ MUSIK ══════════
+    if (typ === 'ordnung') {
+      // Häsordnung: Haesgruppe.ordnung = JSON-Array der mitglied_ids.
+      // Nur 'update' — Anzeige liest direkt, Positionen 1..n ergeben sich.
+      if (aktion !== 'update') return Response.json({ error: 'Nur aktion=update für ordnung' }, { status: 400 });
+      let ids;
+      try {
+        const roh = body.ordnung === undefined || body.ordnung === null ? '[]' : JSON.parse(body.ordnung);
+        if (!Array.isArray(roh)) throw new Error('kein Array');
+        ids = roh.map(String).filter(Boolean).slice(0, 300);
+      } catch {
+        return Response.json({ error: 'ordnung muss ein JSON-Array sein' }, { status: 400 });
+      }
+      await srv.entities.Haesgruppe.update(haesgruppe_id, { ordnung: JSON.stringify(ids) });
+      return Response.json({ ok: true, ordnung: ids });
+    }
+
     if (typ === 'musik') {
       const ENT = srv.entities.TanzMusik;
 

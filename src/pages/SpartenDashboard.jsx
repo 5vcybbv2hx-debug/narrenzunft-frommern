@@ -1,3 +1,4 @@
+import OrdnungTab from '@/components/sparten/OrdnungTab';
 import DateSelect from '../components/ui/DateSelect';
 import { useSwipe } from '@/hooks/useSwipe';
 import TeilnehmerTab from '@/components/sparten/TeilnehmerTab';
@@ -15,7 +16,7 @@ import { Drama,
   Send, Edit, Trash2, 
   Check, X, AlertCircle, MessageSquare, Repeat,
   Euro, UserCheck, ArrowLeft, Save, Phone, MessageCircle, Search, User
-} from 'lucide-react';
+, ListOrdered } from 'lucide-react';
 import { toast } from 'sonner';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import MobileSelect from '@/components/MobileSelect';
@@ -614,7 +615,7 @@ export default function SpartenDashboard() {
 
   // Sichtbare Tabs in fester Reihenfolge — Wischgeste bewegt sich genau durch diese Liste
   const tabsSichtbar = () => {
-    const t = ['uebersicht', 'termine'];
+    const t = ['uebersicht', 'termine', 'ordnung'];
     if (gruppe?.typ === 'Tanzgruppe') t.push('teilnehmer', 'tanz');
     if (canEdit) {
       t.push('auslagen');
@@ -741,6 +742,9 @@ export default function SpartenDashboard() {
           </button>
           <button onClick={() => setActiveTab('termine')} className={tabClass('termine')}>
             <Calendar className="w-4 h-4" /> Termine
+          </button>
+          <button onClick={() => setActiveTab('ordnung')} className={tabClass('ordnung')}>
+            <ListOrdered className="w-4 h-4" /> Ordnung
           </button>
           {gruppe?.typ === 'Tanzgruppe' && (
             <button onClick={() => setActiveTab('teilnehmer')} className={tabClass('teilnehmer')}>
@@ -1066,6 +1070,9 @@ export default function SpartenDashboard() {
         {/* TAB 3: AUSLAGEN */}
         {activeTab === 'teilnehmer' && (
           <TeilnehmerTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} />
+        )}
+        {activeTab === 'ordnung' && (
+          <OrdnungTab gruppe={gruppe} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} />
         )}
         {activeTab === 'tanz' && (
           <TanzTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} />
