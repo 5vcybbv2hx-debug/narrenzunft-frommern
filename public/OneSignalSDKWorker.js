@@ -6,5 +6,5 @@
  * Lösung: EIN Worker, EIN Scope. OneSignal-Worker importiert die
  * Caching-Logik per importScripts dazu.
  */
-importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.sw.js');
+importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js'); // korrekte v16-SW-URL (page.sw.js liefert 404 und toetet die Worker-Installation)
 importScripts('/cache-worker.js');

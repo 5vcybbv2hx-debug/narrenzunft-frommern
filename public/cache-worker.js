@@ -9,7 +9,7 @@
  * CACHE_NAME bei jeder Worker-Änderung hochzählen (v1 -> v2 -> ...),
  * der activate-Handler räumt alte Caches automatisch weg.
  */
-const CACHE_NAME = 'nz-cache-v1';
+const CACHE_NAME = 'nz-cache-v2';
 const HASHED_ASSET = /\/assets\/.+$/;
 
 self.addEventListener('install', (event) => {
