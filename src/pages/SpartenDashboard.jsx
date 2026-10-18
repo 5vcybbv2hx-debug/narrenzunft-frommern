@@ -1,4 +1,7 @@
 import OrdnungTab from '@/components/sparten/OrdnungTab';
+import ElternInfoTab from '@/components/sparten/ElternInfoTab';
+import WartelisteTab from '@/components/sparten/WartelisteTab';
+import HaesteilVergessenKarte from '@/components/sparten/HaesteilVergessenKarte';
 import DateSelect from '../components/ui/DateSelect';
 import { useSwipe } from '@/hooks/useSwipe';
 import TeilnehmerTab from '@/components/sparten/TeilnehmerTab';
@@ -16,7 +19,7 @@ import { Drama,
   Send, Edit, Trash2, 
   Check, X, AlertCircle, MessageSquare, Repeat,
   Euro, UserCheck, ArrowLeft, Save, Phone, MessageCircle, Search, User
-, ListOrdered } from 'lucide-react';
+, ListOrdered , Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import MobileSelect from '@/components/MobileSelect';
@@ -617,6 +620,8 @@ export default function SpartenDashboard() {
   const tabsSichtbar = () => {
     const t = ['uebersicht', 'termine', 'ordnung'];
     if (gruppe?.typ === 'Tanzgruppe') t.push('teilnehmer', 'tanz');
+    t.push('info');
+    if (canEdit) t.push('warteliste');
     if (canEdit) {
       t.push('auslagen');
       if (gruppe?.typ !== 'Tanzgruppe') t.push('mitglieder');
@@ -746,6 +751,14 @@ export default function SpartenDashboard() {
           <button onClick={() => setActiveTab('ordnung')} className={tabClass('ordnung')}>
             <ListOrdered className="w-4 h-4" /> Ordnung
           </button>
+          <button onClick={() => setActiveTab('info')} className={tabClass('info')}>
+            <Info className="w-4 h-4" /> Eltern-Info
+          </button>
+          {canEdit && (
+            <button onClick={() => setActiveTab('warteliste')} className={tabClass('warteliste')}>
+              <Clock className="w-4 h-4" /> Warteliste
+            </button>
+          )}
           {gruppe?.typ === 'Tanzgruppe' && (
             <button onClick={() => setActiveTab('teilnehmer')} className={tabClass('teilnehmer')}>
               <Users className="w-4 h-4" /> Mitglieder
@@ -1069,10 +1082,21 @@ export default function SpartenDashboard() {
 
         {/* TAB 3: AUSLAGEN */}
         {activeTab === 'teilnehmer' && (
-          <TeilnehmerTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} />
+          <div className="space-y-6">
+            <TeilnehmerTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} />
+            {(canEdit || istGruppenVerantwortlicher) && (
+              <HaesteilVergessenKarte gruppeId={id} alleMitglieder={alleMitglieder} />
+            )}
+          </div>
         )}
         {activeTab === 'ordnung' && (
           <OrdnungTab gruppe={gruppe} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} />
+        )}
+        {activeTab === 'info' && (
+          <ElternInfoTab gruppe={gruppe} canEdit={canEdit || istGruppenVerantwortlicher} />
+        )}
+        {canEdit && activeTab === 'warteliste' && (
+          <WartelisteTab gruppeId={id} />
         )}
         {activeTab === 'tanz' && (
           <TanzTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} />

@@ -13,6 +13,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
  *  - 'schritt': TanzSchritt (nr, beschreibung, figur_id)
  *  - 'musik'  : TanzMusik  (titel, datei_url, sortierung)
  *  - 'ordnung': Haesgruppe.ordnung (JSON-Array mitglied_ids — Häsordnung, ALLE Gruppen)
+ *  - 'info'   : Haesgruppe.eltern_info / kosten_info (Eltern-Infoseite, ALLE Gruppen)
+ *  - 'warteliste': Warteliste-Einträge (Interessenten, ALLE Gruppen)
+ *  - 'haesteil'  : HaesTeilVergessen (dokumentierte vergessene Hästeile)
  *
  * Aktionen: 'create' | 'update' | 'delete'
  */
@@ -168,6 +171,81 @@ export default async function(req) {
         if (!figurId) return Response.json({ error: 'figur_id fehlt' }, { status: 400 });
         await ENT.delete(figurId);
         return Response.json({ erfolg: true });
+      }
+    }
+
+    // ══════════ ELTERN-INFO (alle Gruppen) ══════════
+    if (typ === 'info') {
+      if (aktion !== 'update') return Response.json({ error: 'Nur aktion=update für info' }, { status: 400 });
+      const eltern_info = str(body.eltern_info, 8000);
+      const kosten_info = str(body.kosten_info, 4000);
+      await srv.entities.Haesgruppe.update(haesgruppe_id, { eltern_info, kosten_info });
+      return Response.json({ ok: true });
+    }
+
+    // ══════════ WARTELISTE (Interessenten, alle Gruppen) ══════════
+    if (typ === 'warteliste') {
+      const ENT = srv.entities.Warteliste;
+      if (aktion === 'create') {
+        const name = str(body.name, 120);
+        if (!name) return Response.json({ error: 'Name fehlt' }, { status: 400 });
+        const bestehende = await ENT.filter({ haesgruppe_id });
+        const neu = await ENT.create({
+          haesgruppe_id,
+          name,
+          kontakt: str(body.kontakt, 200),
+          geburtsdatum: str(body.geburtsdatum, 10),
+          eltern_name: str(body.eltern_name, 120),
+          position: (bestehende || []).filter(x => x.status === 'Wartend').length + 1,
+          status: 'Wartend',
+          notiz: str(body.notiz, 500),
+        });
+        return Response.json({ ok: true, eintrag: neu });
+      }
+      if (aktion === 'update') {
+        const id = str(body.eintrag_id);
+        if (!id) return Response.json({ error: 'eintrag_id fehlt' }, { status: 400 });
+        const patch = {};
+        if (body.name !== undefined) patch.name = str(body.name, 120);
+        if (body.kontakt !== undefined) patch.kontakt = str(body.kontakt, 200);
+        if (body.geburtsdatum !== undefined) patch.geburtsdatum = str(body.geburtsdatum, 10);
+        if (body.eltern_name !== undefined) patch.eltern_name = str(body.eltern_name, 120);
+        if (body.status !== undefined) patch.status = str(body.status, 20) || 'Wartend';
+        if (body.position !== undefined) patch.position = num(body.position) ?? 1;
+        if (body.notiz !== undefined) patch.notiz = str(body.notiz, 500);
+        if (Object.keys(patch).length === 0) return Response.json({ error: 'Keine Änderungen' }, { status: 400 });
+        const erg = await ENT.update(id, patch);
+        return Response.json({ ok: true, eintrag: erg });
+      }
+      if (aktion === 'delete') {
+        const id = str(body.eintrag_id);
+        if (!id) return Response.json({ error: 'eintrag_id fehlt' }, { status: 400 });
+        await ENT.delete(id);
+        return Response.json({ ok: true });
+      }
+    }
+
+    // ══════════ HÄSTEIL VERGESSEN (Doku für Verantwortliche) ══════════
+    if (typ === 'haesteil') {
+      const ENT = srv.entities.HaesTeilVergessen;
+      if (aktion === 'create') {
+        const mitglied_id = str(body.mitglied_id);
+        const teil = str(body.teil, 80);
+        if (!mitglied_id || !teil) return Response.json({ error: 'mitglied_id und teil fehlen' }, { status: 400 });
+        const neu = await ENT.create({
+          haesgruppe_id,
+          mitglied_id,
+          teil,
+          datum: str(body.datum, 10) || new Date().toISOString().split('T')[0],
+          notiz: str(body.notiz, 300),
+        });
+        return Response.json({ ok: true, eintrag: neu });
+      }
+      if (aktion === 'delete') {
+        const id = str(body.eintrag_id);
+        if (!id) return Response.json({ error: 'eintrag_id fehlt' }, { status: 400 });
+        await ENT.delete(id);
+        return Response.json({ ok: true });
       }
     }
 
