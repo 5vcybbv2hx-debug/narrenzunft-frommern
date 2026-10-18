@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import BottomModal from '@/components/ui/BottomModal';
 
-const TERMINARTEN = ['Umzug','Abendveranstaltung','Arbeitsdienst','Ausschusssitzung','Vorstandssitzung','Jugendtermin','Gruppen-Termin','Intern','Sonstiges'];
+const TERMINARTEN = ['Umzug','Abendveranstaltung','Arbeitsdienst','Ausschusssitzung','Vorstandssitzung','Jugendtermin','Gruppen-Termin','Training','Intern','Sonstiges'];
 const SICHTBARKEITEN = [
   { value: 'alle', label: 'Alle Mitglieder' },
   { value: 'admin', label: 'Nur Admin/Vorstand' },
@@ -26,6 +26,7 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
     ort: '', terminart: 'Intern', sichtbarkeit: 'alle',
     abonnierbar: true, anmeldbar: false, anmeldeschluss: '', max_teilnehmer: '',
     status: 'Geplant',
+    u18_begleitung_erforderlich: false,
     ...termin,
   });
   const [saving, setSaving] = useState(false);
@@ -177,6 +178,10 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
             <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground">
               <input type="checkbox" checked={form.anmeldbar} onChange={e => set('anmeldbar', e.target.checked)} className="rounded" />
               Anmeldung möglich
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground">
+              <input type="checkbox" checked={form.u18_begleitung_erforderlich} onChange={e => set('u18_begleitung_erforderlich', e.target.checked)} className="rounded" />
+              U18-Begleitung erforderlich
             </label>
           </div>
 

@@ -25,7 +25,8 @@ export default function AusfahrtEditModal({ ausfahrt, sparten, onSave, onClose }
     anmeldung_start: '',
     anmeldung_ende: '',
     status: 'Geplant',
-    notizen: ''
+    notizen: '',
+    u18_begleitung_erforderlich: false
   });
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -50,7 +51,8 @@ export default function AusfahrtEditModal({ ausfahrt, sparten, onSave, onClose }
         anmeldung_start: ausfahrt.anmeldung_start || '',
         anmeldung_ende: ausfahrt.anmeldung_ende || '',
         status: ausfahrt.status || 'Geplant',
-        notizen: ausfahrt.notizen || ''
+        notizen: ausfahrt.notizen || '',
+        u18_begleitung_erforderlich: ausfahrt.u18_begleitung_erforderlich || false
       });
     }
   }, [ausfahrt]);
@@ -89,7 +91,8 @@ export default function AusfahrtEditModal({ ausfahrt, sparten, onSave, onClose }
         anmeldung_start: formData.anmeldung_start,
         anmeldung_ende: formData.anmeldung_ende,
         status: formData.status,
-        notizen: formData.notizen.trim() || undefined
+        notizen: formData.notizen.trim() || undefined,
+        u18_begleitung_erforderlich: formData.u18_begleitung_erforderlich
       };
       await base44.entities.Ausfahrt.update(ausfahrt.id, payload);
       clearEntityCache('Ausfahrt');
@@ -229,6 +232,16 @@ export default function AusfahrtEditModal({ ausfahrt, sparten, onSave, onClose }
                 </div>
               )}
             </div>
+          </div>
+
+          {/* U18-Begleitung */}
+          <div className="p-3 bg-secondary/30 border border-border rounded-lg">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" name="u18_begleitung_erforderlich" checked={formData.u18_begleitung_erforderlich} onChange={handleChange}
+                className="w-4 h-4 rounded accent-primary" />
+              <span className="text-sm font-medium text-foreground">U18-Begleitung erforderlich</span>
+            </label>
+            <p className="text-xs text-muted-foreground mt-1.5">Für minderjährige Tänzer:innen wird eine Begleitperson mit getrennter Eltern-/Begleitbestätigung angelegt.</p>
           </div>
 
           {/* Anmeldezeitraum */}

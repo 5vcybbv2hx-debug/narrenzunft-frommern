@@ -40,6 +40,11 @@
     "push_erinnerung_id": {
       "type": "string",
       "description": "OneSignal-Notification-ID der geplanten 2h-Erinnerung (zum Ersetzen/Stornieren)"
+    },
+    "abfrage_frist": {
+      "type": "string",
+      "format": "date",
+      "description": "Frist der Arbeitsdienst-Abfrage (Ja/Vielleicht/Nein); leer = keine Abfrage"
     }
   },
   "description": {

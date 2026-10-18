@@ -84,6 +84,11 @@
       ],
       "default": "Geplant"
     },
+    "u18_begleitung_erforderlich": {
+      "type": "boolean",
+      "default": false,
+      "description": "true = f\u00fcr U18-T\u00e4nzer:innen ist eine begleitete Teilnahme n\u00f6tig (getrennte Eltern-/Begleitbest\u00e4tigung)"
+    },
     "notizen": {
       "type": "string"
     }

@@ -52,6 +52,13 @@ export default async function (req) {
         if (ad.verantwortlicher_id) ids.add(String(ad.verantwortlicher_id));
         return [...ids];
       }
+      if (empfaenger === "gruppe") {
+        const gId = body.haesgruppe_id;
+        if (!gId) return [];
+        const t = await S.GruppenTeilnehmer.filter({ haesgruppe_id: gId });
+        const ids = [...new Set((t || []).filter(x => x.aktiv !== false && x.mitglied_id).map(x => String(x.mitglied_id)))];
+        return holeIdsMitAppKonto(S, ids);
+      }
       if (empfaenger === "mitglieder") {
         return (body.mitglied_ids || []).map(String).filter(Boolean);
       }

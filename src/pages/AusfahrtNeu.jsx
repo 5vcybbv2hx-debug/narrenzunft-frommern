@@ -38,7 +38,8 @@ export default function AusfahrtNeu() {
     sparte_id: '',
     anmeldung_start: todayStr,
     anmeldung_ende: '',
-    notizen: ''
+    notizen: '',
+    u18_begleitung_erforderlich: false
   });
 
   // Auto: Anmelde-Ende = 3 Tage vor Event
@@ -122,6 +123,7 @@ export default function AusfahrtNeu() {
         anmeldung_start: formData.anmeldung_start,
         anmeldung_ende: formData.anmeldung_ende,
         notizen: formData.notizen.trim() || undefined,
+        u18_begleitung_erforderlich: formData.u18_begleitung_erforderlich,
         status: initialStatus
       };
 
@@ -273,6 +275,16 @@ export default function AusfahrtNeu() {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* U18-Begleitung */}
+          <div className="p-3 bg-secondary/30 border border-border rounded-lg">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" name="u18_begleitung_erforderlich" checked={formData.u18_begleitung_erforderlich} onChange={handleChange}
+                className="w-4 h-4 rounded accent-primary" />
+              <span className="text-sm font-medium text-foreground">U18-Begleitung erforderlich</span>
+            </label>
+            <p className="text-xs text-muted-foreground mt-1.5">Für minderjährige Tänzer:innen wird eine Begleitperson mit getrennter Eltern-/Begleitbestätigung angelegt.</p>
           </div>
 
           {/* Anmeldezeitraum */}

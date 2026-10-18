@@ -1,0 +1,88 @@
+{
+  "name": "ArbeitsdienstAntwort",
+  "type": "object",
+  "properties": {
+    "arbeitsdienst_id": {
+      "type": "string",
+      "description": "ID des Arbeitsdienstes, auf den sich die Antwort bezieht"
+    },
+    "mitglied_id": {
+      "type": "string",
+      "description": "ID des antwortenden Mitglieds"
+    },
+    "antwort": {
+      "type": "string",
+      "enum": [
+        "Ja",
+        "Nein",
+        "Vielleicht"
+      ],
+      "default": "Vielleicht",
+      "description": "Zusage/Absage zur Arbeitsdienst-Abfrage"
+    },
+    "notiz": {
+      "type": "string",
+      "description": "Optionale Notiz der antwortenden Person"
+    }
+  },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
+  },
+  "required": [
+    "arbeitsdienst_id",
+    "mitglied_id"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    },
+    "read": null,
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    }
+  }
+}

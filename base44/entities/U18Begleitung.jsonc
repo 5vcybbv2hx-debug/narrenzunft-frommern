@@ -1,0 +1,121 @@
+{
+  "name": "U18Begleitung",
+  "type": "object",
+  "properties": {
+    "typ": {
+      "type": "string",
+      "enum": [
+        "kalender",
+        "ausfahrt",
+        "veranstaltung"
+      ],
+      "default": "kalender",
+      "description": "Art des verkn\u00fcpften Termins"
+    },
+    "termin_id": {
+      "type": "string",
+      "description": "ID des verkn\u00fcpften Termins (KalenderTermin/Ausfahrt/Veranstaltung)"
+    },
+    "u18_mitglied_id": {
+      "type": "string",
+      "description": "ID des U18-Mitglieds"
+    },
+    "u18_name": {
+      "type": "string",
+      "description": "Name des U18-Mitglieds (denormalisiert)"
+    },
+    "begleit_mitglied_id": {
+      "type": "string",
+      "description": "ID der eingetragenen Begleitperson"
+    },
+    "begleit_name": {
+      "type": "string",
+      "description": "Name der Begleitperson (denormalisiert)"
+    },
+    "eltern_bestaetigt_am": {
+      "type": "string",
+      "description": "ISO-Datum der Elternbest\u00e4tigung"
+    },
+    "eltern_bestaetigt_von": {
+      "type": "string",
+      "description": "Mitglied-ID des best\u00e4tigenden Elternteils"
+    },
+    "begleitung_bestaetigt_am": {
+      "type": "string",
+      "description": "ISO-Datum der Begleitbest\u00e4tigung"
+    },
+    "begleitung_bestaetigt_von": {
+      "type": "string",
+      "description": "Mitglied-ID der best\u00e4tigenden Begleitperson"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Ausstehend",
+        "Best\u00e4tigt"
+      ],
+      "default": "Ausstehend",
+      "description": "Best\u00e4tigt erst, wenn Eltern UND Begleitperson best\u00e4tigt haben"
+    },
+    "notiz": {
+      "type": "string"
+    }
+  },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
+  },
+  "required": [
+    "termin_id",
+    "u18_mitglied_id"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    },
+    "read": null,
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    }
+  }
+}

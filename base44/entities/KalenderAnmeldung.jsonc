@@ -17,6 +17,10 @@
       ],
       "default": "Angemeldet"
     },
+    "anwesend": {
+      "type": "boolean",
+      "description": "Anwesenheit bei Trainings-Terminen (via verwalteTrainingAnwesenheit gesetzt)"
+    },
     "notizen": {
       "type": "string"
     }
