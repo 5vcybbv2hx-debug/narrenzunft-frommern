@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { meldeAnAusfahrtSicher } from '@/lib/ausfahrtAnmeldung';
+import { istU18 } from '@/lib/u18Begleitung';
+import { U18BegleitungKarte, U18BegleitungModal } from '@/components/veranstaltung/U18Begleitung';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannAusschussSehn, kannAusfahrtCheckin } from '@/lib/roles';
 import { Bus, MapPin, Clock, Calendar, Users, ArrowLeft, UserPlus, CheckCircle2, Download, X, Pencil, Trash2, Ban, AlertTriangle, QrCode, ScanLine, Search, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -19,6 +21,7 @@ export default function AusfahrtDetail() {
   const { user } = useAuth();
 
   const [ausfahrt, setAusfahrt] = useState(null);
+  const [u18Offen, setU18Offen] = useState(null); // { mitgliedId, name } wenn Begleitperson fehlt
   const [anmeldungen, setAnmeldungen] = useState([]);
   const [mitglieder, setMitglieder] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -218,6 +221,14 @@ export default function AusfahrtDetail() {
 
       setAusgewaehlteFamilienmitglieder([]);
       toast.success('Anmeldung erfolgreich');
+      // U18-Begleitbestätigung: erste betroffene U18-Person nachtragen
+      if (ausfahrt?.u18_begleitung_erforderlich) {
+        const u18s = [
+          ...(istU18(currentMitglied.geburtsdatum, ausfahrt.datum) ? [{ mitgliedId: currentMitglied.id, name: `${currentMitglied.vorname} ${currentMitglied.nachname}`.trim() }] : []),
+          ...selectedFamily.filter(fm => fm.alter != null && fm.alter < 18).map(fm => ({ mitgliedId: fm.id, name: fm.name })),
+        ];
+        if (u18s.length > 0) setU18Offen(u18s[0]);
+      }
       fetchData();
     } catch (err) {
       console.error('Error during registration:', err);
@@ -238,6 +249,10 @@ export default function AusfahrtDetail() {
         return;
       }
       toast.success('Kind angemeldet');
+      const kind = familienmitglieder.find(fm => fm.id === kindId);
+      if (ausfahrt?.u18_begleitung_erforderlich && kind) {
+        setU18Offen({ mitgliedId: kindId, name: kind.name });
+      }
       fetchData();
     } catch (err) {
       console.error('Kind-Anmeldung fehlgeschlagen:', err);
@@ -761,6 +776,16 @@ export default function AusfahrtDetail() {
 
   return (
     <div className="min-h-[60vh] pb-12">
+      {u18Offen && (
+        <U18BegleitungModal
+          typ="ausfahrt"
+          terminId={id}
+          u18MitgliedId={u18Offen.mitgliedId}
+          u18Name={u18Offen.name}
+          onClose={() => setU18Offen(null)}
+          onAngelegt={fetchData}
+        />
+      )}
       <div className="max-w-5xl mx-auto px-4 pt-8">
         {/* Back Link */}
         <Link to="/ausfahrten" className="inline-flex items-center text-muted-foreground hover:text-foreground mb-6 transition-colors">
@@ -949,6 +974,11 @@ export default function AusfahrtDetail() {
               <h2 className="text-xl font-bold font-oswald uppercase tracking-wider border-b border-border pb-3 mb-4">
                 Anmeldung
               </h2>
+
+              {/* U18-Begleitbestätigungen (falls erforderlich) */}
+              {ausfahrt?.u18_begleitung_erforderlich && (
+                <U18BegleitungKarte typ="ausfahrt" terminId={id} myMitglied={currentMitglied} />
+              )}
 
               {myRegistration ? (
                 // Already registered

@@ -18,6 +18,8 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth,
 import { de } from 'date-fns/locale';
 import KalenderTerminModal from '@/components/kalender/KalenderTerminModal';
 import TrainingAnwesenheit from '@/components/kalender/TrainingAnwesenheit';
+import { istU18 } from '@/lib/u18Begleitung';
+import { U18BegleitungModal } from '@/components/veranstaltung/U18Begleitung';
 import VeranstaltungBearbeitenModal from '@/components/kalender/VeranstaltungBearbeitenModal';
 import VeranstaltungsvorlagenModal from '@/components/veranstaltung/VeranstaltungsvorlagenModal';
 import { toast } from 'sonner';
@@ -74,6 +76,7 @@ export default function Kalender({ nur = 'alle' }) {
   const [monat, setMonat] = useState(new Date());
   const [termine, setTermine] = useState([]);
   const [myMitglied, setMyMitglied] = useState(null);
+  const [u18Offen, setU18Offen] = useState(null); // { terminId, mitgliedId, name }
   const [anmeldungen, setAnmeldungen] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -275,6 +278,14 @@ export default function Kalender({ nur = 'alle' }) {
       }
       const anm = await base44.entities.KalenderAnmeldung.filter({ mitglied_id: myMitglied.id });
       setAnmeldungen(anm || []);
+      // U18-Begleitbestätigung fuer gekennzeichnete Termine
+      if (termin.u18_begleitung_erforderlich && istU18(myMitglied.geburtsdatum, termin.datum)) {
+        setU18Offen({
+          terminId: termin.id,
+          mitgliedId: myMitglied.id,
+          name: `${myMitglied.vorname || ''} ${myMitglied.nachname || ''}`.trim(),
+        });
+      }
     } catch (e) {
       console.error('Kalender-Anmeldung:', e);
       toast.error('Anmeldung konnte nicht geändert werden.');
@@ -904,6 +915,18 @@ export default function Kalender({ nur = 'alle' }) {
       {/* Dropdown schließen bei Klick außerhalb */}
       {showNeuDropdown && <div className="fixed inset-0 z-20" onClick={() => setShowNeuDropdown(false)} />}
       {showAboModal && <KalenderAboModal onClose={() => setShowAboModal(false)} />}
+
+      {/* U18-Begleitperson nach Anmeldung einer U18-Person */}
+      {u18Offen && (
+        <U18BegleitungModal
+          typ="kalender"
+          terminId={u18Offen.terminId}
+          u18MitgliedId={u18Offen.mitgliedId}
+          u18Name={u18Offen.name}
+          onClose={() => setU18Offen(null)}
+          onAngelegt={() => loadData()}
+        />
+      )}
 
     </div>
   );

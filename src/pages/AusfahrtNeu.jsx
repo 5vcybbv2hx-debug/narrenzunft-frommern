@@ -36,6 +36,7 @@ export default function AusfahrtNeu() {
     busparkplatz: '',
     sparte_auftritt: false,
     sparte_id: '',
+    u18_begleitung_erforderlich: false,
     anmeldung_start: todayStr,
     anmeldung_ende: '',
     notizen: ''
@@ -119,6 +120,7 @@ export default function AusfahrtNeu() {
         busparkplatz: formData.bus_benoetigt ? (formData.busparkplatz.trim() || undefined) : undefined,
         sparte_auftritt: formData.sparte_auftritt,
         sparte_id: formData.sparte_auftritt && formData.sparte_id ? formData.sparte_id : undefined,
+        u18_begleitung_erforderlich: formData.u18_begleitung_erforderlich === true,
         anmeldung_start: formData.anmeldung_start,
         anmeldung_ende: formData.anmeldung_ende,
         notizen: formData.notizen.trim() || undefined,
@@ -251,6 +253,20 @@ export default function AusfahrtNeu() {
                 <input type="text" name="startnummer" value={formData.startnummer} onChange={handleChange}
                   placeholder="z.B. 12" className={inputClass} />
               </div>
+            </div>
+
+            {/* U18-Begleitbestätigung */}
+            <div className="p-3 bg-secondary/30 border border-border rounded-lg">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" name="u18_begleitung_erforderlich" checked={formData.u18_begleitung_erforderlich} onChange={handleChange}
+                  className="w-4 h-4 rounded accent-primary" />
+                <span className="text-sm font-medium text-foreground">U18-Begleitbestätigung erforderlich</span>
+              </label>
+              {formData.u18_begleitung_erforderlich && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Bei Anmeldung von U18-Personen wird eine verantwortliche Begleitperson abgefragt; Erziehungsberechtigte und Begleitung bestätigen getrennt.
+                </p>
+              )}
             </div>
 
             {/* Sparte Auftritt */}

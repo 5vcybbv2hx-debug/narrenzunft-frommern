@@ -24,7 +24,7 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
   const [form, setForm] = useState({
     titel: '', beschreibung: '', datum: '', startzeit: '', endzeit: '',
     ort: '', terminart: 'Intern', sichtbarkeit: 'alle',
-    abonnierbar: true, anmeldbar: false, anmeldeschluss: '', max_teilnehmer: '',
+    abonnierbar: true, anmeldbar: false, anmeldeschluss: '', max_teilnehmer: '', u18_begleitung_erforderlich: false,
     status: 'Geplant',
     ...termin,
   });
@@ -181,6 +181,10 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
             <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground">
               <input type="checkbox" checked={form.anmeldbar} onChange={e => set('anmeldbar', e.target.checked)} className="rounded" />
               Anmeldung möglich
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground">
+              <input type="checkbox" checked={!!form.u18_begleitung_erforderlich} onChange={e => set('u18_begleitung_erforderlich', e.target.checked)} className="rounded" />
+              U18-Begleitbestätigung
             </label>
           </div>
 
