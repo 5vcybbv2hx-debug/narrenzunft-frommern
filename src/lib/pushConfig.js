@@ -6,6 +6,6 @@
  * Bis die App-ID hier eingetragen ist, ist Push sauber deaktiviert
  * (alle Push-Funktionen laufen dann als No-Op, nichts bricht).
  */
-export const ONESIGNAL_APP_ID = ''; // TODO: OneSignal-App-ID des EIGENEN Projekts eintragen
+export const ONESIGNAL_APP_ID = 'cdf8032c-18f1-4e2d-9805-3276ef60e1c7';
 
 export const PUSH_AKTIV = ONESIGNAL_APP_ID !== '';

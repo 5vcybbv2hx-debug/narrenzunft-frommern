@@ -3,7 +3,7 @@ import { loeseMeinMitglied, istVerwaltung } from "../../shared/mitgliedBerechtig
 import {
   sendePush, planePush, stornierePush,
   holeAusschussIds, holeIdsMitAppKonto,
-} from "../../shared/pushSenden.ts";
+} from "../../shared/pushSenden.ts"; // redeploy 2026-10-18: OneSignal App-ID aktiv
 
 /**
  * ZENTRALE Push-Funktion. ALLE Features rufen NUR diese Funktion auf,
