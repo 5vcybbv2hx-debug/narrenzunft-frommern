@@ -77,6 +77,14 @@
       "format": "date",
       "description": "Wann wurde erstattet?"
     },
+    "zahlungen": {
+      "type": "string",
+      "description": "Teilzahlungen: JSON-Array aus {datum, betrag, notiz}"
+    },
+    "verpflichteter_id": {
+      "type": "string",
+      "description": "ID des Mitglieds, das die Auslage verpflichtet hat (optional)"
+    },
     "notizen": {
       "type": "string"
     }
