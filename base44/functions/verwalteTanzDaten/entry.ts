@@ -181,7 +181,15 @@ export default async function(req) {
       if (aktion !== 'update') return Response.json({ error: 'Nur aktion=update für info' }, { status: 400 });
       const eltern_info = str(body.eltern_info, 8000);
       const kosten_info = str(body.kosten_info, 4000);
-      await srv.entities.Haesgruppe.update(haesgruppe_id, { eltern_info, kosten_info });
+      const empfehlungen = str(body.empfehlungen, 12000);
+      await srv.entities.Haesgruppe.update(haesgruppe_id, { eltern_info, kosten_info, empfehlungen });
+      return Response.json({ ok: true });
+    }
+
+    // ══════════ MARKTPLATZ-SCHALTER (Gruppe) ══════════
+    if (typ === 'marktplatz') {
+      if (aktion !== 'update') return Response.json({ error: 'Nur aktion=update für marktplatz' }, { status: 400 });
+      await srv.entities.Haesgruppe.update(haesgruppe_id, { marktplatz_aktiv: body.marktplatz_aktiv === true });
       return Response.json({ ok: true });
     }
 

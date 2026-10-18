@@ -1,4 +1,6 @@
 import OrdnungTab from '@/components/sparten/OrdnungTab';
+import TeilzahlungModal, { parseZahlungen } from '@/components/sparten/TeilzahlungModal';
+import MarktplatzTab from '@/components/sparten/MarktplatzTab';
 import ElternInfoTab from '@/components/sparten/ElternInfoTab';
 import WartelisteTab from '@/components/sparten/WartelisteTab';
 import HaesteilVergessenKarte from '@/components/sparten/HaesteilVergessenKarte';
@@ -19,7 +21,7 @@ import { Drama,
   Send, Edit, Trash2, 
   Check, X, AlertCircle, MessageSquare, Repeat,
   Euro, UserCheck, ArrowLeft, Save, Phone, MessageCircle, Search, User
-, ListOrdered , Info } from 'lucide-react';
+, ListOrdered , Info , Store } from 'lucide-react';
 import { toast } from 'sonner';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import MobileSelect from '@/components/MobileSelect';
@@ -73,6 +75,7 @@ export default function SpartenDashboard() {
   });
 
   const [showAuslageModal, setShowAuslageModal] = useState(false);
+  const [teilzahlungAuslage, setTeilzahlungAuslage] = useState(null);
   const [editingAuslage, setEditingAuslage] = useState(null);
   const [auslageForm, setAuslageForm] = useState({
     mitglied_id: '',
@@ -81,6 +84,7 @@ export default function SpartenDashboard() {
     datum: '',
     typ: 'Einzelerstattung',
     notizen: '',
+    verpflichteter_id: '',
     selectedAnteile: {} // { mitgliedId: boolean }
   });
 
@@ -360,6 +364,7 @@ export default function SpartenDashboard() {
       }
       setAuslageForm({
         mitglied_id: auslage.mitglied_id || '',
+        verpflichteter_id: auslage.verpflichteter_id || '',
         betrag: auslage.betrag || '',
         beschreibung: auslage.beschreibung || '',
         datum: auslage.datum || '',
@@ -414,7 +419,8 @@ export default function SpartenDashboard() {
         datum: auslageForm.datum,
         typ: auslageForm.typ,
         notizen: auslageForm.notizen,
-        anteile: anteile
+        anteile: anteile,
+        verpflichteter_id: auslageForm.verpflichteter_id || undefined
       };
 
       if (editingAuslage) {
@@ -621,6 +627,7 @@ export default function SpartenDashboard() {
     const t = ['uebersicht', 'termine', 'ordnung'];
     if (gruppe?.typ === 'Tanzgruppe') t.push('teilnehmer', 'tanz');
     t.push('info');
+    if (gruppe?.marktplatz_aktiv || canEdit) t.push('marktplatz');
     if (canEdit) t.push('warteliste');
     if (canEdit) {
       t.push('auslagen');
@@ -754,6 +761,11 @@ export default function SpartenDashboard() {
           <button onClick={() => setActiveTab('info')} className={tabClass('info')}>
             <Info className="w-4 h-4" /> Eltern-Info
           </button>
+          {(gruppe?.marktplatz_aktiv || canEdit) && (
+            <button onClick={() => setActiveTab('marktplatz')} className={tabClass('marktplatz')}>
+              <Store className="w-4 h-4" /> Marktplatz
+            </button>
+          )}
           {canEdit && (
             <button onClick={() => setActiveTab('warteliste')} className={tabClass('warteliste')}>
               <Clock className="w-4 h-4" /> Warteliste
@@ -1098,6 +1110,9 @@ export default function SpartenDashboard() {
         {canEdit && activeTab === 'warteliste' && (
           <WartelisteTab gruppeId={id} />
         )}
+        {activeTab === 'marktplatz' && (
+          <MarktplatzTab gruppe={gruppe} gruppeId={id} myMitglied={myMitglied} alleMitglieder={mitglieder} canEditGruppe={canEdit || istGruppenVerantwortlicher} onGruppeGeaendert={loadData} />
+        )}
         {activeTab === 'tanz' && (
           <TanzTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} />
         )}
@@ -1149,6 +1164,8 @@ export default function SpartenDashboard() {
                               <span className={`text-xs px-2 py-0.5 rounded-full uppercase tracking-wider font-semibold font-oswald ${
                                 a.status === 'Erstattet' 
                                   ? 'bg-green-500/10 border border-green-500/30 text-green-500' 
+                                  : a.status === 'Teilweise'
+                                  ? 'bg-yellow-500/10 border border-yellow-500/30 text-yellow-500'
                                   : a.status === 'Storniert' 
                                   ? 'bg-red-500/10 border border-red-500/30 text-red-500' 
                                   : 'bg-yellow-500/10 border border-yellow-500/30 text-yellow-500'
@@ -1170,9 +1187,35 @@ export default function SpartenDashboard() {
                             <span className="text-2xl font-bold text-foreground font-oswald">
                               {Number(a.betrag).toFixed(2)} €
                             </span>
+                            {(() => {
+                              const zs = parseZahlungen(a.zahlungen);
+                              if (zs.length === 0) return null;
+                              const sum = zs.reduce((acc, z) => acc + (Number(z.betrag) || 0), 0);
+                              return (
+                                <span className="text-[10px] text-muted-foreground">
+                                  {sum.toFixed(2)} € beglichen
+                                </span>
+                              );
+                            })()}
+                            {a.verpflichteter_id && (() => {
+                              const v = mitglieder.find(m => m.id === a.verpflichteter_id);
+                              return v ? (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-secondary text-muted-foreground">
+                                  Zuständig: {v.vorname} {v.nachname?.[0]}.
+                                </span>
+                              ) : null;
+                            })()}
                             
                             {canEdit && (
                               <div className="flex gap-1.5 mt-2">
+                                {(a.status === 'Offen' || a.status === 'Teilweise') && (
+                                  <button 
+                                    onClick={() => setTeilzahlungAuslage(a)}
+                                    className="flex items-center gap-1 px-2.5 py-1 bg-yellow-600/20 hover:bg-yellow-600 text-yellow-400 hover:text-white border border-yellow-600/30 rounded-lg text-xs font-semibold transition-colors"
+                                  >
+                                    <Euro className="w-3 h-3" /> Teilzahlung
+                                  </button>
+                                )}
                                 {a.status === 'Offen' && (
                                   <>
                                     <button 
@@ -1487,6 +1530,9 @@ export default function SpartenDashboard() {
         </div>
       )}
       {/* AUSLAGE MODAL */}
+      {teilzahlungAuslage && (
+        <TeilzahlungModal auslage={teilzahlungAuslage} onClose={() => setTeilzahlungAuslage(null)} onGeaendert={loadData} />
+      )}
       {showAuslageModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto">
           <div className="bg-card border border-border rounded-xl w-full max-w-lg p-4 sm:p-6 relative">
@@ -1508,6 +1554,16 @@ export default function SpartenDashboard() {
                   value={auslageForm.mitglied_id}
                   onChange={(v) => setAuslageForm({ ...auslageForm, mitglied_id: v })}
                   placeholder="Mitglied auswählen..."
+                  options={auslagenPersonen.map(m => ({ label: `${m.vorname} ${m.nachname}`, value: m.id }))}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Zuständig für Begleichung (optional)</label>
+                <MobileSelect
+                  value={auslageForm.verpflichteter_id}
+                  onChange={(v) => setAuslageForm({ ...auslageForm, verpflichteter_id: v })}
+                  placeholder="Verantwortliche:r wählen..."
                   options={auslagenPersonen.map(m => ({ label: `${m.vorname} ${m.nachname}`, value: m.id }))}
                 />
               </div>
