@@ -67,10 +67,10 @@ export async function sendePush(mitgliedIds, titel, nachricht, data = {}, sendAf
   } else if (errs?.invalid_external_ids) {
     invalid.push(...errs.invalid_external_ids);
   }
+  // HTTP 200 + Notification-ID = angenommen. Achtung: 'recipients' kann beim
+  // Anlegen 0 sein, obwohl asynchron zugestellt wird (Live-Test 18.10.:
+  // recipients=0, successful=1). Nur ungültige Aliasse zählen als Info.
   const erreicht = Number(json?.recipients || 0);
-  if (erreicht < 1 && !invalid.length) {
-    return { erfolg: false, grund: "Kein Empfänger erreicht (Geräte evtl. noch nicht registriert)", invalid, notification_id: json?.id || "" };
-  }
   return { erfolg: true, erreicht, invalid, notification_id: json?.id || "" };
 }
 
