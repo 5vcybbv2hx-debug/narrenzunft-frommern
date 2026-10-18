@@ -53,13 +53,15 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
 
   const laden = async () => {
     try {
-      const [f, mus] = await Promise.all([
+      const [f, mus, t] = await Promise.all([
         base44.entities.TanzFigur.filter({ haesgruppe_id: gruppeId }),
         base44.entities.TanzMusik.filter({ haesgruppe_id: gruppeId }),
+        base44.entities.GruppenTeilnehmer.filter({ haesgruppe_id: gruppeId }),
       ]);
       const sortiert = [...(f || [])].sort((a, b) => (a.reihenfolge ?? 0) - (b.reihenfolge ?? 0));
       setFiguren(sortiert);
       setMusikListe(mus || []);
+      setTanzliste((t || []).filter(x => x.aktiv !== false));
     } catch (e) {
       console.error(e);
       toast.error('Figuren konnten nicht geladen werden.');
@@ -180,18 +182,25 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
   // ── Aufstellungs-Editor ──
   const inAufstellung = useMemo(() => new Set(marker.map(m => m.mitglied_id)), [marker]);
 
-  const tanzlisteLaden = async () => {
-    try {
-      const t = await base44.entities.GruppenTeilnehmer.filter({ haesgruppe_id: gruppeId });
-      return (t || []).filter(x => x.aktiv !== false);
-    } catch { return []; }
-  };
-  const [tanzliste, setTanzliste] = useState([]);
+  // Figuren-Zähler pro aktiver Tänzer:in (nur canEdit, Liste-Ansicht).
+  // Aufsteigend sortiert — wenigste Einsätze zuerst (Gerechtigkeit);
+  // 0-Figuren heben sich amber ab.
+  const figurenProTaenzer = useMemo(() => {
+    if (!figuren.length || !tanzliste.length) return [];
+    const counts = new Map();
+    for (const t of tanzliste) counts.set(String(t.mitglied_id), 0);
+    for (const f of figuren) {
+      for (const m of parseAufstellung(f.aufstellung)) {
+        const id = String(m.mitglied_id);
+        if (counts.has(id)) counts.set(id, counts.get(id) + 1);
+      }
+    }
+    return tanzliste
+      .map((t) => ({ mitglied_id: t.mitglied_id, name: nameVon(t.mitglied_id), anzahl: counts.get(String(t.mitglied_id)) || 0 }))
+      .sort((a, b) => a.anzahl - b.anzahl || a.name.localeCompare(b.name));
+  }, [figuren, tanzliste, alleMitglieder]);
 
-  useEffect(() => {
-    if (!gewaehlt) return;
-    tanzlisteLaden().then(setTanzliste);
-  }, [gewaehlt?.id]);
+  const [tanzliste, setTanzliste] = useState([]);
 
   const hinzufuegenZurAufstellung = (t) => {
     if (inAufstellung.has(t.mitglied_id)) return;
@@ -284,6 +293,7 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
       const data = await invoke({ typ: 'figur', aktion: 'update', figur_id: gewaehlt.id, aufstellung: JSON.stringify(marker), linien: JSON.stringify(linien) });
       if (data?.error) throw new Error(data.error);
       setGewaehlt(v => ({ ...v, aufstellung: JSON.stringify(marker), linien: JSON.stringify(linien) }));
+      setFiguren(v => v.map(f => f.id === gewaehlt.id ? { ...f, aufstellung: JSON.stringify(marker), linien: JSON.stringify(linien) } : f));
       setDirty(false);
       toast.success('Aufstellung gespeichert.');
     } catch (e) {
@@ -305,6 +315,34 @@ export default function FigurenTab({ gruppeId, alleMitglieder, canEdit, onUebeMu
           <h2 className="text-xl font-semibold text-foreground">Figuren &amp; Aufstellung</h2>
           <span className="text-sm text-muted-foreground">{figuren.length} {figuren.length === 1 ? 'Figur' : 'Figuren'}</span>
         </div>
+
+        {canEdit && figuren.length > 0 && figurenProTaenzer.length > 0 && (
+          <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">Figuren-Einsätze</span>
+              <span>· wenigste zuerst</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {figurenProTaenzer.map((t) => (
+                <span key={t.mitglied_id}
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border ${
+                    t.anzahl === 0
+                      ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                      : 'bg-secondary text-foreground border-border'
+                  }`}
+                  style={{ fontSize: chipFontSize(t.name) }}>
+                  <span className="truncate max-w-[110px]">{t.name}</span>
+                  <span className="font-mono">{t.anzahl}</span>
+                </span>
+              ))}
+            </div>
+            {figurenProTaenzer.some((t) => t.anzahl === 0) && (
+              <p className="text-[11px] text-amber-400">
+                {figurenProTaenzer.filter((t) => t.anzahl === 0).length} Tänzer:innen noch in keiner Figur platziert.
+              </p>
+            )}
+          </div>
+        )}
 
         {canEdit && (
           <div className="rounded-xl border border-border bg-card p-4 flex flex-col sm:flex-row gap-2">
