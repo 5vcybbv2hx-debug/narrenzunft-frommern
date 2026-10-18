@@ -1,3 +1,4 @@
+import PushStatus from '@/components/mitglied/PushStatus';
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
@@ -237,6 +238,7 @@ export default function Profil() {
       {/* Tab Contents */}
       {mitglied && activeTab === 'profil' && (
         <>
+          <PushStatus />
           {/* Erscheinungsbild: Hell / Dunkel */}
           <div className="bg-card border border-border rounded-xl p-5 mb-4">
             <div className="flex items-center justify-between mb-3">

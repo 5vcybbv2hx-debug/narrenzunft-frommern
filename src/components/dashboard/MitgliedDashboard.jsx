@@ -2,6 +2,7 @@
  * Persönliches Dashboard für normale Mitglieder und Elternkonten.
  * Zeigt eigene Veranstaltungsanmeldungen, Arbeitsdienste und Beiträge.
  */
+import PushOnboarding from './PushOnboarding';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
@@ -107,6 +108,7 @@ export default function MitgliedDashboard() {
 
   return (
     <div className="px-4 lg:px-6 py-6 max-w-2xl mx-auto space-y-4">
+      <PushOnboarding />
       {/* Begrüßung */}
       <div className="mb-2">
         <h1 className="text-2xl font-bold text-foreground">

@@ -1,7 +1,8 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { ConfirmProvider } from '@/components/ui/ConfirmProvider';
@@ -191,12 +192,34 @@ const AuthenticatedApp = () => {
   );
 };
 
+/** Push-Klick -> SPA-Navigation. Route kommt im data-Objekt des Pushs. */
+function PushNavigator() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    const geheZu = (route) => {
+      const ziel = String(route || '/');
+      try { navigate(ziel.startsWith('/') ? ziel : '/' + ziel); }
+      catch (e) { window.location.assign(ziel); }
+    };
+    const onCustomEvent = (e) => geheZu(e?.detail);
+    const onSwMessage = (e) => { if (e?.data?.nzPushRoute) geheZu(e.data.nzPushRoute); };
+    window.addEventListener('nz-push-navigate', onCustomEvent);
+    navigator.serviceWorker?.addEventListener?.('message', onSwMessage);
+    return () => {
+      window.removeEventListener('nz-push-navigate', onCustomEvent);
+      navigator.serviceWorker?.removeEventListener?.('message', onSwMessage);
+    };
+  }, [navigate]);
+  return null;
+}
+
 function App() {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <ConfirmProvider>
           <Router>
+            <PushNavigator />
             <AuthenticatedApp />
           </Router>
         </ConfirmProvider>

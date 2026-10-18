@@ -88,6 +88,7 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
         mitglied_id: mitgliedId,
         status: 'Offen',
       });
+      planeErinnerung(); // neue Zuweisung -> Erinnerung updaten
       setZuweisungen(prev => [...prev, neu]);
     } catch (e) { console.error('Error:', e); }
     setAdding(false);
@@ -95,6 +96,7 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
 
   const handleRemove = async (zuweisungId) => {
     await base44.entities.ArbeitsdienstZuweisung.delete(zuweisungId);
+    planeErinnerung(); // Zuweisung weg -> Erinnerung updaten
     setZuweisungen(prev => prev.filter(z => z.id !== zuweisungId));
   };
 
@@ -111,6 +113,13 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
     }
   };
 
+  /** Erinnerung (2h vorher) neu planen – ersetzt eine bestehende Planung. */
+  const planeErinnerung = () => {
+    base44.functions.invoke('sendNotification', {
+      aktion: 'diensterinnerung_planen', arbeitsdienst_id: dienst.id,
+    }).catch(e => console.warn('Dienst-Erinnerung nicht geplant:', e));
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -119,6 +128,14 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
         ort: form.ort, beschreibung: form.beschreibung,
         benoetigte_personen: form.benoetigte_personen, status: form.status,
       });
+      // Push: Dienst geändert + Erinnerung neu planen (Hintergrund, nie blockierend)
+      base44.functions.invoke('sendNotification', {
+        aktion: 'senden', empfaenger: 'dienst', arbeitsdienst_id: dienst.id,
+        titel: 'Dienst geändert',
+        nachricht: `„${form.titel}" am ${form.datum}${form.uhrzeit ? ', ' + form.uhrzeit + ' Uhr' : ''}${form.ort ? ', ' + form.ort : ''}`,
+        route: '/dienste',
+      }).catch(e => console.warn('Dienst-Push übersprungen:', e));
+      planeErinnerung();
       setSaving(false);
       onSaved();
     } catch (e) {
@@ -130,6 +147,10 @@ export default function ArbeitsdienstEditModal({ dienst, mitglieder, zuweisungen
 
   const handleDelete = async () => {
     if (!(await confirmDialog('Arbeitsdienst wirklich löschen?'))) return;
+    // Geplante Push-Erinnerung stornieren (Hintergrund)
+    base44.functions.invoke('sendNotification', {
+      aktion: 'diensterinnerung_entfernen', arbeitsdienst_id: dienst.id,
+    }).catch(e => console.warn('Erinnerungs-Storno übersprungen:', e));
     await base44.entities.Arbeitsdienst.delete(dienst.id);
     onSaved();
   };

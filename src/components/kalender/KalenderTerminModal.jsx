@@ -43,6 +43,15 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
     try {
       if (isNew) {
         const neuTermin = await base44.entities.KalenderTermin.create(form);
+        // Push: Ausschuss-Termin (Hintergrund, nie blockierend)
+        if (['Ausschusssitzung', 'Vorstandssitzung'].includes(form.terminart)) {
+          base44.functions.invoke('sendNotification', {
+            aktion: 'senden', empfaenger: 'ausschuss',
+            titel: 'Ausschuss-Termin',
+            nachricht: `${form.titel} am ${form.datum}${form.startzeit ? ', ' + form.startzeit + ' Uhr' : ''}${form.ort ? ', ' + form.ort : ''}`,
+            route: '/kalender',
+          }).catch(e => console.warn('Termin-Push übersprungen:', e));
+        }
         // Auto-TOP: Nachbesprechungen fälliger Veranstaltungen bei Ausschusssitzungen
         if (form.terminart === 'Ausschusssitzung') {
           const n = await erstelleNachbesprechungsTops(neuTermin.id, form.datum);
@@ -50,6 +59,15 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
         }
       } else {
         await base44.entities.KalenderTermin.update(termin.id, form);
+        // Push: Termin geändert (nur Ausschusssitzungen, Hintergrund)
+        if (['Ausschusssitzung', 'Vorstandssitzung'].includes(form.terminart)) {
+          base44.functions.invoke('sendNotification', {
+            aktion: 'senden', empfaenger: 'ausschuss',
+            titel: 'Ausschuss-Termin geändert',
+            nachricht: `${form.titel} am ${form.datum}${form.startzeit ? ', ' + form.startzeit + ' Uhr' : ''}${form.ort ? ', ' + form.ort : ''}`,
+            route: '/kalender',
+          }).catch(e => console.warn('Termin-Push übersprungen:', e));
+        }
       }
       onSaved();
     } catch (e) { console.error('Error:', e); }

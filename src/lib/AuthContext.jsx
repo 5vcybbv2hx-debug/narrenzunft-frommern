@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
+import { verknuepfePushMitglied } from '@/lib/push';
 import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
 
 const AuthContext = createContext();
@@ -114,6 +115,10 @@ export const AuthProvider = ({ children }) => {
       } catch (e) {
         console.warn('Auto-Verknüpfung fehlgeschlagen:', e);
       }
+
+      // Push-Verknüpfung (external_id = Mitglied-Entity-ID): fire-and-forget,
+      // wirft nie, bricht die Login-Kette nie (SAVO-Regel).
+      verknuepfePushMitglied(currentUser._mitglied?.id);
 
       setUser(currentUser);
       setIsAuthenticated(true);

@@ -1,0 +1,10 @@
+/**
+ * KOMBINIERTER Root-Worker: OneSignal + App-Caching.
+ *
+ * SAVO-Learning: Zwei Root-Scope-Worker bekämpfen sich – einer wirft den
+ * anderen raus, sämtliche Push-Anmeldungen sterben ohne Fehlermeldung.
+ * Lösung: EIN Worker, EIN Scope. OneSignal-Worker importiert die
+ * Caching-Logik per importScripts dazu.
+ */
+importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.sw.js');
+importScripts('/cache-worker.js');

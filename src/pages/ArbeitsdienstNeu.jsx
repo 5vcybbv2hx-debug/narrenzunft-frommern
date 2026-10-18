@@ -40,6 +40,11 @@ export default function ArbeitsdienstNeu() {
         benoetigte_personen: form.benoetigte_personen ? Number(form.benoetigte_personen) : ausgewaehlte.length || undefined,
       });
 
+      // Push: 2h-Diensterinnerung planen (Hintergrund, nie blockierend)
+      base44.functions.invoke('sendNotification', {
+        aktion: 'diensterinnerung_planen', arbeitsdienst_id: dienst.id,
+      }).catch(e => console.warn('Dienst-Push übersprungen:', e));
+
       // Zuweisungen + Benachrichtigungen für alle verknüpften Mitglieder
       await Promise.all(ausgewaehlte.map(async (m) => {
         await base44.entities.ArbeitsdienstZuweisung.create({

@@ -63,11 +63,15 @@ export default function ArbeitsdienstTab({ veranstaltung, isAdmin }) {
     if (!form.titel || !form.datum) return;
     setSaving(true);
     try {
-      await base44.entities.Arbeitsdienst.create({
+      const dienst = await base44.entities.Arbeitsdienst.create({
         ...form,
         veranstaltung_id: veranstaltung.id,
         benoetigte_personen: form.benoetigte_personen ? Number(form.benoetigte_personen) : undefined,
       });
+      // Push: 2h-Diensterinnerung planen (Hintergrund)
+      base44.functions.invoke('sendNotification', {
+        aktion: 'diensterinnerung_planen', arbeitsdienst_id: dienst.id,
+      }).catch(e => console.warn('Dienst-Push übersprungen:', e));
       setForm(EMPTY_DIENST);
       setShowForm(false);
       await loadDienste();

@@ -1,5 +1,6 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.50";
 import { loeseMitgliedUndRechte, schreibeAudit, generiereBeschlussnummer } from "../../shared/ausschussBerechtigung.ts"; // redeploy 481cf71
+import { sendePush, holeAusschussIds } from "../../shared/pushSenden.ts";
 
 /**
  * Zentrale, allowlist-basierte Function für Ausschuss-Lifecycle- und
@@ -30,6 +31,11 @@ async function pullFromArr(base44, entity, id, field, value) {
 function mitgliedName(mitglieder, id) {
   const m = mitglieder?.find((x) => x.id === id);
   return m ? `${m.vorname} ${m.nachname}` : "–";
+}
+
+/** Push im Hintergrund senden – darf die Ausschuss-Aktion NIE brechen. */
+async function pushHintergrund(promise) {
+  try { await promise; } catch (e) { console.warn("Push-Versand übersprungen:", e?.message || e); }
 }
 
 export default async function (req) {
@@ -107,6 +113,10 @@ async function ausfuehren(base44, ctx, body) {
         console.error("Nachbesprechungs-TOPs nicht vollständig erstellt:", e);
         nachbesprechungen_fehler = true;
       }
+      // Push: Ausschuss-Termin (Hintergrund, nie brechend)
+      await pushHintergrund(sendePush(await holeAusschussIds(S), "Ausschuss-Termin",
+        `${termin.titel} am ${termin.datum}${termin.startzeit ? ", " + termin.startzeit + " Uhr" : ""}${termin.ort ? ", " + termin.ort : ""}`,
+        { route: "/kalender" }));
       // Sitzung existiert bereits: Erfolg mit Warnung statt 500 und Doppelanlage beim Retry.
       return { termin, nachbesprechungen, nachbesprechungen_fehler };
     }
@@ -234,6 +244,8 @@ async function ausfuehren(base44, ctx, body) {
       });
       await pushToArr(base44, "Tagesordnungspunkt", top_id, "abstimmung_ids", abs.id);
       await schreibeAudit(base44, ctx, "Abstimmung", abs.id, "top_abstimmung_anlegen", { top_id, titel });
+      await pushHintergrund(sendePush(await holeAusschussIds(S), "Neue Abstimmung",
+        `„${titel}" ist jetzt offen. Jetzt abstimmen!`, { route: "/ausschuss" }));
       return { abstimmung: abs };
     }
 
@@ -254,6 +266,8 @@ async function ausfuehren(base44, ctx, body) {
       const abstimmung = await S.Abstimmung.create({ titel: titel.trim(), beschreibung: beschreibung || "", termin_id: termin_id || "",
         angenommen_ab: grenze, antwort_optionen: optionen.map(x => x.trim()), status: "Offen" });
       await schreibeAudit(base44, ctx, "Abstimmung", abstimmung.id, "abstimmung_anlegen", { termin_id, titel });
+      await pushHintergrund(sendePush(await holeAusschussIds(S), "Neue Abstimmung",
+        `„${titel.trim()}" ist jetzt offen. Jetzt abstimmen!`, { route: "/ausschuss" }));
       return { abstimmung };
     }
     case "abstimmung_update": {
@@ -342,6 +356,8 @@ async function ausfuehren(base44, ctx, body) {
       const ergebnis = prozent > (abs.angenommen_ab || 50) ? "Angenommen" : "Abgelehnt";
       await S.Abstimmung.update(abstimmung_id, { status: "Abgeschlossen", ergebnis });
       await schreibeAudit(base44, ctx, "Abstimmung", abstimmung_id, "abstimmung_abschliessen", { ergebnis, ja, gesamt });
+      await pushHintergrund(sendePush(await holeAusschussIds(S), "Abstimmungsergebnis",
+        `„${abs.titel}": ${ergebnis} (${ja} von ${gesamt} Stimmen)`, { route: "/ausschuss" }));
       return { abstimmung_id, ergebnis, ja, gesamt };
     }
     case "abstimmung_loeschen": {
@@ -435,6 +451,11 @@ async function ausfuehren(base44, ctx, body) {
       });
       if (b.top_id) await pushToArr(base44, "Tagesordnungspunkt", b.top_id, "aufgabe_ids", aufg.id);
       await schreibeAudit(base44, ctx, "Aufgabe", aufg.id, "aufgabe_aus_beschluss", { beschluss_id });
+      if (aufg.verantwortlicher_id) {
+        await pushHintergrund(sendePush([aufg.verantwortlicher_id], "Aufgabe zugewiesen",
+          `Du bist zuständig für „${aufg.titel}"${aufg.faellig_am ? ` (fällig am ${aufg.faellig_am})` : ""}.`,
+          { route: "/ausschuss" }));
+      }
       return { aufgabe: aufg };
     }
 
@@ -450,6 +471,11 @@ async function ausfuehren(base44, ctx, body) {
       });
       if (top_id) await pushToArr(base44, "Tagesordnungspunkt", top_id, "aufgabe_ids", aufg.id);
       await schreibeAudit(base44, ctx, "Aufgabe", aufg.id, "aufgabe_anlegen", { titel });
+      if (verantwortlicher_id) {
+        await pushHintergrund(sendePush([verantwortlicher_id], "Aufgabe zugewiesen",
+          `Du bist zuständig für „${titel}"${faellig_am ? ` (fällig am ${faellig_am})` : ""}.`,
+          { route: "/ausschuss" }));
+      }
       return { aufgabe: aufg };
     }
     case "aufgabe_status": {
@@ -476,6 +502,10 @@ async function ausfuehren(base44, ctx, body) {
       }
       await S.Ausschussaufgabe.update(aufgabe_id, { verantwortlicher_id });
       await schreibeAudit(base44, ctx, "Aufgabe", aufgabe_id, "aufgabe_uebergeben", { an: verantwortlicher_id });
+      if (verantwortlicher_id) {
+        await pushHintergrund(sendePush([verantwortlicher_id], "Aufgabe übergeben",
+          `„${aufg.titel}" wurde an dich übergeben.`, { route: "/ausschuss" }));
+      }
       return { aufgabe_id, verantwortlicher_id };
     }
     case "aufgabe_update": {
