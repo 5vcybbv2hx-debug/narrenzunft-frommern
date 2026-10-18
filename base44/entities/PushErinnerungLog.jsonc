@@ -1,0 +1,108 @@
+{
+  "name": "PushErinnerungLog",
+  "type": "object",
+  "properties": {
+    "schluessel": {
+      "type": "string",
+      "description": "Dedupe-Schl\u00fcssel (z.B. ausfahrt_<id>_<datum> oder beitrag_<jahr>_<mm-dd>)"
+    },
+    "typ": {
+      "type": "string",
+      "description": "Art der Erinnerung (z.B. ausfahrt, beitrag)"
+    },
+    "empfaenger": {
+      "type": "string",
+      "description": "Anzahl oder Beschreibung der Empf\u00e4nger"
+    },
+    "gesendet_am": {
+      "type": "string",
+      "description": "ISO-Datum des Versands"
+    }
+  },
+  "description": {
+    "type": "string",
+    "description": "Zus\u00e4tzliche Beschreibung (bis 1000 Zeichen)",
+    "maxLength": 1000
+  },
+  "required": [
+    "schluessel"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        }
+      ]
+    }
+  }
+}
