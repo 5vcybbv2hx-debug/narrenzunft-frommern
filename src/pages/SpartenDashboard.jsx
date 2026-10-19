@@ -57,6 +57,8 @@ export default function SpartenDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('uebersicht');
+  // Eltern-Zugriff auf den Info-Tab: verknüpftes Kind ist aktive:r Teilnehmer:in
+  const [istElternVonTeilnehmer, setIstElternVonTeilnehmer] = useState(false);
 
   // Modals & Forms State
   const [showTerminModal, setShowTerminModal] = useState(false);
@@ -248,6 +250,45 @@ export default function SpartenDashboard() {
     const ids = gruppe.verantwortliche_ids || (gruppe.verantwortlicher_id ? [gruppe.verantwortlicher_id] : []);
     return ids.includes(myMitglied.id);
   }, [gruppe, myMitglied]);
+
+  // Gruppen-Zugehörigkeit: aktive:r Teilnehmer:in (Tanzgruppen) bzw. Roster-Mitglied.
+  // Gruppeninterne Tabs (Häsordnung, Mitglieder, Tanz, Info, Marktplatz) sehen nur
+  // Gruppen-Angehörige — nicht Mitglieder anderer Gruppen.
+  const istGruppenMitglied = useMemo(() => {
+    if (!gruppe || !myMitglied) return false;
+    if (gruppe.typ === 'Tanzgruppe') {
+      return (teilnehmerListe || []).some(t => t.mitglied_id === myMitglied.id && t.aktiv !== false);
+    }
+    return (mitglieder || []).some(m => m.id === myMitglied.id);
+  }, [gruppe, myMitglied, teilnehmerListe, mitglieder]);
+
+  // Sichtbarkeit für gruppeninterne Inhalte: Angehörige, Verantwortliche oder Verwaltung
+  const kannGruppeIntern = canEdit || istGruppenVerantwortlicher || istGruppenMitglied;
+
+  // Eltern-Check (Info-Tab): Ist ein verknüpftes Kind aktive:r Teilnehmer:in dieser Gruppe?
+  // Nur nötig, wenn weder Angehörige:r noch Verwaltung — spart die Abfrage sonst.
+  useEffect(() => {
+    let cancelled = false;
+    setIstElternVonTeilnehmer(false);
+    if (!gruppe || !myMitglied || kannGruppeIntern || gruppe.typ !== 'Tanzgruppe') return;
+    (async () => {
+      try {
+        const verb = await base44.entities.Verwandtschaft.filter({ mitglied_id: myMitglied.id }).catch(() => []);
+        const kinderIds = new Set((verb || []).filter(v => v.beziehung === 'Kind').map(v => v.verwandter_id));
+        if (kinderIds.size === 0 || cancelled) return;
+        const aktiv = (teilnehmerListe || []).some(t => t.aktiv !== false && kinderIds.has(t.mitglied_id));
+        if (!cancelled) setIstElternVonTeilnehmer(aktiv);
+      } catch (e) { /* keine Verwandten-Daten -> kein Eltern-Zugriff */ }
+    })();
+    return () => { cancelled = true; };
+  }, [gruppe, myMitglied, teilnehmerListe, kannGruppeIntern]);
+
+  // Ungültige Tabs (z. B. nach Login-Wechsel oder Deep-Link) auf Übersicht zurücksetzen.
+  // Nutzt dieselbe Logik wie die Tab-Leiste — Eltern behalten z. B. den Info-Tab.
+  useEffect(() => {
+    if (!gruppe) return;
+    if (!tabsSichtbar().includes(activeTab)) setActiveTab('uebersicht');
+  }, [gruppe, activeTab, kannGruppeIntern, istElternVonTeilnehmer]);
 
   // Tab 1: stats computation
   const stats = useMemo(() => {
@@ -624,10 +665,11 @@ export default function SpartenDashboard() {
 
   // Sichtbare Tabs in fester Reihenfolge — Wischgeste bewegt sich genau durch diese Liste
   const tabsSichtbar = () => {
-    const t = ['uebersicht', 'termine', 'haesordnung'];
-    if (gruppe?.typ === 'Tanzgruppe') t.push('teilnehmer', 'tanz');
-    t.push('info');
-    if (gruppe?.marktplatz_aktiv || canEdit) t.push('marktplatz');
+    const t = ['uebersicht', 'termine'];
+    if (kannGruppeIntern) t.push('haesordnung');
+    if (gruppe?.typ === 'Tanzgruppe' && kannGruppeIntern) t.push('teilnehmer', 'tanz');
+    if (kannGruppeIntern || istElternVonTeilnehmer) t.push('info');
+    if ((gruppe?.marktplatz_aktiv && kannGruppeIntern) || canEdit) t.push('marktplatz');
     if (canEdit) t.push('warteliste');
     if (canEdit) {
       t.push('auslagen');
@@ -1093,7 +1135,7 @@ export default function SpartenDashboard() {
         )}
 
         {/* TAB 3: AUSLAGEN */}
-        {activeTab === 'teilnehmer' && (
+        {activeTab === 'teilnehmer' && kannGruppeIntern && (
           <div className="space-y-6">
             <TeilnehmerTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} />
             {(canEdit || istGruppenVerantwortlicher) && (
@@ -1101,19 +1143,19 @@ export default function SpartenDashboard() {
             )}
           </div>
         )}
-        {activeTab === 'haesordnung' && (
+        {activeTab === 'haesordnung' && kannGruppeIntern && (
           <HaesordnungTab gruppe={gruppe} canEdit={canEdit || istGruppenVerantwortlicher} />
         )}
-        {activeTab === 'info' && (
+        {activeTab === 'info' && (kannGruppeIntern || istElternVonTeilnehmer) && (
           <ElternInfoTab gruppe={gruppe} canEdit={canEdit || istGruppenVerantwortlicher} />
         )}
         {canEdit && activeTab === 'warteliste' && (
           <WartelisteTab gruppeId={id} />
         )}
-        {activeTab === 'marktplatz' && (
+        {activeTab === 'marktplatz' && ((gruppe?.marktplatz_aktiv && kannGruppeIntern) || canEdit) && (
           <MarktplatzTab gruppe={gruppe} gruppeId={id} myMitglied={myMitglied} alleMitglieder={mitglieder} canEditGruppe={canEdit || istGruppenVerantwortlicher} onGruppeGeaendert={loadData} />
         )}
-        {activeTab === 'tanz' && (
+        {activeTab === 'tanz' && kannGruppeIntern && (
           <TanzTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} />
         )}
         {canEdit && activeTab === 'auslagen' && (
