@@ -15,53 +15,69 @@
       <mj-class name="muted" color="#ffffff" />
     </mj-attributes>
     <mj-style>
-      @media (max-width:480px) { .hero-h div { font-size:32px !important; line-height:1.12 !important; } .offer-h div { font-size:48px !important; } }
+      @media (max-width:480px) { .hero-h div { font-size:32px !important; line-height:1.12 !important; } }
     </mj-style>
   </mj-head>
   <mj-body background-color="#14161a" width="600px">
     <mj-wrapper padding="28px 12px" background-color="#14161a">
+      <!-- Header-Band: Logo + Vereinsname (wie System-Mails) -->
       <mj-section background-color="#e82626" padding="24px 36px" border-radius="8px 8px 0 0">
         <mj-column>
           <mj-image src="https://media.base44.com/images/public/69f263f56f0ba624a7c9355c/fe91a7ed7_logo.png" alt="Narrenzunft Frommern" width="40px" align="center" padding="0 0 12px" />
           <mj-text align="center" font-size="12px" letter-spacing="4px" font-weight="700" text-transform="uppercase" color="#000000">Narrenzunft Frommern</mj-text>
         </mj-column>
       </mj-section>
+
+      <!-- Hero-Bild -->
       <mj-section padding="0"><mj-column><mj-image src="https://media.base44.com/images/public/69f263f56f0ba624a7c9355c/742eb24f9_generated_4a85841f.png" alt="" width="600px" /></mj-column></mj-section>
+
+      <!-- Headline + Roter Akzentbalken (entspricht App border-l-4 border-primary) -->
       <mj-section padding="44px 36px 20px">
         <mj-column>
+          <mj-divider border-color="#e82626" border-width="3px" width="40px" align="left" padding="0 0 18px" />
           <mj-text mj-class="h" css-class="hero-h" font-size="42px" line-height="1.08" padding="0 0 16px">Narri, Narro!, {{first_name}}.</mj-text>
           <mj-text mj-class="muted" font-size="17px">Termine, Ausfahrten und Abstimmungen laufen jetzt zentral bei der Narrenzunft Frommern. So bleibt der Ausschuss auf dem Laufenden und keine Aufgabe bleibt liegen.</mj-text>
         </mj-column>
       </mj-section>
+
+      <!-- CTA -->
       <mj-section padding="12px 36px 40px"><mj-column><mj-button href="{{cta_url}}" align="left">Mitgliederbereich öffnen</mj-button></mj-column></mj-section>
+
       <mj-section padding="0 36px"><mj-column><mj-divider /></mj-column></mj-section>
+
+      <!-- Section-Label (App-Style: uppercase Tracking in Rot) -->
       <mj-section padding="36px 36px 18px"><mj-column><mj-text mj-class="label">Auf einen Blick</mj-text></mj-column></mj-section>
+
+      <!-- Feature-Karten mit Rahmen (entspricht App rounded-xl border border-border) -->
       <mj-section padding="0 26px 14px">
-        <mj-column padding="0 10px 22px">
-          <mj-divider border-color="#e82626" border-width="3px" width="28px" align="left" padding="0 0 14px" />
+        <mj-column padding="0 10px 22px" background-color="#24272e" border-radius="8px" border="1px solid #2d3139" padding-top="22px" padding-bottom="22px">
           <mj-text mj-class="h" font-size="16px" line-height="1.35" padding="0 0 6px">Dienste planen</mj-text>
           <mj-text mj-class="muted" font-size="14px">Alle Dienste und Ausfahrten stehen an einem Ort, mit Anmeldung und Besetzungsliste.</mj-text>
         </mj-column>
-        <mj-column padding="0 10px 22px">
-          <mj-divider border-color="#e82626" border-width="3px" width="28px" align="left" padding="0 0 14px" />
+        <mj-column padding="0 10px 22px" background-color="#24272e" border-radius="8px" border="1px solid #2d3139" padding-top="22px" padding-bottom="22px">
           <mj-text mj-class="h" font-size="16px" line-height="1.35" padding="0 0 6px">Termine im Griff</mj-text>
           <mj-text mj-class="muted" font-size="14px">Termine, Aufgaben und Beiträge werden zentral gepflegt, nichts geht verloren.</mj-text>
         </mj-column>
-        <mj-column padding="0 10px 22px">
-          <mj-divider border-color="#e82626" border-width="3px" width="28px" align="left" padding="0 0 14px" />
+        <mj-column padding="0 10px 22px" background-color="#24272e" border-radius="8px" border="1px solid #2d3139" padding-top="22px" padding-bottom="22px">
           <mj-text mj-class="h" font-size="16px" line-height="1.35" padding="0 0 6px">Abstimmungen</mj-text>
           <mj-text mj-class="muted" font-size="14px">Abstimmungen und Beschlüsse des Ausschusses sind für alle nachlesbar dokumentiert.</mj-text>
         </mj-column>
       </mj-section>
+
+      <!-- Hinweis-Karte -->
       <mj-section padding="8px 36px 40px">
-        <mj-column background-color="#24272e" border-radius="8px" padding="18px 22px">
+        <mj-column background-color="#24272e" border-radius="8px" border="1px solid #2d3139" padding="18px 22px">
           <mj-text font-size="14px">Fragen oder Anmerkungen? Melde dich einfach beim Ausschuss der Narrenzunft Frommern.</mj-text>
         </mj-column>
       </mj-section>
+
+      <!-- Footer-Band mit Live-URL -->
       <mj-section background-color="#e82626" padding="26px 36px 30px" border-radius="0 0 8px 8px">
         <mj-column>
           <mj-text mj-class="h" align="center" font-size="17px" color="#000000" padding="0 0 8px">Narrenzunft Frommern</mj-text>
-          
+          <mj-text align="center" font-size="12px" color="#000000">
+            <a href="https://narrenzunft-frommern.base44.app" style="color:#000000; text-decoration:underline;">narrenzunft-frommern.base44.app</a>
+          </mj-text>
         </mj-column>
       </mj-section>
     </mj-wrapper>
