@@ -14,7 +14,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
  *  - 'figur'  : TanzFigur  (name, reihenfolge, pdf_url, aufstellung als JSON-String)
  *  - 'schritt': TanzSchritt (nr, beschreibung, figur_id)
  *  - 'musik'  : TanzMusik  (titel, datei_url, sortierung)
- *  - 'ordnung': Haesgruppe.ordnung (JSON-Array mitglied_ids — Häsordnung, ALLE Gruppen)
+ *  - 'haesordnung': Haesgruppe.haesordnung (JSON-Array der Hästeile — KLEIDERORDNUNG, ALLE Gruppen)
  *  - 'info'   : Haesgruppe.eltern_info / kosten_info (Eltern-Infoseite, ALLE Gruppen)
  *  - 'warteliste': Warteliste-Einträge (Interessenten, ALLE Gruppen)
  *  - 'haesteil'  : HaesTeilVergessen (dokumentierte vergessene Hästeile)
@@ -299,20 +299,28 @@ export default async function(req) {
     }
 
     // ══════════ MUSIK ══════════
-    if (typ === 'ordnung') {
-      // Häsordnung: Haesgruppe.ordnung = JSON-Array der mitglied_ids.
-      // Nur 'update' — Anzeige liest direkt, Positionen 1..n ergeben sich.
-      if (aktion !== 'update') return Response.json({ error: 'Nur aktion=update für ordnung' }, { status: 400 });
-      let ids;
+    if (typ === 'haesordnung') {
+      // Häsordnung = KLEIDERORDNUNG: Haesgruppe.haesordnung = JSON-Array der
+      // Hästeile [{ titel, beschreibung, beschaffung, notiz }].
+      if (aktion !== 'update') return Response.json({ error: 'Nur aktion=update für haesordnung' }, { status: 400 });
+      let teile;
       try {
-        const roh = body.ordnung === undefined || body.ordnung === null ? '[]' : JSON.parse(body.ordnung);
+        const roh = body.haesordnung === undefined || body.haesordnung === null ? '[]' : JSON.parse(body.haesordnung);
         if (!Array.isArray(roh)) throw new Error('kein Array');
-        ids = roh.map(String).filter(Boolean).slice(0, 300);
+        teile = roh
+          .filter(x => x && typeof x === 'object' && typeof x.titel === 'string' && x.titel.trim())
+          .slice(0, 60)
+          .map(x => ({
+            titel: str(x.titel, 120),
+            beschreibung: str(x.beschreibung, 500),
+            beschaffung: x.beschaffung === 'selbst' ? 'selbst' : 'verein',
+            notiz: str(x.notiz, 300),
+          }));
       } catch {
-        return Response.json({ error: 'ordnung muss ein JSON-Array sein' }, { status: 400 });
+        return Response.json({ error: 'haesordnung muss ein JSON-Array sein' }, { status: 400 });
       }
-      await srv.entities.Haesgruppe.update(haesgruppe_id, { ordnung: JSON.stringify(ids) });
-      return Response.json({ ok: true, ordnung: ids });
+      await srv.entities.Haesgruppe.update(haesgruppe_id, { haesordnung: JSON.stringify(teile) });
+      return Response.json({ ok: true, haesordnung: teile });
     }
 
     if (typ === 'musik') {

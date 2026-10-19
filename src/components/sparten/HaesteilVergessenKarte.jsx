@@ -16,6 +16,7 @@ export default function HaesteilVergessenKarte({ gruppeId, alleMitglieder }) {
   const [person, setPerson] = useState('');
   const [teil, setTeil] = useState('');
   const [notiz, setNotiz] = useState('');
+  const [haesordnung, setHaesordnung] = useState([]); // Teile aus der Kleiderordnung als Vorschlaege
 
   const ladenFn = async () => {
     setLaden(true);
@@ -25,6 +26,17 @@ export default function HaesteilVergessenKarte({ gruppeId, alleMitglieder }) {
     } catch (e) { console.error('Hästeil:', e); }
     finally { setLaden(false); }
   };
+
+  useEffect(() => {
+    base44.entities.Haesgruppe.get(gruppeId)
+      .then(g => {
+        try {
+          const a = JSON.parse(g?.haesordnung || '[]');
+          setHaesordnung(Array.isArray(a) ? a : []);
+        } catch { setHaesordnung([]); }
+      })
+      .catch(() => setHaesordnung([]));
+  }, [gruppeId]);
 
   useEffect(() => { ladenFn(); /* eslint-disable-line */ }, [gruppeId]);
 
@@ -87,8 +99,13 @@ export default function HaesteilVergessenKarte({ gruppeId, alleMitglieder }) {
             ))}
           </select>
           <div className="flex gap-2">
-            <input value={teil} onChange={e => setTeil(e.target.value)} placeholder="Hästeil (z. B. Handschuhe)"
+            <input value={teil} onChange={e => setTeil(e.target.value)} placeholder="Hästeil (z. B. Handschuhe)" list="nzf-haesordnung-teile"
               className="flex-1 px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary" />
+            <datalist id="nzf-haesordnung-teile">
+              {haesordnung.map((t, i) => (
+                <option key={i} value={t.titel} />
+              ))}
+            </datalist>
             <button onClick={eintragen} disabled={busy || !person || !teil.trim()}
               className="px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 disabled:opacity-50">
               Eintragen

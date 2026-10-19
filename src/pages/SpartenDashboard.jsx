@@ -1,4 +1,4 @@
-import OrdnungTab from '@/components/sparten/OrdnungTab';
+import HaesordnungTab from '@/components/sparten/HaesordnungTab';
 import TeilzahlungModal, { parseZahlungen } from '@/components/sparten/TeilzahlungModal';
 import MarktplatzTab from '@/components/sparten/MarktplatzTab';
 import ElternInfoTab from '@/components/sparten/ElternInfoTab';
@@ -21,7 +21,7 @@ import { Drama,
   Send, Edit, Trash2, 
   Check, X, AlertCircle, MessageSquare, Repeat,
   Euro, UserCheck, ArrowLeft, Save, Phone, MessageCircle, Search, User
-, ListOrdered , Info , Store } from 'lucide-react';
+, Info , Store , Shirt } from 'lucide-react';
 import { toast } from 'sonner';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import MobileSelect from '@/components/MobileSelect';
@@ -624,7 +624,7 @@ export default function SpartenDashboard() {
 
   // Sichtbare Tabs in fester Reihenfolge — Wischgeste bewegt sich genau durch diese Liste
   const tabsSichtbar = () => {
-    const t = ['uebersicht', 'termine', 'ordnung'];
+    const t = ['uebersicht', 'termine', 'haesordnung'];
     if (gruppe?.typ === 'Tanzgruppe') t.push('teilnehmer', 'tanz');
     t.push('info');
     if (gruppe?.marktplatz_aktiv || canEdit) t.push('marktplatz');
@@ -755,8 +755,8 @@ export default function SpartenDashboard() {
           <button onClick={() => setActiveTab('termine')} className={tabClass('termine')}>
             <Calendar className="w-4 h-4" /> Termine
           </button>
-          <button onClick={() => setActiveTab('ordnung')} className={tabClass('ordnung')}>
-            <ListOrdered className="w-4 h-4" /> Ordnung
+          <button onClick={() => setActiveTab('haesordnung')} className={tabClass('haesordnung')}>
+            <Shirt className="w-4 h-4" /> Häsordnung
           </button>
           <button onClick={() => setActiveTab('info')} className={tabClass('info')}>
             <Info className="w-4 h-4" /> Eltern-Info
@@ -1101,8 +1101,8 @@ export default function SpartenDashboard() {
             )}
           </div>
         )}
-        {activeTab === 'ordnung' && (
-          <OrdnungTab gruppe={gruppe} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} />
+        {activeTab === 'haesordnung' && (
+          <HaesordnungTab gruppe={gruppe} canEdit={canEdit || istGruppenVerantwortlicher} />
         )}
         {activeTab === 'info' && (
           <ElternInfoTab gruppe={gruppe} canEdit={canEdit || istGruppenVerantwortlicher} />
