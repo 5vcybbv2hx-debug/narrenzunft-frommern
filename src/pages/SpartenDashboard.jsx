@@ -53,6 +53,7 @@ export default function SpartenDashboard() {
   const [alleMitglieder, setAlleMitglieder] = useState([]);
   const [myMitglied, setMyMitglied] = useState(null);
   const [splatHistorie, setSplatHistorie] = useState([]);
+  const [verwandtschaften, setVerwandtschaften] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -204,6 +205,19 @@ export default function SpartenDashboard() {
       if (user) {
         const myMitgliedRecord = (await base44.entities.Mitglied.filter({ user_id: user.id }))[0];
         setMyMitglied(myMitgliedRecord || null);
+        // Verwandtschaft (Kinder) für Eltern-Info-Sichtbarkeit laden
+        if (myMitgliedRecord) {
+          try {
+            const verw = await base44.entities.Verwandtschaft.filter({
+              mitglied_id: myMitgliedRecord.id,
+              beziehung: 'Kind'
+            });
+            setVerwandtschaften(verw || []);
+          } catch (e) {
+            console.warn('Verwandtschaft konnte nicht geladen werden:', e);
+            setVerwandtschaften([]);
+          }
+        }
       }
     } catch (err) {
       console.error('Fehler beim Laden des Sparten-Dashboards:', err);
@@ -248,6 +262,32 @@ export default function SpartenDashboard() {
     const ids = gruppe.verantwortliche_ids || (gruppe.verantwortlicher_id ? [gruppe.verantwortlicher_id] : []);
     return ids.includes(myMitglied.id);
   }, [gruppe, myMitglied]);
+
+  // Aktiver Gruppen-Angehöriger (Tanzgruppen: aktive Teilnehmer; sonst Roster)
+  const istAktivesGruppenmitglied = useMemo(() => {
+    if (!myMitglied) return false;
+    if (gruppe?.typ === 'Tanzgruppe') {
+      return (teilnehmerListe || []).some(t => t.mitglied_id === myMitglied.id && t.aktiv !== false);
+    }
+    return mitglieder.some(m => m.id === myMitglied.id);
+  }, [myMitglied, gruppe, teilnehmerListe, mitglieder]);
+
+  // Eltern eines aktiven Teilnehmers der Gruppe (für Eltern-Info-Tab)
+  const istElternVonAktivemTeilnehmer = useMemo(() => {
+    if (!myMitglied || !verwandtschaften.length) return false;
+    const kindIds = new Set(verwandtschaften.map(v => v.verwandter_id));
+    if (kindIds.size === 0) return false;
+    if (gruppe?.typ === 'Tanzgruppe') {
+      return (teilnehmerListe || []).some(t => kindIds.has(t.mitglied_id) && t.aktiv !== false);
+    }
+    return mitglieder.some(m => kindIds.has(m.id));
+  }, [myMitglied, verwandtschaften, gruppe, teilnehmerListe, mitglieder]);
+
+  // Sichtbarkeit für gruppeninterne Tabs (Häsordnung, Teilnehmer, Tanz, Marktplatz)
+  const darfGruppenInternesSehen = istAktivesGruppenmitglied || istGruppenVerantwortlicher || canEdit;
+
+  // Sichtbarkeit für Eltern-Info-Tab (zusätzlich Eltern aktiver Teilnehmer)
+  const darfInfoSehen = darfGruppenInternesSehen || istElternVonAktivemTeilnehmer;
 
   // Tab 1: stats computation
   const stats = useMemo(() => {
@@ -624,10 +664,13 @@ export default function SpartenDashboard() {
 
   // Sichtbare Tabs in fester Reihenfolge — Wischgeste bewegt sich genau durch diese Liste
   const tabsSichtbar = () => {
-    const t = ['uebersicht', 'termine', 'haesordnung'];
-    if (gruppe?.typ === 'Tanzgruppe') t.push('teilnehmer', 'tanz');
-    t.push('info');
-    if (gruppe?.marktplatz_aktiv || canEdit) t.push('marktplatz');
+    const t = ['uebersicht', 'termine'];
+    if (darfGruppenInternesSehen) {
+      t.push('haesordnung');
+      if (gruppe?.typ === 'Tanzgruppe') t.push('teilnehmer', 'tanz');
+      if (gruppe?.marktplatz_aktiv || canEdit) t.push('marktplatz');
+    }
+    if (darfInfoSehen) t.push('info');
     if (canEdit) t.push('warteliste');
     if (canEdit) {
       t.push('auslagen');
@@ -655,6 +698,15 @@ export default function SpartenDashboard() {
       }
     },
   });
+
+  // Deep-Link-Schutz: aktiver Tab auf 'uebersicht' zurücksetzen, wenn nicht sichtbar
+  useEffect(() => {
+    const sichtbar = tabsSichtbar();
+    if (!sichtbar.includes(activeTab)) {
+      setActiveTab('uebersicht');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [darfGruppenInternesSehen, darfInfoSehen, canEdit, gruppe, activeTab]);
 
   if (loading) {
     return (
@@ -755,13 +807,17 @@ export default function SpartenDashboard() {
           <button onClick={() => setActiveTab('termine')} className={tabClass('termine')}>
             <Calendar className="w-4 h-4" /> Termine
           </button>
-          <button onClick={() => setActiveTab('haesordnung')} className={tabClass('haesordnung')}>
-            <Shirt className="w-4 h-4" /> Häsordnung
-          </button>
-          <button onClick={() => setActiveTab('info')} className={tabClass('info')}>
-            <Info className="w-4 h-4" /> Eltern-Info
-          </button>
-          {(gruppe?.marktplatz_aktiv || canEdit) && (
+          {darfGruppenInternesSehen && (
+            <button onClick={() => setActiveTab('haesordnung')} className={tabClass('haesordnung')}>
+              <Shirt className="w-4 h-4" /> Häsordnung
+            </button>
+          )}
+          {darfInfoSehen && (
+            <button onClick={() => setActiveTab('info')} className={tabClass('info')}>
+              <Info className="w-4 h-4" /> Eltern-Info
+            </button>
+          )}
+          {darfGruppenInternesSehen && (gruppe?.marktplatz_aktiv || canEdit) && (
             <button onClick={() => setActiveTab('marktplatz')} className={tabClass('marktplatz')}>
               <Store className="w-4 h-4" /> Marktplatz
             </button>
@@ -771,12 +827,12 @@ export default function SpartenDashboard() {
               <Clock className="w-4 h-4" /> Warteliste
             </button>
           )}
-          {gruppe?.typ === 'Tanzgruppe' && (
+          {darfGruppenInternesSehen && gruppe?.typ === 'Tanzgruppe' && (
             <button onClick={() => setActiveTab('teilnehmer')} className={tabClass('teilnehmer')}>
               <Users className="w-4 h-4" /> Mitglieder
             </button>
           )}
-          {gruppe?.typ === 'Tanzgruppe' && (
+          {darfGruppenInternesSehen && gruppe?.typ === 'Tanzgruppe' && (
             <button onClick={() => setActiveTab('tanz')} className={tabClass('tanz')}>
               <Drama className="w-4 h-4" /> Tanz
             </button>
