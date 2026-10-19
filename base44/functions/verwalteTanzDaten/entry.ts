@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
 
-// redeploy 3458700 — typs: figur/schritt/musik/ordnung/info(+empfehlungen)/warteliste/haesteil/marktplatz
+// redeploy fcee00b — typs: figur/schritt/musik/haesordnung/info(+empfehlungen)/warteliste/haesteil/marktplatz (ordnung entfernt, haesordnung = Kleiderordnung)
 
 /**
  * Sichere Verwaltung der Tanzgruppen-Daten: Figuren (mit Aufstellung),

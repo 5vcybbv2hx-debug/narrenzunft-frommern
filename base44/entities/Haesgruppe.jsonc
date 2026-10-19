@@ -42,7 +42,11 @@
     },
     "ordnung": {
       "type": "string",
-      "description": "H\u00e4sordnung: JSON-Array der mitglied_ids in Reihenfolge (f\u00fcr Aufstellung & Umzug)"
+      "description": "Legacy (ungenutzt) \u2013 fr\u00fcher Mitglieder-Sortierung"
+    },
+    "haesordnung": {
+      "type": "string",
+      "description": "Kleiderordnung: JSON-Array der H\u00e4steile [{titel, beschreibung, beschaffung: 'verein'|'selbst', notiz}]"
     },
     "eltern_info": {
       "type": "string",
