@@ -263,31 +263,31 @@ export default function SpartenDashboard() {
     return ids.includes(myMitglied.id);
   }, [gruppe, myMitglied]);
 
-  // Aktiver Gruppen-Angehöriger (Tanzgruppen: aktive Teilnehmer; sonst Roster)
-  const istAktivesGruppenmitglied = useMemo(() => {
-    if (!myMitglied) return false;
-    if (gruppe?.typ === 'Tanzgruppe') {
+  // Gruppen-Zugehörigkeit: aktive:r Teilnehmer:in (Tanzgruppen) bzw. Roster-Mitglied.
+  // Gruppeninterne Tabs (Häsordnung, Mitglieder, Tanz, Info, Marktplatz) sehen nur
+  // Gruppen-Angehörige — nicht Mitglieder anderer Gruppen.
+  const istGruppenMitglied = useMemo(() => {
+    if (!gruppe || !myMitglied) return false;
+    if (gruppe.typ === 'Tanzgruppe') {
       return (teilnehmerListe || []).some(t => t.mitglied_id === myMitglied.id && t.aktiv !== false);
     }
-    return mitglieder.some(m => m.id === myMitglied.id);
-  }, [myMitglied, gruppe, teilnehmerListe, mitglieder]);
+    return (mitglieder || []).some(m => m.id === myMitglied.id);
+  }, [gruppe, myMitglied, teilnehmerListe, mitglieder]);
 
-  // Eltern eines aktiven Teilnehmers der Gruppe (für Eltern-Info-Tab)
-  const istElternVonAktivemTeilnehmer = useMemo(() => {
+  // Sichtbarkeit für gruppeninterne Inhalte: Angehörige, Verantwortliche oder Verwaltung
+  const kannGruppeIntern = canEdit || istGruppenVerantwortlicher || istGruppenMitglied;
+
+  // Eltern eines aktiven Teilnehmers der Gruppe (Eltern-Info-Tab).
+  // Tanzgruppen: aktive Teilnehmer:innen, sonst der Roster der Gruppe.
+  const istElternVonTeilnehmer = useMemo(() => {
     if (!myMitglied || !verwandtschaften.length) return false;
-    const kindIds = new Set(verwandtschaften.map(v => v.verwandter_id));
-    if (kindIds.size === 0) return false;
+    const kinderIds = new Set(verwandtschaften.map(v => v.verwandter_id));
+    if (kinderIds.size === 0) return false;
     if (gruppe?.typ === 'Tanzgruppe') {
-      return (teilnehmerListe || []).some(t => kindIds.has(t.mitglied_id) && t.aktiv !== false);
+      return (teilnehmerListe || []).some(t => kinderIds.has(t.mitglied_id) && t.aktiv !== false);
     }
-    return mitglieder.some(m => kindIds.has(m.id));
+    return (mitglieder || []).some(m => kinderIds.has(m.id));
   }, [myMitglied, verwandtschaften, gruppe, teilnehmerListe, mitglieder]);
-
-  // Sichtbarkeit für gruppeninterne Tabs (Häsordnung, Teilnehmer, Tanz, Marktplatz)
-  const darfGruppenInternesSehen = istAktivesGruppenmitglied || istGruppenVerantwortlicher || canEdit;
-
-  // Sichtbarkeit für Eltern-Info-Tab (zusätzlich Eltern aktiver Teilnehmer)
-  const darfInfoSehen = darfGruppenInternesSehen || istElternVonAktivemTeilnehmer;
 
   // Tab 1: stats computation
   const stats = useMemo(() => {
@@ -665,13 +665,11 @@ export default function SpartenDashboard() {
   // Sichtbare Tabs in fester Reihenfolge — Wischgeste bewegt sich genau durch diese Liste
   const tabsSichtbar = () => {
     const t = ['uebersicht', 'termine'];
-    if (darfGruppenInternesSehen) {
-      t.push('haesordnung');
-      if (gruppe?.typ === 'Tanzgruppe') t.push('teilnehmer', 'tanz');
-      if (gruppe?.marktplatz_aktiv || canEdit) t.push('marktplatz');
-    }
-    if (darfInfoSehen) t.push('info');
+    if (kannGruppeIntern) t.push('haesordnung');
+    if (kannGruppeIntern || istElternVonTeilnehmer) t.push('info');
+    if ((gruppe?.marktplatz_aktiv && kannGruppeIntern) || canEdit) t.push('marktplatz');
     if (canEdit) t.push('warteliste');
+    if (gruppe?.typ === 'Tanzgruppe' && kannGruppeIntern) t.push('teilnehmer', 'tanz');
     if (canEdit) {
       t.push('auslagen');
       if (gruppe?.typ !== 'Tanzgruppe') t.push('mitglieder');
@@ -706,7 +704,7 @@ export default function SpartenDashboard() {
       setActiveTab('uebersicht');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [darfGruppenInternesSehen, darfInfoSehen, canEdit, gruppe, activeTab]);
+  }, [kannGruppeIntern, istElternVonTeilnehmer, canEdit, gruppe, activeTab]);
 
   if (loading) {
     return (
@@ -807,17 +805,17 @@ export default function SpartenDashboard() {
           <button onClick={() => setActiveTab('termine')} className={tabClass('termine')}>
             <Calendar className="w-4 h-4" /> Termine
           </button>
-          {darfGruppenInternesSehen && (
+          {kannGruppeIntern && (
             <button onClick={() => setActiveTab('haesordnung')} className={tabClass('haesordnung')}>
               <Shirt className="w-4 h-4" /> Häsordnung
             </button>
           )}
-          {darfInfoSehen && (
+          {(kannGruppeIntern || istElternVonTeilnehmer) && (
             <button onClick={() => setActiveTab('info')} className={tabClass('info')}>
               <Info className="w-4 h-4" /> Eltern-Info
             </button>
           )}
-          {darfGruppenInternesSehen && (gruppe?.marktplatz_aktiv || canEdit) && (
+          {kannGruppeIntern && (gruppe?.marktplatz_aktiv || canEdit) && (
             <button onClick={() => setActiveTab('marktplatz')} className={tabClass('marktplatz')}>
               <Store className="w-4 h-4" /> Marktplatz
             </button>
@@ -827,12 +825,12 @@ export default function SpartenDashboard() {
               <Clock className="w-4 h-4" /> Warteliste
             </button>
           )}
-          {darfGruppenInternesSehen && gruppe?.typ === 'Tanzgruppe' && (
+          {kannGruppeIntern && gruppe?.typ === 'Tanzgruppe' && (
             <button onClick={() => setActiveTab('teilnehmer')} className={tabClass('teilnehmer')}>
               <Users className="w-4 h-4" /> Mitglieder
             </button>
           )}
-          {darfGruppenInternesSehen && gruppe?.typ === 'Tanzgruppe' && (
+          {kannGruppeIntern && gruppe?.typ === 'Tanzgruppe' && (
             <button onClick={() => setActiveTab('tanz')} className={tabClass('tanz')}>
               <Drama className="w-4 h-4" /> Tanz
             </button>
@@ -1149,7 +1147,7 @@ export default function SpartenDashboard() {
         )}
 
         {/* TAB 3: AUSLAGEN */}
-        {activeTab === 'teilnehmer' && (
+        {activeTab === 'teilnehmer' && kannGruppeIntern && (
           <div className="space-y-6">
             <TeilnehmerTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} />
             {(canEdit || istGruppenVerantwortlicher) && (
@@ -1157,19 +1155,19 @@ export default function SpartenDashboard() {
             )}
           </div>
         )}
-        {activeTab === 'haesordnung' && (
+        {activeTab === 'haesordnung' && kannGruppeIntern && (
           <HaesordnungTab gruppe={gruppe} canEdit={canEdit || istGruppenVerantwortlicher} />
         )}
-        {activeTab === 'info' && (
+        {activeTab === 'info' && (kannGruppeIntern || istElternVonTeilnehmer) && (
           <ElternInfoTab gruppe={gruppe} canEdit={canEdit || istGruppenVerantwortlicher} />
         )}
         {canEdit && activeTab === 'warteliste' && (
           <WartelisteTab gruppeId={id} />
         )}
-        {activeTab === 'marktplatz' && (
+        {activeTab === 'marktplatz' && ((gruppe?.marktplatz_aktiv && kannGruppeIntern) || canEdit) && (
           <MarktplatzTab gruppe={gruppe} gruppeId={id} myMitglied={myMitglied} alleMitglieder={mitglieder} canEditGruppe={canEdit || istGruppenVerantwortlicher} onGruppeGeaendert={loadData} />
         )}
-        {activeTab === 'tanz' && (
+        {activeTab === 'tanz' && kannGruppeIntern && (
           <TanzTab gruppeId={id} alleMitglieder={alleMitglieder} canEdit={canEdit || istGruppenVerantwortlicher} />
         )}
         {canEdit && activeTab === 'auslagen' && (
