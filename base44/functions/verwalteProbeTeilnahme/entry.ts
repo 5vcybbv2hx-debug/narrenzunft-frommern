@@ -75,12 +75,19 @@ export default async function (req) {
 
       const satz = await findeOderLegeAn(zielMitgliedId);
       if (aktion === 'abmelden') {
-        // Verspätet? Abmelde-Schluss der Gruppe (z. B. '15:00') am Termin-Datum
+        // Verspätet? Abmelde-Schluss der Gruppe (z. B. '15:00') am Termin-Datum.
+        // Wall-Clock-Vergleich in Europe/Berlin (Trainingstag + Uhrzeit sind
+        // lokale Angaben; das Function-Runtime rechnet intern UTC).
         let verspaetet = false;
         const g = await holeGruppe();
         if (g && g.abmeldeschluss_uhrzeit && termin && termin.datum) {
-          const grenze = new Date(termin.datum + 'T' + String(g.abmeldeschluss_uhrzeit).padStart(5, '0') + ':00');
-          if (!isNaN(grenze.getTime())) verspaetet = new Date() > grenze;
+          try {
+            const berlinJetzt = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Berlin' }));
+            const grenze = new Date(termin.datum + 'T' + String(g.abmeldeschluss_uhrzeit).padStart(5, '0') + ':00');
+            if (!isNaN(grenze.getTime()) && !isNaN(berlinJetzt.getTime())) {
+              verspaetet = berlinJetzt > grenze;
+            }
+          } catch (e) { /* Vergleich fehlgeschlagen → nicht verspätet markieren */ }
         }
         await S.ProbeTeilnahme.update(satz.id, {
           abgemeldet: true,
