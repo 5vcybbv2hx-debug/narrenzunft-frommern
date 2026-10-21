@@ -8,7 +8,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ClipboardList, CheckSquare, FileText, Lock, Plus, X,
   Trash2, ChevronRight, Circle, CheckCircle2, Clock, Users,
-  AlertTriangle, Calendar, MapPin, User as UserIcon, Gavel, Vote, Shield, ListPlus, Pencil,
+  AlertTriangle, Calendar, MapPin, User as UserIcon, Gavel, Vote, Shield, ListPlus, Pencil, Check, RotateCcw,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -193,6 +193,18 @@ export default function Ausschuss() {
     }
   })();
 
+  // Ein-Tipp-Abhaken für Ausschuss-Aufgaben (Backend setzt abgeschlossen_am mit)
+  const aufgabeStatusWechseln = async (a, status) => {
+    try {
+      await ausschussAktion('aufgabe_update', { aufgabe_id: a.id, status });
+      toast.success(status === 'Erledigt' ? 'Aufgabe erledigt' : 'Aufgabe wieder geöffnet');
+      loadData();
+    } catch (e) {
+      console.error('Aufgaben-Status:', e);
+      toast.error('Status konnte nicht geändert werden');
+    }
+  };
+
   const AUFGABEN_FILTER = ['Alle', 'Meine', 'Überfällig', 'Ohne', 'Offen', 'Erledigt'];
 
   const beschlussJahre = ['Alle', ...Array.from(new Set((beschluesse || []).map(b => b.jahr).filter(Boolean))).sort((a, b) => b - a)];
@@ -357,6 +369,19 @@ export default function Ausschuss() {
                     {a.verantwortlicher_id && <span className="text-xs text-muted-foreground flex items-center gap-1"><UserIcon size={10} /> {getMitgliedName(a.verantwortlicher_id)}</span>}
                   </div>
                 </div>
+                {a.status !== 'Erledigt' ? (
+                  <button onClick={() => aufgabeStatusWechseln(a, 'Erledigt')}
+                    title="Als erledigt markieren"
+                    className="shrink-0 p-1.5 rounded-lg text-green-400 hover:bg-green-500/10 transition-colors">
+                    <Check size={15} />
+                  </button>
+                ) : (
+                  <button onClick={() => aufgabeStatusWechseln(a, 'Offen')}
+                    title="Wieder öffnen"
+                    className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+                    <RotateCcw size={14} />
+                  </button>
+                )}
                 <button onClick={() => { setEditAufgabe(a); setShowAufgabeModal(true); }}
                   className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
                   <Pencil size={14} />
