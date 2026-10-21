@@ -40,11 +40,11 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    // Authentifizierung: Nur Admins dürfen diese Funktion aufrufen
+    // Authentifizierung: Vorstand, Stellv. Vorstand und Admin (ein Vorstand genügt)
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    if (user.role !== 'admin') {
-      return Response.json({ error: 'Nur Admins dürfen diese Funktion aufrufen' }, { status: 403 });
+    if (!['admin', 'vorstand', 'stellv_vorstand'].includes(user.role)) {
+      return Response.json({ error: 'Nur Vorstand oder Admin dürfen diese Funktion aufrufen' }, { status: 403 });
     }
 
     const mitglieder = await base44.asServiceRole.entities.Mitglied.filter({ archiviert: false });
@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
       neueBenachrichtigungen: neu,
     };
 
-    // Sensible Mitgliederdaten (Namen, Geburtsdaten) — alle Aufrufer sind Admins
+    // Sensible Mitgliederdaten (Namen, Geburtsdaten) — Aufrufer sind Vorstand/Admin
     result.eintraege = zuAktualisieren;
 
     return Response.json(result);

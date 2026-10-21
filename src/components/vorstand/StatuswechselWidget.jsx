@@ -41,7 +41,9 @@ export default function StatuswechselWidget() {
     try {
       await base44.functions.invoke('pruefeAltersstatusWechsel', {});
       await ladeOffene();
-    } catch {}
+    } catch (e) {
+      console.error('Statuswechsel-Prüfung:', e);
+    }
     setPruefeLaeuft(false);
   };
 
