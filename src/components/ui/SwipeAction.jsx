@@ -51,7 +51,7 @@ export default function SwipeActionRow({ onSwipe, actionLabel = 'Erledigt', disa
     >
       {/* Aktionsfläche links, wird beim Wischen nach rechts freigegeben */}
       <div
-        className="absolute inset-y-0 left-0 w-24 bg-green-600 flex flex-col items-center justify-center gap-1 text-white"
+        className="absolute inset-y-0 left-0 w-24 bg-green-600 flex flex-col items-center justify-center gap-1 text-white pointer-events-none z-0"
         style={{ opacity: dx > 0 ? 1 : 0, transition: dx > 0 ? 'opacity .1s' : 'opacity .2s' }}
         aria-hidden="true"
       >
@@ -59,6 +59,7 @@ export default function SwipeActionRow({ onSwipe, actionLabel = 'Erledigt', disa
         <span className="text-[10px] font-semibold uppercase tracking-wide leading-tight text-center px-1">{actionLabel}</span>
       </div>
       <div
+        className="relative z-10"
         style={{
           transform: dx ? `translateX(${dx}px)` : undefined,
           transition: dx ? 'none' : 'transform .2s ease-out',
