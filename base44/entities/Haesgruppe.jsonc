@@ -64,6 +64,10 @@
       "type": "boolean",
       "default": false,
       "description": "true = Gruppen-Marktplatz ist f\u00fcr Mitglieder sichtbar"
+    },
+    "abmeldeschluss_uhrzeit": {
+      "type": "string",
+      "description": "Abmelde-Schluss f\u00fcr Probe-Abmeldungen am Trainingstag"
     }
   },
   "description": {

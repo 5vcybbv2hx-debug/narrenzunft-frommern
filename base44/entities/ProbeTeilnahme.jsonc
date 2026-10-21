@@ -26,6 +26,11 @@
       "type": "string",
       "description": "Wer abgemeldet hat (selbst oder Elternteil)"
     },
+    "abgemeldet_verspaetet": {
+      "type": "boolean",
+      "default": false,
+      "description": "true = Abmeldung nach dem Abmelde-Schluss der Gruppe"
+    },
     "grund": {
       "type": "string",
       "description": "Optionaler Grund"
