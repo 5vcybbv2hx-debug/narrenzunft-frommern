@@ -1,20 +1,52 @@
 {
-  // Erst-Login-Protokoll: genau ein Datensatz pro User-Konto nach dessen erstem Login.
-  // Dient der Dedupe der Nur-Pierre-Erst-Login-Push-Nachricht und als Audit-Trail,
-  // ob eingeladene Mitglieder den Login geschafft haben und ob das Profil verknüpft war.
+  "name": "ErstLoginProtokoll",
+  "type": "object",
   "properties": {
-    "user_id":        { "type": "string", "description": "Base44-User-ID des Logins" },
-    "login_email":    { "type": "string", "description": "E-Mail-Adresse bei diesem Login" },
-    "mitglied_id":    { "type": "string", "description": "Verknüpftes Mitgliedsprofil (leer, falls keines gefunden)" },
-    "mitgliedsname":  { "type": "string", "description": "Vor- und Nachname des Mitglieds (Anzeige)" },
-    "verknuepft":     { "type": "boolean", "description": "true, wenn ein Profil eindeutig verknüpft werden konnte" },
-    "problem":        { "type": "string", "description": "Fehlergrund bei gescheiterter Verknüpfung" }
+    "user_id": {
+      "type": "string",
+      "description": "Base44-User-ID des Logins"
+    },
+    "login_email": {
+      "type": "string",
+      "description": "E-Mail-Adresse bei diesem Login"
+    },
+    "mitglied_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpftes Mitgliedsprofil (leer, falls keines gefunden)"
+    },
+    "mitgliedsname": {
+      "type": "string",
+      "description": "Vor- und Nachname des Mitglieds (Anzeige)"
+    },
+    "verknuepft": {
+      "type": "boolean",
+      "description": "true, wenn ein Profil eindeutig verkn\u00fcpft werden konnte"
+    },
+    "problem": {
+      "type": "string",
+      "description": "Fehlergrund bei gescheiterter Verkn\u00fcpfung"
+    }
   },
   "rls": {
-    // Nur Admin (Pierre) darf lesen/ändern; die Login-Function schreibt über Service-Role.
-    "read":   { "user_condition": { "role": "admin" } },
-    "create": { "user_condition": { "role": "admin" } },
-    "update": { "user_condition": { "role": "admin" } },
-    "delete": { "user_condition": { "role": "admin" } }
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
   }
 }
