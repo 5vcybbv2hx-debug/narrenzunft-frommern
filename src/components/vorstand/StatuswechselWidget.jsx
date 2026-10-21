@@ -16,6 +16,7 @@ export default function StatuswechselWidget() {
   const [loading, setLoading] = useState(true);
   const [pruefeLaeuft, setPruefeLaeuft] = useState(false);
   const [bestaetigeId, setBestaetigeId] = useState(null); // benachrichtigung id
+  const [ignoriereId, setIgnoriereId] = useState(null); // X erst nach Rückfrage wirksam
 
   useEffect(() => { ladeOffene(); }, []);
 
@@ -62,6 +63,7 @@ export default function StatuswechselWidget() {
   };
 
   const ignorieren = async (eintrag) => {
+    setIgnoriereId(null);
     await base44.entities.Benachrichtigung.update(eintrag.id, { gelesen: true });
     setEintraege(prev => prev.filter(e => e.id !== eintrag.id));
   };
@@ -99,13 +101,33 @@ export default function StatuswechselWidget() {
                     </p>
                   </div>
                   <button
-                    onClick={() => ignorieren(eintrag)}
-                    className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                    title="Ignorieren"
+                    onClick={() => setIgnoriereId(ignoriereId === eintrag.id ? null : eintrag.id)}
+                    className={`p-1 rounded transition-colors shrink-0 ${
+                      ignoriereId === eintrag.id ? 'text-foreground bg-secondary' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                    title="Ignorieren (mit Rückfrage)"
                   >
                     <X size={13} />
                   </button>
                 </div>
+
+                {ignoriereId === eintrag.id && (
+                  <div className="flex items-center justify-between gap-2 mb-2 px-2.5 py-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+                    <p className="text-[11px] text-yellow-300 leading-tight">
+                      Meldung für alle Vorstände verwerfen, ohne den Status zu ändern?
+                    </p>
+                    <div className="flex gap-1.5 shrink-0">
+                      <button onClick={() => ignorieren(eintrag)}
+                        className="px-2 py-1 rounded-md bg-yellow-500/20 text-yellow-300 text-[11px] font-semibold hover:bg-yellow-500/30 transition-colors">
+                        Ja
+                      </button>
+                      <button onClick={() => setIgnoriereId(null)}
+                        className="px-2 py-1 rounded-md bg-secondary text-muted-foreground text-[11px] font-medium hover:text-foreground transition-colors">
+                        Abbrechen
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Status-Wechsel Visualisierung */}
                 <div className="flex items-center gap-2 mb-3">
