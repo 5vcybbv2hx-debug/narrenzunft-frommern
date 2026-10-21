@@ -647,7 +647,7 @@ export default function MitgliedDetail() {
                 const g = haesgruppen.find(g => g.id === gid);
                 return g ? (
                   <span key={gid} className="text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/40 font-semibold flex items-center gap-1">
-                    <Crown size={10} /> Spartenleiter · {g.name}
+                    <Crown size={10} /> {g.typ === 'Tanzgruppe' ? 'Trainer:in' : 'Spartenleiter'} · {g.name}
                   </span>
                 ) : null;
               })}
@@ -991,7 +991,7 @@ export default function MitgliedDetail() {
 
           {(zeigeSplatSektion || linkedUser?.role === 'spartenleiter') && (
             <div className="mb-3">
-              <label className="text-xs text-muted-foreground font-medium block mb-1">Zuständige Gruppen (Spartenleiter)</label>
+              <label className="text-xs text-muted-foreground font-medium block mb-1">Zuständige Gruppen (Spartenleiter/Trainer:in)</label>
               <div className="space-y-2">
                 <div className="flex flex-wrap gap-1.5">
                   {(mitglied.spartenleiter_haesgruppen_ids || (mitglied.spartenleiter_haesgruppe_id ? [mitglied.spartenleiter_haesgruppe_id] : [])).map(gid => {
@@ -1052,7 +1052,7 @@ export default function MitgliedDetail() {
               {/* Spartenleiter-Historie (Amtszeiten) */}
               {splatHistorie.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-border">
-                  <label className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Spartenleiter-Historie</label>
+                  <label className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Amtszeiten (Spartenleiter/Trainer:in)</label>
                   <div className="space-y-1 mt-1.5">
                     {splatHistorie.map(h => {
                       const aktiv = !h.bis_datum;

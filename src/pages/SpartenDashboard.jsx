@@ -60,6 +60,9 @@ export default function SpartenDashboard() {
   const [anwesenheitTermin, setAnwesenheitTermin] = useState(null);
   const [anwesenheitListe, setAnwesenheitListe] = useState([]);
   const [anwesenheitSpeichert, setAnwesenheitSpeichert] = useState(false);
+  const [abmeldeschlussWert, setAbmeldeschlussWert] = useState(null); // null = noch nicht geladen
+  const [abmeldeschlussSpeichert, setAbmeldeschlussSpeichert] = useState(false);
+  const [zeigeAnalyse, setZeigeAnalyse] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -292,6 +295,10 @@ export default function SpartenDashboard() {
   const kannGruppeIntern = canEdit || istGruppenVerantwortlicher || istGruppenMitglied;
 
   // ── Probe-Abmeldung & Anwesenheit (Tanzgruppen) ──
+  useEffect(() => {
+    if (gruppe && abmeldeschlussWert === null) setAbmeldeschlussWert(gruppe.abmeldeschluss_uhrzeit || '');
+  }, [gruppe, abmeldeschlussWert]);
+
   const heuteISO = new Date().toISOString().slice(0, 10);
   const istZukuenftigeProbe = (t) => t.typ === 'Probe' && (!t.datum || t.datum >= heuteISO);
   const kindTeilnehmer = useMemo(() => {
@@ -340,6 +347,20 @@ export default function SpartenDashboard() {
         anwesend: !!(pt && pt.anwesend === true),
       };
     }));
+  };
+
+  const abmeldeschlussSpeichern = async () => {
+    setAbmeldeschlussSpeichert(true);
+    try {
+      await base44.functions.invoke('verwalteProbeTeilnahme', {
+        aktion: 'abmeldeschluss_setzen', haesgruppe_id: id, uhrzeit: (abmeldeschlussWert || '').trim(),
+      });
+      setGruppe(g => ({ ...g, abmeldeschluss_uhrzeit: (abmeldeschlussWert || '').trim() }));
+    } catch (e) {
+      console.error('Abmelde-Schluss:', e);
+      setError('Abmelde-Schluss speichern fehlgeschlagen: ' + (e?.response?.data?.error || e?.message || 'unbekannter Fehler'));
+    }
+    setAbmeldeschlussSpeichert(false);
   };
 
   const anwesenheitSpeichern = async () => {
@@ -1007,7 +1028,7 @@ export default function SpartenDashboard() {
                   Verantwortliche
                 </h3>
                 {alleMitglieder.filter(m => gruppe.verantwortliche_ids?.includes(m.id)).length === 0 ? (
-                  <p className="text-sm text-muted-foreground italic">Keine Spartenleiter zugewiesen.</p>
+                  <p className="text-sm text-muted-foreground italic">{gruppe?.typ === 'Tanzgruppe' ? 'Keine Trainer:innen zugewiesen.' : 'Keine Spartenleiter zugewiesen.'}</p>
                 ) : (
                   <div className="space-y-3">
                     {alleMitglieder.filter(m => gruppe.verantwortliche_ids?.includes(m.id)).map(leader => {
@@ -1022,7 +1043,7 @@ export default function SpartenDashboard() {
                             </div>
                             <div className="min-w-0">
                               <div className="font-semibold text-foreground text-sm">{leader.vorname} {leader.nachname}</div>
-                              <div className="text-xs text-muted-foreground">Spartenleiter</div>
+                              <div className="text-xs text-muted-foreground">{gruppe?.typ === 'Tanzgruppe' ? 'Trainer:in' : 'Spartenleiter'}</div>
                             </div>
                           </Link>
                           {telUrl && (
@@ -1047,7 +1068,7 @@ export default function SpartenDashboard() {
                 {(splatHistorie.length > 0 || isAdmin(user)) && (
                   <div className="pt-4 border-t border-border">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-muted-foreground block text-xs uppercase tracking-wider">Spartenleiter-Historie</span>
+                      <span className="text-muted-foreground block text-xs uppercase tracking-wider">{gruppe?.typ === 'Tanzgruppe' ? 'Trainer-Historie' : 'Spartenleiter-Historie'}</span>
                       {isAdmin(user) && (
                         <button
                           onClick={handleOpenHistorieNeu}
@@ -1134,6 +1155,34 @@ export default function SpartenDashboard() {
                 </button>
               )}
             </div>
+
+            {gruppe?.typ === 'Tanzgruppe' && (canEdit || istGruppenVerantwortlicher) && (
+              <div className="bg-card border border-border rounded-xl p-4 flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground font-medium">Abmelde-Schluss</span>
+                  <input
+                    type="time"
+                    value={abmeldeschlussWert || ''}
+                    onChange={(e) => setAbmeldeschlussWert(e.target.value)}
+                    className="px-2 py-1.5 min-h-[36px] rounded-md bg-background border border-border text-sm text-foreground focus:outline-none focus:border-primary"
+                  />
+                  <span className="text-xs text-muted-foreground">Uhr am Trainingstag</span>
+                  <button
+                    onClick={abmeldeschlussSpeichern}
+                    disabled={abmeldeschlussSpeichert}
+                    className="px-3 py-1.5 min-h-[36px] rounded-md bg-primary text-foreground text-xs font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  >
+                    {abmeldeschlussSpeichert ? 'Speichert…' : 'Speichern'}
+                  </button>
+                </div>
+                <button
+                  onClick={() => setZeigeAnalyse(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-md bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors ml-auto"
+                >
+                  Analyse
+                </button>
+              </div>
+            )}
 
             {termine.length === 0 ? (
               <div className="bg-card border border-border rounded-xl p-8 text-center text-muted-foreground">
@@ -1255,8 +1304,8 @@ export default function SpartenDashboard() {
                                     </div>
                                   ) : eigene?.abgemeldet ? (
                                     <div className="flex items-center justify-between gap-2 flex-wrap">
-                                      <span className="text-xs bg-red-900/20 border border-red-700/30 text-red-400 px-2 py-1 rounded-full font-medium">
-                                        Abgemeldet{eigene.abgemeldet_am ? ' · ' + new Date(eigene.abgemeldet_am).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}
+                                      <span className={`text-xs px-2 py-1 rounded-full font-medium border ${eigene.abgemeldet_verspaetet ? 'bg-orange-900/20 border-orange-700/30 text-orange-400' : 'bg-red-900/20 border-red-700/30 text-red-400'}`}>
+                                        {eigene.abgemeldet_verspaetet ? 'Verspätet abgemeldet' : 'Abgemeldet'}{eigene.abgemeldet_am ? ' · ' + new Date(eigene.abgemeldet_am).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}
                                         {eigene.grund ? ` · ${eigene.grund}` : ''}
                                       </span>
                                       <button
@@ -1267,12 +1316,14 @@ export default function SpartenDashboard() {
                                       </button>
                                     </div>
                                   ) : (
-                                    <button
-                                      onClick={() => setAbmeldeForm({ termin_id: t.id, mitglied_id: myMitglied.id, name: 'mich', grund: '' })}
-                                      className="text-xs text-muted-foreground hover:text-red-400 transition-colors underline"
-                                    >
-                                      Ich kann nicht kommen
-                                    </button>
+                                    <div>
+                                      <button
+                                        onClick={() => setAbmeldeForm({ termin_id: t.id, mitglied_id: myMitglied.id, name: 'mich', grund: '' })}
+                                        className="text-xs text-muted-foreground hover:text-red-400 transition-colors underline"
+                                      >
+                                        Ich kann nicht kommen{gruppe?.abmeldeschluss_uhrzeit ? ` (bis ${gruppe.abmeldeschluss_uhrzeit} Uhr)` : ''}
+                                      </button>
+                                    </div>
                                   )}
 
                                   {kindTeilnehmer.map(k => {
@@ -1282,8 +1333,8 @@ export default function SpartenDashboard() {
                                     if (kFormOffen) return null;
                                     return kt?.abgemeldet ? (
                                       <div key={k.id} className="flex items-center justify-between gap-2">
-                                        <span className="text-xs bg-red-900/20 border border-red-700/30 text-red-400 px-2 py-1 rounded-full font-medium">
-                                          {kName} abgemeldet{kt.grund ? ` · ${kt.grund}` : ''}
+                                        <span className={`text-xs px-2 py-1 rounded-full font-medium border ${kt.abgemeldet_verspaetet ? 'bg-orange-900/20 border-orange-700/30 text-orange-400' : 'bg-red-900/20 border-red-700/30 text-red-400'}`}>
+                                          {kName} {kt.abgemeldet_verspaetet ? 'verspätet abgemeldet' : 'abgemeldet'}{kt.grund ? ` · ${kt.grund}` : ''}
                                         </span>
                                         <button
                                           onClick={() => abmeldungZuruecknehmen(t.id, k.id)}
@@ -1623,6 +1674,15 @@ export default function SpartenDashboard() {
       </main>
 
       {/* TERMIN MODAL */}
+      {zeigeAnalyse && (
+        <AnalyseModal
+          onClose={() => setZeigeAnalyse(false)}
+          teilnehmer={auslagenPersonen || []}
+          teilnahmen={probeTeilnahmen || []}
+          termine={(termine || []).filter(t => t.typ === 'Probe')}
+        />
+      )}
+
       {anwesenheitTermin && (
         <AnwesenheitModal
           termin={anwesenheitTermin}
@@ -1956,7 +2016,7 @@ export default function SpartenDashboard() {
             </button>
 
             <h3 className="text-xl font-oswald uppercase tracking-wide text-foreground border-b border-border pb-3 mb-4">
-              Verantwortliche (Spartenleiter) zuweisen
+              {gruppe?.typ === 'Tanzgruppe' ? 'Verantwortliche (Trainer:innen) zuweisen' : 'Verantwortliche (Spartenleiter) zuweisen'}
             </h3>
 
             <div className="space-y-4">
@@ -2263,6 +2323,68 @@ function AnwesenheitModal({ termin, liste, setListe, onClose, onSave, speichert 
         >
           {speichert ? 'Speichern…' : 'Anwesenheit speichern'}
         </button>
+      </div>
+    </div>
+  );
+}
+
+function AnalyseModal({ onClose, teilnehmer, teilnahmen, termine }) {
+  // Nur Proben mit erfasster Anwesenheit zählen für die Quote
+  const erfassteTerminIds = new Set(
+    termine.filter(t => teilnahmen.some(p => p.termin_id === t.id && p.anwesend !== null && p.anwesend !== undefined)).map(t => t.id)
+  );
+  const erfassteProben = erfassteTerminIds.size;
+
+  const zeilen = teilnehmer.map(m => {
+    const eigene = teilnahmen.filter(p => p.mitglied_id === m.id);
+    const inProben = eigene.filter(p => erfassteTerminIds.has(p.termin_id));
+    const anwesend = inProben.filter(p => p.anwesend === true).length;
+    const abwesend = inProben.filter(p => p.anwesend === false).length;
+    const abgemeldet = eigene.filter(p => p.abgemeldet).length;
+    const verspaetet = eigene.filter(p => p.abgemeldet && p.abgemeldet_verspaetet).length;
+    const quote = (anwesend + abwesend) > 0 ? Math.round((anwesend / (anwesend + abwesend)) * 100) : null;
+    return {
+      id: m.id,
+      name: String(m.vorname || '') + ' ' + String(m.nachname || '').trim(),
+      anwesend, abwesend, abgemeldet, verspaetet, quote,
+    };
+  }).sort((a, b) => (a.quote ?? -1) - (b.quote ?? -1));
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-card border border-border rounded-2xl p-5 max-w-md w-full max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="font-oswald font-semibold text-lg uppercase tracking-wide text-foreground">Anwesenheits-Analyse</h3>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          {erfassteProben === 0
+            ? 'Noch keine Anwesenheit erfasst.'
+            : `${erfassteProben} ${erfassteProben === 1 ? 'Probe' : 'Proben'} mit erfasster Anwesenheit`}
+        </p>
+        <div className="space-y-1.5">
+          {zeilen.map(z => (
+            <div key={z.id} className="px-3 py-2 rounded-lg border border-border">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-medium text-foreground truncate">{z.name}</p>
+                <span className={`text-sm font-bold tabular-nums shrink-0 ${
+                  z.quote === null ? 'text-muted-foreground' : z.quote >= 80 ? 'text-green-400' : z.quote >= 50 ? 'text-yellow-400' : 'text-red-400'
+                }`}>
+                  {z.quote === null ? '–' : z.quote + '%'}
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                {z.anwesend}× anwesend · {z.abwesend}× abwesend · {z.abgemeldet}× abgemeldet
+                {z.verspaetet > 0 && <span className="text-orange-400"> ({z.verspaetet}× verspätet)</span>}
+              </p>
+            </div>
+          ))}
+          {zeilen.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-4">Keine aktiven Teilnehmer:innen</p>
+          )}
+        </div>
       </div>
     </div>
   );

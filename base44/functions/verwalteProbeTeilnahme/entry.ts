@@ -11,6 +11,9 @@ import { loeseMeinMitglied, istVerwaltung, istElternVon } from '../../shared/mit
  *  - 'abmeldung_loeschen' { termin_id, mitglied_id? }        → Rücknahme (gleiche Rechte).
  *  - 'anwesenheit_setzen' { termin_id, eintraege: [{mitglied_id, anwesend}] }
  *                         → nur Vorstand/Stellv./Admin oder Gruppen-Verantwortliche.
+ *  - 'abmeldeschluss_setzen' { haesgruppe_id, uhrzeit } → Abmelde-Schluss-Uhrzeit der
+ *                         Gruppe (z. B. '15:00'), nur Verwaltung/Verantwortliche.
+ *                         Beim Abmelden wird automatisch verspätet-Flag gesetzt.
  *  - 'liste'              { termin_id } → alle Teilnahme-Datensätze des Termins.
  */
 export default async function (req) {
@@ -22,16 +25,27 @@ export default async function (req) {
     const body = await req.json().catch(() => ({}));
     const { aktion, termin_id, grund } = body;
     if (!aktion) return Response.json({ error: 'aktion fehlt' }, { status: 400 });
-    if (!termin_id) return Response.json({ error: 'termin_id fehlt' }, { status: 400 });
+    if (!termin_id && aktion !== 'abmeldeschluss_setzen') {
+      return Response.json({ error: 'termin_id fehlt' }, { status: 400 });
+    }
 
-    const termin = await S.SpartenTermin.get(termin_id).catch(() => null);
-    if (!termin) return Response.json({ error: 'Termin nicht gefunden' }, { status: 404 });
-    const gruppeId = termin.haesgruppe_id;
+    const termin = termin_id
+      ? await S.SpartenTermin.get(termin_id).catch(() => null)
+      : null;
+    const gruppeId = termin ? termin.haesgruppe_id : body.haesgruppe_id;
     const mein = await loeseMeinMitglied(base44, user);
 
+    let gruppeCache = null;
+    async function holeGruppe() {
+      if (gruppeCache) return gruppeCache;
+      if (!gruppeId) return null;
+      gruppeCache = await S.Haesgruppe.get(gruppeId).catch(() => null);
+      return gruppeCache;
+    }
+
     async function istGruppenVerantwortlicher() {
-      if (!mein || !gruppeId) return false;
-      const g = await S.Haesgruppe.get(gruppeId).catch(() => null);
+      if (!mein) return false;
+      const g = await holeGruppe();
       if (!g) return false;
       const ids = g.verantwortliche_ids || (g.verantwortlicher_id ? [g.verantwortlicher_id] : []);
       return ids.includes(mein.id);
@@ -61,15 +75,23 @@ export default async function (req) {
 
       const satz = await findeOderLegeAn(zielMitgliedId);
       if (aktion === 'abmelden') {
+        // Verspätet? Abmelde-Schluss der Gruppe (z. B. '15:00') am Termin-Datum
+        let verspaetet = false;
+        const g = await holeGruppe();
+        if (g && g.abmeldeschluss_uhrzeit && termin && termin.datum) {
+          const grenze = new Date(termin.datum + 'T' + String(g.abmeldeschluss_uhrzeit).padStart(5, '0') + ':00');
+          if (!isNaN(grenze.getTime())) verspaetet = new Date() > grenze;
+        }
         await S.ProbeTeilnahme.update(satz.id, {
           abgemeldet: true,
           abgemeldet_am: new Date().toISOString(),
           abgemeldet_durch_id: mein ? mein.id : '',
+          abgemeldet_verspaetet: verspaetet,
           grund: String(grund || '').slice(0, 200),
         });
       } else {
         await S.ProbeTeilnahme.update(satz.id, {
-          abgemeldet: false, abgemeldet_am: '', abgemeldet_durch_id: '', grund: '',
+          abgemeldet: false, abgemeldet_am: '', abgemeldet_durch_id: '', abgemeldet_verspaetet: false, grund: '',
         });
       }
       return Response.json({ erfolg: true, aktion, termin_id, mitglied_id: zielMitgliedId });
@@ -95,6 +117,20 @@ export default async function (req) {
         gesetzt++;
       }
       return Response.json({ erfolg: true, gesetzt });
+    }
+
+    if (aktion === 'abmeldeschluss_setzen') {
+      if (!gruppeId) return Response.json({ error: 'haesgruppe_id fehlt' }, { status: 400 });
+      const erlaubt = istVerwaltung(user) || await istGruppenVerantwortlicher();
+      if (!erlaubt) {
+        return Response.json({ error: 'Keine Berechtigung — nur Vorstand oder Gruppen-Verantwortliche.' }, { status: 403 });
+      }
+      const uhrzeit = String(body.uhrzeit || '').trim().slice(0, 5);
+      if (uhrzeit && !/^\d{1,2}:\d{2}$/.test(uhrzeit)) {
+        return Response.json({ error: 'Uhrzeit im Format HH:MM erwartet (z. B. 15:00), oder leer.' }, { status: 400 });
+      }
+      await S.Haesgruppe.update(gruppeId, { abmeldeschluss_uhrzeit: uhrzeit });
+      return Response.json({ erfolg: true, haesgruppe_id: gruppeId, abmeldeschluss_uhrzeit: uhrzeit });
     }
 
     return Response.json({ error: 'Unbekannte Aktion' }, { status: 400 });
