@@ -185,6 +185,7 @@ export default function Todos() {
 
   // Smart-Checkbox: haken = erledigt (mit Bestätigung), aufheben = zurück zum letzten Status
   const handleErledigtToggle = async (todo) => {
+    try {
     if (todo.status === 'Erledigt') {
       // Aufheben darf ohne Rückfrage passieren — schadet nie
       const neuerStatus = letzteStatus.current[todo.id] || 'Offen';
@@ -193,6 +194,10 @@ export default function Todos() {
     }
     // Abhaken: erst sicherstellen, dass die Aufgabe wirklich erledigt ist
     setBestaetigeTodo(todo);
+    } catch (e) {
+      console.error('Abhaken:', e);
+      setError('Abhaken fehlgeschlagen: ' + (e?.message || 'unbekannter Fehler'));
+    }
   };
 
   const bestaetigeErledigt = async () => {
@@ -265,15 +270,20 @@ export default function Todos() {
         <div className="flex items-start gap-3">
           {/* Smart-Checkbox */}
           <button
-            onClick={() => handleErledigtToggle(todo)}
+            type="button"
+            onClick={(e) => { e.stopPropagation(); handleErledigtToggle(todo); }}
             title={istErledigt ? 'Als offen markieren' : 'Als erledigt markieren'}
-            className="mt-0.5 hover:scale-110 transition-transform shrink-0 p-3 -m-3 min-h-[44px] min-w-[44px] flex items-center justify-center active:scale-95"
+            aria-label={istErledigt ? 'Als offen markieren' : 'Als erledigt markieren'}
+            style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+            className="group shrink-0 w-11 h-11 -ml-2 -mt-2 flex items-center justify-center rounded-full cursor-pointer select-none"
           >
-            {istErledigt
-              ? <CheckCircle2 size={20} className="text-green-400" />
-              : ueberfaellig
-                ? <Circle size={20} className="text-red-400" />
-                : <Circle size={20} className="text-yellow-400/80 hover:text-yellow-300" />}
+            <span className="pointer-events-none flex items-center justify-center transition-transform group-hover:scale-110">
+              {istErledigt
+                ? <CheckCircle2 size={22} className="text-green-400" />
+                : ueberfaellig
+                  ? <Circle size={22} className="text-red-400" />
+                  : <Circle size={22} className="text-yellow-400/80 group-hover:text-yellow-300" />}
+            </span>
           </button>
 
           <div className="flex-1 min-w-0">
