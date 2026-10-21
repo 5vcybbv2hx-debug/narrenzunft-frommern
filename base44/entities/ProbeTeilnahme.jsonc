@@ -1,0 +1,24 @@
+{
+  // Probe-Teilnahme für Tanzgruppen: Abmeldungen (mit Zeitstempel) und Anwesenheit
+  // pro SpartenTermin und Mitglied. Ein Datensatz pro (termin, mitglied).
+  // Schreibrechte liegen bewusst NUR bei der Backend-Function verwalteProbeTeilnahme
+  // (Service-Role), die Selbst-/Eltern-/Verantwortlichen-Rechte prüft.
+  "properties": {
+    "termin_id":            { "type": "string", "description": "SpartenTermin-ID (Probe)" },
+    "haesgruppe_id":        { "type": "string", "description": "Gruppe des Termins" },
+    "mitglied_id":          { "type": "string", "description": "Teilnehmer:in" },
+    "abgemeldet":           { "type": "boolean", "description": "true = für diese Probe abgemeldet" },
+    "abgemeldet_am":        { "type": "string", "description": "ISO-Zeitstempel der Abmeldung" },
+    "abgemeldet_durch_id":  { "type": "string", "description": "Wer abgemeldet hat (selbst oder Elternteil)" },
+    "grund":                { "type": "string", "description": "Optionaler Grund" },
+    "anwesend":             { "type": "boolean", "description": "Von Verantwortlichen erfasste Anwesenheit" },
+    "anwesend_gesetzt_von": { "type": "string", "description": "Mitglied-ID der erfassenden Person" },
+    "anwesend_gesetzt_am":  { "type": "string", "description": "ISO-Zeitstempel der Erfassung" }
+  },
+  "rls": {
+    "read":   null,
+    "create": { "user_condition": { "role": "admin" } },
+    "update": { "user_condition": { "role": "admin" } },
+    "delete": { "user_condition": { "role": "admin" } }
+  }
+}

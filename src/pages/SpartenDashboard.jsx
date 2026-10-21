@@ -54,6 +54,12 @@ export default function SpartenDashboard() {
   const [myMitglied, setMyMitglied] = useState(null);
   const [splatHistorie, setSplatHistorie] = useState([]);
   const [verwandtschaften, setVerwandtschaften] = useState([]);
+  // Probe-Abmeldung & Anwesenheit (Tanzgruppen)
+  const [probeTeilnahmen, setProbeTeilnahmen] = useState([]);
+  const [abmeldeForm, setAbmeldeForm] = useState(null); // { termin_id, mitglied_id, name, grund }
+  const [anwesenheitTermin, setAnwesenheitTermin] = useState(null);
+  const [anwesenheitListe, setAnwesenheitListe] = useState([]);
+  const [anwesenheitSpeichert, setAnwesenheitSpeichert] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -136,6 +142,14 @@ export default function SpartenDashboard() {
           setTeilnehmerListe(tn || []);
         } catch (e) {
           console.error(e);
+        }
+      }
+      if (g.typ === 'Tanzgruppe') {
+        try {
+          const pt = await base44.entities.ProbeTeilnahme.filter({ haesgruppe_id: id });
+          setProbeTeilnahmen(pt || []);
+        } catch (e) {
+          console.warn('ProbeTeilnahme nicht verfügbar:', e);
         }
       }
 
@@ -276,6 +290,68 @@ export default function SpartenDashboard() {
 
   // Sichtbarkeit für gruppeninterne Inhalte: Angehörige, Verantwortliche oder Verwaltung
   const kannGruppeIntern = canEdit || istGruppenVerantwortlicher || istGruppenMitglied;
+
+  // ── Probe-Abmeldung & Anwesenheit (Tanzgruppen) ──
+  const heuteISO = new Date().toISOString().slice(0, 10);
+  const istZukuenftigeProbe = (t) => t.typ === 'Probe' && (!t.datum || t.datum >= heuteISO);
+  const kindTeilnehmer = useMemo(() => {
+    const kindIds = new Set((verwandtschaften || []).map(v => v.verwandter_id));
+    return (auslagenPersonen || []).filter(m => kindIds.has(m.id) && m.id !== myMitglied?.id);
+  }, [verwandtschaften, auslagenPersonen, myMitglied]);
+
+  const teilnahmeFuer = (terminId, mitgliedId) =>
+    (probeTeilnahmen || []).find(p => p.termin_id === terminId && p.mitglied_id === mitgliedId);
+
+  const probeAktion = async (payload, fehlerText) => {
+    try {
+      await base44.functions.invoke('verwalteProbeTeilnahme', payload);
+      const pt = await base44.entities.ProbeTeilnahme.filter({ haesgruppe_id: id });
+      setProbeTeilnahmen(pt || []);
+      return true;
+    } catch (e) {
+      console.error('ProbeTeilnahme:', e);
+      setError(fehlerText + ': ' + (e?.response?.data?.error || e?.message || 'unbekannter Fehler'));
+      return false;
+    }
+  };
+
+  const abmeldeFormSenden = async () => {
+    if (!abmeldeForm) return;
+    const ok = await probeAktion(
+      { aktion: 'abmelden', termin_id: abmeldeForm.termin_id, mitglied_id: abmeldeForm.mitglied_id, grund: abmeldeForm.grund || '' },
+      'Abmelden fehlgeschlagen'
+    );
+    if (ok) setAbmeldeForm(null);
+  };
+
+  const abmeldungZuruecknehmen = async (terminId, mitgliedId) => {
+    await probeAktion({ aktion: 'abmeldung_loeschen', termin_id: terminId, mitglied_id: mitgliedId }, 'Rücknahme fehlgeschlagen');
+  };
+
+  const oeffneAnwesenheit = (termin) => {
+    setAnwesenheitTermin(termin);
+    setAnwesenheitListe((auslagenPersonen || []).map(m => {
+      const pt = teilnahmeFuer(termin.id, m.id);
+      return {
+        mitglied_id: m.id,
+        name: String(m.vorname || '') + ' ' + String(m.nachname || '').trim(),
+        abgemeldet: !!(pt && pt.abgemeldet),
+        grund: (pt && pt.grund) || '',
+        anwesend: !!(pt && pt.anwesend === true),
+      };
+    }));
+  };
+
+  const anwesenheitSpeichern = async () => {
+    setAnwesenheitSpeichert(true);
+    const ok = await probeAktion(
+      { aktion: 'anwesenheit_setzen', termin_id: anwesenheitTermin.id,
+        eintraege: anwesenheitListe.map(a => ({ mitglied_id: a.mitglied_id, anwesend: a.anwesend })) },
+      'Anwesenheit speichern fehlgeschlagen'
+    );
+    setAnwesenheitSpeichert(false);
+    if (ok) setAnwesenheitTermin(null);
+  };
 
   // Eltern eines aktiven Teilnehmers der Gruppe (Eltern-Info-Tab).
   // Tanzgruppen: aktive Teilnehmer:innen, sonst der Roster der Gruppe.
@@ -1120,6 +1196,118 @@ export default function SpartenDashboard() {
                           </div>
                         </div>
 
+                        {/* Probe-Abmeldung & Anwesenheit (nur Tanzgruppen) */}
+                        {gruppe?.typ === 'Tanzgruppe' && t.typ === 'Probe' && (
+                          <div className="mt-4 pt-3 border-t border-border/60 space-y-2">
+                            {(canEdit || istGruppenVerantwortlicher) && (() => {
+                              const abm = (probeTeilnahmen || []).filter(p => p.termin_id === t.id && p.abgemeldet);
+                              return (
+                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                  {abm.length > 0 && (
+                                    <span className="text-xs bg-red-900/20 border border-red-700/30 text-red-400 px-2 py-1 rounded-full font-medium">
+                                      {abm.length} abgemeldet
+                                    </span>
+                                  )}
+                                  <button
+                                    onClick={() => oeffneAnwesenheit(t)}
+                                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 min-h-[36px] rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors ml-auto"
+                                  >
+                                    <UserCheck className="w-3.5 h-3.5" /> Anwesenheit
+                                  </button>
+                                </div>
+                              );
+                            })()}
+
+                            {kannGruppeIntern && istZukuenftigeProbe(t) && (() => {
+                              const istAktivDabei = myMitglied && (auslagenPersonen || []).some(m => m.id === myMitglied.id);
+                              if (!istAktivDabei) return null;
+                              const eigene = teilnahmeFuer(t.id, myMitglied.id);
+                              const formOffen = abmeldeForm && abmeldeForm.termin_id === t.id;
+                              return (
+                                <div className="space-y-2">
+                                  {formOffen ? (
+                                    <div className="flex flex-col gap-2 bg-secondary/40 border border-border rounded-lg p-2.5">
+                                      <p className="text-xs font-medium text-foreground">
+                                        Abmeldung für <span className="text-primary">{abmeldeForm.name}</span>
+                                      </p>
+                                      <input
+                                        type="text"
+                                        value={abmeldeForm.grund || ''}
+                                        onChange={(e) => setAbmeldeForm(f => ({ ...f, grund: e.target.value }))}
+                                        placeholder="Grund (optional)"
+                                        maxLength={200}
+                                        className="w-full px-2.5 py-2 min-h-[40px] rounded-md bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+                                      />
+                                      <div className="flex gap-2">
+                                        <button
+                                          onClick={abmeldeFormSenden}
+                                          className="flex-1 py-2 min-h-[40px] rounded-md bg-red-600 hover:bg-red-500 text-white text-xs font-semibold transition-colors"
+                                        >
+                                          Abmelden
+                                        </button>
+                                        <button
+                                          onClick={() => setAbmeldeForm(null)}
+                                          className="flex-1 py-2 min-h-[40px] rounded-md bg-secondary text-muted-foreground hover:text-foreground text-xs font-medium transition-colors"
+                                        >
+                                          Abbrechen
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : eigene?.abgemeldet ? (
+                                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                                      <span className="text-xs bg-red-900/20 border border-red-700/30 text-red-400 px-2 py-1 rounded-full font-medium">
+                                        Abgemeldet{eigene.abgemeldet_am ? ' · ' + new Date(eigene.abgemeldet_am).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}
+                                        {eigene.grund ? ` · ${eigene.grund}` : ''}
+                                      </span>
+                                      <button
+                                        onClick={() => abmeldungZuruecknehmen(t.id, myMitglied.id)}
+                                        className="text-xs underline text-muted-foreground hover:text-foreground transition-colors ml-auto"
+                                      >
+                                        Zurücknehmen
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={() => setAbmeldeForm({ termin_id: t.id, mitglied_id: myMitglied.id, name: 'mich', grund: '' })}
+                                      className="text-xs text-muted-foreground hover:text-red-400 transition-colors underline"
+                                    >
+                                      Ich kann nicht kommen
+                                    </button>
+                                  )}
+
+                                  {kindTeilnehmer.map(k => {
+                                    const kt = teilnahmeFuer(t.id, k.id);
+                                    const kName = String(k.vorname || '') || String(k.nachname || '');
+                                    const kFormOffen = abmeldeForm && abmeldeForm.termin_id === t.id && abmeldeForm.mitglied_id === k.id;
+                                    if (kFormOffen) return null;
+                                    return kt?.abgemeldet ? (
+                                      <div key={k.id} className="flex items-center justify-between gap-2">
+                                        <span className="text-xs bg-red-900/20 border border-red-700/30 text-red-400 px-2 py-1 rounded-full font-medium">
+                                          {kName} abgemeldet{kt.grund ? ` · ${kt.grund}` : ''}
+                                        </span>
+                                        <button
+                                          onClick={() => abmeldungZuruecknehmen(t.id, k.id)}
+                                          className="text-xs underline text-muted-foreground hover:text-foreground transition-colors"
+                                        >
+                                          Zurücknehmen
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <button
+                                        key={k.id}
+                                        onClick={() => setAbmeldeForm({ termin_id: t.id, mitglied_id: k.id, name: kName, grund: '' })}
+                                        className="text-xs text-muted-foreground hover:text-red-400 transition-colors underline block"
+                                      >
+                                        Für {kName} abmelden
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        )}
+
                         {canEdit && (
                           <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-border/60">
                             <button 
@@ -1435,6 +1623,17 @@ export default function SpartenDashboard() {
       </main>
 
       {/* TERMIN MODAL */}
+      {anwesenheitTermin && (
+        <AnwesenheitModal
+          termin={anwesenheitTermin}
+          liste={anwesenheitListe}
+          setListe={setAnwesenheitListe}
+          onClose={() => setAnwesenheitTermin(null)}
+          onSave={anwesenheitSpeichern}
+          speichert={anwesenheitSpeichert}
+        />
+      )}
+
       {showTerminModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto">
           <div className="bg-card border border-border rounded-xl w-full max-w-lg p-4 sm:p-6 relative">
@@ -1998,6 +2197,73 @@ export default function SpartenDashboard() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function AnwesenheitModal({ termin, liste, setListe, onClose, onSave, speichert }) {
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-card border border-border rounded-2xl p-5 max-w-md w-full max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="font-oswald font-semibold text-lg uppercase tracking-wide text-foreground">Anwesenheit</h3>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          {new Date(termin.datum).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
+          {termin.uhrzeit ? `, ${termin.uhrzeit} Uhr` : ''}
+        </p>
+        <div className="flex gap-2 mb-3">
+          <button
+            onClick={() => setListe(liste.map(a => ({ ...a, anwesend: true })))}
+            className="flex-1 py-2 min-h-[40px] rounded-lg bg-green-500/15 text-green-400 text-xs font-semibold hover:bg-green-500/25 transition-colors"
+          >
+            Alle anwesend
+          </button>
+          <button
+            onClick={() => setListe(liste.map(a => ({ ...a, anwesend: false })))}
+            className="flex-1 py-2 min-h-[40px] rounded-lg bg-secondary text-muted-foreground text-xs font-medium hover:text-foreground transition-colors"
+          >
+            Alle abwesend
+          </button>
+        </div>
+        <div className="space-y-1.5">
+          {liste.map((a, i) => (
+            <div
+              key={a.mitglied_id}
+              className={`flex items-center justify-between gap-3 px-3 py-2 rounded-lg border transition-colors ${a.anwesend ? 'bg-green-500/5 border-green-500/30' : 'border-border'}`}
+            >
+              <div className="min-w-0 flex-1">
+                <p className={`text-sm font-medium truncate ${a.anwesend ? 'text-foreground' : 'text-muted-foreground'}`}>{a.name}</p>
+                {a.abgemeldet && (
+                  <p className="text-[11px] text-red-400 mt-0.5">
+                    Abgemeldet{a.grund ? `: ${a.grund}` : ''}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => setListe(liste.map((x, xi) => xi === i ? { ...x, anwesend: !x.anwesend } : x))}
+                className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${a.anwesend ? 'bg-green-500/20 text-green-400' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+                title={a.anwesend ? 'Als abwesend markieren' : 'Als anwesend markieren'}
+              >
+                {a.anwesend ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+              </button>
+            </div>
+          ))}
+          {liste.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-4">Keine aktiven Teilnehmer:innen</p>
+          )}
+        </div>
+        <button
+          onClick={onSave}
+          disabled={speichert}
+          className="mt-4 w-full py-3 min-h-[44px] rounded-lg bg-primary text-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+        >
+          {speichert ? 'Speichern…' : 'Anwesenheit speichern'}
+        </button>
+      </div>
     </div>
   );
 }
