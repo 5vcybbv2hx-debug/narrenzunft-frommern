@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { kannAusschussSehn, isAdmin } from '@/lib/roles';
@@ -197,8 +198,9 @@ export default function Todos() {
   const bestaetigeErledigt = async () => {
     if (!bestaetigeTodo) return;
     letzteStatus.current[bestaetigeTodo.id] = bestaetigeTodo.status;
-    await setStatus(bestaetigeTodo, 'Erledigt');
+    const t = bestaetigeTodo;
     setBestaetigeTodo(null);
+    await setStatus(t, 'Erledigt');
   };
 
   // Status-Chip: wechselt zwischen Offen und In Bearbeitung
@@ -459,8 +461,8 @@ export default function Todos() {
       )}
 
       {/* Bestätigung: Aufgabe wirklich erledigt? */}
-      {bestaetigeTodo && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setBestaetigeTodo(null)}>
+      {bestaetigeTodo && createPortal(
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[1000] flex items-center justify-center p-4" onClick={() => setBestaetigeTodo(null)}>
           <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-green-900/30 flex items-center justify-center shrink-0">
@@ -489,7 +491,8 @@ export default function Todos() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {showForm && (
