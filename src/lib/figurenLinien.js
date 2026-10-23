@@ -16,7 +16,7 @@ export const parseLinien = (raw) => {
 };
 
 const r1 = (n) => Math.round(n * 10) / 10;
-const GRID = 5; // sauberes 5%-Raster, beide Achsen, an 0 ausgerichtet
+const GRID = 2.5; // feines 2,5%-Raster, beide Achsen, an 0 ausgerichtet
 
 // Rechnet die Personen-Linien in konkrete Strecken um (für Snap & Render).
 export function linienSegmente(linien, marker) {
@@ -33,7 +33,7 @@ export function linienSegmente(linien, marker) {
  * Einrasten beim Verschieben einer Person:
  *  1. an Enden anderer Linien (also andere Personen)
  *  2. sonst an die nächste Stelle auf einer Linie
- *  3. sonst ans 5%-Raster
+ *  3. sonst ans 2,5%-Raster
  */
 export function snapPerson(p, linien, marker, rect) {
   const toPx = (q) => ({ x: (q.x * rect.width) / 100, y: (q.y * rect.height) / 100 });
