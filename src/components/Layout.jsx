@@ -11,6 +11,7 @@ import {
   ArrowLeft, LayoutGrid, FileText,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import SecureSearch from './SecureSearch';
 import DatenschutzZustimmungModal from '@/components/dokumente/DatenschutzZustimmungModal';
 
@@ -269,7 +270,7 @@ export default function Layout() {
   );
 
   return (
-    <div className="min-h-screen bg-background flex overflow-x-hidden">
+    <div className="min-h-screen bg-background flex overflow-x-clip">
 
       {/* ── Desktop Sidebar ── */}
       <aside className="hidden lg:flex flex-col w-60 fixed h-full z-30"
@@ -360,8 +361,9 @@ export default function Layout() {
         <DatenschutzZustimmungModal />
 
         {/* ── Bottom Navigation (Mobile) ── */}
+        {createPortal(
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-20 border-t border-border pb-safe"
-             style={{ background: 'hsl(var(--sidebar-background))' }}>
+             style={{ background: 'hsl(var(--sidebar-background))', transform: 'translateZ(0)', WebkitTransform: 'translateZ(0)' }}>
           <div className="absolute top-0 left-0 right-0 h-px bg-primary/50" />
           <div className="flex items-center justify-around px-1 py-1">
             {BOTTOM_NAV.map((item) => {
@@ -389,7 +391,9 @@ export default function Layout() {
               {location.pathname.startsWith('/mehr') && <div className="w-4 h-0.5 rounded-full bg-primary mt-0.5" />}
             </button>
           </div>
-        </nav>
+        </nav>,
+        document.body
+        )}
       </div>
     </div>
   );

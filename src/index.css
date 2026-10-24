@@ -156,3 +156,9 @@ html.light :is(.bg-card, .bg-muted, .bg-secondary, .bg-popover).text-white {
   50%       { box-shadow: 0 0 0 8px hsl(0 81% 53% / 0); }
 }
 .nz-pulse { animation: nz-pulse-red 2s ease-in-out infinite; }
+
+/* iOS: 100vh ist höher als der sichtbare Bereich (Adressleiste) — dvh nutzen,
+   damit die untere Navigation nicht mitwandert/springt. */
+@supports (height: 100dvh) {
+  .min-h-screen { min-height: 100dvh; }
+}

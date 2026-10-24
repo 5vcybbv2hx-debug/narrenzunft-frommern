@@ -92,7 +92,7 @@ const AuthenticatedApp = () => {
   }
 
   return (
-    <div className="overflow-x-hidden">
+    <div className="overflow-x-clip">
     <Routes location={location}>
       <Route element={<Layout />}>
         {/* ── Öffentlich (alle authentifizierten User) ── */}
