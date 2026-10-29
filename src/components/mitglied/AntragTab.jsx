@@ -129,7 +129,7 @@ export default function AntragTab({ mitglied, isAdmin, onOpenDokumente }) {
           <div className="space-y-1.5 text-sm">
             <DigRow label="Sparte" value={digitalerAntrag.sparte} />
             <DigRow label="E-Mail" value={digitalerAntrag.email} />
-            <DigRow label="IBAN" value={digitalerAntrag.sepa_iban} mono />
+            {isAdmin && <DigRow label="IBAN" value={digitalerAntrag.sepa_iban} mono />}
             <DigRow label="Status" value={digitalerAntrag.status} />
             {digitalerAntrag.notizen && <DigRow label="Notizen" value={digitalerAntrag.notizen} />}
           </div>

@@ -6,7 +6,7 @@ import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { isAdmin, kannMitgliederlisteSehn, kannAusschussSehn } from '@/lib/roles';
+import { isAdmin, kannMitgliederlisteSehn, kannAusschussSehn, kannBankdatenSehn } from '@/lib/roles';
 import { Search, Plus, User, ChevronRight, Archive, Download, Shirt, FileText, FolderOpen, Send } from 'lucide-react';
 import NeuerAntragModal from '@/components/mitglied/NeuerAntragModal';
 import BulkEinladenModal from '@/components/mitglied/BulkEinladenModal';
@@ -200,17 +200,23 @@ export default function Mitglieder() {
         'Notfallkontakt Name': m.notfallkontakt_name || '',
         'Notfallkontakt Tel':  m.notfallkontakt_telefon || '',
         'App-Rolle':           m.app_rolle || '',
-        'Kontoinhaber':        m.kontoinhaber || '',
-        'Bank':                m.bankname || '',
-        'IBAN':                m.iban || '',
-        'Mandatnummer':        m.sepa_mandatnummer || '',
-        'Mandatdatum':         m.sepa_mandatdatum || '',
+        // Bankverbindung/SEPA nur für Vorstand, Stellv., Kassierer und Admin
+        ...(kannBankdatenSehn(user) ? {
+          'Kontoinhaber':      m.kontoinhaber || '',
+          'Bank':              m.bankname || '',
+          'IBAN':              m.iban || '',
+          'Mandatnummer':      m.sepa_mandatnummer || '',
+          'Mandatdatum':       m.sepa_mandatdatum || '',
+        } : {}),
         'Umzüge (historisch)': m.umzuege_vor_digitalisierung || 0,
         'Notizen':             m.notizen || '',
       }));
 
     // The new selected export intentionally excludes payment and mandate information.
-    if (selectedOnly) rows.forEach(row => { for (const k of ['Kontoinhaber', 'Bank', 'IBAN', 'Mandatnummer', 'Mandatdatum']) delete row[k]; });
+    const BANK_SPALTEN = ['Kontoinhaber', 'Bank', 'IBAN', 'Mandatnummer', 'Mandatdatum'];
+    if (selectedOnly || !kannBankdatenSehn(user)) {
+      rows.forEach(row => { for (const k of BANK_SPALTEN) delete row[k]; });
+    }
     if (!rows.length) { toast.error('Keine Mitglieder zum Export ausgewählt.'); return; }
     // xlsx lazy: ~400 KB laden erst beim Export-Klick
     const XLSX = await import('xlsx').then(m => m.default ?? m);
