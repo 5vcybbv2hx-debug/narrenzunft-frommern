@@ -5,6 +5,7 @@
  * daher greift die normale RLS-Regel "nur eigene created_by-Records" nicht.)
  */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { ladeAlleMitglieder } from '../../shared/alleMitglieder.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -25,8 +26,9 @@ Deno.serve(async (req) => {
 
     // 3. Versuch: case-insensitive Email (Auth-Provider → lowercase, DB → mixed case)
     if (!mitglied && user.email) {
-      const all = await base44.asServiceRole.entities.Mitglied.list({ limit: 500 });
-      mitglied = all.find(m => m.email && m.email.toLowerCase() === user.email.toLowerCase());
+      const all = await ladeAlleMitglieder(base44.asServiceRole);
+      const norm = String(user.email).trim().toLowerCase();
+      mitglied = all.find(m => m.email && m.email.trim().toLowerCase() === norm);
     }
 
     // Namens-Matching bewusst entfernt — Sicherheitsrisiko: ein Angreifer konnte sich

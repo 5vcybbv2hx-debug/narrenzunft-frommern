@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 import { istAktuellerSpartenleiter } from '../../shared/ausschussBerechtigung.ts';
 import { sendePush } from '../../shared/pushSenden.ts';
+import { ladeAlleMitglieder } from '../../shared/alleMitglieder.ts';
 
 // Einziger Empfänger der Erst-Login-Benachrichtigung (Nur-Pierre-Regel):
 // Pierre Hugendubel (Vorstand). Er will bei jedem ERSTEN Login eines eingeladenen
@@ -71,16 +72,14 @@ Deno.serve(async (req) => {
 
     if (!mitglied && !problem && user.email) {
       // Nur eindeutige E-Mail, inklusive Groß-/Kleinschreibvarianten (case-insensitive).
-      const alle = await S.entities.Mitglied.list({ limit: 500 });
-      if (alle.length < 500) {
-        const norm = String(user.email).trim().toLowerCase();
-        const matches = alle.filter(m => m.email && m.email.trim().toLowerCase() === norm);
-        if (matches.length === 1) {
-          mitglied = matches[0];
-          matchStrategy = mitglied.email === user.email ? 'email' : 'email_ci';
-        } else if (matches.length > 1) {
-          problem = 'mehrere Profile mit derselben E-Mail';
-        }
+      const alle = await ladeAlleMitglieder(S);
+      const norm = String(user.email).trim().toLowerCase();
+      const matches = alle.filter(m => m.email && m.email.trim().toLowerCase() === norm);
+      if (matches.length === 1) {
+        mitglied = matches[0];
+        matchStrategy = mitglied.email === user.email ? 'email' : 'email_ci';
+      } else if (matches.length > 1) {
+        problem = 'mehrere Profile mit derselben E-Mail';
       }
     }
 
