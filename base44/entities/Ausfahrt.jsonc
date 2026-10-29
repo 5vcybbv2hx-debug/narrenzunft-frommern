@@ -45,6 +45,11 @@
     "busparkplatz": {
       "type": "string"
     },
+    "bus_benoetigt": {
+      "type": "boolean",
+      "default": true,
+      "description": "Bus für diese Ausfahrt nötig? Ohne Bus entfallen Abfahrt, Rückfahrt und Busparkplatz."
+    },
     "bus_kapazitaet": {
       "type": "number"
     },

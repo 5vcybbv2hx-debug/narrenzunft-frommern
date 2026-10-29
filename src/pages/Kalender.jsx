@@ -141,6 +141,7 @@ export default function Kalender({ nur = 'alle' }) {
         beschreibung: a.notizen || null,
         anmeldbar: true,
         _bus: a.bus_benoetigt || false,
+        _bus_benoetigt: a.bus_benoetigt !== false, // fehlend/null = Bus nötig (Altbestand)
         _busparkplatz_adresse: a.busparkplatz || null,
         _busparkplatz_treffzeit: a.bus_benoetigt ? (a.abfahrt_zeit && a.abfahrt_ort ? `${a.abfahrt_zeit} ${a.abfahrt_ort}` : null) : null,
         _abfahrt_ort: a.abfahrt_ort || null,
@@ -1143,6 +1144,7 @@ function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditV
               {onAusfahrtRegister && !ausfahrtAnmeldung && (
                 isAusfahrtOpen ? (
                   <div className="flex gap-2">
+                    {termin._bus_benoetigt !== false && (
                     <button
                       onClick={() => onAusfahrtRegister('Bus')}
                       disabled={submittingAusfahrt === termin._ausfahrt_id}
@@ -1150,6 +1152,7 @@ function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditV
                     >
                       <Bus size={15} /> {submittingAusfahrt === termin._ausfahrt_id ? '...' : 'Mit Bus'}
                     </button>
+                    )}
                     <button
                       onClick={() => onAusfahrtRegister('Privat')}
                       disabled={submittingAusfahrt === termin._ausfahrt_id}
