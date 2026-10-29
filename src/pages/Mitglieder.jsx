@@ -284,7 +284,7 @@ export default function Mitglieder() {
               <span className="hidden sm:inline">Einladen</span>
             </button>
             <button
-              onClick={handleExport}
+              onClick={() => handleExport(false)}
               title="Mitgliederliste exportieren"
               className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium hover:bg-border hover:text-foreground transition-colors"
             >
