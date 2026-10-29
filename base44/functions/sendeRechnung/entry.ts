@@ -14,9 +14,19 @@ export default async function (req) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { email, name, rechnungsnummer, pdf_url, betrag, gegenstand, von, bis } = body;
+    const { email, name, rechnungsnummer, pdf_url, pdf_uri, betrag, gegenstand, von, bis } = body;
     if (!email) return Response.json({ error: 'Keine Empfängeradresse' }, { status: 400 });
-    if (!pdf_url) return Response.json({ error: 'Keine PDF-Datei übergeben' }, { status: 400 });
+    if (!pdf_url && !pdf_uri) return Response.json({ error: 'Keine PDF-Datei übergeben' }, { status: 400 });
+
+    // PDF liegt privat (Rechnungen enthalten Anschriften) – Link nur befristet gültig
+    let pdfLink = pdf_url || '';
+    if (pdf_uri) {
+      const { signed_url } = await base44.asServiceRole.integrations.Core.CreateFileSignedUrl({
+        file_uri: pdf_uri,
+        expires_in: 60 * 60 * 24 * 30,
+      });
+      pdfLink = signed_url;
+    }
 
     const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const eur = (v) => Number(v || 0).toFixed(2).replace('.', ',') + ' €';
@@ -39,7 +49,7 @@ export default async function (req) {
               <tr><td style="padding:6px 0;color:#6b7280;">Betrag</td><td style="padding:6px 0;color:#e2e8f0;text-align:right;"><strong style="color:#EA2525;">${eur(betrag)}</strong></td></tr>
             </table>
             <p style="margin:20px 0 0;">
-              <a href="${esc(pdf_url)}" style="display:inline-block;background:#EA2525;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600;font-size:14px;">Rechnung als PDF öffnen</a>
+              <a href="${esc(pdfLink)}" style="display:inline-block;background:#EA2525;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600;font-size:14px;">Rechnung als PDF öffnen</a>
             </p>
             <p style="color:#94a3b8;font-size:12px;margin:20px 0 0;padding-top:16px;border-top:1px solid #2a2a2a;">
               Bei Fragen einfach auf diese Mail antworten.<br>Eure Narrenzunft Frommern 🎭

@@ -92,10 +92,10 @@ export default function RechnungModal({ ausleihe, ausruestung, empfaenger, onClo
       const { doc, nr, dateiname } = await bauePdf();
       const blob = doc.output('blob');
       const datei = new File([blob], dateiname, { type: 'application/pdf' });
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: datei });
+      const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file: datei });
       await base44.functions.invoke('sendeRechnung', {
         ausleihe_id: ausleihe?.id, email: empf.email, name: empf.name,
-        rechnungsnummer: nr, pdf_url: file_url, betrag: betrag.gesamt,
+        rechnungsnummer: nr, pdf_uri: file_uri, betrag: betrag.gesamt,
         gegenstand: ausruestung?.name || '', von: ausleihe?.von_datum, bis: ausleihe?.bis_datum,
       });
       toast.success(`Rechnung ${nr} per E-Mail an ${empf.email} gesendet.`);
