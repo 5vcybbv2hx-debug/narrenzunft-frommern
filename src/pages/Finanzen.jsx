@@ -5,6 +5,8 @@ import { kannBankdatenSehn } from '@/lib/roles';
 import { fmtDatum } from '@/lib/datum';
 import { Wallet, Search, Download, Save, AlertCircle, Check, ShieldCheck, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import KassenbuchTab from '@/components/finanzen/KassenbuchTab';
+import { kannKasseSehn, kannKasseBuchen } from '@/lib/roles';
 
 const euro = (v) => Number(v || 0).toFixed(2).replace('.', ',') + ' €';
 
@@ -14,7 +16,9 @@ const euro = (v) => Number(v || 0).toFixed(2).replace('.', ',') + ' €';
  */
 export default function Finanzen() {
   const { user } = useAuth();
-  const darf = kannBankdatenSehn(user);
+  const darf = kannBankdatenSehn(user) || kannKasseSehn(user);
+  const darfBuchen = kannKasseBuchen(user);
+  const istPruefer = darf && !darfBuchen;
 
   const [tab, setTab] = useState('mandate');
   const [laden, setLaden] = useState(true);
@@ -192,17 +196,18 @@ export default function Finanzen() {
 
       {/* Tabs */}
       <div className="flex gap-1.5 mb-4 overflow-x-auto scrollbar-hide">
-        {[
-          ['mandate', 'SEPA-Mandate'],
-          ['lauf', 'Lastschriftlauf'],
-          ['konfiguration', 'Einstellungen'],
-        ].map(([id, label]) => (
+        {(istPruefer
+          ? [['kasse', 'Kassenbuch']]
+          : [['kasse', 'Kassenbuch'], ['mandate', 'SEPA-Mandate'], ['lauf', 'Lastschriftlauf'], ['konfiguration', 'Einstellungen']]
+        ).map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)}
             className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${tab === id ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
             {label}
           </button>
         ))}
       </div>
+
+      {tab === 'kasse' && <KassenbuchTab darfBuchen={darfBuchen} />}
 
       {tab === 'mandate' && (
         <div className="space-y-3">

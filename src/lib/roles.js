@@ -6,6 +6,7 @@
  * - vorstand
  * - stellv_vorstand
  * - kassierer
+ * - kassenpruefer   (Kassenprüfer: nur Lesen, kein Buchen)
  * - spartenleiter
  * - mitglied
  *
@@ -17,6 +18,7 @@ export const ROLLEN = {
   VORSTAND:        'vorstand',
   STELLV_VORSTAND: 'stellv_vorstand',
   KASSIERER:       'kassierer',
+  KASSENPRUEFER:   'kassenpruefer',
   SPARTENLEITER:   'spartenleiter',
   MITGLIED:        'mitglied',
 };
@@ -25,6 +27,7 @@ export const ROLLEN_LABELS = {
   vorstand:        'Vorstand',
   stellv_vorstand: 'Stv. Vorstand',
   kassierer:       'Kassierer',
+  kassenpruefer:   'Kassenprüfer',
   spartenleiter:   'Spartenleiter',
   mitglied:        'Mitglied',
   // Legacy-Fallbacks (Base44 Standard-Rollen)
@@ -52,6 +55,21 @@ export function isVorstand(user) {
 /** Finanzzugriff: Vorstand + Kassierer + Developer */
 export function kannBankdatenSehn(user) {
   return ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'].includes(user?.role) || isDeveloper(user);
+}
+
+/** Kassenbuch lesen: Finanzrollen + Kassenprüfer (Prüfer nur lesend). */
+export function kannKasseSehn(user) {
+  return ['vorstand', 'stellv_vorstand', 'kassierer', 'kassenpruefer', 'admin'].includes(user?.role) || isDeveloper(user);
+}
+
+/** Kassenbuch buchen/stornieren: Kassenprüfer bewusst NICHT. */
+export function kannKasseBuchen(user) {
+  return ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'].includes(user?.role) || isDeveloper(user);
+}
+
+/** Ist die Person ausschließlich prüfend (dann nur Leserechte prüfen)? */
+export function istKassenpruefer(user) {
+  return user?.role === 'kassenpruefer';
 }
 
 export function kannBeitraegeVerwalten(user) {

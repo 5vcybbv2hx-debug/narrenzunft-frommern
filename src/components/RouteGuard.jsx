@@ -56,5 +56,6 @@ export function Guard({ roles, zusatz, children }) {
 export const ROLLEN_VORSTAND = ['vorstand', 'stellv_vorstand', 'admin'];
 export const ROLLEN_FUEHRUNG = ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'];
 export const ROLLEN_FINANZEN = ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'];
+export const ROLLEN_KASSE = [...ROLLEN_FINANZEN, 'kassenpruefer']; // Kassenprüfer: nur Lesen
 export const ROLLEN_MITGLIEDER = ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter', 'admin'];
 export const ROLLEN_NUR_ADMIN = ['admin'];

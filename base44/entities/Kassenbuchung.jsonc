@@ -1,0 +1,25 @@
+{
+  "name": "Kassenbuchung",
+  "properties": {
+    "belegnummer": { "type": "string", "description": "Fortlaufende Belegnummer je Jahr, z.B. 2026-0001 (wird serverseitig vergeben)" },
+    "datum": { "type": "string", "format": "date", "description": "Buchungsdatum" },
+    "art": { "type": "string", "enum": ["Einnahme", "Ausgabe"] },
+    "betrag": { "type": "number", "description": "Betrag in Euro (immer positiv; Richtung steckt in art)" },
+    "kategorie": { "type": "string", "description": "z.B. Beiträge, Spenden, Verleih, Material, Bewirtung, Fahrtkosten" },
+    "beschreibung": { "type": "string" },
+    "konto": { "type": "string", "enum": ["Barkasse", "Bank"], "default": "Barkasse" },
+    "veranstaltung_id": { "type": "string" },
+    "mitglied_id": { "type": "string" },
+    "beleg_url": { "type": "string", "description": "Foto/Scan des Belegs" },
+    "gebucht_von": { "type": "string", "description": "Name der buchenden Person" },
+    "storniert": { "type": "boolean", "default": false },
+    "storno_grund": { "type": "string" },
+    "storno_zu_id": { "type": "string", "description": "Bei einer Stornobuchung: Verweis auf die stornierte Buchung" }
+  },
+  "rls": {
+    "create": { "$or": [{ "user_condition": { "role": "admin" } }, { "user_condition": { "role": "vorstand" } }, { "user_condition": { "role": "stellv_vorstand" } }, { "user_condition": { "role": "kassierer" } }] },
+    "read": { "$or": [{ "user_condition": { "role": "admin" } }, { "user_condition": { "role": "vorstand" } }, { "user_condition": { "role": "stellv_vorstand" } }, { "user_condition": { "role": "kassierer" } }, { "user_condition": { "role": "kassenpruefer" } }] },
+    "update": { "$or": [{ "user_condition": { "role": "admin" } }, { "user_condition": { "role": "kassierer" } }] },
+    "delete": { "$or": [{ "user_condition": { "role": "admin" } }] }
+  }
+}

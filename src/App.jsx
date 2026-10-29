@@ -7,7 +7,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { ConfirmProvider } from '@/components/ui/ConfirmProvider';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-import { Guard, ROLLEN_VORSTAND, ROLLEN_FUEHRUNG, ROLLEN_FINANZEN, ROLLEN_MITGLIEDER } from '@/components/RouteGuard';
+import { Guard, ROLLEN_VORSTAND, ROLLEN_FUEHRUNG, ROLLEN_FINANZEN, ROLLEN_KASSE, ROLLEN_MITGLIEDER } from '@/components/RouteGuard';
 
 // Layout
 import Layout from './components/Layout';
@@ -175,7 +175,7 @@ const AuthenticatedApp = () => {
         } />
 
         <Route path="/finanzen" element={
-          <Guard roles={ROLLEN_FINANZEN}><Finanzen /></Guard>
+          <Guard roles={ROLLEN_KASSE}><Finanzen /></Guard>
         } />
 
         {/* Selbstauskunft: eigenes Bankkonto + SEPA-Mandat (auch für Eltern) */}

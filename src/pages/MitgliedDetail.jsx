@@ -70,6 +70,7 @@ const ROLE_TILES = [
   { value: 'mitglied', label: 'Mitglied', desc: 'Grundzugang', icon: User },
   { value: 'spartenleiter', label: 'Spartenleiter', desc: 'Dienste & Check-In', icon: ClipboardList },
   { value: 'kassierer', label: 'Kassierer', desc: 'Finanzen & Beiträge', icon: Wallet },
+  { value: 'kassenpruefer', label: 'Kassenprüfer', desc: 'Liest Kassenbuch & Kassenstürze', icon: Shield },
   { value: 'stellv_vorstand', label: 'Stv. Vorstand', desc: 'Vollzugriff (ohne Admin)', icon: Shield },
   { value: 'vorstand', label: 'Vorstand', desc: 'Vollzugriff', icon: Crown },
 ];
