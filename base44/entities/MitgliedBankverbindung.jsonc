@@ -1,0 +1,118 @@
+{
+  "name": "MitgliedBankverbindung",
+  "properties": {
+    "mitglied_id": {
+      "type": "string",
+      "description": "Verweis auf das Mitglied"
+    },
+    "kontoinhaber": {
+      "type": "string"
+    },
+    "bankname": {
+      "type": "string"
+    },
+    "iban": {
+      "type": "string"
+    },
+    "bic": {
+      "type": "string"
+    },
+    "sepa_mandatnummer": {
+      "type": "string"
+    },
+    "sepa_mandatdatum": {
+      "type": "string"
+    },
+    "notizen": {
+      "type": "string"
+    }
+  },
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "kassierer"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "kassierer"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "kassierer"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        }
+      ]
+    }
+  }
+}

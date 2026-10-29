@@ -7,6 +7,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannMitgliederlisteSehn, kannAusschussSehn, kannBankdatenSehn } from '@/lib/roles';
+import { bankdatenMap } from '@/lib/bankverbindung';
 import { Search, Plus, User, ChevronRight, Archive, Download, Shirt, FileText, FolderOpen, Send } from 'lucide-react';
 import NeuerAntragModal from '@/components/mitglied/NeuerAntragModal';
 import BulkEinladenModal from '@/components/mitglied/BulkEinladenModal';
@@ -182,6 +183,8 @@ export default function Mitglieder() {
       gruppen.forEach(g => { gruppenMap[g.id] = g.name; });
     } catch (e) { console.error('Error:', e); }
 
+    // Bankdaten kommen aus der geschützten Entity — nur für Berechtigte geladen
+    const bankMap = kannBankdatenSehn(user) ? await bankdatenMap() : null;
     const rows = (selectedOnly ? mitglieder.filter(m => selected.includes(m.id)) : mitglieder.filter(m => !m.archiviert))
       .map(m => ({
         'Mitgliedsnummer':     m.mitgliedsnummer || '',
@@ -200,13 +203,14 @@ export default function Mitglieder() {
         'Notfallkontakt Name': m.notfallkontakt_name || '',
         'Notfallkontakt Tel':  m.notfallkontakt_telefon || '',
         'App-Rolle':           m.app_rolle || '',
-        // Bankverbindung/SEPA nur für Vorstand, Stellv., Kassierer und Admin
-        ...(kannBankdatenSehn(user) ? {
-          'Kontoinhaber':      m.kontoinhaber || '',
-          'Bank':              m.bankname || '',
-          'IBAN':              m.iban || '',
-          'Mandatnummer':      m.sepa_mandatnummer || '',
-          'Mandatdatum':       m.sepa_mandatdatum || '',
+            // Bankverbindung/SEPA nur für Vorstand, Stellv., Kassierer und Admin
+        // (Quelle: geschützte Entity MitgliedBankverbindung)
+        ...(bankMap ? {
+          'Kontoinhaber':      bankMap.get(m.id)?.kontoinhaber || '',
+          'Bank':              bankMap.get(m.id)?.bankname || '',
+          'IBAN':              bankMap.get(m.id)?.iban || '',
+          'Mandatnummer':      bankMap.get(m.id)?.sepa_mandatnummer || '',
+          'Mandatdatum':       bankMap.get(m.id)?.sepa_mandatdatum || '',
         } : {}),
         'Umzüge (historisch)': m.umzuege_vor_digitalisierung || 0,
         'Notizen':             m.notizen || '',

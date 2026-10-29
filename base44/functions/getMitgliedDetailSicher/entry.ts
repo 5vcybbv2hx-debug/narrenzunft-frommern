@@ -38,6 +38,7 @@ Deno.serve(async (req) => {
     // Eigenes Profil
     else if (eigenMitglied && eigenMitglied.id === mitglied_id) {
       darfSehen = true;
+      // Bankverbindung sieht das Mitglied nicht — nur Vorstand/Kassierer/Admin
       darfSensitiveSehen = true;
     }
     // Elternkonto: eigene Kinder
@@ -92,9 +93,21 @@ Deno.serve(async (req) => {
       mitgliedData.ort = zielMitglied.ort;
       mitgliedData.notfallkontakt_name = zielMitglied.notfallkontakt_name;
       mitgliedData.notfallkontakt_telefon = zielMitglied.notfallkontakt_telefon;
-      mitgliedData.iban = zielMitglied.iban;
-      mitgliedData.kontoinhaber = zielMitglied.kontoinhaber;
-      mitgliedData.sepa_mandatnummer = zielMitglied.sepa_mandatnummer;
+      // Bankverbindung/SEPA: nur Vorstand, Stellv., Kassierer, Admin — aus der
+      // geschützten Entity MitgliedBankverbindung (Fallback: alte Mitglied-Felder).
+      const BANK_ROLLEN = ['admin', 'vorstand', 'stellv_vorstand', 'kassierer'];
+      if (BANK_ROLLEN.includes(user.role)) {
+        let bank = null;
+        try {
+          const treffer = await base44.asServiceRole.entities.MitgliedBankverbindung.filter({ mitglied_id: zielMitglied.id });
+          bank = treffer?.[0] || null;
+        } catch (e) { /* Entity evtl. noch nicht vorhanden */ }
+        mitgliedData.iban = bank?.iban || zielMitglied.iban || '';
+        mitgliedData.kontoinhaber = bank?.kontoinhaber || zielMitglied.kontoinhaber || '';
+        mitgliedData.sepa_mandatnummer = bank?.sepa_mandatnummer || zielMitglied.sepa_mandatnummer || '';
+        mitgliedData.bankname = bank?.bankname || zielMitglied.bankname || '';
+        mitgliedData.sepa_mandatdatum = bank?.sepa_mandatdatum || zielMitglied.sepa_mandatdatum || '';
+      }
       mitgliedData.notizen = zielMitglied.notizen;
       mitgliedData.haesgruppen_ids = zielMitglied.haesgruppen_ids;
       mitgliedData.app_rolle = zielMitglied.app_rolle;

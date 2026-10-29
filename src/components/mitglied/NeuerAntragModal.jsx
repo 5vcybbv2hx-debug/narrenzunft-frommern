@@ -1,4 +1,5 @@
 import DateSelect from '../ui/DateSelect';
+import { speichereBankdaten } from '@/lib/bankverbindung';
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, ChevronRight, ChevronLeft, CheckCircle2, UserPlus, Loader2 } from 'lucide-react';
@@ -65,10 +66,18 @@ export default function NeuerAntragModal({ onClose, onMitgliedAngelegt }) {
         telefon: form.telefon || form.handy,
         email: form.email,
         eintrittsdatum: form.eintrittsdatum,
-        iban: form.sepa_iban,
-        kontoinhaber: form.sepa_kontoinhaber,
         mitgliedsstatus: 'Aktiv',
       });
+
+      // Bankverbindung gehört in die geschützte Entity (nicht in 'Mitglied')
+      if (form.sepa_iban || form.sepa_kontoinhaber) {
+        await speichereBankdaten(mitglied.id, {
+          iban: form.sepa_iban,
+          bic: form.sepa_bic,
+          kontoinhaber: form.sepa_kontoinhaber,
+          sepa_mandatdatum: form.eintrittsdatum || new Date().toISOString().slice(0, 10),
+        }).catch((e) => console.warn('Bankdaten zum Antrag:', e));
+      }
 
       // Antrag mit Mitglied verknüpfen & Status setzen
       await base44.entities.Mitgliedsantrag.update(aId, {

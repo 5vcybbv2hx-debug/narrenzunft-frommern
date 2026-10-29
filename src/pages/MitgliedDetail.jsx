@@ -3,6 +3,7 @@ import DateSelect from '../components/ui/DateSelect';
 import { useParams, useNavigate, useLocation, Link, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { waEinladungsLink } from '@/lib/whatsappEinladung';
+import { ladeBankdaten, speichereBankdaten, BANK_FELDER } from '@/lib/bankverbindung';
 import { useAuth } from '@/lib/AuthContext';
 import {
   ArrowLeft, Edit, Save, X, Phone, Mail, MapPin,
@@ -353,6 +354,18 @@ export default function MitgliedDetail() {
     return `https://wa.me/${nr.replace('+', '')}`;
   };
 
+  // Bankdaten aus der geschützten Entity nachladen (nur admin/vorstand/stv./kassierer).
+  // Fallback auf die alten Mitglied-Felder, solange die Migration noch läuft.
+  useEffect(() => {
+    let abgebrochen = false;
+    if (!kannBank || !mitglied?.id || isNew) return undefined;
+    ladeBankdaten(mitglied.id, mitglied).then((bank) => {
+      if (abgebrochen || !bank || !Object.keys(bank).length) return;
+      setMitglied((p) => ({ ...p, ...Object.fromEntries(BANK_FELDER.filter((f) => bank[f] != null).map((f) => [f, bank[f]])) }));
+    });
+    return () => { abgebrochen = true; };
+  }, [kannBank, mitglied?.id, isNew]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleSave = async () => {
     setSaving(true);
     setError(null);
@@ -371,7 +384,16 @@ export default function MitgliedDetail() {
         });
         setEditing(false);
       } else {
-        await base44.entities.Mitglied.update(mitglied.id, mitglied);
+        // Bankverbindung gehört in die geschützte Entity, nicht in 'Mitglied'
+        const ohneBank = { ...mitglied };
+        BANK_FELDER.forEach((f) => delete ohneBank[f]);
+        await base44.entities.Mitglied.update(mitglied.id, ohneBank);
+        if (kannBank) {
+          const bankDaten = Object.fromEntries(BANK_FELDER.filter((f) => mitglied[f] != null).map((f) => [f, mitglied[f]]));
+          if (Object.keys(bankDaten).length) {
+            await speichereBankdaten(mitglied.id, bankDaten).catch((e) => console.warn('Bankdaten speichern:', e));
+          }
+        }
         setEditing(false);
       }
     } catch (e) {

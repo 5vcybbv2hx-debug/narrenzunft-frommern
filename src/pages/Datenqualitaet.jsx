@@ -1,3 +1,4 @@
+import { bankdatenMap } from '@/lib/bankverbindung';
 import { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -36,6 +37,7 @@ export default function Datenqualitaet() {
   const [haes, setHaes] = useState([]);
   const [historien, setHistorien] = useState([]);
   const [beitraege, setBeitraege] = useState([]);
+  const [bankMap, setBankMap] = useState(new Map());
   const [filter, setFilter] = useState('all'); // all | error | warning | info
   const [offeneFaelle, setOffeneFaelle] = useState(0);
 
@@ -58,6 +60,7 @@ export default function Datenqualitaet() {
       setHaes(h || []);
       setHistorien(hist || []);
       setBeitraege(b || []);
+      setBankMap(await bankdatenMap());
     } catch (e) {
       console.error('Datenqualität laden:', e);
       setError('Daten konnten nicht geladen werden. Bitte erneut versuchen.');
@@ -112,9 +115,11 @@ export default function Datenqualitaet() {
     });
 
     // 6. SEPA unvollständig (für aktive Mitglieder mit Beiträgen)
+    // Bankdaten liegen in der geschützten Entity MitgliedBankverbindung (in loadData geladen).
     const mitMitBeitraegen = new Set(beitraege.map(b => b.mitglied_id));
     mitglieder.filter(m => mitMitBeitraegen.has(m.id) && m.mitgliedsstatus === 'Aktiv').forEach(m => {
-      if (!m.iban || !m.kontoinhaber) {
+      const bank = bankMap.get(m.id) || m;
+      if (!bank.iban || !bank.kontoinhaber) {
         result.push({ severity: 'info', text: `${m.vorname || ''} ${m.nachname || ''}: SEPA-Daten unvollständig`, link: `/mitglieder/${m.id}` });
       }
     });
@@ -126,7 +131,7 @@ export default function Datenqualitaet() {
 
     const order = { error: 0, warning: 1, info: 2 };
     return result.sort((a, b) => order[a.severity] - order[b.severity]);
-  }, [mitglieder, haes, historien, beitraege]);
+  }, [mitglieder, haes, historien, beitraege, bankMap]);
 
   const errors = probleme.filter(p => p.severity === 'error');
   const warnings = probleme.filter(p => p.severity === 'warning');
