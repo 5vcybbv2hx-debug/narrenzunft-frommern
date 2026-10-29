@@ -8,8 +8,7 @@ import {
   Award, CreditCard, ChevronDown,
   LogOut, Shield, ClipboardList,
   AlertTriangle, Lock, CheckSquare, Package, ShoppingBag,
-  ArrowLeft, LayoutGrid, FileText,
-} from 'lucide-react';
+  ArrowLeft, LayoutGrid, FileText, Wallet } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import SecureSearch from './SecureSearch';
@@ -37,7 +36,8 @@ export const NAV_SECTIONS = [
     items: [
       { path: '/mitglieder',     label: 'Mitglieder',         icon: Users,         roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter', 'admin'] },
       { path: '/haes',           label: 'Häs',                icon: Shirt,         roles: ['vorstand', 'stellv_vorstand', 'admin'] },
-      { path: '/beitraege',      label: 'Beiträge',           icon: CreditCard,    roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'] },
+      { path: '/finanzen',       label: 'Finanzen',           icon: Wallet,        roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'] },
+{ path: '/beitraege',      label: 'Beiträge',           icon: CreditCard,    roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'] },
       { path: '/ehrungen',       label: 'Ehrungen',           icon: Award,         roles: ['vorstand', 'stellv_vorstand', 'admin'] },
       { path: '/vereine',        label: 'Vereine & Zünfte',  icon: Users,         roles: ['vorstand', 'stellv_vorstand', 'admin'] },
     ],

@@ -22,6 +22,8 @@ import Arbeitsdienste from './pages/Arbeitsdienste';
 import ArbeitsdienstNeu from './pages/ArbeitsdienstNeu';
 import Ehrungen from './pages/Ehrungen.jsx';
 import Beitraege from './pages/Beitraege';
+import Finanzen from './pages/Finanzen';
+import MeineBankdaten from './pages/MeineBankdaten';
 import Haes from './pages/Haes';
 import HaesDetail from './pages/HaesDetail';
 import Umzuege from './pages/Umzuege';
@@ -171,6 +173,13 @@ const AuthenticatedApp = () => {
         <Route path="/beitraege" element={
           <Guard roles={ROLLEN_FINANZEN}><Beitraege /></Guard>
         } />
+
+        <Route path="/finanzen" element={
+          <Guard roles={ROLLEN_FINANZEN}><Finanzen /></Guard>
+        } />
+
+        {/* Selbstauskunft: eigenes Bankkonto + SEPA-Mandat (auch für Eltern) */}
+        <Route path="/meine-bankdaten" element={<MeineBankdaten />} />
 
         {/* ── Inventar (Rollen + Zusatz-Berechtigung 'inventar') ── */}
         <Route path="/inventar" element={
