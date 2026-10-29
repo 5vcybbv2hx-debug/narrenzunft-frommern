@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { Shirt, Plus, Trash2, Loader2, ChevronDown } from 'lucide-react';
+import { fmtDatum } from '@/lib/datum';
 
 /**
  * HaesteilVergessenKarte – dokumentiert vergessene Hästeile (z. B. Garde)

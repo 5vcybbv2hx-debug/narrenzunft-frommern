@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, CheckCircle2, RefreshCw, Shield, Filter, FolderOpen } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, RefreshCw, Shield, Filter } from 'lucide-react';
 import { differenceInYears } from 'date-fns';
 import FaelleSektion from '@/components/datenqualitaet/FaelleSektion';
 

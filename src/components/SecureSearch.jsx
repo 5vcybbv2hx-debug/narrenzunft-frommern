@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Search, Loader2, Users, Shirt, Briefcase, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
+import { fmtDatum } from '@/lib/datum';
 
 export default function SecureSearch({ initialQuery = '' }) {
   const { user } = useAuth();

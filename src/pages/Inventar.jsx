@@ -6,6 +6,7 @@ import { istVerleihZustaendig } from '../lib/verleih';
 import { kannInventarSehn, isAdmin } from '@/lib/roles';
 import { Package, Plus, Lock, Calendar, Clock, Globe, User, AlertCircle, AlertTriangle, Inbox, QrCode, Check, X, Phone, Mail, Loader2 } from 'lucide-react';
 import { cachedFetch, clearEntityCache } from '../lib/entityCache';
+import { fmtDatum } from '@/lib/datum';
 import AusruestungKarte from '@/components/inventar/AusruestungKarte';
 import AusruestungForm from '@/components/inventar/AusruestungForm';
 import AusleiheForm from '@/components/inventar/AusleiheForm';

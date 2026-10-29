@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { X, Upload, FileText, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import BottomModal from '@/components/ui/BottomModal';
+import { fmtDatum } from '@/lib/datum';
 
 export default function HaesHistorieImportModal({ onClose, onImported }) {
   const [phase, setPhase] = useState('upload'); // upload | vorschau | ergebnis

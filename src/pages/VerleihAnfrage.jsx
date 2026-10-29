@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { CheckCircle2, Loader2, AlertCircle, Phone, Mail, Snowflake, Truck, Tent, Plug, Package, Wine, CalendarDays, Euro, ArrowLeft } from 'lucide-react';
 import DateSelect from '../components/ui/DateSelect';
+import { fmtZeitraum } from '@/lib/datum';
 
 const KATEGORIE_ICONS = {
   'Anhänger': Truck, 'Kühlanhänger': Snowflake, 'Bar': Wine,

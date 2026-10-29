@@ -68,6 +68,10 @@
     },
     "notizen": {
       "type": "string"
+    },
+    "veranstaltung_id": {
+      "type": "string",
+      "description": "ID der Veranstaltung, wenn die Reservierung f\u00fcr eine eigene Veranstaltung gilt"
     }
   },
   "description": {

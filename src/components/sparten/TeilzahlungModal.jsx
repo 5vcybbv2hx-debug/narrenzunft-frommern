@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { X, Euro, Trash2 } from 'lucide-react';
+import { fmtDatum } from '@/lib/datum';
 
 /**
  * TeilzahlungModal – Teilzahlungen auf eine SpartenAuslage erfassen.

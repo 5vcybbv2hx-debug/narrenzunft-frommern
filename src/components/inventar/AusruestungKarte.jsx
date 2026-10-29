@@ -1,4 +1,5 @@
 import { Edit, AlertTriangle, Check, Circle, MapPin, Globe, User, Car, Truck, Snowflake, Tent, Plug, Package, Wine, QrCode, Clock } from 'lucide-react';
+import { fmtDatum } from '@/lib/datum';
 
 const KATEGORIE_ICONS = {
   'Anhänger': Truck, 'Kühlanhänger': Snowflake, 'Bar': Wine,
@@ -99,7 +100,7 @@ export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, kommen
             <div className="mt-2 px-3 py-2 rounded-lg bg-blue-900/10 border border-blue-700/20 text-xs">
               <p className="text-blue-400 flex items-center gap-1.5">
                 <Clock size={13} />
-                <span>Reserviert: {kommendeAusleihe.von_datum} → {kommendeAusleihe.bis_datum}</span>
+                <span>Reserviert: {fmtDatum(kommendeAusleihe.von_datum)} → {fmtDatum(kommendeAusleihe.bis_datum)}</span>
               </p>
             </div>
           )}
@@ -109,7 +110,7 @@ export default function AusruestungKarte({ ausruestung, aktuelleAusleihe, kommen
             <div className="mt-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20 text-xs">
               <p className="text-primary flex items-center gap-1.5">
                 {aktuelleAusleihe.ausleiher_typ === 'extern' ? <Globe size={13} /> : <User size={13} />}
-                <span>{ausleiherName} · bis {aktuelleAusleihe.bis_datum}{aktuelleAusleihe.zweck && ` · ${aktuelleAusleihe.zweck}`}</span>
+                <span>{ausleiherName} · bis {fmtDatum(aktuelleAusleihe.bis_datum)}{aktuelleAusleihe.zweck && ` · ${aktuelleAusleihe.zweck}`}</span>
               </p>
             </div>
           )}

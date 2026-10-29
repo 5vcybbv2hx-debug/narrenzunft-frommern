@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, CheckCircle, Loader2, AlertTriangle } from 'lucide-react';
 import BottomModal from '@/components/ui/BottomModal';
+import { fmtDatum } from '@/lib/datum';
 
 export default function UmzugAbschliessenModal({ veranstaltung, onClose, onAbgeschlossen }) {
   const [loading, setLoading] = useState(false);
