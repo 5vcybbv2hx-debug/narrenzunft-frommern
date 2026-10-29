@@ -13,6 +13,7 @@ import ArbeitsdienstTab from '@/components/veranstaltung/ArbeitsdienstTab';
 import DokumenteTab from '@/components/veranstaltung/DokumenteTab';
 import PlanungTab from '@/components/veranstaltung/PlanungTab';
 import NachbereitungTab from '@/components/veranstaltung/NachbereitungTab';
+import InventarTab from '@/components/veranstaltung/InventarTab';
 import { istVeranstaltungAnmeldungOffen, veranstaltungAnmeldeText } from '@/lib/veranstaltungAnmeldung';
 import AdresseAutocomplete from '@/components/AdresseAutocomplete';
 import { VeranstaltungsDetailsForm, VeranstaltungsDetailsView } from '@/components/veranstaltung/VeranstaltungsDetails';
@@ -97,16 +98,24 @@ export default function VeranstaltungDetail() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Zahlenfelder säubern: leere Strings würden die Schemavalidierung brechen
+      const payload = { ...veranstaltung };
+      ['max_teilnehmer'].forEach((feld) => {
+        const v = payload[feld];
+        if (v === '' || v === null || v === undefined) delete payload[feld];
+        else if (typeof v === 'string') payload[feld] = Number(v.replace(',', '.'));
+      });
       if (isNew) {
-        await base44.entities.Veranstaltung.create({ ...veranstaltung, nachbereitung_status: 'Ausstehend' });
+        await base44.entities.Veranstaltung.create({ ...payload, nachbereitung_status: 'Ausstehend' });
         navigate('/veranstaltungen');
       } else {
-        await base44.entities.Veranstaltung.update(veranstaltung.id, veranstaltung);
+        await base44.entities.Veranstaltung.update(veranstaltung.id, payload);
         setEditing(false);
       }
     } catch (e) {
       console.error('Speichern fehlgeschlagen:', e);
-      toast.error('Speichern fehlgeschlagen: ' + (e instanceof Error ? e.message : e));
+      const grund = e?.response?.data?.message || e?.response?.data?.detail || (e instanceof Error ? e.message : String(e));
+      toast.error('Speichern fehlgeschlagen: ' + String(grund).slice(0, 160));
     }
     setSaving(false);
   };
@@ -318,6 +327,7 @@ export default function VeranstaltungDetail() {
             { id: 'teilnahmen',  label: `Teilnahmen (${angemeldete.length})` },
             { id: 'bus',         label: `Bus (${teilnahmen.filter(t => t.bus).length})` },
             { id: 'organisation',label: 'Organisation' },
+            { id: 'inventar',    label: 'Inventar' },
           ].map(tab => (
             <button
               key={tab.id}
@@ -762,6 +772,15 @@ export default function VeranstaltungDetail() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Inventar: eigene Ausrüstung für diese Veranstaltung reservieren */}
+      {activeTab === 'inventar' && !isNew && (
+        <InventarTab
+          veranstaltung={veranstaltung}
+          meinMitglied={myMitglied}
+          kannBearbeiten={Boolean(isAdmin || ['vorstand', 'stellv_vorstand'].includes(user?.role))}
+        />
       )}
 
       {/* Arbeitsdienste Tab */}

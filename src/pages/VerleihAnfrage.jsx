@@ -126,7 +126,7 @@ export default function VerleihAnfrage() {
             Der Vorstand prüft die Anfrage und meldet sich dann bei euch unter der angegebenen Nummer.
           </p>
           <div className="mt-4 px-4 py-3 rounded-xl bg-black/30 border border-border text-xs text-muted-foreground text-left space-y-1">
-            <p><span className="text-muted-foreground">Zeitraum:</span> {form.von_datum} → {form.bis_datum}</p>
+            <p><span className="text-muted-foreground">Zeitraum:</span> {fmtZeitraum(form.von_datum, form.bis_datum)}</p>
             {item?.preis > 0 && <p><span className="text-muted-foreground">Miete (ca.):</span> {tage()} Tag(e) × {euro(item.preis)} = {euro(tage() * item.preis)}</p>}
             {item?.mitglied_preis != null && item?.preis > 0 && item.mitglied_preis < item.preis && (
               <p><span className="text-muted-foreground">Mitglieder:</span> <span className="text-primary font-semibold">{euro(item.mitglied_preis)} / Tag</span> — Buchung einfach über die App.</p>

@@ -1,3 +1,4 @@
+import { fmtDatum } from '@/lib/datum';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import DateSelect from '../components/ui/DateSelect';
@@ -680,7 +681,7 @@ function AufgabeModal({ aufgabe, mitglieder, termine, onClose, onSaved }) {
           </div>
           <div>
             <label className={labelCls}>Zugehörige Sitzung</label>
-            <MobileSelect value={form.termin_id || ''} onChange={v => set('termin_id', v)} placeholder="–" options={[{label:'–', value:''}, ...termine.map(t => ({label:`${t.titel} (${t.datum})`, value:t.id}))]} className={selectCls} />
+            <MobileSelect value={form.termin_id || ''} onChange={v => set('termin_id', v)} placeholder="–" options={[{label:'–', value:''}, ...termine.map(t => ({label:`${t.titel} (${fmtDatum(t.datum)})`, value:t.id}))]} className={selectCls} />
           </div>
           <textarea placeholder="Notizen" value={form.notizen || ''} onChange={e => set('notizen', e.target.value)} rows={2} className={`${inputCls} resize-none`} />
         </div>
@@ -791,7 +792,7 @@ function AbstimmungModal({ abstimmung, termine, onClose, onSaved }) {
           </div>
           <div>
             <label className={labelCls}>Zugehörige Sitzung</label>
-            <MobileSelect value={form.termin_id || ''} onChange={v => set('termin_id', v)} placeholder="–" options={[{label:'–', value:''}, ...termine.map(t => ({label:`${t.titel} (${t.datum})`, value:t.id}))]} className={selectCls} />
+            <MobileSelect value={form.termin_id || ''} onChange={v => set('termin_id', v)} placeholder="–" options={[{label:'–', value:''}, ...termine.map(t => ({label:`${t.titel} (${fmtDatum(t.datum)})`, value:t.id}))]} className={selectCls} />
           </div>
         </div>
         {confirmDelete && <div className="mt-3"><DeleteBar show={true} onConfirm={handleDelete} onCancel={() => setConfirmDelete(false)} deleting={deleting} /></div>}
@@ -964,7 +965,7 @@ function BeschlussModal({ beschluss, termine, mitglieder, onClose, onSaved }) {
             </div>
             <div>
               <label className={labelCls}>Zugehörige Sitzung</label>
-              <MobileSelect value={form.termin_id || ''} onChange={v => set('termin_id', v)} placeholder="–" options={[{label:'–', value:''}, ...termine.map(t => ({label:`${t.titel} (${t.datum})`, value:t.id}))]} className={selectCls} />
+              <MobileSelect value={form.termin_id || ''} onChange={v => set('termin_id', v)} placeholder="–" options={[{label:'–', value:''}, ...termine.map(t => ({label:`${t.titel} (${fmtDatum(t.datum)})`, value:t.id}))]} className={selectCls} />
             </div>
           </div>
           <div>

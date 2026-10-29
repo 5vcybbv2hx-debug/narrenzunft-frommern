@@ -42,8 +42,17 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
     if (!form.titel || !form.datum) return;
     setSaving(true);
     try {
+      // Zahlenfelder vor dem Speichern säubern: Ein leerer String im Zahlenfeld
+      // (z. B. "max. Teilnehmer") wird vom Schema abgelehnt und ließ das Speichern
+      // bisher still scheitern. Leer = Feld weglassen.
+      const payload = { ...form };
+      ['max_teilnehmer'].forEach((feld) => {
+        const v = payload[feld];
+        if (v === '' || v === null || v === undefined) delete payload[feld];
+        else if (typeof v === 'string') payload[feld] = Number(v.replace(',', '.'));
+      });
       if (isNew) {
-        const neuTermin = await base44.entities.KalenderTermin.create(form);
+        const neuTermin = await base44.entities.KalenderTermin.create(payload);
         // Push: Ausschuss-Termin (Hintergrund, nie blockierend)
         if (['Ausschusssitzung', 'Vorstandssitzung'].includes(form.terminart)) {
           base44.functions.invoke('sendNotification', {
@@ -59,7 +68,7 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
           if (n) toast.success(`${n} Nachbesprechungs-TOP${n > 1 ? 's' : ''} automatisch hinzugefügt`);
         }
       } else {
-        await base44.entities.KalenderTermin.update(termin.id, form);
+        await base44.entities.KalenderTermin.update(termin.id, payload);
         // Push: Termin geändert (nur Ausschusssitzungen, Hintergrund)
         if (['Ausschusssitzung', 'Vorstandssitzung'].includes(form.terminart)) {
           base44.functions.invoke('sendNotification', {
@@ -71,7 +80,11 @@ export default function KalenderTerminModal({ termin, onClose, onSaved }) {
         }
       }
       onSaved();
-    } catch (e) { console.error('Error:', e); }
+    } catch (e) {
+      console.error('Termin speichern:', e);
+      const grund = e?.response?.data?.message || e?.response?.data?.detail || e?.message || 'Unbekannter Fehler';
+      toast.error('Termin konnte nicht gespeichert werden: ' + String(grund).slice(0, 160));
+    }
     setSaving(false);
   };
 

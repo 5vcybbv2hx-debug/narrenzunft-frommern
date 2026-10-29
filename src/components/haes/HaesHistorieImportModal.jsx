@@ -134,7 +134,7 @@ export default function HaesHistorieImportModal({ onClose, onImported }) {
                       <td className="px-2 py-1.5 font-mono text-primary">{r.haesnummer}</td>
                       <td className="px-2 py-1.5">{r.vorname}</td>
                       <td className="px-2 py-1.5 font-medium">{r.nachname}</td>
-                      <td className="px-2 py-1.5 text-muted-foreground">{r.von_datum}</td>
+                      <td className="px-2 py-1.5 text-muted-foreground">{fmtDatum(r.von_datum)}</td>
                       <td className="px-2 py-1.5 text-muted-foreground">{r.bis_datum || '–'}</td>
                       <td className="px-2 py-1.5 text-muted-foreground">{r.haesgruppe}</td>
                       <td className="px-2 py-1.5 text-muted-foreground truncate max-w-[80px]">{r.notizen}</td>

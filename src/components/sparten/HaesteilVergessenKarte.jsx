@@ -134,7 +134,7 @@ export default function HaesteilVergessenKarte({ gruppeId, alleMitglieder }) {
           <div className="max-h-40 overflow-y-auto space-y-1">
             {eintraege.slice(0, 8).map(e => (
               <div key={e.id} className="flex items-center gap-2 text-xs">
-                <span className="text-muted-foreground shrink-0 w-16">{e.datum}</span>
+                <span className="text-muted-foreground shrink-0 w-16">{fmtDatum(e.datum)}</span>
                 <span className="text-foreground min-w-0 truncate flex-1">{nameVon(e.mitglied_id)}: {e.teil}</span>
                 <button onClick={() => loeschen(e)} disabled={busy} className="p-1 rounded-lg text-muted-foreground hover:text-red-400 shrink-0" title="Löschen">
                   <Trash2 className="w-3 h-3" />

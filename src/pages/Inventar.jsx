@@ -431,7 +431,7 @@ export default function Inventar() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-foreground">{an.ausruestung_name}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {an.von_datum} → {an.bis_datum} · {tage} Tag(e)
+                    {fmtDatum(an.von_datum)} → {fmtDatum(an.bis_datum)} · {tage} Tag(e)
                   </p>
                 </div>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary text-white uppercase tracking-wide shrink-0">Neu</span>
@@ -449,7 +449,7 @@ export default function Inventar() {
 
               {entscheidung?.anfrage?.id === an.id ? (
                 <div className="mt-3 space-y-2">
-                  {entscheidung.typ === 'genehmigen' && kostet > 0 && (() => {
+                  {entscheidung.typ === 'genehmigen' && (() => {
                     const pIn = parseFloat(String(entscheidung.preisTag ?? '').replace(',', '.')) || 0;
                     const gesamtNeu = pIn * tage;
                     return (
@@ -518,7 +518,7 @@ export default function Inventar() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="text-xs font-semibold text-foreground">{an.ausruestung_name} · {an.name}</p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">{an.von_datum} → {an.bis_datum}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{fmtDatum(an.von_datum)} → {fmtDatum(an.bis_datum)}</p>
                       {an.antwort_notiz && <p className="text-[11px] text-muted-foreground mt-0.5 italic">{an.antwort_notiz}</p>}
                     </div>
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ${an.status === 'Genehmigt' ? 'bg-green-900/20 text-green-400 border border-green-700/30' : 'bg-secondary text-muted-foreground'}`}>
@@ -636,7 +636,7 @@ function AusleiheKarte({ ausleihe, ausruestung, ausleiherName, today, onClick, v
           </div>
           <div className="text-xs text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
             <Calendar size={13} className="inline" />
-            <span className="text-foreground">{ausleihe.von_datum} → {ausleihe.bis_datum}</span>
+            <span className="text-foreground">{fmtDatum(ausleihe.von_datum)} → {fmtDatum(ausleihe.bis_datum)}</span>
             {istUeberfaellig && (
               <span className="flex items-center gap-1 text-red-400 font-medium">
                 <AlertTriangle size={12} /> Überfällig!

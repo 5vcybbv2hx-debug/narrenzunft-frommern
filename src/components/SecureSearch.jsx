@@ -145,7 +145,7 @@ export default function SecureSearch({ initialQuery = '' }) {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-foreground truncate">{d.titel}</p>
-                    <p className="text-xs text-muted-foreground">{d.datum}</p>
+                    <p className="text-xs text-muted-foreground">{fmtDatum(d.datum)}</p>
                   </div>
                 </Link>
               ))}

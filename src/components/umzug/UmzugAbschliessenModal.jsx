@@ -53,7 +53,7 @@ export default function UmzugAbschliessenModal({ veranstaltung, onClose, onAbges
           <>
             <div className="bg-secondary/50 border border-border rounded-xl p-4 mb-4">
               <p className="text-sm font-semibold text-foreground mb-1">{veranstaltung.titel}</p>
-              <p className="text-xs text-muted-foreground">{veranstaltung.datum} · {veranstaltung.ort || 'Kein Ort'}</p>
+              <p className="text-xs text-muted-foreground">{fmtDatum(veranstaltung.datum)} · {veranstaltung.ort || 'Kein Ort'}</p>
             </div>
 
             {/* Vorschau-Statistik */}

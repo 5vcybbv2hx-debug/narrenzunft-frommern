@@ -86,7 +86,7 @@ export default function TeilzahlungModal({ auslage, onClose, onGeaendert }) {
           <div className="space-y-1 max-h-32 overflow-y-auto">
             {liste.map((z, i) => (
               <div key={i} className="flex items-center gap-2 text-xs bg-secondary/50 rounded-lg px-2.5 py-1.5">
-                <span className="text-muted-foreground shrink-0">{z.datum}</span>
+                <span className="text-muted-foreground shrink-0">{fmtDatum(z.datum)}</span>
                 <span className="text-foreground font-semibold">{Number(z.betrag).toFixed(2)} €</span>
                 {z.notiz && <span className="text-muted-foreground min-w-0 truncate flex-1">{z.notiz}</span>}
                 <button onClick={() => entfernen(i)} disabled={busy} className="p-1 rounded-lg text-muted-foreground hover:text-red-400 shrink-0" title="Entfernen"><Trash2 className="w-3 h-3" /></button>

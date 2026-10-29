@@ -224,7 +224,7 @@ export function ProtokollModal({ protokoll, prefill = {}, termine, mitglieder, a
                   setForm(p => ({ ...p, termin_id: v, titel: t ? t.titel : p.titel }));
                 }}
                 placeholder="–"
-                options={termine.map(t => ({ label: `${t.titel} (${t.datum})`, value: t.id }))}
+                options={termine.map(t => ({ label: `${t.titel} (${fmtDatum(t.datum)})`, value: t.id }))}
                 label="Sitzung" />
             </div>
           </div>
