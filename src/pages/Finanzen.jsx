@@ -11,8 +11,8 @@ import { kannKasseSehn, kannKasseBuchen } from '@/lib/roles';
 const euro = (v) => Number(v || 0).toFixed(2).replace('.', ',') + ' €';
 
 /**
- * Finanzbereich — Stufe 1: SEPA-Mandate und Lastschriftlauf.
- * Zugriff: Vorstand, Stellv., Kassierer, Admin (kannBankdatenSehn).
+ * Finanzbereich — Stufe 2: Kassenbuch, SEPA-Mandate und Lastschriftlauf.
+ * Zugriff: Vorstand, Stellv., Kassierer, Kassenprüfer (nur lesend), Admin.
  */
 export default function Finanzen() {
   const { user } = useAuth();
@@ -20,7 +20,7 @@ export default function Finanzen() {
   const darfBuchen = kannKasseBuchen(user);
   const istPruefer = darf && !darfBuchen;
 
-  const [tab, setTab] = useState('mandate');
+  const [tab, setTab] = useState('kasse');
   const [laden, setLaden] = useState(true);
   const [fehler, setFehler] = useState(null);
   const [daten, setDaten] = useState(null); // { konfiguration, zeilen, mit_mandat, ohne_mandat }
@@ -42,6 +42,8 @@ export default function Finanzen() {
   };
 
   const laden_ = async () => {
+    // Kassenprüfer haben keinen SEPA-Zugriff – das Kassenbuch lädt sich selbst
+    if (!darfBuchen) { setLaden(false); return; }
     setLaden(true);
     setFehler(null);
     try {
@@ -60,9 +62,9 @@ export default function Finanzen() {
 
   useEffect(() => { if (darf) laden_(); }, [darf]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (!darf) return;
+    if (!darf || !darfBuchen) return;
     base44.entities.Beitrag.filter({ jahr: Number(laufJahr) }).then((d) => setBeitraege(d || [])).catch(() => setBeitraege([]));
-  }, [laufJahr, darf]);
+  }, [laufJahr, darf, darfBuchen]);
 
   const zeilen = daten?.zeilen || [];
   const gefiltert = useMemo(() => zeilen.filter((z) => {
@@ -174,25 +176,27 @@ export default function Finanzen() {
         </button>
       </div>
 
-      {/* Kennzahlen */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
-        <div className="bg-card border border-border rounded-xl p-3">
-          <p className="text-[11px] text-muted-foreground">Mandate vorhanden</p>
-          <p className="text-xl font-semibold text-foreground">{daten?.mit_mandat || 0}</p>
+      {/* Kennzahlen (Kassenprüfer sehen nur das Kassenbuch) */}
+      {!istPruefer && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+          <div className="bg-card border border-border rounded-xl p-3">
+            <p className="text-[11px] text-muted-foreground">Mandate vorhanden</p>
+            <p className="text-xl font-semibold text-foreground">{daten?.mit_mandat || 0}</p>
+          </div>
+          <div className="bg-card border border-border rounded-xl p-3">
+            <p className="text-[11px] text-muted-foreground">Ohne Mandat</p>
+            <p className="text-xl font-semibold text-foreground">{daten?.ohne_mandat || 0}</p>
+          </div>
+          <div className="bg-card border border-border rounded-xl p-3">
+            <p className="text-[11px] text-muted-foreground">Mitglieder gesamt</p>
+            <p className="text-xl font-semibold text-foreground">{daten?.anzahl || 0}</p>
+          </div>
+          <div className="bg-card border border-border rounded-xl p-3">
+            <p className="text-[11px] text-muted-foreground">Offene Beiträge {laufJahr}</p>
+            <p className="text-xl font-semibold text-primary">{euro(offene.reduce((s, o) => s + Number(o.betrag || 0), 0))}</p>
+          </div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-3">
-          <p className="text-[11px] text-muted-foreground">Ohne Mandat</p>
-          <p className="text-xl font-semibold text-foreground">{daten?.ohne_mandat || 0}</p>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-3">
-          <p className="text-[11px] text-muted-foreground">Mitglieder gesamt</p>
-          <p className="text-xl font-semibold text-foreground">{daten?.anzahl || 0}</p>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-3">
-          <p className="text-[11px] text-muted-foreground">Offene Beiträge {laufJahr}</p>
-          <p className="text-xl font-semibold text-primary">{euro(offene.reduce((s, o) => s + Number(o.betrag || 0), 0))}</p>
-        </div>
-      </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-1.5 mb-4 overflow-x-auto scrollbar-hide">

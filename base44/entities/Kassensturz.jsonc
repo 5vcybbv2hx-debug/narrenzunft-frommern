@@ -1,19 +1,117 @@
 {
   "name": "Kassensturz",
+  "type": "object",
   "properties": {
-    "datum": { "type": "string", "format": "date" },
-    "konto": { "type": "string", "enum": ["Barkasse", "Bank"], "default": "Barkasse" },
-    "soll": { "type": "number", "description": "Rechnerischer Bestand laut Kassenbuch" },
-    "gezaehlt": { "type": "number", "description": "Tatsächlich gezählter Bestand" },
-    "differenz": { "type": "number" },
-    "notiz": { "type": "string" },
-    "gezaehlt_von": { "type": "string" },
-    "pruefer": { "type": "string", "description": "Anwesende Kassenprüfer" }
+    "datum": {
+      "type": "string",
+      "format": "date"
+    },
+    "konto": {
+      "type": "string",
+      "enum": [
+        "Barkasse",
+        "Bank"
+      ],
+      "default": "Barkasse"
+    },
+    "soll": {
+      "type": "number",
+      "description": "Rechnerischer Bestand laut Kassenbuch"
+    },
+    "gezaehlt": {
+      "type": "number",
+      "description": "Tats\u00e4chlich gez\u00e4hlter Bestand"
+    },
+    "differenz": {
+      "type": "number"
+    },
+    "notiz": {
+      "type": "string"
+    },
+    "gezaehlt_von": {
+      "type": "string"
+    },
+    "pruefer": {
+      "type": "string",
+      "description": "Anwesende Kassenpr\u00fcfer"
+    }
   },
   "rls": {
-    "create": { "$or": [{ "user_condition": { "role": "admin" } }, { "user_condition": { "role": "vorstand" } }, { "user_condition": { "role": "stellv_vorstand" } }, { "user_condition": { "role": "kassierer" } }] },
-    "read": { "$or": [{ "user_condition": { "role": "admin" } }, { "user_condition": { "role": "vorstand" } }, { "user_condition": { "role": "stellv_vorstand" } }, { "user_condition": { "role": "kassierer" } }, { "user_condition": { "role": "kassenpruefer" } }] },
-    "update": { "$or": [{ "user_condition": { "role": "admin" } }, { "user_condition": { "role": "kassierer" } }] },
-    "delete": { "$or": [{ "user_condition": { "role": "admin" } }] }
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "kassierer"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "stellv_vorstand"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "kassierer"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "kassenpruefer"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "kassierer"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
   }
 }

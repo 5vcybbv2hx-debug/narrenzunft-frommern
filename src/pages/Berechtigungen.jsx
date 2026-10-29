@@ -9,6 +9,7 @@ const ROLLEN_OPTIONEN = [
   { value: 'mitglied',        label: 'Mitglied',        desc: 'Grundzugang',          Icon: User },
   { value: 'spartenleiter',   label: 'Spartenleiter',   desc: 'Dienste & Check-In',    Icon: ClipboardList },
   { value: 'kassierer',       label: 'Kassierer',       desc: 'Finanzen & Beiträge',   Icon: Wallet },
+  { value: 'kassenpruefer',   label: 'Kassenprüfer',    desc: 'Kassenbuch lesen',      Icon: Shield },
   { value: 'stellv_vorstand', label: 'Stv. Vorstand',   desc: 'Vollzugriff (ohne Admin)', Icon: Shield },
   { value: 'vorstand',        label: 'Vorstand',        desc: 'Vollzugriff',           Icon: Crown },
 ];

@@ -119,8 +119,10 @@ export default async function (req) {
       const konto = body.konto === 'Bank' ? 'Bank' : 'Barkasse';
       const gezaehlt = betrag(body.gezaehlt);
       const buchungen = await ladeAlle('Kassenbuchung', '-datum');
+      // Storno läuft als Gegenbuchung: Original und Gegenbuchung zählen beide,
+      // damit der Bestand nach einem Storno wieder stimmt.
       const soll = buchungen
-        .filter((b: any) => !b.storniert && (b.konto || 'Barkasse') === konto)
+        .filter((b: any) => (b.konto || 'Barkasse') === konto)
         .reduce((s: number, b: any) => s + (b.art === 'Ausgabe' ? -Number(b.betrag || 0) : Number(b.betrag || 0)), 0);
       const differenz = Number((gezaehlt - soll).toFixed(2));
       const sturz = await S.Kassensturz.create({
@@ -142,7 +144,8 @@ export default async function (req) {
         ladeAlle('Kassenbuchung', '-datum'),
         ladeAlle('Kassensturz', '-datum'),
       ]);
-      const aktiv = buchungen.filter((b: any) => !b.storniert);
+      // Stornierte Buchungen bleiben im Bestand stehen – die Gegenbuchung neutralisiert sie.
+      const aktiv = buchungen;
       const imJahr = aktiv.filter((b: any) => String(b.datum || '').startsWith(String(jahr)));
       const summe = (liste: any[], art: string) => Number(liste.filter((b) => b.art === art).reduce((s, b) => s + Number(b.betrag || 0), 0).toFixed(2));
       const bestand = (konto: string) => Number(aktiv
