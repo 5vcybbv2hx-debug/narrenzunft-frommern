@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import DateSelect from '../components/ui/DateSelect';
 import { useParams, useNavigate, useLocation, Link, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
+import { waEinladungsLink } from '@/lib/whatsappEinladung';
 import { useAuth } from '@/lib/AuthContext';
 import {
   ArrowLeft, Edit, Save, X, Phone, Mail, MapPin,
@@ -1099,7 +1100,20 @@ export default function MitgliedDetail() {
                   {inviteSent ? <><Check size={14} /> Einladung gesendet!</> : inviting ? 'Sende…' : mitglied.einladung_gesendet_am ? 'Einladung erneut senden' : `Einladung senden an ${mitglied.email}`}
                 </button>
               ) : (
-                <p className="text-xs text-muted-foreground">Keine E-Mail-Adresse hinterlegt – Einladung nicht möglich.</p>
+                <p className="text-xs text-muted-foreground">Ohne E-Mail geht keine Mail-Einladung – nutze unten den WhatsApp-Weg.</p>
+              )}
+              {waEinladungsLink({
+                telefon: mitglied.telefon,
+                vorname: mitglied.vorname,
+                email: mitglied.email,
+              }) && (
+                <a
+                  href={waEinladungsLink({ telefon: mitglied.telefon, vorname: mitglied.vorname, email: mitglied.email })}
+                  target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#25D366]/15 border border-[#25D366]/40 text-[#25D366] text-sm font-medium hover:bg-[#25D366]/25 transition-colors w-full justify-center"
+                >
+                  <MessageCircle size={14} /> Einladung per WhatsApp an {mitglied.telefon}
+                </a>
               )}
             </div>
           )}

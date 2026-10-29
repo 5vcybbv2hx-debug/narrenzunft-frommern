@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, Send, Mail, AlertCircle, Check, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { waEinladungsLink } from '@/lib/whatsappEinladung';
 
 /**
  * Bulk-Einladung für den Launch (Admin-only).
@@ -32,6 +33,7 @@ export default function BulkEinladenModal({ onClose, onDone }) {
 
   const [showDup, setShowDup] = useState(false);
   const [showInvalid, setShowInvalid] = useState(false);
+  const [showOhneEmail, setShowOhneEmail] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,12 +56,12 @@ export default function BulkEinladenModal({ onClose, onDone }) {
           if (e) emailCounts[e] = (emailCounts[e] || 0) + 1;
         }
 
-        const einladbar = [], dubletten = [], ungueltig = [];
-        let ohneEmail = 0, eingeladen = 0, registriert = 0;
+        const einladbar = [], dubletten = [], ungueltig = [], ohneEmailListe = [];
+        let eingeladen = 0, registriert = 0;
 
         for (const m of aktiv) {
           const e = (m.email || '').trim();
-          if (!e) { ohneEmail += 1; continue; }
+          if (!e) { ohneEmailListe.push(m); continue; }
           if (m.user_id || userEmails.has(e.toLowerCase())) { registriert += 1; continue; }
           if (eingeladenIds.has(m.id)) { eingeladen += 1; continue; }
           if (!EMAIL_RE.test(e)) { ungueltig.push(m); continue; }
@@ -68,7 +70,7 @@ export default function BulkEinladenModal({ onClose, onDone }) {
         }
 
         if (!cancelled) {
-          setListe({ einladbar, dubletten, ungueltig, ohneEmail, eingeladen, registriert });
+          setListe({ einladbar, dubletten, ungueltig, ohneEmailListe, eingeladen, registriert });
           setLoading(false);
         }
       } catch (e) {
@@ -177,8 +179,40 @@ export default function BulkEinladenModal({ onClose, onDone }) {
             <div className="grid gap-2">
               <Stat icon={Send} label="Einladbar – werden jetzt eingeladen" value={liste.einladbar.length} tone="primary" />
               <Stat icon={Check} label="Bereits eingeladen oder registriert" value={liste.eingeladen + liste.registriert} tone="green" />
-              <Stat icon={Mail} label="Ohne E-Mail – noch keine Einladung möglich" value={liste.ohneEmail} tone="muted" />
+              <Stat icon={Mail} label="Ohne E-Mail – per WhatsApp einladen" value={liste.ohneEmailListe.length} tone="muted" />
             </div>
+
+            {liste.ohneEmailListe.length > 0 && (
+              <div className="rounded-lg border border-border bg-secondary/40">
+                <button onClick={() => setShowOhneEmail(!showOhneEmail)} className="w-full flex items-center justify-between px-3 py-2.5 text-left">
+                  <span className="text-sm font-medium text-foreground">Ohne E-Mail ({liste.ohneEmailListe.length}) – per WhatsApp einladen</span>
+                  {showOhneEmail ? <ChevronUp size={14} className="text-muted-foreground" /> : <ChevronDown size={14} className="text-muted-foreground" />}
+                </button>
+                {showOhneEmail && (
+                  <div className="px-3 pb-3 space-y-1.5">
+                    <p className="text-xs text-muted-foreground">
+                      Der Knopf öffnet WhatsApp mit fertiger Einladung an die hinterlegte Handynummer – gesendet wird aus deinem eigenen WhatsApp. Ohne gültige Nummer bleibt nur, eine E-Mail im Profil zu erfassen.
+                    </p>
+                    {(liste.ohneEmailListe || []).map(m => {
+                      const wa = waEinladungsLink({ telefon: m.telefon, vorname: m.vorname, email: '' });
+                      return (
+                        <div key={m.id} className="flex items-center justify-between gap-2 text-xs">
+                          <span className="text-foreground truncate">{m.vorname} {m.nachname}</span>
+                          {wa ? (
+                            <a href={wa} target="_blank" rel="noopener noreferrer"
+                              className="shrink-0 px-2 py-1 rounded-md bg-[#25D366]/15 border border-[#25D366]/40 text-[#25D366] font-medium hover:bg-[#25D366]/25 transition-colors">
+                              WhatsApp
+                            </a>
+                          ) : (
+                            <span className="shrink-0 text-muted-foreground">keine Nummer</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
 
             {groupBox(
               'E-Mail-Dubletten (übersprungen)',
