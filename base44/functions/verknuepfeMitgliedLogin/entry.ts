@@ -72,6 +72,9 @@ Deno.serve(async (req) => {
 
     if (!mitglied && !problem && user.email) {
       // Nur eindeutige E-Mail, inklusive Groß-/Kleinschreibvarianten (case-insensitive).
+      // WICHTIG: list({limit}) liefert in SDK 0.8.25 nur die Standardseite —
+      // dadurch schlug die E-Mail-Zuordnung für alle Profile weiter hinten fehl.
+      // Deshalb echtes Blättern über ladeAlleMitglieder (list(sort, limit, skip)).
       const alle = await ladeAlleMitglieder(S);
       const norm = String(user.email).trim().toLowerCase();
       const matches = alle.filter(m => m.email && m.email.trim().toLowerCase() === norm);

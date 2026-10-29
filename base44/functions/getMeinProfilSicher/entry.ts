@@ -26,6 +26,8 @@ Deno.serve(async (req) => {
 
     // 3. Versuch: case-insensitive Email (Auth-Provider → lowercase, DB → mixed case)
     if (!mitglied && user.email) {
+      // Echtes Blättern über ladeAlleMitglieder (list({limit}) liefert in SDK 0.8.25
+      // nur die Standardseite – Profile weiter hinten wurden sonst nicht gefunden).
       const all = await ladeAlleMitglieder(base44.asServiceRole);
       const norm = String(user.email).trim().toLowerCase();
       mitglied = all.find(m => m.email && m.email.trim().toLowerCase() === norm);
