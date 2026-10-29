@@ -81,6 +81,10 @@
       "default": false,
       "description": "true = Gegenstand kann extern \u00fcber QR-Seite angefragt werden"
     },
+    "verleih_pauschalpreis": {
+      "type": "number",
+      "description": "Optionaler Pauschalpreis pro Veranstaltung/Zeitraum (Alternative zum Tagespreis)"
+    },
     "verleih_preis": {
       "type": "number",
       "default": 0,

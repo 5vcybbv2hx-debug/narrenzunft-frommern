@@ -61,7 +61,9 @@ Deno.serve(async (req) => {
     const tage = al.von_datum && al.bis_datum
       ? Math.max(1, Math.round((new Date(al.bis_datum) - new Date(al.von_datum)) / 86400000) + 1)
       : 1;
-    const gesamt = preisProTag * tage;
+    // Pauschalpreis pro Veranstaltung: Preis gilt für den ganzen Zeitraum
+    const istPauschal = al?.preis_modus === 'veranstaltung';
+    const gesamt = istPauschal ? preisProTag : preisProTag * tage;
 
     const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     const eur = (v) => Number(v || 0).toFixed(2).replace('.', ',') + ' €';
@@ -79,7 +81,7 @@ Deno.serve(async (req) => {
             </p>
             <table style="width:100%;color:#94a3b8;font-size:13px;border-collapse:collapse;">
               <tr><td style="padding:6px 0;color:#6b7280;">Zeitraum</td><td style="padding:6px 0;color:#e2e8f0;text-align:right;">${esc(al.von_datum)} → ${esc(al.bis_datum)}</td></tr>
-              <tr><td style="padding:6px 0;color:#6b7280;">Mietpreis</td><td style="padding:6px 0;color:#e2e8f0;text-align:right;">${eur(preisProTag)} / Tag · ${tage} Tag${tage > 1 ? 'e' : ''} = <strong style="color:#EA2525;">${eur(gesamt)}</strong></td></tr>
+              <tr><td style="padding:6px 0;color:#6b7280;">Mietpreis</td><td style="padding:6px 0;color:#e2e8f0;text-align:right;">${istPauschal ? `${eur(preisProTag)} pauschal (Zeitraum)` : `${eur(preisProTag)} / Tag · ${tage} Tag${tage > 1 ? 'e' : ''}`} = <strong style="color:#EA2525;">${eur(gesamt)}</strong></td></tr>
               ${kaution > 0 ? `<tr><td style="padding:6px 0;color:#6b7280;">Kaution</td><td style="padding:6px 0;color:#e2e8f0;text-align:right;">${eur(kaution)}</td></tr>` : ''}
               ${al.zweck ? `<tr><td style="padding:6px 0;color:#6b7280;">Zweck</td><td style="padding:6px 0;color:#e2e8f0;text-align:right;">${esc(al.zweck)}</td></tr>` : ''}
               ${notiz ? `<tr><td style="padding:6px 0;color:#6b7280;">Notiz</td><td style="padding:6px 0;color:#e2e8f0;text-align:right;">${esc(notiz)}</td></tr>` : ''}

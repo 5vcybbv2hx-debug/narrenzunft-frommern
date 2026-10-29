@@ -4,9 +4,11 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { istVerleihZustaendig } from '../lib/verleih';
 import { kannInventarSehn, isAdmin } from '@/lib/roles';
-import { Package, Plus, Lock, Calendar, Clock, Globe, User, AlertCircle, AlertTriangle, Inbox, QrCode, Check, X, Phone, Mail, Loader2 } from 'lucide-react';
+import { Package, Plus, Lock, Calendar, Clock, Globe, User, AlertCircle, AlertTriangle, Inbox, QrCode, Check, X, Phone, Mail, Loader2, FileText } from 'lucide-react';
 import { cachedFetch, clearEntityCache } from '../lib/entityCache';
 import { fmtDatum } from '@/lib/datum';
+import RechnungModal from '@/components/inventar/RechnungModal';
+import { betragVon } from '@/lib/rechnung';
 import AusruestungKarte from '@/components/inventar/AusruestungKarte';
 import AusruestungForm from '@/components/inventar/AusruestungForm';
 import AusleiheForm from '@/components/inventar/AusleiheForm';
@@ -20,6 +22,7 @@ export default function Inventar() {
 
   const [ausruestungen, setAusruestungen] = useState([]);
   const [ausleihen, setAusleihen] = useState([]);
+  const [rechnungFuer, setRechnungFuer] = useState(null); // Ausleihe, für die eine Rechnung entsteht
   const [mitglieder, setMitglieder] = useState([]);
   const [externePersonen, setExternePersonen] = useState([]);
   const [meinMitglied, setMeinMitglied] = useState(null);
@@ -100,6 +103,20 @@ export default function Inventar() {
         al.von_datum <= today && al.bis_datum >= today)
       .reduce((sum, al) => sum + (al.anzahl || 1), 0);
     return { verfuegbar: Math.max(0, bestand - heuteAusgeliehen), bestand };
+  };
+
+  // Empfängeranschrift für eine Rechnung (extern oder Mitglied)
+  const empfaengerFuer = (al) => {
+    if (!al) return null;
+    if (al.ausleiher_typ === 'extern') {
+      const ep = externePersonen.find(p => p.id === al.ausleiher_extern_id);
+      return ep ? { name: ep.name, strasse: ep.strasse || '', plz: ep.plz || '', ort: ep.ort || '', email: ep.email || '' } : null;
+    }
+    const m = mitglieder.find(x => x.id === al.ausleiher_mitglied_id);
+    return m ? {
+      name: `${m.vorname || ''} ${m.nachname || ''}`.trim(),
+      strasse: m.strasse || '', plz: m.plz || '', ort: m.ort || '', email: m.email || '',
+    } : null;
   };
 
   const getMitgliedName = (id) => {
@@ -232,7 +249,9 @@ export default function Inventar() {
       const preisTag = parseFloat(String(entscheidung.preisTag ?? '').replace(',', '.'));
       const ausr = ausruestungen.find(a => a.id === an.ausruestung_id);
       const standardPreis = Number(ausr?.verleih_preis ?? 0);
-      const vereinbarterPreis = Number.isFinite(preisTag) && preisTag >= 0 && preisTag !== standardPreis ? preisTag : undefined;
+      const istPauschal = (entscheidung.preisModus || 'tag') === 'veranstaltung';
+      const vereinbarterPreis = Number.isFinite(preisTag) && preisTag >= 0
+        && (istPauschal || preisTag !== standardPreis) ? preisTag : undefined;
       const neuAusleihe = await base44.entities.Ausleihe.create({
         ausruestung_id: an.ausruestung_id,
         ausleiher_typ: 'extern',
@@ -243,6 +262,7 @@ export default function Inventar() {
         status: 'Reserviert',
         anzahl: 1,
         verantwortlicher_id: meinMitglied?.id || '',
+        preis_modus: (entscheidung.preisModus || 'tag') === 'veranstaltung' ? 'veranstaltung' : 'tag',
         ...(vereinbarterPreis !== undefined && { vereinbarter_preis: vereinbarterPreis }),
       });
       // Anfrage abschließen
@@ -445,6 +465,9 @@ export default function Inventar() {
                   {an.email && <a href={`mailto:${an.email}`} className="flex items-center gap-1 hover:text-primary truncate"><Mail size={11} /> {an.email}</a>}
                 </div>
                 {an.zweck && <p className="text-muted-foreground"><span className="text-muted-foreground">Zweck:</span> {an.zweck}</p>}
+                {Number(ausr?.verleih_pauschalpreis) > 0 && (
+                  <p className="text-muted-foreground">Pauschal pro Veranstaltung: <span className="text-primary font-semibold">{Number(ausr.verleih_pauschalpreis).toFixed(2).replace('.', ',')} €</span></p>
+                )}
                 {kostet > 0 && <p className="text-primary font-semibold">≈ {Number(kostet).toFixed(2).replace('.', ',')} € Miete{ausr?.verleih_kaution > 0 ? ` + ${Number(ausr.verleih_kaution).toFixed(2).replace('.', ',')} € Kaution` : ''}</p>}
               </div>
 
@@ -452,11 +475,25 @@ export default function Inventar() {
                 <div className="mt-3 space-y-2">
                   {entscheidung.typ === 'genehmigen' && (() => {
                     const pIn = parseFloat(String(entscheidung.preisTag ?? '').replace(',', '.')) || 0;
-                    const gesamtNeu = pIn * tage;
+                    const istPauschal = (entscheidung.preisModus || 'tag') === 'veranstaltung';
+                    const gesamtNeu = istPauschal ? pIn : pIn * tage;
                     return (
                       <div className="px-3 py-2 rounded-lg bg-secondary border border-border">
                         <div className="flex items-center justify-between gap-2">
-                          <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Tagespreis anpassbar</label>
+                          <div className="flex items-center gap-1.5 mb-1.5">
+                            {[['tag', 'pro Tag'], ['veranstaltung', 'pro Veranstaltung']].map(([modus, label]) => (
+                              <button key={modus} type="button"
+                                onClick={() => setEntscheidung(p => ({ ...p, preisModus: modus }))}
+                                className={`px-2 py-1 rounded-md text-[11px] font-medium border transition-colors ${
+                                  (entscheidung.preisModus || 'tag') === modus
+                                    ? 'bg-primary text-white border-primary'
+                                    : 'bg-secondary text-muted-foreground border-border hover:text-foreground'
+                                }`}>
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                          <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">{(entscheidung.preisModus || 'tag') === 'veranstaltung' ? 'Pauschalpreis (ganzer Zeitraum)' : 'Tagespreis anpassbar'}</label>
                           <div className="flex items-center gap-1.5">
                             <input
                               type="number" min="0" step="0.5" inputMode="decimal"
@@ -464,7 +501,7 @@ export default function Inventar() {
                               onChange={(e) => setEntscheidung(p => ({ ...p, preisTag: e.target.value }))}
                               className="w-20 px-2 py-1 rounded-md bg-neutral-900 border border-border text-xs text-foreground text-right focus:outline-none focus:border-primary"
                             />
-                            <span className="text-xs text-muted-foreground">€ / Tag</span>
+                            <span className="text-xs text-muted-foreground">{istPauschal ? '€ pauschal' : '€ / Tag'}</span>
                           </div>
                         </div>
                         <p className="text-[11px] mt-1">
@@ -497,7 +534,13 @@ export default function Inventar() {
                 </div>
               ) : (
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  <button onClick={() => setEntscheidung({ anfrage: an, typ: 'genehmigen', notiz: '', preisTag: ausr?.verleih_preis != null ? String(ausr.verleih_preis) : '0' })} disabled={!istZustaendig}
+                  <button onClick={() => setEntscheidung({
+                      anfrage: an, typ: 'genehmigen', notiz: '',
+                      preisModus: Number(ausr?.verleih_pauschalpreis) > 0 ? 'veranstaltung' : 'tag',
+                      preisTag: Number(ausr?.verleih_pauschalpreis) > 0
+                        ? String(ausr.verleih_pauschalpreis)
+                        : (ausr?.verleih_preis != null ? String(ausr.verleih_preis) : '0'),
+                    })} disabled={!istZustaendig}
                     className="py-2.5 min-h-[44px] rounded-lg bg-green-900/30 border border-green-700/40 text-green-400 text-xs font-semibold hover:bg-green-900/50 transition-colors disabled:opacity-40 flex items-center justify-center gap-1.5">
                     <Check size={14} /> Genehmigen
                   </button>
@@ -545,14 +588,23 @@ export default function Inventar() {
           {aktuelleAusleihen.map(al => {
             const ausruestung = ausruestungen.find(a => a.id === al.ausruestung_id);
             return (
-              <AusleiheKarte
-                key={al.id}
-                ausleihe={al}
-                ausruestung={ausruestung}
-                ausleiherName={getAusleiherName(al)}
-                today={today}
-                onClick={() => handleAusleiheEdit(al)}
-              />
+              <div key={al.id} className="space-y-1.5">
+                <AusleiheKarte
+                  ausleihe={al}
+                  ausruestung={ausruestung}
+                  ausleiherName={getAusleiherName(al)}
+                  today={today}
+                  onClick={() => handleAusleiheEdit(al)}
+                />
+                {admin && al.status !== 'Abgesagt' && (
+                  <button onClick={() => setRechnungFuer(al)}
+                    className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-secondary border border-border text-[11px] font-medium text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors">
+                    <FileText size={12} />
+                    {al.rechnungsnummer ? `Rechnung ${al.rechnungsnummer}` : 'Rechnung erstellen'}
+                    {` · ${betragVon(al, ausruestung).gesamt.toFixed(2).replace('.', ',')} €`}
+                  </button>
+                )}
+              </div>
             );
           })}
         </div>
@@ -570,15 +622,24 @@ export default function Inventar() {
           {vergangeneAusleihen.map(al => {
             const ausruestung = ausruestungen.find(a => a.id === al.ausruestung_id);
             return (
-              <AusleiheKarte
-                key={al.id}
-                ausleihe={al}
-                ausruestung={ausruestung}
-                ausleiherName={getAusleiherName(al)}
-                today={today}
-                onClick={() => handleAusleiheEdit(al)}
-                vergangen
-              />
+              <div key={al.id} className="space-y-1.5">
+                <AusleiheKarte
+                  ausleihe={al}
+                  ausruestung={ausruestung}
+                  ausleiherName={getAusleiherName(al)}
+                  today={today}
+                  onClick={() => handleAusleiheEdit(al)}
+                  vergangen
+                />
+                {admin && al.status !== 'Abgesagt' && (
+                  <button onClick={() => setRechnungFuer(al)}
+                    className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-secondary border border-border text-[11px] font-medium text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors">
+                    <FileText size={12} />
+                    {al.rechnungsnummer ? `Rechnung ${al.rechnungsnummer}` : 'Rechnung erstellen'}
+                    {` · ${betragVon(al, ausruestung).gesamt.toFixed(2).replace('.', ',')} €`}
+                  </button>
+                )}
+              </div>
             );
           })}
         </div>
@@ -611,6 +672,16 @@ export default function Inventar() {
 
       {qrAusruestung && (
         <VerleihQrModal ausruestung={qrAusruestung} onClose={() => setQrAusruestung(null)} />
+      )}
+
+      {rechnungFuer && (
+        <RechnungModal
+          ausleihe={rechnungFuer}
+          ausruestung={ausruestungen.find(a => a.id === rechnungFuer.ausruestung_id)}
+          empfaenger={empfaengerFuer(rechnungFuer)}
+          onClose={() => setRechnungFuer(null)}
+          onGespeichert={(patch) => setAusleihen(prev => prev.map(a => a.id === patch.id ? { ...a, ...patch } : a))}
+        />
       )}
     </div>
   );
