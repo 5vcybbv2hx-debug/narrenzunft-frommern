@@ -25,7 +25,14 @@ Deno.serve(async (req) => {
 
     // 3. Versuch: case-insensitive Email (Auth-Provider → lowercase, DB → mixed case)
     if (!mitglied && user.email) {
-      const all = await base44.asServiceRole.entities.Mitglied.list({ limit: 500 });
+      // Echtes Blättern (list({limit}) liefert in SDK 0.8.25 nur die Standardseite)
+      const all = [];
+      for (let skip = 0; skip < 5000; skip += 500) {
+        const seite = await base44.asServiceRole.entities.Mitglied.list('id', 500, skip).catch(() => []);
+        if (!Array.isArray(seite) || seite.length === 0) break;
+        all.push(...seite);
+        if (seite.length < 500) break;
+      }
       mitglied = all.find(m => m.email && m.email.toLowerCase() === user.email.toLowerCase());
     }
 

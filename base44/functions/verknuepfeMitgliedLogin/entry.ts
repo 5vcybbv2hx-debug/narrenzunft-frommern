@@ -71,7 +71,16 @@ Deno.serve(async (req) => {
 
     if (!mitglied && !problem && user.email) {
       // Nur eindeutige E-Mail, inklusive Groß-/Kleinschreibvarianten (case-insensitive).
-      const alle = await S.entities.Mitglied.list({ limit: 500 });
+      // WICHTIG: list({limit}) liefert in SDK 0.8.25 nur die Standardseite (50 Profile) —
+      // dadurch schlug die E-Mail-Zuordnung für alle Profile weiter hinten fehl.
+      // Deshalb echtes Blättern über die positionale Signatur list(sort, limit, skip).
+      const alle = [];
+      for (let skip = 0; skip < 5000; skip += 500) {
+        const seite = await S.entities.Mitglied.list('id', 500, skip).catch(() => []);
+        if (!Array.isArray(seite) || seite.length === 0) break;
+        alle.push(...seite);
+        if (seite.length < 500) break;
+      }
       if (alle.length < 500) {
         const norm = String(user.email).trim().toLowerCase();
         const matches = alle.filter(m => m.email && m.email.trim().toLowerCase() === norm);
