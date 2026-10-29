@@ -1,5 +1,6 @@
 {
   "name": "MitgliedBankverbindung",
+  "type": "object",
   "properties": {
     "mitglied_id": {
       "type": "string",
@@ -27,6 +28,9 @@
       "type": "string"
     }
   },
+  "required": [
+    "mitglied_id"
+  ],
   "rls": {
     "create": {
       "$or": [

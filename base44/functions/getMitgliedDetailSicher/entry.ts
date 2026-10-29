@@ -93,8 +93,10 @@ Deno.serve(async (req) => {
       mitgliedData.ort = zielMitglied.ort;
       mitgliedData.notfallkontakt_name = zielMitglied.notfallkontakt_name;
       mitgliedData.notfallkontakt_telefon = zielMitglied.notfallkontakt_telefon;
-      // Bankverbindung/SEPA: nur Vorstand, Stellv., Kassierer, Admin — aus der
-      // geschützten Entity MitgliedBankverbindung (Fallback: alte Mitglied-Felder).
+      // Bankverbindung/SEPA: ausschließlich Vorstand, Stellv., Kassierer, Admin —
+      // gelesen aus der geschützten Entity MitgliedBankverbindung (Fallback: alte
+      // Mitglied-Felder, bis die Migration gelaufen ist). Eigenes Profil und
+      // Elternansicht erhalten bewusst keine Bankdaten.
       const BANK_ROLLEN = ['admin', 'vorstand', 'stellv_vorstand', 'kassierer'];
       if (BANK_ROLLEN.includes(user.role)) {
         let bank = null;
