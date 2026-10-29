@@ -163,7 +163,7 @@ export default function RechnungModal({ ausleihe, ausruestung, empfaenger, onClo
                 ['firma', 'Verein'], ['strasse', 'Straße'], ['plz', 'PLZ'], ['ort', 'Ort'],
                 ['steuernummer', 'Steuernummer'], ['ust_id', 'USt-IdNr.'], ['iban', 'IBAN'], ['bic', 'BIC'],
                 ['bank', 'Bank'], ['vertreten_durch', 'Vertreten durch'], ['email', 'E-Mail'], ['telefon', 'Telefon'],
-                ['registergericht', 'Registergericht'], ['registersnummer', 'Registernummer'], ['zahlungsziel_tage', 'Zahlungsziel (Tage)'],
+                ['registergericht', 'Registergericht'], ['registernummer', 'Registernummer'], ['zahlungsziel_tage', 'Zahlungsziel (Tage)'],
               ].map(([feld, label]) => (
                 <div key={feld} className="grid grid-cols-[110px_1fr] items-center gap-2">
                   <label className="text-[11px] text-muted-foreground">{label}</label>

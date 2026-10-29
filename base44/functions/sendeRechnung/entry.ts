@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 
 /**
  * Verschickt eine bereits erzeugte Rechnungs-PDF (Upload-URL) per E-Mail

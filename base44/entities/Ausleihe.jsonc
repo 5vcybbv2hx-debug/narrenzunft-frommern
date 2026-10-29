@@ -60,7 +60,7 @@
     },
     "preis_modus": {
       "type": "string",
-      "description": "Abrechnung: 'tag' = Preis pro Tag × Tage, 'veranstaltung' = Pauschalpreis für den Zeitraum"
+      "description": "Abrechnung: 'tag' = Preis pro Tag \u00d7 Tage, 'veranstaltung' = Pauschalpreis f\u00fcr den Zeitraum"
     },
     "rechnungsnummer": {
       "type": "string",
