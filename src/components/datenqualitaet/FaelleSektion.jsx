@@ -277,7 +277,7 @@ export default function FaelleSektion({ onOpenCountChange }) {
                   >
                     <UserPlus size={14} className="text-primary shrink-0" />
                     <span className="flex-1">{m.vorname} {m.nachname}</span>
-                    <span className="text-xs text-muted-foreground">{alterVon(m.geburtsdatum) !== '?' ? `${alterVon(m.geburtsdatum)}` : ''}</span>
+                    <span className="text-xs text-muted-foreground">{alterVon(m.geburtsdatum) !== '?' ? `${alterVon(m.geburtsdatum)} J.` : ''}</span>
                   </button>
                 ))}
               </div>
