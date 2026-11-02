@@ -4,13 +4,14 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { istVerleihZustaendig } from '../lib/verleih';
 import { kannInventarSehn, isAdmin } from '@/lib/roles';
-import { Package, Plus, Lock, Calendar, Clock, Globe, User, AlertCircle, AlertTriangle, Inbox, QrCode, Check, X, Phone, Mail, Loader2, FileText } from 'lucide-react';
+import { Package, Plus, Lock, Calendar, Clock, Globe, User, AlertCircle, AlertTriangle, Inbox, QrCode, Check, X, Phone, Mail, Loader2, FileText, Users } from 'lucide-react';
 import { cachedFetch, clearEntityCache } from '../lib/entityCache';
 import { fmtDatum } from '@/lib/datum';
 import RechnungModal from '@/components/inventar/RechnungModal';
 import { betragVon } from '@/lib/rechnung';
 import AusruestungKarte from '@/components/inventar/AusruestungKarte';
 import AusruestungForm from '@/components/inventar/AusruestungForm';
+import VerleihZustaendigeModal from '@/components/inventar/VerleihZustaendigeModal';
 import AusleiheForm from '@/components/inventar/AusleiheForm';
 import { toast } from 'sonner';
 import VerleihQrModal from '@/components/inventar/VerleihQrModal';
@@ -34,6 +35,7 @@ export default function Inventar() {
   const initialTab = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(TAB_IDS.includes(initialTab) ? initialTab : 'uebersicht');
   const [showAusruestungForm, setShowAusruestungForm] = useState(false);
+  const [showZustaendige, setShowZustaendige] = useState(false);
   const [editAusruestung, setEditAusruestung] = useState(null);
   const [showAusleiheForm, setShowAusleiheForm] = useState(false);
   const [selectedAusruestung, setSelectedAusruestung] = useState(null);
@@ -354,6 +356,13 @@ export default function Inventar() {
           <h1 className="text-2xl font-oswald uppercase tracking-wide text-foreground flex items-center gap-2">
             <Package size={22} className="text-primary" /> Inventar & Verleih
           </h1>
+          <button
+            onClick={() => setShowZustaendige(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary border border-border text-xs font-medium text-foreground hover:border-primary/40 transition-colors"
+            title="Zentrale Zuständige für alle Verleih-Anfragen"
+          >
+            <Users size={14} /> Zuständige
+          </button>
           <p className="text-sm text-muted-foreground mt-0.5">
             {ausruestungen.length} Gegenstände · {aktuelleAusleihen.length} aktive Ausleihen
           </p>
@@ -681,6 +690,14 @@ export default function Inventar() {
           empfaenger={empfaengerFuer(rechnungFuer)}
           onClose={() => setRechnungFuer(null)}
           onGespeichert={(patch) => setAusleihen(prev => prev.map(a => a.id === patch.id ? { ...a, ...patch } : a))}
+        />
+      )}
+
+      {showZustaendige && (
+        <VerleihZustaendigeModal
+          mitglieder={mitglieder || []}
+          onClose={() => setShowZustaendige(false)}
+          onSaved={() => queryClient?.invalidateQueries?.({ queryKey: ['verleihAnfragen'] })}
         />
       )}
     </div>

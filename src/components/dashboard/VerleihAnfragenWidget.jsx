@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
+import { ladeZentraleVerleihZustaendige } from '@/lib/verleih';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
 import { Inbox, Phone, Calendar, Package, ArrowRight } from 'lucide-react';
@@ -24,19 +25,22 @@ export default function VerleihAnfragenWidget() {
         base44.entities.Ausruestung.list('name', 200),
         base44.entities.Mitglied.filter({ user_id: user?.id }),
       ]);
-      return { anfragen, ausruestungen, myMitgliedId: myMitgliedArr?.[0]?.id };
+      const zentral = await ladeZentraleVerleihZustaendige(base44);
+      return { anfragen, ausruestungen, myMitgliedId: myMitgliedArr?.[0]?.id, zentral };
     },
   });
 
   const anfragen = data?.anfragen || [];
   const ausruestungen = data?.ausruestungen || [];
   const myMitgliedId = data?.myMitgliedId;
+  const zentraleIds = data?.zentral || [];
 
   // Vorstand sieht alle; zuständige Personen nur ihre Gegenstände
   const sichtbareAnfragen = vorstand
     ? anfragen
     : anfragen.filter((a) => {
         const item = ausruestungen.find((x) => x.id === a.ausruestung_id);
+        if (zentraleIds.includes(myMitgliedId)) return true;
         return verleihZustaendigeIds(item?.verleih_verantwortlicher_id).includes(myMitgliedId);
       });
 

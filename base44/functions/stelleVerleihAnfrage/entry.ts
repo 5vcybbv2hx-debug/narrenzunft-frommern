@@ -79,6 +79,18 @@ Deno.serve(async (req) => {
     const gesehen = new Set();
     const zustaendigeIds = String(a.verleih_verantwortlicher_id || '')
       .split(',').map((x) => x.trim()).filter(Boolean);
+
+    // Zentrale Verleih-Zuständige (AppEinstellung 'verleih') ergänzen — sie bekommen
+    // alle Anfragen, unabhängig vom Gegenstand (Vorstandsentscheidung 02.11.2026).
+    try {
+      const konf = await base44.asServiceRole.entities.AppEinstellung.filter({ schluessel: 'verleih' });
+      const roh = konf?.[0]?.wert_json;
+      const geladen = typeof roh === 'string' ? JSON.parse(roh || '{}') : (roh || {});
+      for (const zid of (Array.isArray(geladen.zustaendige_ids) ? geladen.zustaendige_ids : [])) {
+        const sauber = String(zid || '').trim();
+        if (sauber && !zustaendigeIds.includes(sauber)) zustaendigeIds.push(sauber);
+      }
+    } catch (e) { console.error('Zentrale Verleih-Zuständige:', e); }
     for (const zid of zustaendigeIds) {
       if (gesehen.has(zid)) continue;
       const z = await base44.asServiceRole.entities.Mitglied.filter({ id: zid });
