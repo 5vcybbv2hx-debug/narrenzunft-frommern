@@ -129,8 +129,28 @@ Deno.serve(async (req) => {
     const erstloginPush = await erstLoginMelden(base44, user, mitglied, null);
 
     const ausschuss = await S.entities.AusschussMitglied.filter({ mitglied_id: mitglied.id, aktiv: true });
-    const zusatz = Array.isArray(mitglied.zusatz_berechtigungen) ? mitglied.zusatz_berechtigungen :
-      String(mitglied.zusatz_berechtigungen || '').split(',').map(x => x.trim()).filter(Boolean);
+    const zusatz = Array.isArray(mitglied.zusatz_berechtigungen)
+      ? [...mitglied.zusatz_berechtigungen]
+      : String(mitglied.zusatz_berechtigungen || '').split(',').map(x => x.trim()).filter(Boolean);
+
+    // Inventar-Zugang folgt der Verantwortung: Wer zentraler Verleih-Zuständiger ist
+    // oder an einem Gegenstand als Verantwortlicher eingetragen ist, soll die Seite
+    // auch im Menü sehen — ohne dass die Zusatz-Berechtigung manuell gesetzt wird.
+    // Entfällt die Zuständigkeit, verschwindet der Zugang beim nächsten Login wieder.
+    if (!zusatz.includes('inventar')) {
+      try {
+        const [konf, gegenstaende] = await Promise.all([
+          S.entities.AppEinstellung.filter({ schluessel: 'verleih' }).catch(() => []),
+          S.entities.Ausruestung.filter({ verleih_verantwortlicher_id: mitglied.id }).catch(() => []),
+        ]);
+        let zentral = false;
+        try {
+          const ids = JSON.parse((konf && konf[0] && konf[0].wert_json) || '{}').zustaendige_ids || [];
+          zentral = Array.isArray(ids) && ids.includes(mitglied.id);
+        } catch (e) { /* Einstellung unlesbar: ignorieren */ }
+        if (zentral || (gegenstaende || []).length > 0) zusatz.push('inventar');
+      } catch (e) { /* Zugang bleibt unverändert */ }
+    }
     const ausschuss_berechtigt = ['vorstand', 'stellv_vorstand', 'admin'].includes(user.role) ||
       zusatz.includes('ausschuss') || ausschuss.length > 0 ||
       await istAktuellerSpartenleiter(base44, mitglied.id);

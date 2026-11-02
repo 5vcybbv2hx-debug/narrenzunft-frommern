@@ -57,17 +57,17 @@ export default function Inventar() {
             const [a, al, ep, myMArr, va, alleM] = await Promise.all([
         cachedFetch(`Ausruestung|${user.id}|liste`, () => base44.entities.Ausruestung.list('name', 200), 90000),
         cachedFetch(`Ausleihe|${user.id}|liste`, () => base44.entities.Ausleihe.list('-von_datum', 300), 90000),
-        admin ? cachedFetch(`ExternePerson|${user.id}|liste`, () => base44.entities.ExternePerson.list('name', 200), 90000) : Promise.resolve([]),
+        hatZugriff ? cachedFetch(`ExternePerson|${user.id}|liste`, () => base44.entities.ExternePerson.list('name', 200), 90000) : Promise.resolve([]),
         base44.entities.Mitglied.filter({ user_id: user?.id }),
         cachedFetch(`VerleihAnfrage|${user.id}|liste`, () => base44.entities.VerleihAnfrage.list('-created_date', 200), 60000),
-        admin ? cachedFetch(`Mitglied|${user.id}|inventar`, () => base44.entities.Mitglied.list('nachname', 500), 120000) : Promise.resolve([]),
+        hatZugriff ? cachedFetch(`Mitglied|${user.id}|inventar`, () => base44.entities.Mitglied.list('nachname', 500), 120000) : Promise.resolve([]),
       ]);
       setAusruestungen(a.filter(x => x.aktiv !== false));
       setAusleihen(al);
       setExternePersonen(ep);
       setMeinMitglied(myMArr[0] || null);
       setVerleihAnfragen(va);
-      // Mitgliedernamen nur für Admins (für Ausleiher-Anzeige und Form), jetzt parallel im ersten Schwung
+      // Mitgliedernamen für alle mit Inventar-Zugriff (Ausleiher-Anzeige und Form), jetzt parallel im ersten Schwung
       if (admin) {
         setMitglieder(alleM.filter(x => !x.archiviert));
       }
