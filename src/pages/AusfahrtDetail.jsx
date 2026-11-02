@@ -150,7 +150,8 @@ export default function AusfahrtDetail() {
   const isBusverantwortlicher = ausfahrt?.bus_verantwortliche?.includes(currentMitglied?.id);
   const kannScannen = kannAusfahrtCheckin(user) || isBusverantwortlicher;
 
-  // Familienmitglieder des aktuellen Mitglieds (nur Ehepartner/in und Kind)
+  // Familienmitglieder des aktuellen Mitglieds: Ehepartner/in, Kinder UND Eltern
+  // (Vorstand: auch Kinder über 18 dürfen ihre Eltern an- und abmelden)
   // Normalisiert auf die Sicht des Mitglieds: Beziehungen können in beide
   // Richtungen eingetragen sein (Kind→Elternteil gespiegelt), Dedupe pro Person.
   const familienmitglieder = currentMitglied
@@ -162,7 +163,7 @@ export default function AusfahrtDetail() {
           const gespiegelt = { 'Kind': 'Elternteil', 'Elternteil': 'Kind' }[v.beziehung] || v.beziehung;
           return { andererId: v.mitglied_id, beziehung: gespiegelt };
         })
-        .filter(b => b.andererId && ['Ehepartner/in', 'Kind'].includes(b.beziehung))
+        .filter(b => b.andererId && ['Ehepartner/in', 'Kind', 'Elternteil'].includes(b.beziehung))
         .filter((b, i, arr) => arr.findIndex(x => x.andererId === b.andererId) === i)
         .map(b => {
           const verwandtesMitglied = mitglieder.find(m => m.id === b.andererId);
@@ -245,18 +246,18 @@ export default function AusfahrtDetail() {
         durchAdminName: `${currentMitglied?.vorname || ''} ${currentMitglied?.nachname || ''}`.trim() || 'Elternkonto',
       });
       if (res.bereitsAngemeldet) {
-        toast.warning('Dieses Kind ist bereits angemeldet.');
+        toast.warning('Diese Person ist bereits angemeldet.');
         return;
       }
-      toast.success('Kind angemeldet');
+      toast.success(`${familienmitglieder.find(x => x.id === kindId)?.vorname || 'Familienmitglied'} angemeldet`);
       const kind = familienmitglieder.find(fm => fm.id === kindId);
       if (ausfahrt?.u18_begleitung_erforderlich && kind) {
         setU18Offen({ mitgliedId: kindId, name: kind.name });
       }
       fetchData();
     } catch (err) {
-      console.error('Kind-Anmeldung fehlgeschlagen:', err);
-      toast.error('Anmeldung für Kind fehlgeschlagen.');
+      console.error('Familien-Anmeldung fehlgeschlagen:', err);
+      toast.error('Anmeldung für das Familienmitglied fehlgeschlagen.');
     }
   };
 
@@ -270,18 +271,19 @@ export default function AusfahrtDetail() {
       toast.error('Abmeldung nur bis 3 Tage vor der Ausfahrt möglich.');
       return;
     }
-    if (!(await confirmDialog('Kind wirklich von der Ausfahrt abmelden?'))) return;
+    if (!(await confirmDialog('Dieses Familienmitglied wirklich von der Ausfahrt abmelden?'))) return;
 
     try {
-      const todayStr = format(new Date(), 'yyyy-MM-dd');
-      await base44.entities.AusfahrtAnmeldung.update(childReg.id, {
-        status: 'Abgemeldet',
-        abgemeldet_am: todayStr
+      // Läuft über die gesicherte Function: erlaubt Kind↔Eltern-Abmeldungen
+      // auch dann, wenn die Anmeldung von der anderen Person erstellt wurde.
+      const res = await base44.functions.invoke('meldeAbAusfahrtSicher', {
+        anmeldung_id: childReg.id,
       });
-      toast.success('Kind abgemeldet');
+      if (res?.data?.erfolg === false) throw new Error(res.data.fehler || 'Abmeldung nicht möglich.');
+      toast.success('Familienmitglied abgemeldet');
       fetchData();
     } catch (err) {
-      console.error('Kind-Abmeldung fehlgeschlagen:', err);
+      console.error('Familien-Abmeldung fehlgeschlagen:', err);
       toast.error('Abmeldung fehlgeschlagen.');
     }
   };

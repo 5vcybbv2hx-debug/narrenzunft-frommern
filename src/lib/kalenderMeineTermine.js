@@ -3,7 +3,7 @@
 export function familienIdsAusVerwandtschaft(beziehungen, selbstId) {
   const ids = new Set();
   for (const b of beziehungen || []) {
-    if (b.mitglied_id === selbstId && ['Kind', 'Ehepartner/in'].includes(b.beziehung) && b.verwandter_id) {
+    if (b.mitglied_id === selbstId && ['Kind', 'Ehepartner/in', 'Elternteil'].includes(b.beziehung) && b.verwandter_id) {
       ids.add(b.verwandter_id);
     } else if (b.verwandter_id === selbstId && ['Elternteil', 'Ehepartner/in'].includes(b.beziehung) && b.mitglied_id) {
       ids.add(b.mitglied_id);
