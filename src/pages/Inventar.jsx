@@ -697,7 +697,10 @@ export default function Inventar() {
         <VerleihZustaendigeModal
           mitglieder={mitglieder || []}
           onClose={() => setShowZustaendige(false)}
-          onSaved={() => queryClient?.invalidateQueries?.({ queryKey: ['verleihAnfragen'] })}
+          onSaved={async () => {
+            clearEntityCache('VerleihAnfrage');
+            setVerleihAnfragen(await base44.entities.VerleihAnfrage.list('-created_date', 200));
+          }}
         />
       )}
     </div>
