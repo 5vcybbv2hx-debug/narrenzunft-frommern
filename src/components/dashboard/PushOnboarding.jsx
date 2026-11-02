@@ -33,6 +33,7 @@ export default function PushOnboarding() {
   }, []);
 
   if (!PUSH_AKTIV || versteckt || !status || status.abonniert) return null;
+  if (status.deaktiviert) return null; // bewusst ausgeschaltet: nicht erneut nerven
 
   const schliessen = () => {
     try { localStorage.setItem('nz_push_onboarding_weg', '1'); } catch { /* egal */ }

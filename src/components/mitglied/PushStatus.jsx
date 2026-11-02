@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getPushStatus, fragePushAb, pushHinweisBlockiert, PUSH_AKTIV } from '@/lib/push';
+import { getPushStatus, setzePushAbo, pushHinweisBlockiert, PUSH_AKTIV } from '@/lib/push';
 import { toast } from 'sonner';
 import { Bell, BellOff, RefreshCw } from 'lucide-react';
 
@@ -45,41 +45,43 @@ export default function PushStatus() {
       <div className="mt-2 space-y-1 text-xs">
         <p className="text-foreground">
           Abo: <span className={abonniert ? 'text-primary font-medium' : 'text-muted-foreground'}>
-            {abonniert ? 'aktiv ✓' : 'nicht abonniert'}
+            {abonniert ? 'aktiv ✓' : (status.deaktiviert ? 'ausgeschaltet' : 'nicht abonniert')}
           </span>
         </p>
         <p className="text-muted-foreground">Benachrichtigungs-Erlaubnis: {status.erlaubnis}</p>
         <p className="text-muted-foreground">Verbundene ID (external_id): {externalId}</p>
       </div>
 
-      {!abonniert && (
-        <>
-          <button
-            disabled={laeuft}
-            onClick={async () => {
-              setLaeuft(true);
-              setHinweis(null);
-              const ergebnis = await fragePushAb();
-              const neuerStatus = await getPushStatus();
-              setStatus(neuerStatus);
-              setPrueft(true);
-              setLaeuft(false);
-              if (ergebnis.ok || neuerStatus.abonniert) {
-                toast.success('Push aktiviert ✓ Du bekommst jetzt Benachrichtigungen.');
-              } else if (ergebnis.grund === 'blockiert' || neuerStatus.erlaubnis === 'denied') {
-                setHinweis(pushHinweisBlockiert());
-              } else {
-                setHinweis('Der Browser hat die Nachfrage nicht angezeigt. Bitte erneut tippen, '
-                  + 'oder Benachrichtigungen direkt in den Browser-/Geräteeinstellungen erlauben.');
-              }
-            }}
-            className="mt-3 w-full px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60"
-          >
-            {laeuft ? 'Wird geprüft …' : 'Benachrichtigungen aktivieren'}
-          </button>
-          {hinweis && <p className="text-xs text-foreground mt-2">{hinweis}</p>}
-        </>
-      )}
+      <button
+        disabled={laeuft}
+        onClick={async () => {
+          setLaeuft(true);
+          setHinweis(null);
+          const ergebnis = await setzePushAbo(!abonniert);
+          setStatus(await getPushStatus());
+          setPrueft(true);
+          setLaeuft(false);
+          if (abonniert) {
+            if (ergebnis.ok) toast.success('Push ausgeschaltet. Du bekommst keine Benachrichtigungen mehr.');
+            else setHinweis('Ausschalten hat nicht geklappt. Bitte erneut versuchen oder die App neu laden.');
+            return;
+          }
+          if (ergebnis.ok) {
+            toast.success('Push aktiviert ✓ Du bekommst jetzt Benachrichtigungen.');
+          } else if (ergebnis.grund === 'blockiert' || ergebnis.erlaubnis === 'denied') {
+            setHinweis(pushHinweisBlockiert());
+          } else {
+            setHinweis('Der Browser hat die Nachfrage nicht angezeigt. Bitte erneut tippen, '
+              + 'oder Benachrichtigungen direkt in den Browser-/Geräteeinstellungen erlauben.');
+          }
+        }}
+        className={abonniert
+          ? 'mt-3 w-full px-4 py-2 rounded-lg border border-border text-foreground text-sm font-medium hover:bg-muted transition-colors disabled:opacity-60'
+          : 'mt-3 w-full px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60'}
+      >
+        {laeuft ? 'Einen Moment …' : abonniert ? 'Benachrichtigungen ausschalten' : 'Benachrichtigungen aktivieren'}
+      </button>
+      {hinweis && <p className="text-xs text-foreground mt-2">{hinweis}</p>}
     </section>
   );
 }

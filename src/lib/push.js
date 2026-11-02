@@ -16,6 +16,17 @@ import { ONESIGNAL_APP_ID, PUSH_AKTIV } from '@/lib/pushConfig';
 export { PUSH_AKTIV };
 
 let initGestartet = false;
+
+/**
+ * Merkt sich, dass das Mitglied Push im Profil BEWUSST ausgeschaltet hat.
+ * Ohne dieses Flag würde die Selbstheilung beim nächsten Login die
+ * Subscription wieder aktivieren — das Ausschalten wäre wirkungslos.
+ */
+export const PUSH_AUS_KEY = 'nz_push_aus';
+
+export function pushBewusstAus() {
+  try { return localStorage.getItem(PUSH_AUS_KEY) === '1'; } catch { return false; }
+}
 let oneSignalReady = null; // Promise<OneSignal | null>
 
 /** Entwicklung/Preview erkennen (dort läuft der Vite-Worker, Push ist aus). */
@@ -99,8 +110,11 @@ export async function verknuepfePushMitglied(mitgliedId) {
       try { localStorage.setItem('nz_push_external_id', externalId); } catch { /* privat-Modus */ }
       // Selbstheilung: Erlaubnis erteilt, aber Token nie abgeschlossen
       // (typischer iOS-PWA-Zustand) -> Subscription nachziehen.
+      // AUSSER das Mitglied hat Push im Profil bewusst ausgeschaltet.
       try {
-        if (OneSignal.Notifications?.permission === true && OneSignal.User?.PushSubscription?.optedIn !== true) {
+        if (!pushBewusstAus()
+          && OneSignal.Notifications?.permission === true
+          && OneSignal.User?.PushSubscription?.optedIn !== true) {
           await OneSignal.User.PushSubscription.optIn();
         }
       } catch (e) { console.warn('[Push] Subscription-Nachzug:', e); }
@@ -140,6 +154,7 @@ export async function getPushStatus() {
     abonniert: false,
     erlaubnis: typeof Notification !== 'undefined' ? Notification.permission : 'unavailable',
     externalId: null,
+    deaktiviert: pushBewusstAus(),
   };
   try { status.externalId = localStorage.getItem('nz_push_external_id') || null; } catch { /* egal */ }
   if (!PUSH_AKTIV) return status;
@@ -210,6 +225,56 @@ export async function fragePushAb() {
   }
 
   ergebnis.grund = 'blockiert';
+  return ergebnis;
+}
+
+/**
+ * Push im Profil ein- oder ausschalten.
+ *
+ * Aus = abbestellen (optOut), Erlaubnis bleibt erhalten: das Mitglied kann
+ * später ohne neue Systemabfrage wieder einschalten. Das Flag PUSH_AUS_KEY
+ * verhindert, dass der Login die Subscription heimlich wieder aktiviert.
+ */
+export async function setzePushAbo(an) {
+  const ergebnis = { ok: false, abonniert: false, deaktiviert: false, erlaubnis:
+    typeof Notification !== 'undefined' ? Notification.permission : 'unavailable', grund: null };
+  if (!PUSH_AKTIV) { ergebnis.grund = 'inaktiv'; return ergebnis; }
+
+  if (an) {
+    const r = await fragePushAb();
+    if (r.ok) {
+      try { localStorage.removeItem(PUSH_AUS_KEY); } catch { /* egal */ }
+      ergebnis.ok = true;
+    } else {
+      ergebnis.grund = r.grund;
+    }
+    const status = await getPushStatus();
+    ergebnis.abonniert = status.abonniert;
+    ergebnis.deaktiviert = pushBewusstAus();
+    ergebnis.erlaubnis = status.erlaubnis;
+    ergebnis.ok = ergebnis.ok || status.abonniert;
+    return ergebnis;
+  }
+
+  // Ausschalten: abbestellen, Entscheidung merken. Fehler dürfen nicht
+  // verschluckt werden — sonst denkt das Mitglied, es sei aus.
+  try {
+    const OneSignal = await oneSignalReady;
+    if (OneSignal?.User?.PushSubscription?.optOut) {
+      await OneSignal.User.PushSubscription.optOut();
+    }
+  } catch (e) {
+    console.warn('[Push] optOut:', e);
+    ergebnis.grund = 'optout_fehlgeschlagen';
+  }
+  try { localStorage.setItem(PUSH_AUS_KEY, '1'); } catch { /* egal */ }
+  const status = await getPushStatus();
+  ergebnis.abonniert = status.abonniert;
+  ergebnis.deaktiviert = true;
+  ergebnis.erlaubnis = status.erlaubnis;
+  // ok nur, wenn wirklich kein Abo mehr besteht
+  ergebnis.ok = status.abonniert === false;
+  if (!ergebnis.ok) ergebnis.grund = 'optout_fehlgeschlagen';
   return ergebnis;
 }
 
