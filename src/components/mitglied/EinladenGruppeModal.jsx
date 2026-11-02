@@ -19,6 +19,9 @@ export default function EinladenGruppeModal({ mitglieder = [], onClose, onDone }
   const [laeuft, setLaeuft] = useState(false);
   const [fortschritt, setFortschritt] = useState(null);
   const [ergebnis, setErgebnis] = useState(null);
+  const [importOffen, setImportOffen] = useState(false);
+  const [importText, setImportText] = useState('');
+  const [importMeldung, setImportMeldung] = useState(null);
 
   const aktive = useMemo(() => mitglieder.filter(m => !m.archiviert), [mitglieder]);
 
@@ -35,6 +38,62 @@ export default function EinladenGruppeModal({ mitglieder = [], onClose, onDone }
       )
       .slice(0, 12);
   }, [suche, aktive, auswahl]);
+
+  // Listen-Import: Zeilen wie "Nachname  Vorname  Mail" (Excel-Copy, Semikolon oder Komma)
+  const normal = (t) => String(t || '').toLowerCase()
+    .replace(/ä/g, 'a').replace(/ö/g, 'o').replace(/ü/g, 'u').replace(/ß/g, 'ss')
+    .replace(/ae/g, 'a').replace(/oe/g, 'o').replace(/ue/g, 'u')
+    .replace(/[^a-z ]/g, '').trim();
+
+  const uebernehmeListe = () => {
+    const zeilen = importText.split(/\r?\n/).map(z => z.trim()).filter(Boolean);
+    const gefunden = [];
+    const unklar = [];
+    const ohneTreffer = [];
+    const schonDrin = new Set(auswahl.map(m => m.id));
+
+    for (const zeile of zeilen) {
+      const teile = zeile.split(/[\t;,]|\s{2,}/).map(t => t.trim()).filter(Boolean);
+      if (!teile.length) continue;
+      if (/^nachname$/i.test(teile[0])) continue;
+
+      const mail = teile.find(t => EMAIL_RE.test(t));
+      const namen = teile.filter(t => t !== mail);
+      if (!namen.length) continue;
+
+      let trefferListe = [];
+      if (mail) {
+        trefferListe = aktive.filter(m => (m.email || '').trim().toLowerCase() === mail.toLowerCase());
+      }
+      if (!trefferListe.length) {
+        const nachname = normal(namen[0]);
+        const vorname = normal(namen[1] || '');
+        trefferListe = aktive.filter(m => {
+          const nn = normal(m.nachname);
+          const vn = normal(m.vorname);
+          if (nn !== nachname) return false;
+          return !vorname || vn.startsWith(vorname) || vorname.startsWith(vn);
+        });
+      }
+
+      if (trefferListe.length === 1) {
+        const m = trefferListe[0];
+        if (!schonDrin.has(m.id)) {
+          schonDrin.add(m.id);
+          gefunden.push(m);
+        }
+      } else if (trefferListe.length > 1) {
+        unklar.push({ zeile, namen });
+      } else {
+        ohneTreffer.push({ zeile, namen, mail });
+      }
+    }
+
+    setAuswahl(prev => [...prev, ...gefunden]);
+    setImportMeldung({ gefunden: gefunden.length, unklar, ohneTreffer });
+    setImportText('');
+    toast.success(`${gefunden.length} Personen übernommen${unklar.length ? `, ${unklar.length} unklar` : ''}${ohneTreffer.length ? `, ${ohneTreffer.length} ohne Treffer` : ''}`);
+  };
 
   const hinzufuegen = (m) => {
     setAuswahl(prev => [...prev, m]);
@@ -143,6 +202,51 @@ export default function EinladenGruppeModal({ mitglieder = [], onClose, onDone }
                   className="w-full pl-9 pr-3 py-2.5 rounded-lg bg-background border border-border text-sm text-foreground"
                 />
               </div>
+              <button onClick={() => setImportOffen(v => !v)}
+                className="mt-2 text-xs text-primary font-medium">
+                {importOffen ? 'Liste schließen' : 'Liste einfügen (Excel/CSV)'}
+              </button>
+
+              {importOffen && (
+                <div className="mt-2 rounded-lg border border-border bg-background p-2">
+                  <p className="text-[11px] text-muted-foreground mb-1.5">
+                    Zeilen aus Excel kopieren und hier einfügen: Nachname, Vorname, E-Mail.
+                    Trennzeichen Tab, Semikolon oder Komma. Kopfzeile wird übersprungen.
+                  </p>
+                  <textarea
+                    value={importText}
+                    onChange={(e) => setImportText(e.target.value)}
+                    rows={5}
+                    placeholder={'Bechtold\tNicole\tnicole.bechtold@web.de\nBitzer\tHeinz\t'}
+                    className="w-full px-2 py-1.5 rounded-md bg-secondary border border-border text-xs text-foreground font-mono"
+                  />
+                  <div className="flex items-center justify-between gap-2 mt-1.5">
+                    <span className="text-[11px] text-muted-foreground">
+                      {importText.split(/\r?\n/).filter(z => z.trim()).length} Zeilen
+                    </span>
+                    <button onClick={uebernehmeListe} disabled={!importText.trim()}
+                      className="px-3 py-1.5 rounded-md bg-primary text-white text-xs font-semibold disabled:opacity-40">
+                      Liste übernehmen
+                    </button>
+                  </div>
+
+                  {importMeldung && (importMeldung.unklar.length > 0 || importMeldung.ohneTreffer.length > 0) && (
+                    <div className="mt-2 space-y-1.5">
+                      {importMeldung.unklar.length > 0 && (
+                        <div className="text-[11px] text-yellow-400">
+                          Mehrdeutig: {importMeldung.unklar.map(u => u.namen.join(' ')).join(', ')}
+                        </div>
+                      )}
+                      {importMeldung.ohneTreffer.length > 0 && (
+                        <div className="text-[11px] text-muted-foreground">
+                          Ohne Treffer: {importMeldung.ohneTreffer.map(u => u.namen.join(' ')).join(', ')}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {treffer.length > 0 && (
                 <div className="mt-1 rounded-lg border border-border bg-popover overflow-hidden max-h-56 overflow-y-auto">
                   {treffer.map(m => {
