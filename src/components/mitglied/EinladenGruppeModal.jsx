@@ -329,3 +329,4 @@ export default function EinladenGruppeModal({ mitglieder = [], onClose, onDone }
     </div>
   );
 }
+// Wird aus der Mitgliederübersicht geöffnet ("Gruppe einladen").

@@ -185,3 +185,4 @@ export default function EmailZuordnung({ mitglieder = [], onChanged }) {
     </div>
   );
 }
+// Siehe auch MailAbgleich: prüft eingehende Listen gegen die Profile.

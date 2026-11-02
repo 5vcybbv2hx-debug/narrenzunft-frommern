@@ -234,3 +234,4 @@ export default function MailAbgleich({ mitglieder = [], onChanged }) {
     </div>
   );
 }
+// Gegenstück zu EmailZuordnung: dort Dubletten, hier eingehende Listen.
