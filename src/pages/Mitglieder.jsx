@@ -8,9 +8,10 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannMitgliederlisteSehn, kannAusschussSehn, kannBankdatenSehn } from '@/lib/roles';
 import { bankdatenMap } from '@/lib/bankverbindung';
-import { Search, Plus, User, ChevronRight, Archive, Download, Shirt, FileText, FolderOpen, Send } from 'lucide-react';
+import { Search, Plus, User, ChevronRight, Archive, Download, Shirt, FileText, FolderOpen, Send, Users } from 'lucide-react';
 import NeuerAntragModal from '@/components/mitglied/NeuerAntragModal';
 import BulkEinladenModal from '@/components/mitglied/BulkEinladenModal';
+import EinladenGruppeModal from '@/components/mitglied/EinladenGruppeModal';
 import MitgliederStatistik from '@/components/mitglieder/MitgliederStatistik';
 import MitgliederCockpit from '@/components/mitglieder/MitgliederCockpit';
 import { AenderungsantraegeVerwaltung } from '@/components/mitglied/Aenderungsantraege';
@@ -65,6 +66,7 @@ export default function Mitglieder() {
   const [views, setViews] = useState(() => { try { return JSON.parse(localStorage.getItem(viewKey) || '[]'); } catch { return []; } });
   const [showAntragModal, setShowAntragModal] = useState(false);
   const [showBulkEinladen, setShowBulkEinladen] = useState(false);
+  const [showGruppeEinladen, setShowGruppeEinladen] = useState(false);
   const isAdminUser = isAdmin(user);
   const kannListe = kannMitgliederlisteSehn(user);
   const kannStatistik = kannAusschussSehn(user);
@@ -294,6 +296,13 @@ export default function Mitglieder() {
               <span className="hidden sm:inline">Einladen</span>
             </button>
             <button
+              onClick={() => setShowGruppeEinladen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary border border-border text-sm font-medium text-foreground hover:border-primary/40 transition-colors"
+            >
+              <Users size={15} />
+              <span className="hidden sm:inline">Gruppe einladen</span>
+            </button>
+            <button
               onClick={() => handleExport(false)}
               title="Mitgliederliste exportieren"
               className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-secondary text-muted-foreground text-sm font-medium hover:bg-border hover:text-foreground transition-colors"
@@ -345,6 +354,14 @@ export default function Mitglieder() {
             <span className="hidden sm:inline">Anträge</span>
           </Link>
         </div>
+      )}
+
+      {showGruppeEinladen && (
+        <EinladenGruppeModal
+          mitglieder={mitglieder}
+          onClose={() => setShowGruppeEinladen(false)}
+          onDone={() => { setShowGruppeEinladen(false); queryClient.invalidateQueries({ queryKey: ['mitglieder'] }); }}
+        />
       )}
 
       {showBulkEinladen && (
