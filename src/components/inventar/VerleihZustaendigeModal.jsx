@@ -85,6 +85,7 @@ export default function VerleihZustaendigeModal({ mitglieder = [], onClose, onSa
             <Info size={12} className="mt-0.5 shrink-0 text-primary" />
             Diese Personen bekommen <span className="text-foreground font-medium">alle</span> Verleih-Anfragen per App und E-Mail.
             Zuständige, die direkt am Gegenstand eingetragen sind, bleiben zusätzlich zuständig.
+            Beim Speichern erhalten sie automatisch Zugang zur Inventar-Seite.
           </p>
           {!laden && darfBearbeiten && (
             <div className="mt-2">
