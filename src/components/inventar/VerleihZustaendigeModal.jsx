@@ -31,8 +31,18 @@ export default function VerleihZustaendigeModal({ mitglieder = [], onClose, onSa
     })();
   }, []);
 
+  // Kandidaten für die Suche: Liste aus der Seite oder selbst geladen
+  const [eigeneListe, setEigeneListe] = useState([]);
+  useEffect(() => {
+    if (mitglieder.length) return;
+    base44.entities.Mitglied.list('nachname', 1000)
+      .then((liste) => setEigeneListe((liste || []).filter((m) => !m.archiviert)));
+  }, [mitglieder.length]);
+
+  const kandidaten = mitglieder.length ? mitglieder : eigeneListe;
+
   const nameVon = (id) => {
-    const m = mitglieder.find((x) => x.id === id) || personen.find((x) => x.id === id);
+    const m = kandidaten.find((x) => x.id === id) || personen.find((x) => x.id === id);
     return m ? `${m.vorname || ''} ${m.nachname || ''}`.trim() : 'Unbekannt';
   };
 
@@ -76,6 +86,16 @@ export default function VerleihZustaendigeModal({ mitglieder = [], onClose, onSa
             Diese Personen bekommen <span className="text-foreground font-medium">alle</span> Verleih-Anfragen per App und E-Mail.
             Zuständige, die direkt am Gegenstand eingetragen sind, bleiben zusätzlich zuständig.
           </p>
+          {!laden && darfBearbeiten && (
+            <div className="mt-2">
+              <MitgliedLiveSuche
+                mitglieder={kandidaten.filter((m) => !ids.includes(m.id))}
+                value=""
+                onSelect={hinzufuegen}
+                placeholder="Person suchen und eintragen…"
+              />
+            </div>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
@@ -101,16 +121,7 @@ export default function VerleihZustaendigeModal({ mitglieder = [], onClose, onSa
                 ))}
               </div>
 
-              {darfBearbeiten ? (
-                <div className="pt-1">
-                  <MitgliedLiveSuche
-                    mitglieder={mitglieder.filter((m) => !ids.includes(m.id))}
-                    value=""
-                    onSelect={hinzufuegen}
-                    placeholder="Person suchen und hinzufügen…"
-                  />
-                </div>
-              ) : (
+              {!darfBearbeiten && (
                 <p className="text-[11px] text-muted-foreground">Nur Vorstand, Stellvertreter und Admin können die Liste ändern.</p>
               )}
             </>
