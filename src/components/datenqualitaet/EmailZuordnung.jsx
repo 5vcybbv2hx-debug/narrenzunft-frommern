@@ -23,7 +23,6 @@ const alterVon = (geb) => {
  */
 export default function EmailZuordnung({ mitglieder = [], onChanged }) {
   const [busyId, setBusyId] = useState(null);
-  const [offen, setOffen] = useState(null);
   const [wahl, setWahl] = useState({}); // email -> mitglied_id, die die Adresse behält
   const [ohneMailOffen, setOhneMailOffen] = useState(false);
 
