@@ -153,21 +153,18 @@ export default function EmailZuordnung({ mitglieder = [], onChanged }) {
             <div className="mt-2 space-y-1 max-h-72 overflow-y-auto">
               {ohneMail.map(m => {
                 const nummer = (m.telefon || '').trim();
-                const link = waEinladungsLink({ telefon: nummer, vorname: m.vorname });
                 return (
                   <div key={m.id} className="flex items-center gap-2 py-1.5 border-b border-border/50 last:border-0">
                     <span className="flex-1 text-sm text-foreground truncate">{m.vorname} {m.nachname}</span>
-                    {link ? (
+                    {nummer ? (
                       <a
-                        href={link}
+                        href={waEinladungsLink(nummer, m.vorname)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg bg-green-900/30 border border-green-700/40 text-green-400"
                       >
-                        <Phone size={11} /> WhatsApp
+                        <Phone size={11} /> {waNummer(nummer) ? 'WhatsApp' : 'Nummer prüfen'}
                       </a>
-                    ) : nummer ? (
-                      <span className="text-[11px] text-muted-foreground">Nummer prüfen</span>
                     ) : (
                       <span className="text-[11px] text-muted-foreground">keine Nummer</span>
                     )}

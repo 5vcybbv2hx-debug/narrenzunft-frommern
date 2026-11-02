@@ -32,8 +32,12 @@ Viele Grüße
 Narrenzunft Frommern`;
 }
 
-/** wa.me-Link mit vorausgefüllter Einladung; null, wenn keine gültige Nummer. */
-export function waEinladungsLink({ telefon, vorname = '', email = '' } = {}) {
+/** wa.me-Link mit vorausgefüllter Einladung; null, wenn keine gültige Nummer.
+ *  Akzeptiert beide Aufrufarten: waEinladungsLink({ telefon, vorname }) und waEinladungsLink(telefon, vorname). */
+export function waEinladungsLink(daten = {}, vornameAlt = '') {
+  const { telefon, vorname = vornameAlt, email = '' } = typeof daten === 'string' || typeof daten === 'number'
+    ? { telefon: daten, vorname: vornameAlt }
+    : (daten || {});
   const nr = waNummer(telefon);
   if (!nr) return null;
   return `https://wa.me/${nr}?text=${encodeURIComponent(baueEinladungstext({ vorname, email }))}`;

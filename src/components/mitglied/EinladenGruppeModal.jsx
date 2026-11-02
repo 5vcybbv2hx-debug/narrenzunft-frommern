@@ -178,7 +178,7 @@ export default function EinladenGruppeModal({ mitglieder = [], onClose, onDone }
                   <div key={m.id} className="flex items-center justify-between gap-2">
                     <span className="text-[11px] text-foreground truncate">{m.vorname} {m.nachname}</span>
                     {(m.telefon || '').trim() && waNummer(m.telefon) ? (
-                      <a href={waEinladungsLink({ telefon: m.telefon, vorname: m.vorname })} target="_blank" rel="noopener noreferrer"
+                      <a href={waEinladungsLink(m.telefon, m.vorname)} target="_blank" rel="noopener noreferrer"
                         className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg bg-green-900/30 border border-green-700/40 text-green-400 shrink-0">
                         <Phone size={11} /> WhatsApp
                       </a>
