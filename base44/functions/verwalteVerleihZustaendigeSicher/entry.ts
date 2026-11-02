@@ -94,7 +94,8 @@ export default async function (req) {
         }
       }
 
-      const inhalt = { schluessel: 'verleih', wert_json: JSON.stringify({ zustaendige_ids: ids, auto_inventar: auto }) };
+      // wert_json ist ein Objektfeld — kein JSON-String, sonst lehnt die Validierung ab.
+      const inhalt = { schluessel: 'verleih', wert_json: { zustaendige_ids: ids, auto_inventar: auto } };
       if (eintragId) await S.AppEinstellung.update(eintragId, inhalt);
       else await S.AppEinstellung.create(inhalt);
       return Response.json({ ok: true, zustaendige_ids: ids, inventar_zugang_gesetzt: ids.length });
