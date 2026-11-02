@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, RefreshCw, Shield, Filter } from 'lucide-react';
 import { differenceInYears } from 'date-fns';
 import FaelleSektion from '@/components/datenqualitaet/FaelleSektion';
+import EmailZuordnung from '@/components/datenqualitaet/EmailZuordnung';
 
 function pruefeStatusAlter(m) {
   if (!m.geburtsdatum || !m.mitgliedsstatus) return null;
@@ -275,6 +276,9 @@ export default function Datenqualitaet() {
           })}
         </div>
       )}
+
+      {/* E-Mail-Zuordnung: eine Adresse = ein Profil */}
+      <EmailZuordnung mitglieder={mitglieder} onChanged={loadData} />
 
       {/* Offene Fälle – manuell erfasste Datenqualitäts-Fälle */}
       <FaelleSektion onOpenCountChange={setOffeneFaelle} />
