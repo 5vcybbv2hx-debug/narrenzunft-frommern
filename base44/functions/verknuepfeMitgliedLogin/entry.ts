@@ -145,7 +145,10 @@ Deno.serve(async (req) => {
         ]);
         let zentral = false;
         try {
-          const ids = JSON.parse((konf && konf[0] && konf[0].wert_json) || '{}').zustaendige_ids || [];
+          // wert_json kann Objekt ODER JSON-Text sein (je nach Speicherweg)
+          const roh = konf && konf[0] && konf[0].wert_json;
+          const cfg = typeof roh === 'string' ? JSON.parse(roh || '{}') : (roh || {});
+          const ids = cfg.zustaendige_ids || [];
           zentral = Array.isArray(ids) && ids.includes(mitglied.id);
         } catch (e) { /* Einstellung unlesbar: ignorieren */ }
         if (zentral || (gegenstaende || []).length > 0) zusatz.push('inventar');

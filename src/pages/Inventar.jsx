@@ -68,7 +68,7 @@ export default function Inventar() {
       setMeinMitglied(myMArr[0] || null);
       setVerleihAnfragen(va);
       // Mitgliedernamen für alle mit Inventar-Zugriff (Ausleiher-Anzeige und Form), jetzt parallel im ersten Schwung
-      if (admin) {
+      if (hatZugriff) {
         setMitglieder(alleM.filter(x => !x.archiviert));
       }
     } catch (err) {
