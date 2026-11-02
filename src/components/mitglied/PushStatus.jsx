@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getPushStatus, PUSH_AKTIV } from '@/lib/push';
+import { getPushStatus, fragePushAb, pushHinweisBlockiert, PUSH_AKTIV } from '@/lib/push';
+import { toast } from 'sonner';
 import { Bell, BellOff, RefreshCw } from 'lucide-react';
 
 /**
@@ -9,6 +10,8 @@ import { Bell, BellOff, RefreshCw } from 'lucide-react';
 export default function PushStatus() {
   const [status, setStatus] = useState(null);
   const [prueft, setPrueft] = useState(false);
+  const [laeuft, setLaeuft] = useState(false);
+  const [hinweis, setHinweis] = useState(null);
 
   useEffect(() => {
     let aktiv = true;
@@ -48,6 +51,35 @@ export default function PushStatus() {
         <p className="text-muted-foreground">Benachrichtigungs-Erlaubnis: {status.erlaubnis}</p>
         <p className="text-muted-foreground">Verbundene ID (external_id): {externalId}</p>
       </div>
+
+      {!abonniert && (
+        <>
+          <button
+            disabled={laeuft}
+            onClick={async () => {
+              setLaeuft(true);
+              setHinweis(null);
+              const ergebnis = await fragePushAb();
+              const neuerStatus = await getPushStatus();
+              setStatus(neuerStatus);
+              setPrueft(true);
+              setLaeuft(false);
+              if (ergebnis.ok || neuerStatus.abonniert) {
+                toast.success('Push aktiviert ✓ Du bekommst jetzt Benachrichtigungen.');
+              } else if (ergebnis.grund === 'blockiert' || neuerStatus.erlaubnis === 'denied') {
+                setHinweis(pushHinweisBlockiert());
+              } else {
+                setHinweis('Der Browser hat die Nachfrage nicht angezeigt. Bitte erneut tippen, '
+                  + 'oder Benachrichtigungen direkt in den Browser-/Geräteeinstellungen erlauben.');
+              }
+            }}
+            className="mt-3 w-full px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60"
+          >
+            {laeuft ? 'Wird geprüft …' : 'Benachrichtigungen aktivieren'}
+          </button>
+          {hinweis && <p className="text-xs text-foreground mt-2">{hinweis}</p>}
+        </>
+      )}
     </section>
   );
 }
