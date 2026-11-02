@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getPushStatus, fragePushAb, PUSH_AKTIV } from '@/lib/push';
+import { getPushStatus, fragePushAb, pushHinweisBlockiert, PUSH_AKTIV } from '@/lib/push';
+import { toast } from 'sonner';
 import { Bell, X, Share, PlusSquare } from 'lucide-react';
 
 /**
@@ -21,6 +22,8 @@ function istInstalliert() {
 
 export default function PushOnboarding() {
   const [status, setStatus] = useState(null);
+  const [laeuft, setLaeuft] = useState(false);
+  const [hinweis, setHinweis] = useState(null);
   const [versteckt, setVersteckt] = useState(() => {
     try { return localStorage.getItem('nz_push_onboarding_weg') === '1'; } catch { return false; }
   });
@@ -68,11 +71,29 @@ export default function PushOnboarding() {
         <div className="text-sm space-y-2">
           <p className="text-muted-foreground">Erhalte Erinnerungen für Arbeitsdienste, Ausfahrten, Abstimmungen und Termine.</p>
           <button
-            onClick={async () => { await fragePushAb(); setStatus(await getPushStatus()); }}
-            className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+            disabled={laeuft}
+            onClick={async () => {
+              setLaeuft(true);
+              setHinweis(null);
+              const ergebnis = await fragePushAb();
+              const neuerStatus = await getPushStatus();
+              setStatus(neuerStatus);
+              setLaeuft(false);
+              if (ergebnis.ok || neuerStatus.abonniert) {
+                toast.success('Push aktiviert ✓ Du bekommst jetzt Benachrichtigungen.');
+              } else if (ergebnis.grund === 'blockiert' || neuerStatus.erlaubnis === 'denied') {
+                setHinweis(pushHinweisBlockiert());
+              } else {
+                // Prompt verschluckt oder abgebrochen: ruhig erklären statt still scheitern.
+                setHinweis('Der Browser hat die Nachfrage nicht angezeigt. Bitte erneut tippen, '
+                  + 'oder Benachrichtigungen direkt in den Browser-/Geräteeinstellungen erlauben.');
+              }
+            }}
+            className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60"
           >
-            Benachrichtigungen aktivieren
+            {laeuft ? 'Wird geprüft …' : 'Benachrichtigungen aktivieren'}
           </button>
+          {hinweis && <p className="text-foreground mt-2">{hinweis}</p>}
         </div>
       )}
     </section>

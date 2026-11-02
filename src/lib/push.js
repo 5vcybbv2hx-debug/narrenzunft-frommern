@@ -155,10 +155,73 @@ export async function getPushStatus() {
   return status;
 }
 
-/** Push-Prompt anzeigen (Onboarding-Karte). */
+/**
+ * Push-Erlaubnis aktiv einholen (Button "Benachrichtigungen aktivieren").
+ *
+ * WICHTIG (Lehre aus dem Fall "Annehmen geht nicht"): Der OneSignal-Slidedown
+ * ist KEIN verlässlicher Weg. Er wird von iOS/Safari verschluckt und erscheint
+ * nach einmaligem Wegtippen für dieses Gerät nie wieder — der Klick läuft dann
+ * ins Leere, ohne dass irgendetwas passiert. Deshalb:
+ *   1. direkte Browser-Erlaubnis über Notification.requestPermission(),
+ *   2. danach Subscription aktiv nachziehen (optIn),
+ *   3. Slidedown nur noch als harmloser Zusatz-Fallback.
+ * Rückgabe sagt der UI, was passiert ist (ok / blockiert / kein SDK).
+ */
 export async function fragePushAb() {
-  if (!PUSH_AKTIV) return;
+  const ergebnis = {
+    ok: false,
+    erlaubnis: typeof Notification !== 'undefined' ? Notification.permission : 'unavailable',
+    grund: null,
+  };
+  if (!PUSH_AKTIV) { ergebnis.grund = 'inaktiv'; return ergebnis; }
+
+  // 1) Echte Browser-Erlaubnis — funktioniert im Klick-Kontext auf iOS-PWA,
+  //    Android und Desktop. 'denied' kann der Browser nicht mehr nachfragen.
+  if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+    try { await Notification.requestPermission(); } catch (e) { console.warn('[Push] requestPermission:', e); }
+  }
+  ergebnis.erlaubnis = typeof Notification !== 'undefined' ? Notification.permission : 'unavailable';
+
   const OneSignal = await oneSignalReady;
-  if (!OneSignal) return;
-  try { await OneSignal.Slidedown.promptPush(); } catch (e) { console.warn('[Push] promptPush:', e); }
+  if (!OneSignal) { ergebnis.grund = 'sdk'; return ergebnis; }
+
+  // 2) Erlaubnis da -> Subscription wirklich abschließen. Ohne diesen Schritt
+  //    bleibt der Zustand "erlaubt, aber kein Token" (typisch iOS).
+  if (ergebnis.erlaubnis === 'granted') {
+    try { await OneSignal.Notifications?.requestPermission?.(); } catch (e) { console.warn('[Push] OS requestPermission:', e); }
+    try { await OneSignal.User?.PushSubscription?.optIn?.(); } catch (e) { console.warn('[Push] optIn:', e); }
+    ergebnis.ok = true;
+    return ergebnis;
+  }
+
+  // 3) Immer noch 'default' (Prompt verschluckt) -> Slidedown als Zusatz,
+  //    danach Status erneut lesen.
+  if (ergebnis.erlaubnis === 'default') {
+    try { await OneSignal.Slidedown.promptPush(); } catch (e) { console.warn('[Push] promptPush:', e); }
+    try { await OneSignal.Notifications?.requestPermission?.(); } catch (e) { console.warn('[Push] OS requestPermission:', e); }
+    ergebnis.erlaubnis = typeof Notification !== 'undefined' ? Notification.permission : 'unavailable';
+    if (ergebnis.erlaubnis === 'granted') {
+      try { await OneSignal.User?.PushSubscription?.optIn?.(); } catch (e) { console.warn('[Push] optIn:', e); }
+      ergebnis.ok = true;
+    } else {
+      ergebnis.grund = 'nicht_bestaetigt';
+    }
+    return ergebnis;
+  }
+
+  ergebnis.grund = 'blockiert';
+  return ergebnis;
+}
+
+/** Plattform-Hinweis, wie man eine blockierte Erlaubnis wieder freischaltet. */
+export function pushHinweisBlockiert() {
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+  const ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (ios) {
+    return 'iPhone-Einstellungen → Benachrichtigungen → Narrenzunft App → "Zulassen" aktivieren (iOS fragt nur einmal).';
+  }
+  if (/Android/i.test(ua)) {
+    return 'Chrome → Schloss-Symbol neben der Adresse → Benachrichtigungen → "Zulassen", dann Seite neu laden.';
+  }
+  return 'Im Browser auf das Schloss links neben der Adresse klicken → Benachrichtigungen → "Zulassen", dann Seite neu laden.';
 }
