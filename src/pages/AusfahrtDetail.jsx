@@ -45,6 +45,7 @@ export default function AusfahrtDetail() {
   const [ausgewaehlteFamilienmitglieder, setAusgewaehlteFamilienmitglieder] = useState([]);
   const [fremdName, setFremdName] = useState('');
   const [fremdTransport, setFremdTransport] = useState('Bus');
+  // siehe busBenoetigt: bei Ausfahrten ohne Bus wird auf 'Privat' korrigiert
   const [fremdAnzahlBegleitpersonen, setFremdAnzahlBegleitpersonen] = useState(0);
   const [fremdBegleitpersonen, setFremdBegleitpersonen] = useState([]);
   const [kindAnmeldungen, setKindAnmeldungen] = useState({}); // { kindId: { transport, angemeldet } }
@@ -146,6 +147,10 @@ export default function AusfahrtDetail() {
     ? anmeldungen.find(a => a.mitglied_id === currentMitglied.id && a.status !== 'Abgemeldet')
     : null;
 
+  // Bus nur anbieten, wenn für diese Ausfahrt überhaupt ein Bus fährt.
+  // bus_benoetigt === false -> Mitglieder können sich nur als Privatfahrt anmelden.
+  const busBenoetigt = ausfahrt?.bus_benoetigt !== false;
+
   // Ist aktueller User Busverantwortlicher?
   const isBusverantwortlicher = ausfahrt?.bus_verantwortliche?.includes(currentMitglied?.id);
   const kannScannen = kannAusfahrtCheckin(user) || isBusverantwortlicher;
@@ -190,7 +195,9 @@ export default function AusfahrtDetail() {
     );
   };
 
-  const handleRegister = async (transportType) => {
+  const handleRegister = async (transportTypeRaw) => {
+    // Doppelschutz: ohne Bus gibt es keine Bus-Anmeldung, egal woher der Aufruf kommt.
+    const transportType = busBenoetigt ? transportTypeRaw : 'Privat';
     if (!currentMitglied) {
       toast.error('Kein verknüpftes Mitgliedsprofil gefunden.');
       return;
@@ -334,7 +341,7 @@ export default function AusfahrtDetail() {
       await base44.entities.AusfahrtAnmeldung.create({
           ausfahrt_id: id,
           mitglied_id: null,
-          transport: fremdTransport,
+          transport: busBenoetigt ? fremdTransport : 'Privat',
           status: 'Angemeldet',
           angemeldet_am: todayStr,
           anzahl_begleitpersonen: fremdAnzahlBegleitpersonen,
@@ -347,7 +354,7 @@ export default function AusfahrtDetail() {
 
       // Reset form and refresh
       setFremdName('');
-      setFremdTransport('Bus');
+      setFremdTransport(ausfahrt?.bus_benoetigt === false ? 'Privat' : 'Bus');
       setFremdAnzahlBegleitpersonen(0);
       setFremdBegleitpersonen([]);
       setShowFremdForm(false);
@@ -1102,12 +1109,18 @@ export default function AusfahrtDetail() {
                       )}
 
                       <div className="pt-2 grid grid-cols-1 gap-2.5">
-                        <button
-                          onClick={() => handleRegister('Bus')}
-                          className="w-full bg-primary hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
-                        >
-                          <Bus className="w-4 h-4" /> Mit Bus fahren{ausgewaehlteFamilienmitglieder.length > 0 ? ` (+${ausgewaehlteFamilienmitglieder.length})` : ''}
-                        </button>
+                        {busBenoetigt ? (
+                          <button
+                            onClick={() => handleRegister('Bus')}
+                            className="w-full bg-primary hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
+                          >
+                            <Bus className="w-4 h-4" /> Mit Bus fahren{ausgewaehlteFamilienmitglieder.length > 0 ? ` (+${ausgewaehlteFamilienmitglieder.length})` : ''}
+                          </button>
+                        ) : (
+                          <p className="text-xs text-muted-foreground bg-secondary border border-border rounded-lg px-3 py-2">
+                            Für diese Ausfahrt ist kein Bus geplant – die Anmeldung ist nur als Privatfahrt möglich.
+                          </p>
+                        )}
                         <button
                           onClick={() => handleRegister('Privat')}
                           className="w-full bg-secondary hover:bg-border text-foreground border border-border font-semibold py-2.5 px-4 rounded-lg transition-colors text-sm"
@@ -1199,9 +1212,11 @@ export default function AusfahrtDetail() {
                   <div>
                     <label className="block text-xs font-semibold text-muted-foreground mb-1">Transportart</label>
                     <MobileSelect
-                      value={fremdTransport}
+                      value={busBenoetigt ? fremdTransport : 'Privat'}
                       onChange={(v) => setFremdTransport(v)}
-                      options={[{ label: 'Busfahrt', value: 'Bus' }, { label: 'Privatfahrt', value: 'Privat' }]}
+                      options={busBenoetigt
+                        ? [{ label: 'Busfahrt', value: 'Bus' }, { label: 'Privatfahrt', value: 'Privat' }]
+                        : [{ label: 'Privatfahrt', value: 'Privat' }]}
                       label="Transportart" />
                   </div>
 
