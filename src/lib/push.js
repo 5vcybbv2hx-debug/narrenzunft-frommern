@@ -298,7 +298,12 @@ export function pushUmgebung() {
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const standalone = typeof window !== 'undefined'
     && (window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true);
-  const inApp = /(WhatsApp|FBAN|FBAV|FB_IAB|Instagram|Line\/|Snapchat|TikTok|MicroMessenger|GSA\/)/i.test(ua);
+  // Eingebaute Browser: bekannte Apps UND generische Android-WebViews (; wv).
+  // Auch E-Mail-Apps (Gmail, Outlook, GMX) oeffnen Links oft in einem eigenen
+  // WebView — dort gibt es kein Web-Push, unabhaengig vom Versandweg.
+  const inApp = /(WhatsApp|FBAN|FBAV|FB_IAB|Instagram|Line\/|Snapchat|TikTok|MicroMessenger|GSA\/)/i.test(ua)
+    || /; wv\)/i.test(ua)
+    || (/Android/i.test(ua) && /Version\/\d+\.\d+/.test(ua) && !/Chrome\/\d+/.test(ua));
   const technik = typeof Notification !== 'undefined'
     && 'serviceWorker' in navigator
     && 'PushManager' in window;
