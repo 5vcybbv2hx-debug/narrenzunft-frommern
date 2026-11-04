@@ -246,7 +246,7 @@ export default function SparteFormModal({ gruppe, onClose, onSaved }) {
                   <span key={id} className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/20 text-primary text-xs font-medium">
                     {m.vorname} {m.nachname}
                     <button type="button"
-                      title={istTrainer ? 'Als Spartenleiter führen' : 'Als Trainer:in führen'}
+                      title={`${istTrainer ? 'Als Spartenleiter führen' : 'Als Trainer:in führen'} (Rechte bleiben gleich)`}
                       onClick={() => setForm(p => {
                         const trainer = p.verantwortliche_trainer_ids || [];
                         return {
