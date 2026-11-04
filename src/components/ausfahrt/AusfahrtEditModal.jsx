@@ -2,7 +2,8 @@ import TimeSelect from '../ui/TimeSelect';
 import DateSelect from '../ui/DateSelect';
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { X, Save } from 'lucide-react';
+import { X, Save, Info } from 'lucide-react';
+import { toast } from 'sonner';
 import { clearEntityCache } from '../../lib/entityCache';
 import MobileSelect from '@/components/MobileSelect';
 
@@ -96,6 +97,30 @@ export default function AusfahrtEditModal({ ausfahrt, sparten, onSave, onClose }
       };
       await base44.entities.Ausfahrt.update(ausfahrt.id, payload);
       clearEntityCache('Ausfahrt');
+
+      // Bus rausgenommen: bestehende Bus-Anmeldungen dürfen nicht als Busfahrt
+      // stehen bleiben (sonst zählt der Umzugszähler Fahrten, die es nicht gibt).
+      // Sie werden auf Privatfahrt umgebucht — genau wie die Anmelde-Buttons es
+      // ohne Bus nur noch zulassen.
+      if (ausfahrt.bus_benoetigt !== false && formData.bus_benoetigt === false) {
+        try {
+          const betroffen = await base44.entities.AusfahrtAnmeldung.filter({
+            ausfahrt_id: ausfahrt.id,
+            transport: 'Bus',
+            status: 'Angemeldet',
+          });
+          for (const a of (betroffen || [])) {
+            await base44.entities.AusfahrtAnmeldung.update(a.id, { transport: 'Privat' });
+          }
+          if (betroffen?.length) {
+            toast.success(`${betroffen.length} Bus-Anmeldung(en) auf Privatfahrt umgebucht.`);
+          }
+        } catch (e) {
+          console.error('Umbuchung Bus -> Privat fehlgeschlagen:', e);
+          toast.error('Bus entfernt, aber die Umbuchung der Anmeldungen hat nicht geklappt. Bitte Anmeldungen prüfen.');
+        }
+      }
+
       onSave();
     } catch (err) {
       const msg = err?.response?.data?.message || err?.message || 'Unbekannter Fehler';
@@ -174,7 +199,13 @@ export default function AusfahrtEditModal({ ausfahrt, sparten, onSave, onClose }
                 <input type="checkbox" name="bus_benoetigt" checked={formData.bus_benoetigt} onChange={handleChange}
                   className="w-4 h-4 rounded accent-primary" />
                 <span className="text-sm font-medium text-foreground">Bus benötigt</span>
-              </label>
+                            </label>
+              {!formData.bus_benoetigt && ausfahrt.bus_benoetigt !== false && (
+                <p className="text-[11px] text-muted-foreground mt-1 flex items-start gap-1.5">
+                  <Info size={12} className="mt-0.5 shrink-0 text-primary" />
+                  Beim Speichern werden alle bestehenden Bus-Anmeldungen dieser Ausfahrt auf Privatfahrt umgebucht.
+                </p>
+              )}
             </div>
             {formData.bus_benoetigt && (
               <div className="grid grid-cols-2 gap-3 mb-3">
