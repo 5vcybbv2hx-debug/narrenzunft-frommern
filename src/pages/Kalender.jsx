@@ -126,7 +126,19 @@ export default function Kalender({ nur = 'alle' }) {
         setLoading(false);
         return;
       }
-      setTermine(result.data.termine);
+      // Die Termine kommen aus getKalenderSicher und enthalten KEIN _bus_benoetigt
+      // (nur _bus). Dadurch galt überall "Bus nötig" und der Kalender bot auch bei
+      // Ausfahrten ohne Bus den Button "Mit Bus" an. Hier mit den echten
+      // Ausfahrt-Daten zusammenführen (fehlend/null = Bus nötig, Altbestand).
+      const busInfo = new Map(
+        (ausfahrtData || []).map(a => [String(a.id), a.bus_benoetigt !== false])
+      );
+      const termineMitBus = (result.data.termine || []).map(t => {
+        if (t._quelle !== 'ausfahrt') return t;
+        const flag = busInfo.get(String(t._ausfahrt_id));
+        return flag === undefined ? t : { ...t, _bus_benoetigt: flag };
+      });
+      setTermine(termineMitBus);
       const ausfahrtTermine = (ausfahrtData || []).map(a => ({
         id: `a_${a.id}`,
         _ausfahrt_id: a.id,

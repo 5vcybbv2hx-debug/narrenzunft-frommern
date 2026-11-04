@@ -55,6 +55,7 @@ Deno.serve(async (req) => {
       beschreibung: a.notizen || null,
       anmeldbar: true,
       _bus: a.bus_benoetigt || false,
+      _bus_benoetigt: a.bus_benoetigt !== false, // fehlend/null = Bus noetig (Altbestand)
       _busparkplatz_adresse: a.busparkplatz || null,
       _busparkplatz_treffzeit: a.bus_benoetigt ? (a.abfahrt_zeit && a.abfahrt_ort ? `${a.abfahrt_zeit} ${a.abfahrt_ort}` : null) : null,
       _abfahrt_ort: a.abfahrt_ort || null,
