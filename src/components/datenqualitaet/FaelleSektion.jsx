@@ -128,10 +128,14 @@ export default function FaelleSektion({ onOpenCountChange }) {
 
     setActionFamilie(fam.name);
     try {
+      // Beidseitig (Owner-Regel): Eltern -> Kind UND Kind -> Elternteil.
       const neu = [];
       eltern.forEach(p => kinder.forEach(c => {
         if (!paarExistiert(p.id, c.id)) {
           neu.push({ mitglied_id: p.id, verwandter_id: c.id, beziehung: 'Kind' });
+        }
+        if (!paarExistiert(c.id, p.id)) {
+          neu.push({ mitglied_id: c.id, verwandter_id: p.id, beziehung: 'Elternteil' });
         }
       }));
       if (geschwisterAus[fam.name] !== true) {
@@ -139,6 +143,9 @@ export default function FaelleSektion({ onOpenCountChange }) {
           for (let j = i + 1; j < kinder.length; j++) {
             if (!paarExistiert(kinder[i].id, kinder[j].id)) {
               neu.push({ mitglied_id: kinder[i].id, verwandter_id: kinder[j].id, beziehung: 'Geschwister' });
+            }
+            if (!paarExistiert(kinder[j].id, kinder[i].id)) {
+              neu.push({ mitglied_id: kinder[j].id, verwandter_id: kinder[i].id, beziehung: 'Geschwister' });
             }
           }
         }

@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, RefreshCw, Shield, Filter } from 'lucide-react';
 import { differenceInYears } from 'date-fns';
 import FaelleSektion from '@/components/datenqualitaet/FaelleSektion';
+import VerwandtschaftAbgleich from '@/components/datenqualitaet/VerwandtschaftAbgleich';
 import EmailZuordnung from '@/components/datenqualitaet/EmailZuordnung';
 import MailAbgleich from '@/components/datenqualitaet/MailAbgleich';
 
@@ -283,6 +284,9 @@ export default function Datenqualitaet() {
 
       {/* Liste gegen Profile abgleichen und Adressen übernehmen */}
       <MailAbgleich mitglieder={mitglieder} onChanged={loadData} />
+
+      {/* Verwandtschaften: fehlende Gegenrichtungen ergänzen */}
+      <VerwandtschaftAbgleich onChanged={loadData} />
 
       {/* Offene Fälle – manuell erfasste Datenqualitäts-Fälle */}
       <FaelleSektion onOpenCountChange={setOffeneFaelle} />

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
+import { legeVerwandtschaftBeidseitig } from '@/lib/verwandtschaft';
 import { useAuth } from '@/lib/AuthContext';
 import {
   Users, Heart, Baby, Calendar, Briefcase,
@@ -94,7 +95,9 @@ export default function FamilienDashboard() {
     if (!ausgewaehlt || !selbst) return;
     setSaving(true);
     try {
-      await base44.entities.Verwandtschaft.create({
+      // Beidseitig eintragen (Owner-Regel) — sonst greifen Elternrechte und
+      // Familienanmeldungen für die Gegenrichtung nicht.
+      await legeVerwandtschaftBeidseitig({
         mitglied_id: selbst.id,
         verwandter_id: ausgewaehlt.id,
         beziehung: addBeziehung,

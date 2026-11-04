@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Users, Plus, X, ChevronRight, Phone, Mail, Trash2, Search } from 'lucide-react';
 import { differenceInYears } from 'date-fns';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
+import { legeVerwandtschaftBeidseitig, loescheVerwandtschaftBeidseitig } from '@/lib/verwandtschaft';
 import MobileSelect from '@/components/MobileSelect';
 
 const BEZIEHUNGEN = [
@@ -88,7 +89,9 @@ export default function FamilieTab({ mitglied, isAdmin }) {
     if (!form.verwandter_id || !form.beziehung) return;
     setSaving(true);
     try {
-      await base44.entities.Verwandtschaft.create({
+      // Immer beidseitig eintragen (Owner-Regel): sonst fehlt die Gegenrichtung
+      // und Elternrechte/Familienanmeldungen greifen nicht.
+      await legeVerwandtschaftBeidseitig({
         mitglied_id: mitglied.id,
         verwandter_id: form.verwandter_id,
         beziehung: form.beziehung,
@@ -104,8 +107,12 @@ export default function FamilieTab({ mitglied, isAdmin }) {
   const handleDelete = async (id) => {
     if (!(await confirmDialog('Beziehung wirklich entfernen?'))) return;
     try {
-      await base44.entities.Verwandtschaft.delete(id);
+      const satz = (verwandtschaften || []).find(v => v.id === id)
+        || (alleVerwandtschaften || []).find(v => v.id === id);
+      if (satz) await loescheVerwandtschaftBeidseitig(satz);
+      else await base44.entities.Verwandtschaft.delete(id);
       setVerwandtschaften(prev => prev.filter(v => v.id !== id));
+      await loadData();
     } catch (e) { console.error('Error:', e); }
   };
 
