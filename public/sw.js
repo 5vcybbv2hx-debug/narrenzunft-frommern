@@ -7,7 +7,7 @@
 // This SW intercepts those requests and always fetches from the network.
 //
 // SW_VERSION: bump to force the browser to install a new SW and clear all caches.
-const SW_VERSION = 'v2';
+const SW_VERSION = 'v3';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
