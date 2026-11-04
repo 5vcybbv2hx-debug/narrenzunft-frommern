@@ -742,8 +742,8 @@ export default function MitgliedDetail() {
           <Field label="Mitgliedsstatus" field="mitgliedsstatus" options={getVerfuegbareStatus(mitglied.geburtsdatum)} editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
           {editing && (
             <>
-              <Field label="E-Mail" field="email" type="email" editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
-              <Field label="Telefon" field="telefon" editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
+              <Field label="E-Mail" field="email" type="email" editing={(admin || istKindVonMir) && editing} mitglied={mitglied} onChange={handleFieldChange} />
+              <Field label="Telefon" field="telefon" editing={(admin || istKindVonMir) && editing} mitglied={mitglied} onChange={handleFieldChange} />
             </>
           )}
           <Field label="Eintrittsdatum" field="eintrittsdatum" type="date" editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
@@ -851,7 +851,7 @@ export default function MitgliedDetail() {
       {/* Adresse */}
       <div className="bg-card border border-border rounded-xl p-5 mb-4">
         <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2 font-oswald uppercase tracking-wide"><MapPin size={16} className="text-primary" /> Adresse</h2>
-        {admin && editing ? (
+        {(admin || istKindVonMir) && editing ? (
           <div className="space-y-3">
             <div>
               <label className="text-xs text-muted-foreground font-medium block mb-1">Adresse suchen</label>
@@ -864,10 +864,10 @@ export default function MitgliedDetail() {
                 }
               }} />
             </div>
-            <Field label="Straße" field="strasse" editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
+            <Field label="Straße" field="strasse" editing={(admin || istKindVonMir) && editing} mitglied={mitglied} onChange={handleFieldChange} />
             <div className="grid grid-cols-2 gap-3">
-              <Field label="PLZ" field="plz" editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
-              <Field label="Ort" field="ort" editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
+              <Field label="PLZ" field="plz" editing={(admin || istKindVonMir) && editing} mitglied={mitglied} onChange={handleFieldChange} />
+              <Field label="Ort" field="ort" editing={(admin || istKindVonMir) && editing} mitglied={mitglied} onChange={handleFieldChange} />
             </div>
           </div>
         ) : (
@@ -890,9 +890,9 @@ export default function MitgliedDetail() {
       <div className="bg-card border border-border rounded-xl p-5 mb-4">
         <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2 font-oswald uppercase tracking-wide"><AlertTriangle size={16} className="text-red-400" /> Notfallkontakt</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Name" field="notfallkontakt_name" editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
+          <Field label="Name" field="notfallkontakt_name" editing={(admin || istKindVonMir) && editing} mitglied={mitglied} onChange={handleFieldChange} />
           <div>
-            <Field label="Telefon" field="notfallkontakt_telefon" editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
+            <Field label="Telefon" field="notfallkontakt_telefon" editing={(admin || istKindVonMir) && editing} mitglied={mitglied} onChange={handleFieldChange} />
             {!editing && mitglied.notfallkontakt_telefon && (
               <a href={`tel:${mitglied.notfallkontakt_telefon}`} className="inline-flex items-center gap-1 mt-1 text-xs text-primary hover:text-primary/70 transition-colors">
                 <Phone size={11} /> Anrufen
