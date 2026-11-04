@@ -133,19 +133,36 @@ export default function VeranstaltungDetail() {
 
   const handleAnmelden = async (bus = false) => {
     if (!myMitglied) return;
+    if (saving) return;
+    setSaving(true);
     try {
-      const t = await base44.entities.Teilnahme.create({
-        veranstaltung_id: id,
-        mitglied_id: myMitglied.id,
-        status: 'Angemeldet',
-        bus
-      });
-      setMeineTeilnahme(t);
+      // Bestehende Teilnahme prüfen: nach einer Absage wird der VORHANDENE Satz
+      // reaktiviert statt einen zweiten anzulegen (sonst zählt die Veranstaltung
+      // doppelt und die Warteliste/Platzberechnung wird falsch).
+      const meine = (teilnahmen || []).filter(t => t.mitglied_id === myMitglied.id);
+      const aktiv = meine.find(t => t.status !== 'Abgesagt');
+      if (aktiv) {
+        toast.info('Du bist für diese Veranstaltung bereits angemeldet.');
+        setMeineTeilnahme(aktiv);
+        return;
+      }
+      const alt = meine[0];
+      const t = alt
+        ? await base44.entities.Teilnahme.update(alt.id, { status: 'Angemeldet', bus })
+        : await base44.entities.Teilnahme.create({
+            veranstaltung_id: id,
+            mitglied_id: myMitglied.id,
+            status: 'Angemeldet',
+            bus
+          });
+      setMeineTeilnahme(t || { ...(alt || {}), status: 'Angemeldet', bus });
+      toast.success('Anmeldung gespeichert.');
       loadData();
     } catch (e) {
-      console.error('Absage fehlgeschlagen:', e);
-      toast.error('Absage fehlgeschlagen');
+      console.error('Anmeldung fehlgeschlagen:', e);
+      toast.error('Anmeldung fehlgeschlagen: ' + String(e?.message || e).slice(0, 120));
     }
+    setSaving(false);
   };
 
   /** Vorstand: Anmeldung der Veranstaltung per Klick aktivieren/deaktivieren. */
@@ -351,7 +368,7 @@ export default function VeranstaltungDetail() {
           {!isNew && myMitglied && (
             <div className="bg-card border border-border rounded-xl p-4">
               <h3 className="font-semibold text-foreground mb-3">Meine Anmeldung</h3>
-              {meineTeilnahme ? (
+              {meineTeilnahme && meineTeilnahme.status !== 'Abgesagt' ? (
                 <div className="flex items-center justify-between">
                   <div>
                     <span className={`text-sm font-medium ${meineTeilnahme.status === 'Abgesagt' ? 'text-red-400' : 'text-green-400'}`}>
@@ -370,6 +387,12 @@ export default function VeranstaltungDetail() {
                 const anmeldungMoeglich = istVeranstaltungAnmeldungOffen(veranstaltung);
                 if (anmeldungMoeglich) {
                   return (
+                    <div className="space-y-2">
+                    {meineTeilnahme?.status === 'Abgesagt' && (
+                      <p className="text-xs text-red-400">
+                        Deine Teilnahme ist abgesagt – du kannst dich hier wieder anmelden.
+                      </p>
+                    )}
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleAnmelden(false)}
@@ -394,6 +417,7 @@ export default function VeranstaltungDetail() {
                           <Bus size={14} /> Mit Bus
                         </button>
                       )}
+                    </div>
                     </div>
                   );
                 }
