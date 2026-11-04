@@ -127,6 +127,7 @@ export default function SparteFormModal({ gruppe, onClose, onSaved }) {
     aktiv: gruppe?.aktiv !== false,
     verantwortlicher_id: gruppe?.verantwortlicher_id || '',
     verantwortliche_ids: gruppe?.verantwortliche_ids || (gruppe?.verantwortlicher_id ? [gruppe.verantwortlicher_id] : []),
+    verantwortliche_trainer_ids: gruppe?.verantwortliche_trainer_ids || [],
   });
   const [saving, setSaving] = useState(false);
   const [mitglieder, setMitglieder] = useState([]);
@@ -230,16 +231,32 @@ export default function SparteFormModal({ gruppe, onClose, onSaved }) {
           </div>
 
           <div>
-            <label className="text-xs text-muted-foreground font-medium block mb-1">Verantwortliche (Spartenleiter)</label>
+            <label className="text-xs text-muted-foreground font-medium block mb-1">Verantwortliche (Spartenleiter / Trainer)</label>
             <div className="flex flex-wrap gap-1.5 mb-2">
               {form.verantwortliche_ids.map(id => {
                 const m = mitglieder.find(m => m.id === id);
                 return m ? (
                   <span key={id} className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/20 text-primary text-xs font-medium">
                     {m.vorname} {m.nachname}
+                    <button
+                      type="button"
+                      title="Anzeige umschalten: Spartenleiter / Trainer (Rechte bleiben gleich)"
+                      onClick={() => setForm(p => {
+                        const t = p.verantwortliche_trainer_ids || [];
+                        return { ...p, verantwortliche_trainer_ids: t.includes(id) ? t.filter(x => x !== id) : [...t, id] };
+                      })}
+                      className="px-1.5 py-0.5 rounded bg-primary/30 text-[10px] font-semibold hover:bg-primary/50 transition-colors"
+                    >
+                      {(form.verantwortliche_trainer_ids || []).includes(id) ? 'Trainer' : 'Spartenleiter'}
+                    </button>
                     <button type="button" onClick={() => {
                       const neu = form.verantwortliche_ids.filter(x => x !== id);
-                      setForm(p => ({ ...p, verantwortliche_ids: neu, verantwortlicher_id: neu[0] || '' }));
+                      setForm(p => ({
+                        ...p,
+                        verantwortliche_ids: neu,
+                        verantwortlicher_id: neu[0] || '',
+                        verantwortliche_trainer_ids: (p.verantwortliche_trainer_ids || []).filter(x => x !== id),
+                      }));
                     }} className="hover:text-destructive transition-colors ml-0.5"><X size={11} /></button>
                   </span>
                 ) : null;

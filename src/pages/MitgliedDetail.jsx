@@ -671,7 +671,7 @@ export default function MitgliedDetail() {
                 const g = haesgruppen.find(g => g.id === gid);
                 return g ? (
                   <span key={gid} className="text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/40 font-semibold flex items-center gap-1">
-                    <Crown size={10} /> {g.typ === 'Tanzgruppe' ? 'Trainer:in' : 'Spartenleiter'} · {g.name}
+                    <Crown size={10} /> {(g.verantwortliche_trainer_ids || []).includes(mitglied.id) ? 'Trainer' : g.typ === 'Tanzgruppe' ? 'Trainer:in' : 'Spartenleiter'} · {g.name}
                   </span>
                 ) : null;
               })}

@@ -34,6 +34,11 @@
       "items": {
         "type": "string"
       },
+    "verantwortliche_trainer_ids": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Teilmenge von verantwortliche_ids, die in der Anzeige als 'Trainer' statt 'Spartenleiter' erscheinen. Rechte bleiben identisch."
+    },
       "description": "IDs aller verantwortlichen Mitglieder (Spartenleiter)"
     },
     "whatsapp_gruppe_name": {

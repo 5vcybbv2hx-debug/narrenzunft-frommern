@@ -1043,7 +1043,7 @@ export default function SpartenDashboard() {
                             </div>
                             <div className="min-w-0">
                               <div className="font-semibold text-foreground text-sm">{leader.vorname} {leader.nachname}</div>
-                              <div className="text-xs text-muted-foreground">{gruppe?.typ === 'Tanzgruppe' ? 'Trainer:in' : 'Spartenleiter'}</div>
+                              <div className="text-xs text-muted-foreground">{(gruppe?.verantwortliche_trainer_ids || []).includes(leader.id) ? 'Trainer' : gruppe?.typ === 'Tanzgruppe' ? 'Trainer:in' : 'Spartenleiter'}</div>
                             </div>
                           </Link>
                           {telUrl && (
