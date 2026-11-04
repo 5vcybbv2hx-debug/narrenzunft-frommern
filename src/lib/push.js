@@ -190,6 +190,10 @@ export async function fragePushAb() {
   };
   if (!PUSH_AKTIV) { ergebnis.grund = 'inaktiv'; return ergebnis; }
 
+  // Technisch unmögliche Umgebungen (z. B. WhatsApp-Browser) gar nicht erst versuchen.
+  const umgebung = pushUmgebung();
+  if (!umgebung.unterstuetzt) { ergebnis.grund = umgebung.typ; return ergebnis; }
+
   // 1) Echte Browser-Erlaubnis — funktioniert im Klick-Kontext auf iOS-PWA,
   //    Android und Desktop. 'denied' kann der Browser nicht mehr nachfragen.
   if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
@@ -241,6 +245,8 @@ export async function setzePushAbo(an) {
   if (!PUSH_AKTIV) { ergebnis.grund = 'inaktiv'; return ergebnis; }
 
   if (an) {
+    const umgebung = pushUmgebung();
+    if (!umgebung.unterstuetzt) { ergebnis.grund = umgebung.typ; return ergebnis; }
     const r = await fragePushAb();
     if (r.ok) {
       try { localStorage.removeItem(PUSH_AUS_KEY); } catch { /* egal */ }
@@ -276,6 +282,60 @@ export async function setzePushAbo(an) {
   ergebnis.ok = status.abonniert === false;
   if (!ergebnis.ok) ergebnis.grund = 'optout_fehlgeschlagen';
   return ergebnis;
+}
+
+/**
+ * Erkennt, ob Push auf DIESEM Gerät überhaupt möglich ist.
+ *
+ * Wichtigster Fall (kam beim Test-Push an frisch eingeladene Mitglieder):
+ * Wer über einen WhatsApp-Link kommt, landet im eingebauten Browser von
+ * WhatsApp. Dort gibt es kein Web-Push — der Aktivieren-Knopf kann technisch
+ * nicht funktionieren, egal was man drückt. Das muss die App klar sagen.
+ */
+export function pushUmgebung() {
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
+  const ios = /iPad|iPhone|iPod/.test(ua)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const standalone = typeof window !== 'undefined'
+    && (window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true);
+  const inApp = /(WhatsApp|FBAN|FBAV|FB_IAB|Instagram|Line\/|Snapchat|TikTok|MicroMessenger|GSA\/)/i.test(ua);
+  const technik = typeof Notification !== 'undefined'
+    && 'serviceWorker' in navigator
+    && 'PushManager' in window;
+
+  if (inApp) {
+    return {
+      typ: 'inapp',
+      unterstuetzt: false,
+      titel: 'Im App-Browser nicht möglich',
+      hinweis: 'Du bist im eingebauten Browser einer App, zum Beispiel WhatsApp. '
+        + 'Dort funktionieren Push-Benachrichtigungen technisch nicht. '
+        + 'Öffne die Seite in Safari oder Chrome (bei WhatsApp oben rechts auf die drei Punkte → '
+        + '"In Safari/Chrome öffnen") und aktiviere sie dort.',
+    };
+  }
+  if (ios && !standalone) {
+    return {
+      typ: 'ios_safari',
+      unterstuetzt: false,
+      titel: 'Am iPhone nur als installierte App',
+      hinweis: 'Am iPhone geht Push nur in der installierten Web-App, nicht im Safari. '
+        + 'Tippe in Safari unten auf Teilen und dann auf "Zum Home-Bildschirm". '
+        + 'Öffne die App danach über das neue Symbol.',
+    };
+  }
+  if (!technik) {
+    return {
+      typ: 'nicht_unterstuetzt',
+      unterstuetzt: false,
+      titel: 'Dieser Browser kann kein Push',
+      hinweis: 'Dein Browser unterstützt keine Push-Benachrichtigungen. '
+        + 'Bitte öffne die App in Safari (iPhone) oder Chrome (Android).',
+    };
+  }
+  if (ios) return { typ: 'ios_pwa', unterstuetzt: true };
+  if (/Android/i.test(ua)) return { typ: 'android', unterstuetzt: true };
+  return { typ: 'desktop', unterstuetzt: true };
 }
 
 /** Plattform-Hinweis, wie man eine blockierte Erlaubnis wieder freischaltet. */

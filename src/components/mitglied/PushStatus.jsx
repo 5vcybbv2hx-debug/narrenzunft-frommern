@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getPushStatus, setzePushAbo, pushHinweisBlockiert, PUSH_AKTIV } from '@/lib/push';
+import { getPushStatus, setzePushAbo, pushHinweisBlockiert, pushUmgebung, PUSH_AKTIV } from '@/lib/push';
 import { toast } from 'sonner';
 import { Bell, BellOff, RefreshCw } from 'lucide-react';
 
@@ -23,6 +23,7 @@ export default function PushStatus() {
   if (!PUSH_AKTIV) return null; // Push nicht konfiguriert: Zeile weg
 
   const abonniert = status.abonniert;
+  const umgebung = pushUmgebung();
   const externalId = status.externalId ? `…${String(status.externalId).slice(-6)}` : '–';
 
   return (
@@ -49,9 +50,18 @@ export default function PushStatus() {
           </span>
         </p>
         <p className="text-muted-foreground">Benachrichtigungs-Erlaubnis: {status.erlaubnis}</p>
+        {!umgebung.unterstuetzt && (
+          <p className="text-muted-foreground">Gerät/Browser: {umgebung.titel}</p>
+        )}
         <p className="text-muted-foreground">Verbundene ID (external_id): {externalId}</p>
       </div>
 
+      {!umgebung.unterstuetzt ? (
+        <div className="mt-3 rounded-lg border border-border bg-secondary px-3 py-2">
+          <p className="text-xs font-medium text-foreground">{umgebung.titel}</p>
+          <p className="text-xs text-muted-foreground mt-1">{umgebung.hinweis}</p>
+        </div>
+      ) : (
       <button
         disabled={laeuft}
         onClick={async () => {
@@ -81,6 +91,7 @@ export default function PushStatus() {
       >
         {laeuft ? 'Einen Moment …' : abonniert ? 'Benachrichtigungen ausschalten' : 'Benachrichtigungen aktivieren'}
       </button>
+      )}
       {hinweis && <p className="text-xs text-foreground mt-2">{hinweis}</p>}
     </section>
   );

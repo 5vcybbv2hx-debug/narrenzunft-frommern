@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getPushStatus, fragePushAb, pushHinweisBlockiert, PUSH_AKTIV } from '@/lib/push';
+import { getPushStatus, fragePushAb, pushHinweisBlockiert, pushUmgebung, PUSH_AKTIV } from '@/lib/push';
 import { toast } from 'sonner';
 import { Bell, X, Share, PlusSquare } from 'lucide-react';
 
@@ -40,6 +40,7 @@ export default function PushOnboarding() {
     setVersteckt(true);
   };
 
+  const umgebung = pushUmgebung();
   const ios = istIOS();
   const installiert = istInstalliert();
   const abgelehnt = status.erlaubnis === 'denied';
@@ -54,7 +55,11 @@ export default function PushOnboarding() {
         <h2 className="font-oswald text-lg text-foreground">Push aktivieren</h2>
       </div>
 
-      {ios && !installiert ? (
+      {!umgebung.unterstuetzt ? (
+        <div className="text-sm space-y-2">
+          <p className="text-foreground">{umgebung.hinweis}</p>
+        </div>
+      ) : ios && !installiert ? (
         <div className="text-sm space-y-2">
           <p className="text-foreground">Auf dem iPhone funktionieren Push-Benachrichtigungen nur in der installierten App, nicht im Safari. So geht's:</p>
           <ol className="list-decimal pl-5 space-y-1 text-muted-foreground">
@@ -80,6 +85,8 @@ export default function PushOnboarding() {
               const neuerStatus = await getPushStatus();
               setStatus(neuerStatus);
               setLaeuft(false);
+              const umg = pushUmgebung();
+              if (!umg.unterstuetzt) { setHinweis(umg.hinweis); return; }
               if (ergebnis.ok || neuerStatus.abonniert) {
                 toast.success('Push aktiviert ✓ Du bekommst jetzt Benachrichtigungen.');
               } else if (ergebnis.grund === 'blockiert' || neuerStatus.erlaubnis === 'denied') {
