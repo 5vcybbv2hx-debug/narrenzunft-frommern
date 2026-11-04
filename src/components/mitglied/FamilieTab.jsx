@@ -107,8 +107,7 @@ export default function FamilieTab({ mitglied, isAdmin }) {
   const handleDelete = async (id) => {
     if (!(await confirmDialog('Beziehung wirklich entfernen?'))) return;
     try {
-      const satz = (verwandtschaften || []).find(v => v.id === id)
-        || (alleVerwandtschaften || []).find(v => v.id === id);
+      const satz = (verwandtschaften || []).find(v => v.id === id);
       if (satz) await loescheVerwandtschaftBeidseitig(satz);
       else await base44.entities.Verwandtschaft.delete(id);
       setVerwandtschaften(prev => prev.filter(v => v.id !== id));

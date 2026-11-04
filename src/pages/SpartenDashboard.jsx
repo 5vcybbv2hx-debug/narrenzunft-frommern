@@ -991,6 +991,7 @@ export default function SpartenDashboard() {
                             <Link to={`/mitglieder/${leader.id}`}
                               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/15 border border-primary/40 text-primary text-xs font-semibold hover:bg-primary/25 transition-colors">
                               <UserCheck size={12} /> {leader.vorname} {leader.nachname}
+                              {(gruppe.verantwortliche_trainer_ids || []).includes(leader.id) && <span className="font-normal opacity-80">· Trainer</span>}
                             </Link>
                             {telUrl && (
                               <a href={telUrl} title={`${leader.vorname} anrufen`}
@@ -1043,7 +1044,9 @@ export default function SpartenDashboard() {
                             </div>
                             <div className="min-w-0">
                               <div className="font-semibold text-foreground text-sm">{leader.vorname} {leader.nachname}</div>
-                              <div className="text-xs text-muted-foreground">{gruppe?.typ === 'Tanzgruppe' ? 'Trainer:in' : 'Spartenleiter'}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {gruppe?.typ === 'Tanzgruppe' || (gruppe?.verantwortliche_trainer_ids || []).includes(leader.id) ? 'Trainer:in' : 'Spartenleiter'}
+                              </div>
                             </div>
                           </Link>
                           {telUrl && (

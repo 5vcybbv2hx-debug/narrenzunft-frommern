@@ -127,6 +127,7 @@ export default function SparteFormModal({ gruppe, onClose, onSaved }) {
     aktiv: gruppe?.aktiv !== false,
     verantwortlicher_id: gruppe?.verantwortlicher_id || '',
     verantwortliche_ids: gruppe?.verantwortliche_ids || (gruppe?.verantwortlicher_id ? [gruppe.verantwortlicher_id] : []),
+    verantwortliche_trainer_ids: gruppe?.verantwortliche_trainer_ids || [],
   });
   const [saving, setSaving] = useState(false);
   const [mitglieder, setMitglieder] = useState([]);
@@ -138,7 +139,12 @@ export default function SparteFormModal({ gruppe, onClose, onSaved }) {
   const handleSave = async () => {
     if (!form.name) return;
     setSaving(true);
-    const saveData = { ...form, verantwortlicher_id: form.verantwortliche_ids[0] || '' };
+    const saveData = {
+      ...form,
+      verantwortlicher_id: form.verantwortliche_ids[0] || '',
+      // Trainer ist nur eine Rolle innerhalb der Verantwortlichen – keine Karteileichen
+      verantwortliche_trainer_ids: (form.verantwortliche_trainer_ids || []).filter(id => form.verantwortliche_ids.includes(id)),
+    };
     const alteIds = gruppe?.verantwortliche_ids?.length
       ? gruppe.verantwortliche_ids
       : (gruppe?.verantwortlicher_id ? [gruppe.verantwortlicher_id] : []);
@@ -230,19 +236,44 @@ export default function SparteFormModal({ gruppe, onClose, onSaved }) {
           </div>
 
           <div>
-            <label className="text-xs text-muted-foreground font-medium block mb-1">Verantwortliche (Spartenleiter)</label>
+            <label className="text-xs text-muted-foreground font-medium block mb-1">Verantwortliche (Spartenleiter / Trainer)</label>
             <div className="flex flex-wrap gap-1.5 mb-2">
               {form.verantwortliche_ids.map(id => {
                 const m = mitglieder.find(m => m.id === id);
-                return m ? (
+                if (!m) return null;
+                const istTrainer = (form.verantwortliche_trainer_ids || []).includes(id);
+                return (
                   <span key={id} className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/20 text-primary text-xs font-medium">
                     {m.vorname} {m.nachname}
+                    <button type="button"
+                      title={istTrainer ? 'Als Spartenleiter führen' : 'Als Trainer:in führen'}
+                      onClick={() => setForm(p => {
+                        const trainer = p.verantwortliche_trainer_ids || [];
+                        return {
+                          ...p,
+                          verantwortliche_trainer_ids: trainer.includes(id)
+                            ? trainer.filter(x => x !== id)
+                            : [...trainer, id],
+                        };
+                      })}
+                      className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold border transition-colors ${
+                        istTrainer
+                          ? 'bg-green-500/20 border-green-500/40 text-green-300'
+                          : 'bg-primary/20 border-primary/40 text-primary'
+                      }`}>
+                      {istTrainer ? 'Trainer' : 'Spartenleiter'}
+                    </button>
                     <button type="button" onClick={() => {
                       const neu = form.verantwortliche_ids.filter(x => x !== id);
-                      setForm(p => ({ ...p, verantwortliche_ids: neu, verantwortlicher_id: neu[0] || '' }));
+                      setForm(p => ({
+                        ...p,
+                        verantwortliche_ids: neu,
+                        verantwortlicher_id: neu[0] || '',
+                        verantwortliche_trainer_ids: (p.verantwortliche_trainer_ids || []).filter(x => x !== id),
+                      }));
                     }} className="hover:text-destructive transition-colors ml-0.5"><X size={11} /></button>
                   </span>
-                ) : null;
+                );
               })}
             </div>
             <VerantwortlicherSuche

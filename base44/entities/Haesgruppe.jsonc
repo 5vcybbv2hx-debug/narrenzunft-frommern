@@ -36,6 +36,13 @@
       },
       "description": "IDs aller verantwortlichen Mitglieder (Spartenleiter)"
     },
+    "verantwortliche_trainer_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Teilmenge von verantwortliche_ids, die als Trainer:in gef\u00fchrt wird (nur Anzeige \u2013 Rechte bleiben unver\u00e4ndert)"
+    },
     "whatsapp_gruppe_name": {
       "type": "string",
       "description": "Name der verkn\u00fcpften WhatsApp-Gruppe"
