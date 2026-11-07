@@ -49,7 +49,7 @@ export default async function (req) {
       mitglieder = mitglieder.concat(rest || []);
     }
 
-    const norm = (e) => String(e || '').trim().toLowerCase();
+    const norm = (e) => emailSchluessel(e);
     const byEmail = new Map();
     const byUserId = new Map();
     mitglieder.forEach((m) => {

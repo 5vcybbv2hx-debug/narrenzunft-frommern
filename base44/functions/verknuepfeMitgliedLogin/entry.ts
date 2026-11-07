@@ -76,8 +76,8 @@ Deno.serve(async (req) => {
       // dadurch schlug die E-Mail-Zuordnung für alle Profile weiter hinten fehl.
       // Deshalb echtes Blättern über ladeAlleMitglieder (list(sort, limit, skip)).
       const alle = await ladeAlleMitglieder(S);
-      const norm = String(user.email).trim().toLowerCase();
-      const matches = alle.filter(m => m.email && m.email.trim().toLowerCase() === norm);
+      const norm = emailSchluessel(user.email);
+      const matches = alle.filter(m => m.email && emailSchluessel(m.email) === norm);
       if (matches.length === 1) {
         mitglied = matches[0];
         matchStrategy = mitglied.email === user.email ? 'email' : 'email_ci';
