@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Mail, Check, AlertTriangle, Users, Phone } from 'lucide-react';
 import { waEinladungsLink, waNummer } from '@/lib/whatsappEinladung';
 import { toast } from 'sonner';
+import { emailSchluessel } from '@/lib/emailSchluessel';
 
 const alterVon = (geb) => {
   if (!geb) return null;
@@ -30,19 +31,29 @@ export default function EmailZuordnung({ mitglieder = [], onChanged }) {
   const aktive = useMemo(() => mitglieder.filter(m => !m.archiviert), [mitglieder]);
 
   const gruppen = useMemo(() => {
+    // Gruppierung über den normalisierten Schlüssel: @googlemail.com und @gmail.com
+    // sind dasselbe Postfach, Punkte im Gmail-Namen zählen nicht. Vorher wurde roh
+    // verglichen, dadurch blieben genau diese Doppelungen unsichtbar.
     const map = new Map();
     for (const m of aktive) {
-      const e = (m.email || '').trim().toLowerCase();
-      if (!e) continue;
-      if (!map.has(e)) map.set(e, []);
-      map.get(e).push(m);
+      const schluessel = emailSchluessel(m.email);
+      if (!schluessel || !(m.email || '').trim()) continue;
+      if (!map.has(schluessel)) map.set(schluessel, []);
+      map.get(schluessel).push(m);
     }
     return [...map.entries()]
       .filter(([, liste]) => liste.length > 1)
-      .map(([email, liste]) => {
+      .map(([key, liste]) => {
         // Vorschlag: der älteste Erwachsene behält die Adresse
         const sortiert = [...liste].sort((a, b) => (alterVon(b.geburtsdatum) ?? 0) - (alterVon(a.geburtsdatum) ?? 0));
-        return { email, liste, vorschlag: sortiert[0]?.id };
+        const halter = sortiert[0];
+        return {
+          key,
+          email: (halter?.email || key).trim(),
+          varianten: new Set(liste.map(m => (m.email || '').trim().toLowerCase())).size,
+          liste,
+          vorschlag: halter?.id,
+        };
       })
       .sort((a, b) => b.liste.length - a.liste.length);
   }, [aktive]);
@@ -53,15 +64,15 @@ export default function EmailZuordnung({ mitglieder = [], onChanged }) {
   );
 
   const zuordnen = async (gruppe) => {
-    const behalten = wahl[gruppe.email] || gruppe.vorschlag;
+    const behalten = wahl[gruppe.key] || gruppe.vorschlag;
     if (!behalten) { toast.error('Bitte zuerst auswählen, welches Profil die Adresse behält.'); return; }
-    setBusyId(gruppe.email);
+    setBusyId(gruppe.key);
     try {
       for (const m of gruppe.liste) {
         if (m.id === behalten) {
-          // Adresse am gewählten Profil sauber normalisieren
-          if (m.email !== gruppe.email) await base44.entities.Mitglied.update(m.id, { email: gruppe.email });
-        } else if ((m.email || '').trim().toLowerCase() === gruppe.email) {
+          // Adresse am gewählten Profil unverändert lassen (echte Schreibweise bleibt)
+          continue;
+        } else if (emailSchluessel(m.email) === gruppe.key) {
           // Adresse beim Zweitprofil entfernen, Hinweis als Notiz
           const hinweis = `E-Mail gehört zu ${gruppe.liste.find(x => x.id === behalten)?.vorname || 'Hauptprofil'} (Familie)`;
           const notizen = m.notizen ? `${m.notizen}\n${hinweis}` : hinweis;
@@ -99,9 +110,9 @@ export default function EmailZuordnung({ mitglieder = [], onChanged }) {
       </div>
 
       {gruppen.map(g => {
-        const behalten = wahl[g.email] || g.vorschlag;
+        const behalten = wahl[g.key] || g.vorschlag;
         return (
-          <div key={g.email} className="rounded-lg border border-border bg-secondary/40 p-3">
+          <div key={g.key} className="rounded-lg border border-border bg-secondary/40 p-3">
             <div className="flex items-center justify-between gap-2">
               <p className="text-sm font-medium text-foreground truncate">{g.email}</p>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-900/30 text-amber-300 border border-amber-700/40 shrink-0">
@@ -109,6 +120,11 @@ export default function EmailZuordnung({ mitglieder = [], onChanged }) {
               </span>
             </div>
             <p className="text-[11px] text-muted-foreground mt-0.5">Welches Profil behält die Adresse?</p>
+            {g.varianten > 1 && (
+              <p className="text-[11px] text-amber-300 mt-1">
+                Achtung: Die Profile nutzen unterschiedliche Schreibweisen derselben Adresse (z. B. gmail/googlemail oder Punkte).
+              </p>
+            )}
             <div className="mt-2 space-y-1.5">
               {g.liste.map(m => {
                 const gewaehlt = behalten === m.id;
@@ -116,13 +132,16 @@ export default function EmailZuordnung({ mitglieder = [], onChanged }) {
                 return (
                   <button
                     key={m.id}
-                    onClick={() => setWahl(p => ({ ...p, [g.email]: m.id }))}
+                    onClick={() => setWahl(p => ({ ...p, [g.key]: m.id }))}
                     className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-left text-sm transition-colors ${
                       gewaehlt ? 'border-primary bg-primary/15 text-foreground' : 'border-border bg-card text-muted-foreground hover:border-primary/40'
                     }`}
                   >
                     <span className={`w-3.5 h-3.5 rounded-full border shrink-0 ${gewaehlt ? 'bg-primary border-primary' : 'border-muted-foreground'}`} />
                     <span className="flex-1 truncate">{m.vorname} {m.nachname}</span>
+                    {(m.email || '').trim().toLowerCase() !== g.email.toLowerCase() && (
+                      <span className="text-[10px] text-muted-foreground truncate max-w-[45%]">{m.email}</span>
+                    )}
                     {a !== null && <span className="text-[11px] text-muted-foreground">{a} J.</span>}
                     {a !== null && a < 18 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">Kind</span>}
                   </button>
@@ -131,10 +150,10 @@ export default function EmailZuordnung({ mitglieder = [], onChanged }) {
             </div>
             <button
               onClick={() => zuordnen(g)}
-              disabled={busyId === g.email}
+              disabled={busyId === g.key}
               className="mt-2 w-full py-2.5 min-h-[44px] rounded-lg bg-primary text-white text-xs font-semibold disabled:opacity-50"
             >
-              {busyId === g.email ? 'Speichert…' : 'Zuordnung speichern'}
+              {busyId === g.key ? 'Speichert…' : 'Zuordnung speichern'}
             </button>
           </div>
         );

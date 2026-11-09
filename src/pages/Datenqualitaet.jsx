@@ -1,6 +1,7 @@
 import { bankdatenMap } from '@/lib/bankverbindung';
 import { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
+import { emailSchluessel } from '@/lib/emailSchluessel';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
 import { useNavigate } from 'react-router-dom';
@@ -73,6 +74,27 @@ export default function Datenqualitaet() {
 
   const probleme = useMemo(() => {
     const result = [];
+
+    // 0. Dieselbe Adresse an mehreren Profilen (verhindert die Auto-Verknüpfung
+    //    beim Login; Google-Aliase und Punkte werden als gleich behandelt)
+    const mailGruppen = new Map();
+    mitglieder.forEach(m => {
+      if (m.archiviert) return;
+      const k = emailSchluessel(m.email);
+      if (!k || !(m.email || '').trim()) return;
+      if (!mailGruppen.has(k)) mailGruppen.set(k, []);
+      mailGruppen.get(k).push(m);
+    });
+    mailGruppen.forEach((liste, k) => {
+      if (liste.length > 1) {
+        const namen = liste.map(m => `${m.vorname || ''} ${m.nachname || ''}`.trim()).join(', ');
+        result.push({
+          severity: 'error',
+          text: `Adresse ${liste[0].email} steht bei ${liste.length} Profilen: ${namen}`,
+          link: '/datenqualitaet',
+        });
+      }
+    });
 
     // 1. Mitglied ohne Geburtsdatum
     mitglieder.forEach(m => {
