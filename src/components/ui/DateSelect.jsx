@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, ChevronDown, X } from 'lucide-react';
 
 /**
  * Smartes Datum-Eingabefeld als Ersatz für <input type="date">.
@@ -29,11 +29,14 @@ export default function DateSelect({
   className = '',
   required = false,
   disabled = false,
-  minYear = 1950,
+  minYear = 1920,
   maxYear = 2030,
   allowEmpty = true,
 }) {
   const [open, setOpen] = useState(false);
+  // 'tage' = Kalenderblatt, 'monate' = schnelle Monats-/Jahreswahl.
+  // Grund: bei Geburtsdaten (z.B. 1988) waren vorher 38 Klicks auf "Vormonat" nötig.
+  const [modus, setModus] = useState('tage');
   const [pos, setPos] = useState(null);
   const trigRef = useRef(null);
   const popRef = useRef(null);
@@ -58,6 +61,7 @@ export default function DateSelect({
         top: fitsBelow ? r.bottom + 6 : Math.max(8, r.top - 330),
       });
     }
+    setModus('tage');
     setOpen(true);
   };
 
@@ -160,19 +164,80 @@ export default function DateSelect({
           className="fixed z-[100] w-[272px] bg-card border border-border rounded-xl shadow-2xl p-3"
           style={pos ? { top: pos.top, left: pos.left } : undefined}
         >
-          {/* Monat-Navigation */}
-          <div className="flex items-center justify-between mb-2">
-            <button type="button" onClick={() => stepMonth(-1)} className="p-1.5 rounded-lg hover:bg-secondary text-foreground" aria-label="Vorheriger Monat">
-              <ChevronLeft size={16} />
-            </button>
-            <span className="font-oswald uppercase tracking-wide text-white text-sm">
-              {MONTHS[view.m]} {view.y}
-            </span>
-            <button type="button" onClick={() => stepMonth(1)} className="p-1.5 rounded-lg hover:bg-secondary text-foreground" aria-label="Nächster Monat">
-              <ChevronRight size={16} />
-            </button>
-          </div>
+          {/* Monat-Navigation: Titel antippen springt in die Monats-/Jahreswahl */}
+          {modus === 'tage' ? (
+            <div className="flex items-center justify-between mb-2">
+              <button type="button" onClick={() => stepMonth(-1)} className="p-1.5 rounded-lg hover:bg-secondary text-foreground" aria-label="Vorheriger Monat">
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setModus('monate')}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-secondary transition-colors"
+                aria-label="Monat und Jahr wählen"
+              >
+                <span className="font-oswald uppercase tracking-wide text-white text-sm">
+                  {MONTHS[view.m]} {view.y}
+                </span>
+                <ChevronDown size={13} className="text-muted-foreground" />
+              </button>
+              <button type="button" onClick={() => stepMonth(1)} className="p-1.5 rounded-lg hover:bg-secondary text-foreground" aria-label="Nächster Monat">
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-1 mb-2">
+              <div className="flex items-center">
+                <button type="button" onClick={() => setView(v => ({ ...v, y: Math.max(minYear, v.y - 10) }))} className="px-1.5 py-1.5 rounded-lg hover:bg-secondary text-foreground text-[11px] font-semibold" aria-label="10 Jahre zurück">−10</button>
+                <button type="button" onClick={() => setView(v => ({ ...v, y: Math.max(minYear, v.y - 1) }))} className="p-1.5 rounded-lg hover:bg-secondary text-foreground" aria-label="Jahr zurück">
+                  <ChevronLeft size={16} />
+                </button>
+              </div>
+              <input
+                type="number"
+                value={view.y}
+                onChange={(e) => {
+                  const y = Number(e.target.value);
+                  if (Number.isFinite(y)) setView(v => ({ ...v, y: Math.min(maxYear, Math.max(minYear, y)) }));
+                }}
+                className="w-[74px] text-center bg-secondary border border-border rounded-lg py-1 text-sm font-semibold text-white focus:outline-none focus:border-primary"
+                aria-label="Jahr eingeben"
+              />
+              <div className="flex items-center">
+                <button type="button" onClick={() => setView(v => ({ ...v, y: Math.min(maxYear, v.y + 1) }))} className="p-1.5 rounded-lg hover:bg-secondary text-foreground" aria-label="Jahr vor">
+                  <ChevronRight size={16} />
+                </button>
+                <button type="button" onClick={() => setView(v => ({ ...v, y: Math.min(maxYear, v.y + 10) }))} className="px-1.5 py-1.5 rounded-lg hover:bg-secondary text-foreground text-[11px] font-semibold" aria-label="10 Jahre vor">+10</button>
+              </div>
+            </div>
+          )}
 
+          {modus === 'monate' ? (
+            <>
+              <div className="grid grid-cols-3 gap-1.5">
+                {MONTHS.map((name, i) => (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => { setView(v => ({ ...v, m: i })); setModus('tage'); }}
+                    className={`py-2.5 rounded-lg text-xs font-semibold transition-colors ${
+                      i === view.m ? 'bg-primary text-white' : 'text-foreground hover:bg-secondary'
+                    }`}
+                  >
+                    {name.slice(0, 3)}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setModus('tage')}
+                className="w-full mt-2 py-2 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                zurück zum Kalender
+              </button>
+            </>
+          ) : (
+          <>
           {/* Wochentage */}
           <div className="grid grid-cols-7 gap-1 mb-1">
             {WEEKDAYS.map((w) => (
@@ -203,6 +268,9 @@ export default function DateSelect({
               )
             )}
           </div>
+
+          </>
+          )}
 
           {/* Schnellwahl */}
           <div className="flex gap-1.5 mt-3 pt-2 border-t border-border">

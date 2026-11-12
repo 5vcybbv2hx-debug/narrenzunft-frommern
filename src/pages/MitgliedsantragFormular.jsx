@@ -20,6 +20,20 @@ const istWechsel = (t) => t === 'Wechsel_zu_Aktiv' || t === 'Wechsel_zu_Passiv';
 
 export default function MitgliedsantragFormular() {
   const navigate = useNavigate();
+
+  /**
+   * Zurück, aber robust: Die Seite wird aus der Antragsverwaltung mit
+   * target="_blank" in einem eigenen Fenster geöffnet. Dort ist der Verlauf
+   * leer, navigate(-1) bewirkt dann nichts und man sitzt fest.
+   * Deshalb: Verlauf vorhanden -> zurück, sonst zur App-Startseite.
+   */
+  const zurueck = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/', { replace: true });
+    }
+  };
   const [step, setStep] = useState(-1); // -1 = Varianten-Auswahl
   const [form, setForm] = useState({
     antrag_typ: '', vorname: '', nachname: '', geburtsdatum: '',
@@ -140,7 +154,7 @@ export default function MitgliedsantragFormular() {
   if (submitted) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 relative">
-        <button onClick={() => navigate(-1)} className="absolute top-4 left-4 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors min-h-[44px] z-10">
+        <button onClick={zurueck} className="absolute top-4 left-4 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors min-h-[44px] z-10">
           <ArrowLeft size={20} />
           <span className="text-sm font-medium">Zurück</span>
         </button>
@@ -151,6 +165,12 @@ export default function MitgliedsantragFormular() {
             Dein Antrag ({TYP_LABEL[typ]}{typ === 'Junggarde' ? ` für ${form.kind_vorname} ${form.kind_nachname}` : ''}) wurde gespeichert.
             Der Vorstand prüft ihn und meldet sich.
           </p>
+          <button
+            onClick={zurueck}
+            className="mt-6 w-full py-3 min-h-[44px] rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+          >
+            Zurück zur App
+          </button>
         </div>
       </div>
     );
@@ -160,7 +180,7 @@ export default function MitgliedsantragFormular() {
     <div className="min-h-screen bg-background">
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b border-border">
         <div className="max-w-lg mx-auto flex items-center px-4 h-14">
-          <button onClick={() => (step === -1 ? navigate(-1) : setStep(s => s - 1))} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors min-h-[44px]">
+          <button onClick={() => (step === -1 ? zurueck() : setStep(s => s - 1))} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors min-h-[44px]">
             <ArrowLeft size={20} />
             <span className="text-sm font-medium">{step === -1 ? 'Zurück' : STEPS[step - 1] || 'Zurück'}</span>
           </button>
