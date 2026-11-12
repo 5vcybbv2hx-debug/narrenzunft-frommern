@@ -17,8 +17,29 @@ export function normalisiereName(wert) {
   return String(wert || '')
     .toLowerCase()
     .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+    .replace(/ph/g, 'f')      // Stephanie -> Stefanie
     .replace(/[^a-z]+/g, ' ')
     .trim();
+}
+
+/** Editierabstand (Levenshtein) für Tippfehler und Schreibvarianten. */
+function abstand(a, b) {
+  const m = a.length, n = b.length;
+  if (!m) return n;
+  if (!n) return m;
+  let vorher = Array.from({ length: n + 1 }, (_, j) => j);
+  for (let i = 1; i <= m; i++) {
+    const aktuell = [i];
+    for (let j = 1; j <= n; j++) {
+      aktuell[j] = Math.min(
+        vorher[j] + 1,
+        aktuell[j - 1] + 1,
+        vorher[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+    }
+    vorher = aktuell;
+  }
+  return vorher[n];
 }
 
 /** Kandidaten für einen Namensstring (kann auch "Kim Eppler (Leiter)" sein). */
@@ -33,13 +54,25 @@ export function findeMitglieder(name, mitglieder) {
 
   // 2) Nachname exakt enthalten, Vorname mit gleichem Anfang (Leo → Leonard)
   const teile = ziel.split(' ').filter(Boolean);
-  return alle.filter(m => {
+  const stufe2 = alle.filter(m => {
     const nn = normalisiereName(m.nachname);
     const vn = normalisiereName(m.vorname);
     if (!nn || !vn) return false;
     const nachnamePasst = teile.includes(nn) || nn.split(' ').some(t => teile.includes(t));
     const vornamePasst = teile.some(t => t === vn || (t.length > 2 && vn.startsWith(t)) || (vn.length > 2 && t.startsWith(vn)));
     return nachnamePasst && vornamePasst;
+  });
+  if (stufe2.length) return stufe2;
+
+  // 3) Schreibvarianten und Tippfehler: Nachname exakt, Vorname maximal 2
+  //    Buchstaben entfernt (Luis/Louis, Maik/Mike, Luippold/Luipold).
+  return alle.filter(m => {
+    const nn = normalisiereName(m.nachname);
+    const vn = normalisiereName(m.vorname);
+    if (!nn || !vn) return false;
+    const nachnamePasst = teile.includes(nn) || abstand(nn, teile[teile.length - 1]) <= 1;
+    if (!nachnamePasst) return false;
+    return teile.some(t => t !== nn && abstand(vn, t) <= 2);
   });
 }
 
