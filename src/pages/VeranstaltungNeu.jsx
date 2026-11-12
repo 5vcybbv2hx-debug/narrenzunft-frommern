@@ -11,6 +11,7 @@ import AdresseAutocomplete from '@/components/AdresseAutocomplete';
 import DateSelect from '../components/ui/DateSelect';
 import TimeSelect from '../components/ui/TimeSelect';
 import { toast } from 'sonner';
+import { loeseEingeteilteAuf } from '@/lib/vorlagenEingeteilte';
 import BottomModal from '@/components/ui/BottomModal';
 
 const TYPEN = ['Intern', 'Fest', 'Arbeitsdienst', 'Umzug', 'Abendveranstaltung'];
@@ -58,7 +59,14 @@ export default function VeranstaltungNeu() {
     }));
     // Arbeitsdienst-Vorlagen übernehmen
     if (vorlage.arbeitsdienst_vorlagen?.length) {
-      setArbeitsdienste(vorlage.arbeitsdienst_vorlagen.map(a => ({ ...a })));
+      // Eingeteilte Personen je Dienst (aus den historischen Einteilungen)
+      // an den jeweiligen Dienst hängen, damit sie beim Speichern als
+      // Zuweisung angelegt werden können.
+      const jeDienst = vorlage.eingeteilte_je_dienst || {};
+      setArbeitsdienste(vorlage.arbeitsdienst_vorlagen.map(a => ({
+        ...a,
+        eingeteilte_namen: jeDienst[a.titel] || a.eingeteilte_namen || [],
+      })));
       setShowArbeitsdienste(true);
     }
     setSelectedVorlage(vorlage);
@@ -123,21 +131,51 @@ export default function VeranstaltungNeu() {
         vorlage_id: selectedVorlage?.id || undefined,
         nachbereitung_status: 'Ausstehend',
       });
-      // Arbeitsdienste anlegen
-      if (arbeitsdienste.length > 0) {
-        await Promise.all(
-          arbeitsdienste
-            .filter(a => a.titel.trim())
-            .map(a => base44.entities.Arbeitsdienst.create({
-              titel: a.titel,
-              beschreibung: a.beschreibung,
-              benoetigte_personen: a.benoetigte_personen ? Number(a.benoetigte_personen) : undefined,
-              datum: form.datum,
-              ort: form.ort,
+      // Arbeitsdienste anlegen (einzeln, damit die Zuordnung Dienst -> ID für
+      // die voreingeteilten Personen bekannt ist)
+      const dienstIds = {};
+      for (const a of arbeitsdienste.filter(a => a.titel.trim())) {
+        const dienst = await base44.entities.Arbeitsdienst.create({
+          titel: a.titel,
+          beschreibung: a.beschreibung,
+          benoetigte_personen: a.benoetigte_personen ? Number(a.benoetigte_personen) : undefined,
+          datum: form.datum,
+          ort: form.ort,
+          status: 'Offen',
+          veranstaltung_id: veranstaltung.id,
+        });
+        dienstIds[a.titel] = dienst.id;
+      }
+
+      // Voreingeteilte Personen aus der Vorlage als Zuweisung übernehmen.
+      // Bewusst ohne Push/Benachrichtigung: die Einteilungen stammen aus alten
+      // Listen und werden vom Vorstand erst geprüft.
+      const mitEingeteilten = arbeitsdienste.filter(a => a.titel.trim() && (a.eingeteilte_namen || []).length);
+      if (mitEingeteilten.length) {
+        try {
+          const mitglieder = await base44.entities.Mitglied.list('nachname', 500);
+          const { zuweisungen, mehrdeutig, unbekannt } = loeseEingeteilteAuf(mitEingeteilten, mitglieder || []);
+          await Promise.all(zuweisungen
+            .filter(z => dienstIds[z.dienst_titel])
+            .map(z => base44.entities.ArbeitsdienstZuweisung.create({
+              arbeitsdienst_id: dienstIds[z.dienst_titel],
+              mitglied_id: z.mitglied_id,
               status: 'Offen',
-              veranstaltung_id: veranstaltung.id,
-            }))
-        );
+            })));
+          if (zuweisungen.length) {
+            toast.success(`${zuweisungen.length} Personen aus der Vorlage eingeteilt.`);
+          }
+          if (mehrdeutig.length || unbekannt.length) {
+            const teile = [];
+            if (mehrdeutig.length) teile.push(`${mehrdeutig.length} mehrdeutig (${mehrdeutig.map(m => m.name).slice(0, 4).join(', ')})`);
+            if (unbekannt.length) teile.push(`${unbekannt.length} nicht in der Mitgliederliste (${unbekannt.map(m => m.name).slice(0, 4).join(', ')})`);
+            toast.warning('Bitte prüfen: ' + teile.join(' · '), { duration: 12000 });
+            console.warn('Vorlage: nicht eindeutig zugeordnet', { mehrdeutig, unbekannt });
+          }
+        } catch (e) {
+          console.error('Voreinteilung übernehmen:', e);
+          toast.warning('Personen aus der Vorlage konnten nicht übernommen werden.');
+        }
       }
       // Bereiche aus der Vorlage anlegen (Einkauf, Getränke, ...)
       const bereichVorlagen = [];

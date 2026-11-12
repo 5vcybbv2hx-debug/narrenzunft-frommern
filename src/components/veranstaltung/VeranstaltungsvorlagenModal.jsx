@@ -21,6 +21,8 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
       bus_erforderlich: false, anmeldung_aktiv: true,
       busparkplatz_adresse: '', busparkplatz_treffzeit: '', hinweise: '',
       arbeitsdienst_vorlagen: [],
+      eingeteilte_je_dienst: {},
+      sonstige_eingeteilte: {},
       bereich_vorlagen: [],
     };
   }
@@ -51,6 +53,8 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
       busparkplatz_treffzeit: v.busparkplatz_treffzeit || '',
       hinweise: v.hinweise || '',
       arbeitsdienst_vorlagen: v.arbeitsdienst_vorlagen || [],
+      eingeteilte_je_dienst: v.eingeteilte_je_dienst || {},
+      sonstige_eingeteilte: v.sonstige_eingeteilte || {},
       bereich_vorlagen: parseBereiche(v.bereich_vorlagen),
     });
     setAnsicht('form');
@@ -326,6 +330,12 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
                       placeholder="Beschreibung (optional)"
                       className="w-full px-2.5 py-1.5 rounded-lg bg-card border border-border text-xs text-foreground focus:outline-none focus:border-primary"
                     />
+                    {(form.eingeteilte_je_dienst?.[ad.titel] || []).length > 0 && (
+                      <p className="text-[11px] text-muted-foreground leading-snug">
+                        <span className="text-primary font-medium">Voreingeteilt ({(form.eingeteilte_je_dienst[ad.titel] || []).length}):</span>{' '}
+                        {(form.eingeteilte_je_dienst[ad.titel] || []).join(', ')}
+                      </p>
+                    )}
                   </div>
                 ))}
                 {(form.arbeitsdienst_vorlagen || []).length === 0 && (
