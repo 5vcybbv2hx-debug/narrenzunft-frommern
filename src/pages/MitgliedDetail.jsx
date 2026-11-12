@@ -523,7 +523,16 @@ export default function MitgliedDetail() {
 
   const alter = mitglied.geburtsdatum ? differenceInYears(new Date(), new Date(mitglied.geburtsdatum)) : null;
 
-  const altersStatusVorschlag = alter === null ? null : alter < 4 ? 'Kleinkind 0-3' : alter < 11 ? 'Kinder 4-10' : alter < 15 ? 'Jugendliche 11-14' : alter < 18 ? 'Jungaktive 15-17' : null;
+  const jugendStatus = ['Kleinkind 0-3','Kinder 4-10','Jugendliche 11-14','Jungaktive 15-17'];
+  // Ab 18 fuehrt kein Weg automatisch zu 'Aktiv': vollwertig wird man nur mit
+  // Antrag (Owner-Regel 12.11.2026). Bis dahin gilt Passiv, damit der Fall sichtbar bleibt.
+  const altersStatusVorschlag = alter === null ? null
+    : alter < 4 ? 'Kleinkind 0-3'
+    : alter < 11 ? 'Kinder 4-10'
+    : alter < 15 ? 'Jugendliche 11-14'
+    : alter < 18 ? 'Jungaktive 15-17'
+    : jugendStatus.includes(mitglied.mitgliedsstatus) ? 'Passiv'
+    : null;
   const statusPruefung = altersStatusVorschlag && mitglied.mitgliedsstatus !== altersStatusVorschlag
     && ['Kleinkind 0-3', 'Kinder 4-10', 'Jugendliche 11-14', 'Jungaktive 15-17'].includes(mitglied.mitgliedsstatus);
   const statusAltersWarnung = (() => {

@@ -2,7 +2,7 @@ import DateSelect from '../components/ui/DateSelect';
 import { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { CheckCircle2, ChevronRight, ChevronLeft, Loader2, ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const SPARTEN = ['Brennnesseln', 'Hexen', 'Zäpfle Bomber', 'Garde'];
 
@@ -20,6 +20,7 @@ const istWechsel = (t) => t === 'Wechsel_zu_Aktiv' || t === 'Wechsel_zu_Passiv';
 
 export default function MitgliedsantragFormular() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   /**
    * Zurück, aber robust: Die Seite wird aus der Antragsverwaltung mit
@@ -150,6 +151,35 @@ export default function MitgliedsantragFormular() {
     }
     setSubmitting(false);
   };
+
+  // Vorbelegung aus einem Einladungslink, z.B.
+  // /mitgliedsantrag?mitglied_id=...&typ=Wechsel_zu_Aktiv
+  // Damit muss ein 18-Jähriges Mitglied nur noch Sparte, SEPA und Einwilligung ergänzen.
+  useEffect(() => {
+    const mid = searchParams.get('mitglied_id');
+    const t = searchParams.get('typ');
+    if (t && TYPEN.some(x => x.key === t)) setTyp(t);
+    if (!mid) return;
+    let abgebrochen = false;
+    base44.entities.Mitglied.filter({ id: mid })
+      .then(liste => {
+        const m = liste?.[0];
+        if (abgebrochen || !m) return;
+        setForm(p => ({
+          ...p,
+          vorname: p.vorname || m.vorname || '',
+          nachname: p.nachname || m.nachname || '',
+          geburtsdatum: p.geburtsdatum || m.geburtsdatum || '',
+          strasse: p.strasse || m.strasse || '',
+          plz: p.plz || m.plz || '',
+          ort: p.ort || m.ort || '',
+          email: p.email || m.email || '',
+          telefon: p.telefon || m.telefon || '',
+        }));
+      })
+      .catch(e => console.warn('Vorbelegung Antrag:', e));
+    return () => { abgebrochen = true; };
+  }, [searchParams]);
 
   if (submitted) {
     return (

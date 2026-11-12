@@ -13,6 +13,7 @@ const STATUS_FARBEN = {
 
 export default function StatuswechselWidget() {
   const [eintraege, setEintraege] = useState([]);
+  const [aktivierungen, setAktivierungen] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pruefeLaeuft, setPruefeLaeuft] = useState(false);
   const [bestaetigeId, setBestaetigeId] = useState(null); // benachrichtigung id
@@ -23,16 +24,17 @@ export default function StatuswechselWidget() {
   const ladeOffene = async () => {
     setLoading(true);
     try {
-      const benachrichtigungen = await base44.entities.Benachrichtigung.filter({
-        typ: 'Statuswechsel',
-        gelesen: false,
-      });
-      const parsed = benachrichtigungen.map(b => {
+      const [benachrichtigungen, volljaehrig] = await Promise.all([
+        base44.entities.Benachrichtigung.filter({ typ: 'Statuswechsel', gelesen: false }),
+        base44.entities.Benachrichtigung.filter({ typ: 'Aktivierung', gelesen: false }),
+      ]);
+      const parse = (liste) => (liste || []).map(b => {
         let daten = {};
         try { daten = JSON.parse(b.daten || '{}'); } catch {}
         return { ...b, daten };
       });
-      setEintraege(parsed);
+      setEintraege(parse(benachrichtigungen));
+      setAktivierungen(parse(volljaehrig));
     } catch {}
     setLoading(false);
   };
@@ -62,6 +64,15 @@ export default function StatuswechselWidget() {
     setBestaetigeId(null);
   };
 
+  const aktivierungErledigt = async (eintrag) => {
+    setBestaetigeId(eintrag.id);
+    try {
+      await base44.entities.Benachrichtigung.update(eintrag.id, { gelesen: true });
+      setAktivierungen(prev => prev.filter(e => e.id !== eintrag.id));
+    } catch {}
+    setBestaetigeId(null);
+  };
+
   const ignorieren = async (eintrag) => {
     setIgnoriereId(null);
     await base44.entities.Benachrichtigung.update(eintrag.id, { gelesen: true });
@@ -76,7 +87,53 @@ export default function StatuswechselWidget() {
 
   return (
     <div>
-      {eintraege.length === 0 ? (
+      {/* Volljährigkeit: Antrag auf Aktive Mitgliedschaft fehlt */}
+      {aktivierungen.length > 0 && (
+        <div className="space-y-2 mb-3">
+          {aktivierungen.map(eintrag => {
+            const d = eintrag.daten;
+            const link = `/mitgliedsantrag?mitglied_id=${encodeURIComponent(d.mitglied_id || '')}&typ=Wechsel_zu_Aktiv`;
+            const dringend = d.phase === 'faellig' || d.phase === 'erinnerung1' || d.phase === 'erinnerung2';
+            return (
+              <div key={eintrag.id} className={`rounded-xl p-3 border ${dringend ? 'bg-primary/5 border-primary/30' : 'bg-yellow-500/5 border-yellow-500/25'}`}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <Link to={`/mitglieder/${d.mitglied_id}`} className="text-sm font-semibold text-foreground hover:text-primary transition-colors">
+                      {d.vorname} {d.nachname}
+                    </Link>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      {d.phase === 'vorab'
+                        ? `wird am ${String(d.achtzehn_am || '').split('-').reverse().join('.')} volljährig`
+                        : `volljährig seit ${String(d.achtzehn_am || '').split('-').reverse().join('.')}`}
+                      {d.hat_login ? ' · hat App-Zugang' : ' · kein App-Zugang, Eltern informieren'}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs text-foreground/80 mt-1.5 leading-snug">{eintrag.nachricht}</p>
+                <div className="flex gap-1.5 mt-2">
+                  <a
+                    href={link}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1 text-center py-2 rounded-lg bg-primary text-white text-[11px] font-semibold hover:bg-primary/90 transition-colors"
+                  >
+                    Antrag öffnen
+                  </a>
+                  <button
+                    onClick={() => aktivierungErledigt(eintrag)}
+                    disabled={bestaetigeId === eintrag.id}
+                    className="px-3 py-2 rounded-lg bg-secondary text-muted-foreground text-[11px] font-medium hover:text-foreground transition-colors disabled:opacity-50"
+                  >
+                    erledigt
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {eintraege.length === 0 && aktivierungen.length === 0 ? (
         <div className="flex items-center gap-2 py-3">
           <CheckCircle2 size={18} className="text-green-400" />
           <p className="text-sm text-green-400 font-medium">Alle Altersstatusangaben sind aktuell</p>
