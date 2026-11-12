@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { X, Plus, Trash2, Save, LayoutTemplate, Edit, Bus, Clock, MapPin, Briefcase, ShoppingBasket } from 'lucide-react';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import BottomModal from '@/components/ui/BottomModal';
+import MitgliedLiveSuche from '@/components/MitgliedLiveSuche';
 
 const TYP_OPTIONEN = ['Umzug', 'Abendveranstaltung', 'Intern', 'Arbeitsdienst', 'Fest'];
 
@@ -14,6 +15,7 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
   const [editVorlage, setEditVorlage] = useState(null);
   const [form, setForm] = useState(defaultForm());
   const [saving, setSaving] = useState(false);
+  const [mitglieder, setMitglieder] = useState([]);
 
   function defaultForm() {
     return {
@@ -28,6 +30,13 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
   }
 
   useEffect(() => { loadVorlagen(); }, []);
+
+  // Mitglieder für die Personen-Auswahl in den Diensten
+  useEffect(() => {
+    base44.entities.Mitglied.list('nachname', 500)
+      .then(liste => setMitglieder((liste || []).filter(m => !m.archiviert)))
+      .catch(e => console.error('Mitglieder für Vorlagen:', e));
+  }, []);
 
   const loadVorlagen = async () => {
     setLoading(true);
@@ -86,8 +95,16 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
   const handleArbeitsdienstVorlageChange = (idx, field, value) => {
     setForm(p => {
       const liste = [...(p.arbeitsdienst_vorlagen || [])];
+      const altTitel = liste[idx]?.titel;
       liste[idx] = { ...liste[idx], [field]: value };
-      return { ...p, arbeitsdienst_vorlagen: liste };
+      // Bei Umbenennung die eingeteilten Personen mitnehmen, sonst hängen sie
+      // am alten Diensttitel und die Einteilung geht beim Speichern verloren.
+      let eingeteilte = p.eingeteilte_je_dienst || {};
+      if (field === 'titel' && altTitel && altTitel !== value && eingeteilte[altTitel]) {
+        const { [altTitel]: namen, ...rest } = eingeteilte;
+        eingeteilte = { ...rest, [value]: namen };
+      }
+      return { ...p, arbeitsdienst_vorlagen: liste, eingeteilte_je_dienst: eingeteilte };
     });
   };
 
@@ -119,6 +136,27 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
 
   const handleBereichRemove = (idx) => {
     setForm(p => ({ ...p, bereich_vorlagen: (p.bereich_vorlagen || []).filter((_, i) => i !== idx) }));
+  };
+
+  // Personen je Dienst bearbeiten (Owner-Wunsch: der Vorstand passt die
+  // Voreinteilung direkt in der Vorlage an). Gespeichert wird der Anzeigename;
+  // beim Anlegen einer Veranstaltung wird er gegen die Mitgliederliste aufgelöst.
+  const setzeEingeteilte = (titel, namen) => setForm(p => ({
+    ...p,
+    eingeteilte_je_dienst: { ...(p.eingeteilte_je_dienst || {}), [titel]: namen },
+  }));
+
+  const addEingeteilter = (titel, mitglied) => {
+    if (!mitglied) return;
+    const name = `${mitglied.vorname || ''} ${mitglied.nachname || ''}`.trim();
+    const bisher = form.eingeteilte_je_dienst?.[titel] || [];
+    if (!name || bisher.includes(name)) return;
+    setzeEingeteilte(titel, [...bisher, name]);
+  };
+
+  const removeEingeteilter = (titel, name) => {
+    const bisher = form.eingeteilte_je_dienst?.[titel] || [];
+    setzeEingeteilte(titel, bisher.filter(n => n !== name));
   };
 
   const handleSave = async () => {
@@ -330,12 +368,33 @@ export default function VeranstaltungsvorlagenModal({ onClose }) {
                       placeholder="Beschreibung (optional)"
                       className="w-full px-2.5 py-1.5 rounded-lg bg-card border border-border text-xs text-foreground focus:outline-none focus:border-primary"
                     />
-                    {(form.eingeteilte_je_dienst?.[ad.titel] || []).length > 0 && (
-                      <p className="text-[11px] text-muted-foreground leading-snug">
-                        <span className="text-primary font-medium">Voreingeteilt ({(form.eingeteilte_je_dienst[ad.titel] || []).length}):</span>{' '}
-                        {(form.eingeteilte_je_dienst[ad.titel] || []).join(', ')}
+                    <div className="rounded-lg bg-card/60 border border-border/60 p-2 space-y-1.5">
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
+                        Voreingeteilt ({(form.eingeteilte_je_dienst?.[ad.titel] || []).length})
                       </p>
-                    )}
+                      <div className="flex flex-wrap gap-1">
+                        {(form.eingeteilte_je_dienst?.[ad.titel] || []).map(name => (
+                          <span key={name} className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/15 text-primary text-[11px]">
+                            {name}
+                            <button type="button" onClick={() => removeEingeteilter(ad.titel, name)}
+                              className="hover:text-destructive transition-colors" title="Entfernen">
+                              <X size={10} />
+                            </button>
+                          </span>
+                        ))}
+                        {(form.eingeteilte_je_dienst?.[ad.titel] || []).length === 0 && (
+                          <span className="text-[11px] text-muted-foreground italic">noch niemand eingeteilt</span>
+                        )}
+                      </div>
+                      {ad.titel?.trim() && (
+                        <MitgliedLiveSuche
+                          mitglieder={mitglieder}
+                          value=""
+                          onSelect={m => addEingeteilter(ad.titel, m)}
+                          placeholder="Person hinzufügen…"
+                        />
+                      )}
+                    </div>
                   </div>
                 ))}
                 {(form.arbeitsdienst_vorlagen || []).length === 0 && (
