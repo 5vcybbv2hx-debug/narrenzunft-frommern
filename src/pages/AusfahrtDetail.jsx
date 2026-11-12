@@ -1014,8 +1014,16 @@ export default function AusfahrtDetail() {
                               <p className="text-xs text-muted-foreground">{fm.beziehung}{fm.alter ? ` · ${fm.alter} Jahre` : ''}</p>
                             </div>
                             {fmReg ? (
-                              <span className="text-xs text-green-400 font-medium shrink-0 flex items-center gap-1">
-                                <CheckCircle2 className="w-3 h-3" /> {fmReg.transport === 'Bus' ? 'Bus' : 'Privat'}
+                              <span className="flex items-center gap-2 shrink-0">
+                                <span className="text-xs text-green-400 font-medium flex items-center gap-1">
+                                  <CheckCircle2 className="w-3 h-3" /> {fmReg.transport === 'Bus' ? 'Bus' : 'Privat'}
+                                </span>
+                                <button
+                                  onClick={() => handleDeregisterChild(fm.id)}
+                                  className="text-xs px-2 py-1 rounded-lg border border-red-500/40 text-red-400 hover:bg-red-500/10 hover:border-red-500 transition-colors"
+                                >
+                                  Abmelden
+                                </button>
                               </span>
                             ) : (
                               <span className="text-xs text-muted-foreground shrink-0">nicht angemeldet</span>
@@ -1067,14 +1075,22 @@ export default function AusfahrtDetail() {
                               const fmReg = anmeldungen.find(a => a.mitglied_id === fm.id && a.status !== 'Abgemeldet');
                               if (fmReg) {
                                 return (
-                                  <div key={fm.id} className="flex items-center gap-3 p-3 bg-green-950/20 border border-green-800/30 rounded-lg opacity-70">
+                                  <div key={fm.id} className="flex items-center gap-3 p-3 bg-green-950/20 border border-green-800/30 rounded-lg">
                                     <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
-                                    <div className="flex-1">
+                                    <div className="flex-1 min-w-0">
                                       <p className="text-sm text-foreground font-medium">{fm.name}</p>
                                       <p className="text-xs text-green-400">
                                         {fm.beziehung} · Bereits angemeldet ({fmReg.transport === 'Bus' ? 'Bus' : 'Privat'})
                                       </p>
                                     </div>
+                                    {/* Abmelden je Familienmitglied: die Function meldeAbAusfahrtSicher
+                                        prüft die Verwandtschaft serverseitig (Kind/Elternteil/Ehepartner). */}
+                                    <button
+                                      onClick={() => handleDeregisterChild(fm.id)}
+                                      className="shrink-0 text-xs px-2.5 py-1.5 rounded-lg border border-red-500/40 text-red-400 hover:bg-red-500/10 hover:border-red-500 transition-colors"
+                                    >
+                                      Abmelden
+                                    </button>
                                   </div>
                                 );
                               }
