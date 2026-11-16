@@ -36,6 +36,7 @@ export const NAV_SECTIONS = [
     items: [
       { path: '/mitglieder',     label: 'Mitglieder',         icon: Users,         roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter', 'admin'] },
       { path: '/haes',           label: 'Häs',                icon: Shirt,         roles: ['vorstand', 'stellv_vorstand', 'admin'] },
+      { path: '/haes-abgleich', label: 'Häs-Abgleich',      icon: Shirt,         roles: ['vorstand', 'stellv_vorstand', 'admin'] },
       { path: '/finanzen',       label: 'Finanzen',           icon: Wallet,        roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'kassenpruefer', 'admin'] },
 { path: '/beitraege',      label: 'Beiträge',           icon: CreditCard,    roles: ['vorstand', 'stellv_vorstand', 'kassierer', 'admin'] },
       { path: '/ehrungen',       label: 'Ehrungen',           icon: Award,         roles: ['vorstand', 'stellv_vorstand', 'admin'] },

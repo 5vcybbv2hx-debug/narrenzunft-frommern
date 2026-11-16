@@ -52,6 +52,7 @@ import MitgliedsantragFormular from './pages/MitgliedsantragFormular';
 import VerleihAnfrage from './pages/VerleihAnfrage';
 import VerleihUebersicht from './pages/VerleihUebersicht';
 import Mitgliedsantraege from './pages/Mitgliedsantraege';
+import HaesAbgleich from './pages/HaesAbgleich';
 import Dokumente from './pages/Dokumente';
 
 
@@ -164,6 +165,9 @@ const AuthenticatedApp = () => {
         } />
         <Route path="/berechtigungen" element={
           <Guard roles={ROLLEN_VORSTAND}><Berechtigungen /></Guard>
+        } />
+        <Route path="/haes-abgleich" element={
+          <Guard roles={ROLLEN_VORSTAND}><HaesAbgleich /></Guard>
         } />
         <Route path="/mitgliedsantraege" element={
           <Guard roles={ROLLEN_VORSTAND}><Mitgliedsantraege /></Guard>
