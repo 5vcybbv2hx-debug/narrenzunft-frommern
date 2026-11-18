@@ -135,13 +135,12 @@ export default function Mitglieder() {
       if (nummerOnly !== null) {
         result = result.filter(m => m.mitgliedsnummer?.toString().includes(nummerOnly));
       } else {
-        result = result.filter(m =>
-          `${m.vorname} ${m.nachname}`.toLowerCase().includes(s) ||
-          m.email?.toLowerCase().includes(s) ||
-          m.ort?.toLowerCase().includes(s) ||
-          m.mitgliedsnummer?.toString().includes(s) ||
-          haesMap[m.id]?.toString().includes(s)
-        );
+        // Wortweise suchen: „Edel Andrea" und „Andrea  Edel" finden dasselbe Mitglied.
+        const woerter = s.split(/\s+/).filter(Boolean);
+        result = result.filter(m => {
+          const heu = `${m.vorname || ''} ${m.nachname || ''} ${m.email || ''} ${m.ort || ''} ${m.mitgliedsnummer || ''} ${haesMap[m.id] || ''}`.toLowerCase();
+          return woerter.every(w => heu.includes(w));
+        });
       }
     }
 

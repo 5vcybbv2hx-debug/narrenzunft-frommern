@@ -67,7 +67,11 @@ export default function HaesAbgleich() {
     const q = suche.trim().toLowerCase();
     let liste = mitglieder;
     if (q.length >= 2) {
-      liste = liste.filter(m => `${m.vorname} ${m.nachname}`.toLowerCase().includes(q));
+      const woerter = q.split(/\s+/).filter(Boolean);
+      liste = liste.filter(m => {
+        const heu = `${m.vorname || ''} ${m.nachname || ''}`.toLowerCase();
+        return woerter.every(w => heu.includes(w));
+      });
     }
     if (filter === 'ohne') liste = liste.filter(m => !haesProMitglied.has(m.id));
     if (filter === 'mehrere') liste = liste.filter(m => (haesProMitglied.get(m.id) || []).length > 1);
