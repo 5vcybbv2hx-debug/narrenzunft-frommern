@@ -1,5 +1,6 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.49";
 import { loeseMeinMitglied, istVerwaltung, istElternVon } from "../../shared/mitgliedBerechtigung.ts";
+import { sendePush } from "../../shared/pushSenden.ts";
 
 /**
  * U18-Begleitbestätigung (U18Begleitung-Entity) für Termine/Ausfahrten/
@@ -76,6 +77,14 @@ export default async function (req) {
         status: "Ausstehend",
         notiz: notiz || "",
       });
+      // Begleitperson sofort informieren (nur wenn sie ein App-Konto hat).
+      if (rec.begleit_mitglied_id) {
+        try {
+          await sendePush([rec.begleit_mitglied_id], "Erziehungsauftrag",
+            "Du sollst " + (rec.u18_name || "ein Kind") + " beaufsichtigen. Bitte bestaetigen.",
+            { route: "/dashboard" });
+        } catch (e) { console.error("U18-Push:", e); }
+      }
       return Response.json({ ok: true, id: rec.id, begleitung: rec });
     }
 
@@ -108,6 +117,38 @@ export default async function (req) {
         begleitung_bestaetigt_von: mein?.id || "",
         status: statusVon({ ...e, begleitung_bestaetigt_am: jetztISO() }),
       });
+      return Response.json({ ok: true, id: bid, begleitung: erg });
+    }
+
+    if (aktion === "ablehnen") {
+      const bid = body.eintrag_id || body.begleitung_id;
+      const e = bid ? await S.U18Begleitung.get(bid).catch(() => null) : null;
+      if (!e) return Response.json({ error: "Eintrag nicht gefunden" }, { status: 404 });
+      const mein = await loeseMeinMitglied(base44, user);
+      const ok = istVerwaltung(user) || (mein && e.begleit_mitglied_id === mein.id);
+      if (!ok) return Response.json({ error: "Nur die Begleitperson selbst oder Verwaltung" }, { status: 403 });
+      const grund = String(body.grund || "").trim();
+      const wer = ((mein && mein.vorname) || "") + " " + ((mein && mein.nachname) || "");
+      const vermerk = "Abgelehnt von " + wer.trim() + " am " + jetztISO().slice(0, 10) + (grund ? ": " + grund : "");
+      const erg = await S.U18Begleitung.update(bid, {
+        status: "Abgelehnt",
+        begleitung_bestaetigt_am: "",
+        begleitung_bestaetigt_von: "",
+        notiz: [e.notiz, vermerk].filter(Boolean).join(" | "),
+      });
+      // Eltern informieren, damit sie eine andere Aufsicht eintragen koennen
+      try {
+        const verwandt = await S.Verwandtschaft.filter({ verwandter_id: e.u18_mitglied_id }).catch(() => []);
+        const elternIds = (verwandt || [])
+          .filter(v => (v.beziehung || "").toLowerCase().includes("elternteil"))
+          .map(v => v.mitglied_id)
+          .filter(Boolean);
+        if (elternIds.length) {
+          await sendePush(elternIds, "Aufsicht abgelehnt",
+            (wer.trim() || "Die Begleitperson") + " kann " + (e.u18_name || "dein Kind") + " nicht beaufsichtigen. Bitte jemand anderen eintragen.",
+            { route: "/dashboard" });
+        }
+      } catch (err) { console.error("U18-Ablehnung-Push:", err); }
       return Response.json({ ok: true, id: bid, begleitung: erg });
     }
 

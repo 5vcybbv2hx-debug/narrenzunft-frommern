@@ -23,6 +23,7 @@ export default function AusfahrtDetail() {
   const [ausfahrt, setAusfahrt] = useState(null);
   const [u18Offen, setU18Offen] = useState(null); // { mitgliedId, name } wenn Begleitperson fehlt
   const [anmeldungen, setAnmeldungen] = useState([]);
+  const [u18Eintraege, setU18Eintraege] = useState([]);
   const [mitglieder, setMitglieder] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -139,6 +140,13 @@ export default function AusfahrtDetail() {
       }
 
       setAnmeldungen(anmeldungenRes || []);
+      // Aufsicht je Kind (Erziehungsauftrag) für die Check-in-Liste
+      if (ausfahrtRes?.u18_begleitung_erforderlich) {
+        base44.entities.U18Begleitung.filter({ termin_id: id })
+          .then(liste => setU18Eintraege((liste || []).filter(x => x.typ === 'ausfahrt')))
+          .catch(() => setU18Eintraege([]));
+      }
+
       setMitglieder(mitgliederRes || []);
       setSparten(spartenRes || []);
       setVerwandtschaften(verwandt || []);
@@ -804,7 +812,8 @@ export default function AusfahrtDetail() {
       status: reg.status,
       durchAdmin: reg.durch_admin_angemeldet,
       durchAdminName: reg.durch_admin_name,
-      beziehung: null
+      beziehung: null,
+      mitgliedId: reg.mitglied_id || null
     });
     // Begleitpersonen als eigene Einträge
     if (reg.begleitpersonen && Array.isArray(reg.begleitpersonen)) {
@@ -840,6 +849,16 @@ export default function AusfahrtDetail() {
   })();
 
   // Bulk-Zähler (ungefiltert, über alle aktiven Anmeldungen)
+  // Aufsicht zu einer Person: Name + Status des Erziehungsauftrags
+  const aufsichtZeile = (mitgliedId) => {
+    const e = u18Eintraege.find(x => x.u18_mitglied_id === mitgliedId);
+    if (!e) return null;
+    const status = e.status === 'Bestätigt' ? 'bestätigt'
+      : e.status === 'Abgelehnt' ? 'ABGELEHNT'
+      : 'noch nicht bestätigt';
+    return { name: e.begleit_name || '–', status, bestaetigt: e.status === 'Bestätigt', abgelehnt: e.status === 'Abgelehnt' };
+  };
+
   const offeneZumEinchecken = sortedRegistrations.filter(e => e.status !== 'Eingecheckt');
   const offeneBus = offeneZumEinchecken.filter(e => e.transport === 'Bus');
   const offenePrivat = offeneZumEinchecken.filter(e => e.transport === 'Privat');
@@ -1573,6 +1592,17 @@ export default function AusfahrtDetail() {
                                 ({entry.beziehung}{entry.alter ? `, ${entry.alter} J.` : ''})
                               </span>
                             )}
+                            {(() => {
+                              const a = aufsichtZeile(entry.mitgliedId || entry.id);
+                              if (!a) return null;
+                              return (
+                                <span className={`block text-[10px] font-normal mt-0.5 ${
+                                  a.abgelehnt ? 'text-red-400' : a.bestaetigt ? 'text-green-500' : 'text-amber-500'
+                                }`}>
+                                  Aufsicht: {a.name} · {a.status}
+                                </span>
+                              );
+                            })()}
                             {entry.durchAdmin && (
                               <span className="block text-[10px] text-muted-foreground font-normal mt-0.5">
                                 Hinzugefügt von: {entry.durchAdminName || 'Admin'}

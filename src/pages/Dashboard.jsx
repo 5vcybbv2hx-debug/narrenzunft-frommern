@@ -17,6 +17,7 @@ import MitgliedDashboard from '@/components/dashboard/MitgliedDashboard';
 import { useBegruessung } from '@/lib/begruessung';
 import StatuswechselWidget from '@/components/vorstand/StatuswechselWidget';
 import VerleihAnfragenWidget from '@/components/dashboard/VerleihAnfragenWidget';
+import U18AuftraegeWidget from '@/components/dashboard/U18AuftraegeWidget';
 import { AenderungsantraegeVerwaltung } from '@/components/mitglied/Aenderungsantraege';
 
 // ── Hilfsfunktionen ──────────────────────────────────────────────────────────
@@ -342,6 +343,7 @@ export default function Dashboard() {
 
       {/* Offene Verleih-Anfragen (ganz oben, Vorstand + zuständige Personen) */}
       <div className="mb-4">
+        <U18AuftraegeWidget />
         <VerleihAnfragenWidget />
       </div>
 

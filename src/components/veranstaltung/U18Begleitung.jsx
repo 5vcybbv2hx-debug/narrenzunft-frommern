@@ -29,6 +29,18 @@ export function U18BegleitungKarte({ typ, terminId, myMitglied }) {
 
   useEffect(() => { laden(); /* eslint-disable-line */ }, [terminId, typ]);
 
+  const ablehnen = async (eintragId) => {
+    setBusy(eintragId);
+    try {
+      const res = await base44.functions.invoke('verwalteU18Begleitung', { aktion: 'ablehnen', eintrag_id: eintragId });
+      if (res?.error) throw new Error(res.error);
+      await laden();
+      toast.success('Abgelehnt. Die Eltern wurden informiert.');
+    } catch (e) {
+      toast.error(e.message || 'Ablehnen fehlgeschlagen.');
+    } finally { setBusy(null); }
+  };
+
   const bestaetigen = async (aktion, eintragId) => {
     setBusy(eintragId);
     try {
