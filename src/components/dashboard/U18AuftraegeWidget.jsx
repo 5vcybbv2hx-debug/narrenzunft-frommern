@@ -118,6 +118,9 @@ export default function U18AuftraegeWidget() {
             {termine[e.id] && (
               <p className="text-[11px] text-muted-foreground mt-0.5">{termine[e.id]}</p>
             )}
+            <p className="text-[11px] text-amber-400/90 mt-1">
+              Deine Zusage gilt nur für diese Veranstaltung.
+            </p>
             <div className="flex flex-wrap gap-2 mt-2">
               <button
                 onClick={() => entscheiden(e.id, 'begleitung_bestaetigen')}
