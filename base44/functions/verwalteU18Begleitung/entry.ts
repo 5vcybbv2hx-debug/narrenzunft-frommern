@@ -22,6 +22,7 @@ import { sendePush } from "../../shared/pushSenden.ts";
  * Updates laufen im service-role (RLS update = vorstand/admin; service-role
  * bypasses RLS). _von-Felder speichern die Mitglieds-ID (verfolgbar).
  */
+// Deploy-Marker (main df10426): Aktion aufsicht_pruefen + Helfer kindIdsVon.
 const jetztISO = () => new Date().toISOString();
 
 export default async function (req) {

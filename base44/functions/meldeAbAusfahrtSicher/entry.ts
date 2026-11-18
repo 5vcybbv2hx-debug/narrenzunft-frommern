@@ -15,6 +15,7 @@ import { sendePush } from '../../shared/pushSenden.ts';
  *  - Verwaltung (admin/vorstand/stellv_vorstand)
  * Danach wird die Anmeldung auf 'Abgemeldet' gesetzt.
  */
+// Deploy-Marker (main df10426): Erziehungsauftrag wird bei Abmeldung geloescht.
 const VERWALTUNG = ['admin', 'vorstand', 'stellv_vorstand'];
 
 export default async function (req) {
