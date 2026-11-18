@@ -17,7 +17,8 @@ import { Shirt, Search, ChevronLeft, ChevronRight, Save, UserX, AlertTriangle, C
  */
 
 const STATUS_OPTIONEN = ['Aktiv', 'Passiv', 'Kleinkind 0-3', 'Kinder 4-10', 'Jugendliche 11-14', 'Jungaktive 15-17'];
-const HAES_STATUS = ['Verliehen', 'Verfügbar', 'Stillgelegt', 'Verkauft', 'In Reparatur'];
+// Vorstandsbeschluss: nur diese vier Werte. 'Aktiv' ist der Normalfall und fehlte.
+const HAES_STATUS = ['Aktiv', 'Verliehen', 'Passiv', 'Stillgelegt'];
 
 export default function HaesAbgleich() {
   const [mitglieder, setMitglieder] = useState([]);
@@ -346,6 +347,9 @@ export default function HaesAbgleich() {
                         onChange={e => setHaesForm(p => ({ ...p, status: e.target.value }))}
                         className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary">
                         <option value="">—</option>
+                        {haesForm.status && !HAES_STATUS.includes(haesForm.status) && (
+                          <option value={haesForm.status}>{haesForm.status} (alter Wert)</option>
+                        )}
                         {HAES_STATUS.map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
