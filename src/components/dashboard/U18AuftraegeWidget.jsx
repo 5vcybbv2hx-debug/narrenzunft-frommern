@@ -11,28 +11,29 @@ import { toast } from 'sonner';
  */
 export default function U18AuftraegeWidget() {
   const { user } = useAuth();
-  // user._mitglied setzt AuthContext nur direkt nach verknuepfeMitgliedLogin.
-  // Bei bestehenden Sessions ist es leer — deshalb die Mitglieds-ID am Profil
-  // über user_id (Fallback E-Mail) nachschlagen.
+  // user._mitglied wird nur beim automatischen Verknüpfen gesetzt und fehlt bei
+  // bestehenden Sessions. Deshalb die Mitglieds-ID am Profil nachschlagen.
   const [meinId, setMeinId] = useState(user?._mitglied?.id || null);
+
+  useEffect(() => {
+    if (meinId || !user) return;
+    let abbruch = false;
+    (async () => {
+      try {
+        const treffer = await base44.entities.Mitglied.filter({ user_id: user.id });
+        let m = (treffer || [])[0];
+        if (!m && user.email) {
+          const perMail = await base44.entities.Mitglied.filter({ email: user.email });
+          m = (perMail || [])[0];
+        }
+        if (!abbruch && m) setMeinId(m.id);
+      } catch (e) { console.error('Mitglied zu Login nicht gefunden:', e); }
+    })();
+    return () => { abbruch = true; };
+  }, [meinId, user]);
   const [eintraege, setEintraege] = useState([]);
   const [termine, setTermine] = useState({});
   const [busy, setBusy] = useState(null);
-
-  useEffect(() => {
-    if (meinId || !user?.id) return;
-    let aktiv = true;
-    (async () => {
-      const perUser = await base44.entities.Mitglied.filter({ user_id: user.id });
-      let m = perUser?.[0];
-      if (!m && user.email) {
-        const perMail = await base44.entities.Mitglied.filter({ email: user.email });
-        m = perMail?.[0];
-      }
-      if (aktiv && m) setMeinId(m.id);
-    })().catch(e => console.error('Mitglied zum Login suchen:', e));
-    return () => { aktiv = false; };
-  }, [user?.id, user?.email, meinId]);
 
   const laden = async () => {
     if (!meinId) return;

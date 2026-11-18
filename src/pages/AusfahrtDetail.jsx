@@ -4,7 +4,6 @@ import { base44 } from '@/api/base44Client';
 import { meldeAnAusfahrtSicher } from '@/lib/ausfahrtAnmeldung';
 import { istU18 } from '@/lib/u18Begleitung';
 import { U18BegleitungKarte, U18BegleitungModal } from '@/components/veranstaltung/U18Begleitung';
-import ErziehungsauftragFehlt from '@/components/ausfahrt/ErziehungsauftragFehlt';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannAusschussSehn, kannAusfahrtCheckin } from '@/lib/roles';
 import { Bus, MapPin, Clock, Calendar, Users, ArrowLeft, UserPlus, CheckCircle2, Download, X, Pencil, Trash2, Ban, AlertTriangle, QrCode, ScanLine, Search, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -212,24 +211,24 @@ export default function AusfahrtDetail() {
   // Nur wenn ausschließlich Kinder mitfahren, braucht es den Erziehungsauftrag.
   const brauchtBegleiter = u18Kinder.length > 0 && !erwachsenerDabei;
 
-  // Schon angemeldete Kinder, für die noch kein Erziehungsauftrag existiert.
-  // Die Aufsichtssuche oben greift nur für neu angehakte Kinder.
-  const fehlendeAuftraege = ausfahrt?.u18_begleitung_erforderlich
-    ? [
-        ...(currentMitglied
-          && anmeldungen.some(a => a.mitglied_id === currentMitglied.id && a.status !== 'Abgemeldet')
-          && istU18(currentMitglied.geburtsdatum, ausfahrt.datum)
-          ? [{ id: currentMitglied.id, name: `${currentMitglied.vorname || ''} ${currentMitglied.nachname || ''}`.trim() }]
-          : []),
-        ...familienmitglieder
-          .filter(fm => fm.alter != null && fm.alter < 18)
-          .filter(fm => anmeldungen.some(a => a.mitglied_id === fm.id && a.status !== 'Abgemeldet'))
-          .map(fm => ({ id: fm.id, name: fm.name })),
-      ].filter(k => !u18Eintraege.some(e => e.u18_mitglied_id === k.id))
-    : [];
+  // Kinder, die bereits angemeldet sind, aber noch keinen Auftrag haben.
+  // Ohne diese Liste könnte man eine bestehende Anmeldung nie nachrüsten.
+  const kinderOhneAuftrag = familienmitglieder.filter(fm => {
+    if (fm.alter == null || fm.alter >= 18) return false;
+    const reg = anmeldungen.find(a => a.mitglied_id === fm.id && a.status !== 'Abgemeldet');
+    if (!reg) return false;
+    return !u18Eintraege.some(e => e.u18_mitglied_id === fm.id);
+  });
+  const erwachsenerDabeiBeiBestand =
+    (ichMit && currentMitglied && !istU18(currentMitglied.geburtsdatum, ausfahrt?.datum)) ||
+    familienmitglieder.some(fm => {
+      if (fm.alter == null || fm.alter >= 18) return false;
+      return false;
+    });
+  const nachruestenNoetig = ausfahrt?.u18_begleitung_erforderlich && kinderOhneAuftrag.length > 0;
 
   useEffect(() => {
-    if (!brauchtBegleiter || erwachsene.length > 0) return;
+    if (!(brauchtBegleiter || nachruestenNoetig) || erwachsene.length > 0) return;
     base44.entities.Mitglied.list('nachname', 1000)
       .then(m => setErwachsene((m || []).filter(x => !x.archiviert && !istU18(x.geburtsdatum, ausfahrt?.datum))))
       .catch(() => setErwachsene([]));
@@ -347,6 +346,25 @@ export default function AusfahrtDetail() {
   };
 
   /** Nachmelden aus der Familienliste, wenn man selbst schon angemeldet ist. */
+  /** Auftrag für ein bereits angemeldetes Kind sofort anlegen (ohne erneute Anmeldung). */
+  const auftragSofortAnlegen = async (kind, begleiter) => {
+    try {
+      const res = await base44.functions.invoke('verwalteU18Begleitung', {
+        aktion: 'anlegen',
+        typ: 'ausfahrt',
+        termin_id: id,
+        u18_mitglied_id: kind.id,
+        begleit_mitglied_id: begleiter.id,
+      });
+      if (res?.data?.error) throw new Error(res.data.error);
+      toast.success(`Aufsicht für ${kind.name} gespeichert.`);
+      await fetchData();
+    } catch (e) {
+      console.error('Auftrag anlegen:', e);
+      toast.error(e.message || 'Auftrag konnte nicht gespeichert werden.');
+    }
+  };
+
   const handleRegisterAuswahl = async (transportTypeRaw) => {
     const transportType = busBenoetigt ? transportTypeRaw : 'Privat';
     const gewaehlt = familienmitglieder.filter(fm => ausgewaehlteFamilienmitglieder.includes(fm.id));
@@ -764,6 +782,71 @@ export default function AusfahrtDetail() {
     }
   }, [ausfahrt, effectiveStatus]);
 
+  // Aufsicht für bereits angemeldete Kinder ohne Auftrag nachtragen.
+  // Wird in beiden Anmeldezustaenden angezeigt (angemeldet / nicht angemeldet).
+  const renderNachruesten = () => {
+    if (!nachruestenNoetig) return null;
+    return (
+      <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+          Erziehungsauftrag fehlt
+        </p>
+        <p className="text-[11px] text-muted-foreground -mt-1">
+          Diese Kinder sind angemeldet, aber ohne Aufsichtsperson. Bitte eintragen.
+        </p>
+        {kinderOhneAuftrag.map(kind => {
+          const gewaehlt = begleiterWahl[kind.id];
+          const text = begleiterSuche[kind.id] || '';
+          const treffer = text.trim().length >= 2
+            ? erwachsene.filter(m => `${m.vorname || ''} ${m.nachname || ''}`.toLowerCase().includes(text.trim().toLowerCase())).slice(0, 5)
+            : [];
+          return (
+            <div key={kind.id} className="rounded-lg border border-border bg-background p-2.5">
+              <p className="text-xs font-semibold text-foreground mb-1.5">Aufsicht für {kind.name}</p>
+              {gewaehlt ? (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-foreground flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> {gewaehlt.name}
+                  </span>
+                  <button type="button"
+                    onClick={() => setBegleiterWahl(p => { const n = { ...p }; delete n[kind.id]; return n; })}
+                    className="text-[11px] text-muted-foreground hover:text-foreground underline">
+                    ändern
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <input
+                    value={text}
+                    onChange={e => setBegleiterSuche(p => ({ ...p, [kind.id]: e.target.value }))}
+                    placeholder="Aufsichtsperson suchen…"
+                    className="w-full px-2.5 py-2 rounded-md bg-secondary border border-border text-xs text-foreground focus:outline-none focus:border-primary"
+                  />
+                  {treffer.length > 0 && (
+                    <div className="mt-1 space-y-1">
+                      {treffer.map(m => (
+                        <button key={m.id} type="button"
+                          onClick={() => {
+                            const wahl = { id: m.id, name: `${m.vorname} ${m.nachname}`.trim() };
+                            setBegleiterWahl(p => ({ ...p, [kind.id]: wahl }));
+                            setBegleiterSuche(p => ({ ...p, [kind.id]: '' }));
+                            auftragSofortAnlegen(kind, wahl);
+                          }}
+                          className="w-full text-left px-2 py-1.5 rounded-md bg-secondary hover:bg-border text-xs text-foreground">
+                          {m.vorname} {m.nachname}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-[60vh] flex flex-col justify-center items-center">
@@ -1180,15 +1263,7 @@ export default function AusfahrtDetail() {
                     </div>
                   )}
 
-                  {fehlendeAuftraege.length > 0 && (
-                    <ErziehungsauftragFehlt
-                      typ="ausfahrt"
-                      terminId={id}
-                      datum={ausfahrt?.datum}
-                      kinder={fehlendeAuftraege}
-                      onSaved={fetchData}
-                    />
-                  )}
+                  {renderNachruesten()}
 
                   {/* QR Code Button */}
                   <button
@@ -1220,6 +1295,8 @@ export default function AusfahrtDetail() {
                     </div>
                   ) : (
                     <>
+                      {renderNachruesten()}
+
                       {/* Wer fährt mit? Eine Liste, ein Häkchen je Person — ich selbst ist auch eine Zeile. */}
                       <div>
                         <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
@@ -1368,16 +1445,6 @@ export default function AusfahrtDetail() {
                             : `${anzahlGewaehlt} ${anzahlGewaehlt === 1 ? 'Person wird' : 'Personen werden'} angemeldet.`}
                         </p>
                       </div>
-
-                      {fehlendeAuftraege.length > 0 && (
-                        <ErziehungsauftragFehlt
-                          typ="ausfahrt"
-                          terminId={id}
-                          datum={ausfahrt?.datum}
-                          kinder={fehlendeAuftraege}
-                          onSaved={fetchData}
-                        />
-                      )}
 
                       <div className="pt-2 grid grid-cols-1 gap-2.5">
                         {busBenoetigt ? (
