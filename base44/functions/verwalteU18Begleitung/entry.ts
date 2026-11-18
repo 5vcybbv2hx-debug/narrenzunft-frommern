@@ -54,19 +54,30 @@ export default async function (req) {
       return [...new Set(ids)];
     }
 
-    /** Mitglieds-IDs der Erziehungsberechtigten eines Kindes. */
+    /**
+     * Mitglieds-IDs der Erziehungsberechtigten eines Kindes.
+     *
+     * Konvention (src/lib/verwandtschaft.js): {mitglied_id: A, verwandter_id: B,
+     * beziehung: "Kind"} bedeutet "B ist das Kind von A" - also ist A der
+     * Elternteil. Die fruehere Fassung suchte "Elternteil" auf der Seite von
+     * verwandter_id und fand deshalb NIE jemanden; Eltern bekamen keinen Push.
+     */
     async function elternIdsVon(kindId) {
       if (!kindId) return [];
-      const verwandt = await S.Verwandtschaft.filter({ verwandter_id: kindId }).catch(() => []);
-      const ids = (verwandt || [])
-        .filter(v => (v.beziehung || "").toLowerCase().includes("elternteil"))
-        .map(v => v.mitglied_id)
-        .filter(Boolean);
-      // Gegenrichtung mitprüfen, falls ein Alt-Eintrag nur einseitig existiert.
-      const hin = await S.Verwandtschaft.filter({ mitglied_id: kindId }).catch(() => []);
-      for (const v of (hin || [])) {
-        if ((v.beziehung || "").toLowerCase().includes("kind") && v.verwandter_id) ids.push(v.verwandter_id);
-      }
+      const [alsKind, alsElternteil] = await Promise.all([
+        S.Verwandtschaft.filter({ verwandter_id: kindId }).catch(() => []),
+        S.Verwandtschaft.filter({ mitglied_id: kindId }).catch(() => []),
+      ]);
+      const elternRollen = /^(kind|sohn|tochter)$/i;
+      const gegenRollen = /^(elternteil|mutter|vater)$/i;
+      const ids = [
+        ...(alsKind || [])
+          .filter(v => elternRollen.test((v.beziehung || "").trim()))
+          .map(v => v.mitglied_id),
+        ...(alsElternteil || [])
+          .filter(v => gegenRollen.test((v.beziehung || "").trim()))
+          .map(v => v.verwandter_id),
+      ].filter(Boolean);
       return [...new Set(ids)];
     }
 
@@ -302,16 +313,12 @@ export default async function (req) {
       });
       // Eltern informieren, damit sie eine andere Aufsicht eintragen koennen
       try {
-        const verwandt = await S.Verwandtschaft.filter({ verwandter_id: e.u18_mitglied_id }).catch(() => []);
-        const elternIds = (verwandt || [])
-          .filter(v => (v.beziehung || "").toLowerCase().includes("elternteil"))
-          .map(v => v.mitglied_id)
-          .filter(Boolean);
-        if (elternIds.length) {
-          await sendePush(elternIds, "Aufsicht abgelehnt",
-            (wer.trim() || "Die Begleitperson") + " kann " + (e.u18_name || "dein Kind") + " nicht beaufsichtigen. Bitte jemand anderen eintragen.",
-            { route: "/dashboard" });
-        }
+        await informiereEltern(
+          e.u18_mitglied_id,
+          e.u18_name,
+          "Aufsicht abgelehnt",
+          (wer.trim() || "Die Begleitperson") + " kann " + (e.u18_name || "dein Kind") + " nicht beaufsichtigen. Bitte jemand anderen eintragen.",
+        );
       } catch (err) { console.error("U18-Ablehnung-Push:", err); }
       return Response.json({ ok: true, id: bid, begleitung: erg });
     }
