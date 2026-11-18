@@ -3,6 +3,7 @@
  * Zeigt eigene Veranstaltungsanmeldungen, Arbeitsdienste und Beiträge.
  */
 import PushOnboarding from './PushOnboarding';
+import U18AuftraegeWidget from './U18AuftraegeWidget';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
@@ -109,6 +110,9 @@ export default function MitgliedDashboard() {
   return (
     <div className="px-4 lg:px-6 py-6 max-w-2xl mx-auto space-y-4">
       <PushOnboarding />
+      {/* Erziehungsauftraege: muss auch hier stehen, weil Mitglieder dieses
+          Dashboard statt Dashboard.jsx sehen (dort wird vorher abgebrochen). */}
+      <U18AuftraegeWidget />
       {/* Begrüßung */}
       <div className="mb-2">
         <h1 className="text-2xl font-bold text-foreground">
