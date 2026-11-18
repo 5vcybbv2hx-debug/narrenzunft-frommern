@@ -39,6 +39,20 @@ export default async function (req) {
       return m ? `${m.vorname || ""} ${m.nachname || ""}`.trim() : "";
     }
 
+    /** Mitglieds-IDs der Kinder eines Mitglieds (beide Richtungen). */
+    async function kindIdsVon(mitgliedId) {
+      if (!mitgliedId) return [];
+      const [hin, zurueck] = await Promise.all([
+        S.Verwandtschaft.filter({ mitglied_id: mitgliedId }).catch(() => []),
+        S.Verwandtschaft.filter({ verwandter_id: mitgliedId }).catch(() => []),
+      ]);
+      const ids = [
+        ...(hin || []).filter(v => (v.beziehung || "").toLowerCase().includes("kind")).map(v => v.verwandter_id),
+        ...(zurueck || []).filter(v => (v.beziehung || "").toLowerCase().includes("elternteil")).map(v => v.mitglied_id),
+      ].filter(Boolean);
+      return [...new Set(ids)];
+    }
+
     /** Mitglieds-IDs der Erziehungsberechtigten eines Kindes. */
     async function elternIdsVon(kindId) {
       if (!kindId) return [];
@@ -149,6 +163,64 @@ export default async function (req) {
         (rec.begleit_name || "Die Begleitperson") + " soll " + (rec.u18_name || "dein Kind") + " beaufsichtigen. Bitte bestätige.",
       );
       return Response.json({ ok: true, id: rec.id, begleitung: rec });
+    }
+
+    if (aktion === "aufsicht_pruefen") {
+      // Meldet sich ein Erziehungsberechtigter selbst zu einer Veranstaltung an,
+      // faehrt eine Aufsicht mit und der Erziehungsauftrag wird nicht mehr
+      // gebraucht (Vorgabe Pierre 19.11.). Der Auftrag wird geloescht und die
+      // Begleitperson informiert, damit sie nicht weiter fuer das Kind plant.
+      const { termin_id, mitglied_id } = body;
+      if (!termin_id || !mitglied_id) {
+        return Response.json({ error: "termin_id und mitglied_id fehlen" }, { status: 400 });
+      }
+      const mein = await loeseMeinMitglied(base44, user);
+      const darf = istVerwaltung(user) || (mein && mein.id === mitglied_id);
+      if (!darf) return Response.json({ error: "Nicht berechtigt" }, { status: 403 });
+
+      // Nur wenn die Person fuer diese Veranstaltung wirklich (noch) angemeldet
+      // ist - sonst wuerde ein Seitenaufruf Auftraege loeschen.
+      const anmeldungen = await S.AusfahrtAnmeldung
+        .filter({ ausfahrt_id: termin_id, mitglied_id })
+        .catch(() => []);
+      const aktivAngemeldet = (anmeldungen || []).some(a => a.status !== "Abgemeldet");
+      if (!aktivAngemeldet) {
+        return Response.json({ ok: true, geloescht: 0, grund: "nicht angemeldet" });
+      }
+
+      const kindIds = await kindIdsVon(mitglied_id);
+      if (kindIds.length === 0) return Response.json({ ok: true, geloescht: 0 });
+
+      const auftraege = await S.U18Begleitung.filter({ termin_id }).catch(() => []);
+      const betroffen = (auftraege || []).filter(a => kindIds.includes(a.u18_mitglied_id));
+      if (betroffen.length === 0) return Response.json({ ok: true, geloescht: 0 });
+
+      let elternName = await nameVon(mitglied_id);
+      let titel = "der Ausfahrt";
+      if (betroffen[0]?.typ === "ausfahrt") {
+        const a = await S.Ausfahrt.get(termin_id).catch(() => null);
+        if (a && a.titel) titel = a.titel;
+      }
+
+      let geloescht = 0;
+      for (const a of betroffen) {
+        // Ist die Aufsicht selbst die angemeldete Person, bleibt der Auftrag
+        // bestehen - sie muss ihn weiterhin bestaetigen.
+        if (a.begleit_mitglied_id && a.begleit_mitglied_id === mitglied_id) continue;
+        await S.U18Begleitung.delete(a.id);
+        geloescht += 1;
+        if (a.begleit_mitglied_id) {
+          try {
+            await sendePush(
+              [a.begleit_mitglied_id],
+              "Aufsicht nicht mehr nötig",
+              (elternName || "Ein Elternteil") + " fährt bei " + titel + " selbst mit. Dein Erziehungsauftrag für " + (a.u18_name || "das Kind") + " ist damit erledigt.",
+              { route: "/dashboard" },
+            );
+          } catch (e) { console.error("Push Aufsicht erledigt:", e); }
+        }
+      }
+      return Response.json({ ok: true, geloescht });
     }
 
     if (aktion === "eltern_bestaetigen") {

@@ -33,5 +33,17 @@ export async function meldeAnAusfahrtSicher({ ausfahrtId, mitgliedId, transport 
       ? { durch_admin_angemeldet: true, durch_admin_name: durchAdminName }
       : {}),
   });
+  // Faehrt ein Erziehungsberechtigter selbst mit, wird keine Aufsicht mehr
+  // gebraucht: Erziehungsauftraege zu dieser Veranstaltung loeschen und die
+  // Begleitperson informieren. Das Backend prueft selbst, ob die Person
+  // tatsaechlich angemeldet ist und ob sie Erziehungsberechtigte/r ist.
+  try {
+    await base44.functions.invoke('verwalteU18Begleitung', {
+      aktion: 'aufsicht_pruefen',
+      termin_id: ausfahrtId,
+      mitglied_id: mitgliedId,
+    });
+  } catch (e) { console.error('Aufsicht-Prüfung:', e); }
+
   return { bereitsAngemeldet: false, anmeldung };
 }

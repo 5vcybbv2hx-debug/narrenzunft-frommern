@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -28,6 +28,7 @@ export default function ElternAuftraegeWidget() {
   const [auftraege, setAuftraege] = useState([]);
   const [termine, setTermine] = useState({});
   const [busy, setBusy] = useState(null);
+  const schonAufgeraeumt = useRef(false);
 
   // Eigene Mitglieds-ID am Profil nachschlagen (user._mitglied fehlt bei bestehenden Sessions).
   useEffect(() => {
@@ -78,6 +79,25 @@ export default function ElternAuftraegeWidget() {
         }
       }
       setTermine(map);
+
+      // Sicherheitsnetz: Fährt der Elternteil inzwischen selbst mit, ist die
+      // Aufsicht hinfällig - auch wenn die Anmeldung nicht über den normalen
+      // Weg lief (z. B. Nachtrag durch den Vorstand am Veranstaltungstag).
+      // Das Backend löscht nur, wenn die Person wirklich angemeldet ist.
+      if (!schonAufgeraeumt.current && aktiv.some(e => e.typ === 'ausfahrt')) {
+        schonAufgeraeumt.current = true;
+        let aufgeraeumt = 0;
+        for (const tid of [...new Set(aktiv.filter(e => e.typ === 'ausfahrt').map(e => e.termin_id))]) {
+          try {
+            const res = await base44.functions.invoke('verwalteU18Begleitung', {
+              aktion: 'aufsicht_pruefen', termin_id: tid, mitglied_id: meinId,
+            });
+            const d = res?.data ?? res;
+            aufgeraeumt += Number(d?.geloescht || 0);
+          } catch (e) { /* still */ }
+        }
+        if (aufgeraeumt > 0) { await laden(); return; }
+      }
     } catch (e) { console.error('Eltern-Aufträge laden:', e); }
   };
 
