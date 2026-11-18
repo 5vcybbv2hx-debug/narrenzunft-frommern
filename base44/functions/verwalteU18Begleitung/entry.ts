@@ -39,6 +39,29 @@ export default async function (req) {
       return m ? `${m.vorname || ""} ${m.nachname || ""}`.trim() : "";
     }
 
+    /** Mitglieds-IDs der Erziehungsberechtigten eines Kindes. */
+    async function elternIdsVon(kindId) {
+      if (!kindId) return [];
+      const verwandt = await S.Verwandtschaft.filter({ verwandter_id: kindId }).catch(() => []);
+      const ids = (verwandt || [])
+        .filter(v => (v.beziehung || "").toLowerCase().includes("elternteil"))
+        .map(v => v.mitglied_id)
+        .filter(Boolean);
+      // Gegenrichtung mitprüfen, falls ein Alt-Eintrag nur einseitig existiert.
+      const hin = await S.Verwandtschaft.filter({ mitglied_id: kindId }).catch(() => []);
+      for (const v of (hin || [])) {
+        if ((v.beziehung || "").toLowerCase().includes("kind") && v.verwandter_id) ids.push(v.verwandter_id);
+      }
+      return [...new Set(ids)];
+    }
+
+    async function informiereEltern(kindId, kindName, titel, text) {
+      try {
+        const ids = await elternIdsVon(kindId);
+        if (ids.length) await sendePush(ids, titel, text, { route: "/dashboard" });
+      } catch (e) { console.error("U18-Push Eltern:", e); }
+    }
+
     function statusVon(e) {
       const eltern = !!e.eltern_bestaetigt_am;
       const begl = !!e.begleitung_bestaetigt_am;
@@ -92,6 +115,12 @@ export default async function (req) {
             );
           } catch (e) { console.error("U18-Neuzuordnung-Push:", e); }
         }
+        await informiereEltern(
+          aktiv.u18_mitglied_id,
+          aktiv.u18_name,
+          "Aufsicht bestätigen",
+          (neuerName || "Die Begleitperson") + " soll " + (aktiv.u18_name || "dein Kind") + " beaufsichtigen. Bitte bestätige erneut.",
+        );
         return Response.json({ ok: true, existierend: true, zurueckgesetzt: true, id: aktiv.id, begleitung: erg });
       }
       const rec = await S.U18Begleitung.create({
@@ -112,6 +141,13 @@ export default async function (req) {
             { route: "/dashboard" });
         } catch (e) { console.error("U18-Push:", e); }
       }
+      // Eltern muessen ebenfalls bestaetigen, also sofort informieren.
+      await informiereEltern(
+        rec.u18_mitglied_id,
+        rec.u18_name,
+        "Aufsicht bestätigen",
+        (rec.begleit_name || "Die Begleitperson") + " soll " + (rec.u18_name || "dein Kind") + " beaufsichtigen. Bitte bestätige.",
+      );
       return Response.json({ ok: true, id: rec.id, begleitung: rec });
     }
 
@@ -128,6 +164,16 @@ export default async function (req) {
         eltern_bestaetigt_von: mein.id,
         status: statusVon({ ...e, eltern_bestaetigt_am: jetztISO() }),
       });
+      // Aufsichtsperson informieren, dass der Auftrag jetzt verbindlich ist.
+      if (e.begleit_mitglied_id) {
+        try {
+          const beide = !!(e.begleitung_bestaetigt_am);
+          await sendePush([e.begleit_mitglied_id], "Erziehungsauftrag",
+            "Die Eltern haben bestätigt: du beaufsichtigst " + (e.u18_name || "das Kind") + "."
+              + (beide ? "" : " Bitte bestätige deinen Teil noch."),
+            { route: "/dashboard" });
+        } catch (err) { console.error("U18-Push Aufsicht:", err); }
+      }
       return Response.json({ ok: true, id: bid, begleitung: erg });
     }
 
@@ -136,14 +182,32 @@ export default async function (req) {
       const e = bid ? await S.U18Begleitung.get(bid).catch(() => null) : null;
       if (!e) return Response.json({ error: "Eintrag nicht gefunden" }, { status: 404 });
       const mein = await loeseMeinMitglied(base44, user);
-      // Bei externer Begleitung (kein Mitglied) darf nur die Verwaltung bestätigen
-      const ok = istVerwaltung(user) || (mein && e.begleit_mitglied_id === mein.id);
-      if (!ok) return Response.json({ error: "Nur die Begleitperson selbst oder Verwaltung" }, { status: 403 });
+      // Regel (Pierre 19.11.): Hat die Aufsicht ein App-Konto, bestaetigt sie
+      // AUSSCHLIESSLICH selbst - auch Eltern und Vorstand duerfen das nicht
+      // fuer sie tun, sonst steht im Datensatz eine Zusage, die es nicht gibt.
+      // Nur bei externer Begleitung (kein Konto) bestaetigt die Verwaltung.
+      const hatKonto = !!e.begleit_mitglied_id;
+      const istSelbst = !!mein && hatKonto && e.begleit_mitglied_id === mein.id;
+      const ok = hatKonto ? istSelbst : istVerwaltung(user);
+      if (!ok) {
+        return Response.json({
+          error: hatKonto
+            ? "Die Aufsicht bestätigt selbst in der App. Eltern und Vorstand können das nicht übernehmen."
+            : "Nur die Verwaltung kann eine externe Begleitung bestätigen.",
+        }, { status: 403 });
+      }
       const erg = await S.U18Begleitung.update(bid, {
         begleitung_bestaetigt_am: jetztISO(),
         begleitung_bestaetigt_von: mein?.id || "",
         status: statusVon({ ...e, begleitung_bestaetigt_am: jetztISO() }),
       });
+      // Eltern informieren, dass die Aufsicht uebernommen hat und sie noch bestaetigen muessen.
+      await informiereEltern(
+        e.u18_mitglied_id,
+        e.u18_name,
+        "Aufsicht übernommen",
+        (e.begleit_name || "Die Begleitperson") + " hat die Aufsicht für " + (e.u18_name || "dein Kind") + " übernommen. Bitte bestätige noch.",
+      );
       return Response.json({ ok: true, id: bid, begleitung: erg });
     }
 

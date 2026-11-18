@@ -129,6 +129,11 @@ export function U18BegleitungKarte({ typ, terminId, myMitglied }) {
                 </p>
               )}
             </div>
+            {!beglOk && e.begleit_mitglied_id && (
+              <p className="text-[10px] text-muted-foreground">
+                Die Aufsicht bestätigt selbst in der App. Eltern und Vorstand können das nicht übernehmen.
+              </p>
+            )}
             {(istVerwaltung || !fertig) && (
               <button
                 onClick={() => setWechsel(e)}
@@ -145,10 +150,12 @@ export function U18BegleitungKarte({ typ, terminId, myMitglied }) {
                     <UserCheck size={10} /> Eltern manuell bestätigen
                   </button>
                 )}
-                {!beglOk && (
+                {/* Nur externe Begleitung ohne App-Konto darf die Verwaltung bestätigen.
+                    Hat die Aufsicht ein Konto, bestätigt sie ausschließlich selbst. */}
+                {!beglOk && !e.begleit_mitglied_id && (
                   <button onClick={() => bestaetigen('begleitung_bestaetigen', e.id)} disabled={busy === e.id}
                     className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/15 text-primary text-[10px] font-medium hover:bg-primary/25 disabled:opacity-50">
-                    <UserCheck size={10} /> {e.begleit_mitglied_id ? 'Begleitung bestätigen' : 'Begleitung manuell bestätigen (z. B. vor Ort)'}
+                    <UserCheck size={10} /> Begleitung bestätigen (ohne App-Konto)
                   </button>
                 )}
               </div>
