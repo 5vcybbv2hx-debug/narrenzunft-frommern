@@ -52,10 +52,11 @@
       "type": "string",
       "enum": [
         "Ausstehend",
-        "Best\u00e4tigt"
+        "Best\u00e4tigt",
+        "Abgelehnt"
       ],
       "default": "Ausstehend",
-      "description": "Best\u00e4tigt erst, wenn Eltern UND Begleitperson best\u00e4tigt haben"
+      "description": "Best\u00e4tigt erst, wenn Eltern UND Begleitperson best\u00e4tigt haben; Abgelehnt, wenn die Begleitperson den Auftrag zur\u00fcckgibt"
     },
     "notiz": {
       "type": "string"

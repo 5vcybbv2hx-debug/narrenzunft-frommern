@@ -158,7 +158,7 @@ export default function MitgliedsantragFormular() {
   useEffect(() => {
     const mid = searchParams.get('mitglied_id');
     const t = searchParams.get('typ');
-    if (t && TYPEN.some(x => x.key === t)) setTyp(t);
+    if (t && TYPEN.some(x => x.key === t)) set('antrag_typ', t);
     if (!mid) return;
     let abgebrochen = false;
     base44.entities.Mitglied.filter({ id: mid })

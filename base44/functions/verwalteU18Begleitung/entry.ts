@@ -14,7 +14,10 @@ import { sendePush } from "../../shared/pushSenden.ts";
  *      (Verwandtschafts-Prüfung via istElternVon) — mit Zeitstempel.
  *   3. 'begleitung_bestaetigen': Die Begleitperson bestätigt selbst (falls
  *      Mitglied); bei externer Begleitung nur Vorstand (manuell, z. B. vor Ort).
- *   4. 'liste': Begleitungen eines Termins (optional typ).
+ *   4. 'ablehnen': Die Begleitperson (oder Verwaltung) gibt den Auftrag zurück.
+ *      Status 'Abgelehnt', Begleitbestätigung wird zurückgesetzt, Ablehnung mit
+ *      Name + Datum in notiz vermerkt, Push an die Eltern.
+ *   5. 'liste': Begleitungen eines Termins (optional typ).
  * Erst wenn Eltern UND Begleitperson bestätigt haben, ist der Status 'Bestätigt'.
  * Updates laufen im service-role (RLS update = vorstand/admin; service-role
  * bypasses RLS). _von-Felder speichern die Mitglieds-ID (verfolgbar).
