@@ -45,7 +45,26 @@ export default function AusfahrtDetail() {
   const [ausgewaehlteFamilienmitglieder, setAusgewaehlteFamilienmitglieder] = useState([]);
   // Eigene Teilnahme ist in der Häkchenliste eine Zeile wie jede andere.
   const [ichMit, setIchMit] = useState(true);
+  // Erziehungsauftrag: gewählte Begleitperson je Kind + Suchtexte + Kandidatenliste
+  const [begleiterWahl, setBegleiterWahl] = useState({});
+  const [begleiterSuche, setBegleiterSuche] = useState({});
+  const [erwachsene, setErwachsene] = useState([]);
   const anzahlGewaehlt = (ichMit ? 1 : 0) + ausgewaehlteFamilienmitglieder.length;
+
+  // Wer fährt mit? (für die Begleit-Logik)
+  const u18Kinder = familienmitglieder.filter(fm => ausgewaehlteFamilienmitglieder.includes(fm.id) && fm.alter != null && fm.alter < 18);
+  const erwachsenerDabei =
+    (ichMit && currentMitglied && !istU18(currentMitglied.geburtsdatum, ausfahrt?.datum)) ||
+    familienmitglieder.some(fm => ausgewaehlteFamilienmitglieder.includes(fm.id) && fm.alter != null && fm.alter >= 18);
+  // Nur wenn ausschließlich Kinder mitfahren, braucht es den Erziehungsauftrag.
+  const brauchtBegleiter = u18Kinder.length > 0 && !erwachsenerDabei;
+
+  useEffect(() => {
+    if (!brauchtBegleiter || erwachsene.length > 0) return;
+    base44.entities.Mitglied.list('nachname', 1000)
+      .then(m => setErwachsene((m || []).filter(x => !x.archiviert && !istU18(x.geburtsdatum, ausfahrt?.datum))))
+      .catch(() => setErwachsene([]));
+  }, [brauchtBegleiter, ausfahrt?.datum, erwachsene.length]);
   const [fremdName, setFremdName] = useState('');
   const [fremdTransport, setFremdTransport] = useState('Bus');
   // siehe busBenoetigt: bei Ausfahrten ohne Bus wird auf 'Privat' korrigiert
@@ -246,7 +265,28 @@ export default function AusfahrtDetail() {
           ...(ichMit && istU18(currentMitglied.geburtsdatum, ausfahrt.datum) ? [{ mitgliedId: currentMitglied.id, name: `${currentMitglied.vorname} ${currentMitglied.nachname}`.trim() }] : []),
           ...selectedFamily.filter(fm => fm.alter != null && fm.alter < 18).map(fm => ({ mitgliedId: fm.id, name: fm.name })),
         ];
-        if (u18s.length > 0) setU18Offen(u18s[0]);
+        // Gewählte Begleitperson sofort als Erziehungsauftrag anlegen (Status Ausstehend),
+        // damit niemand sie nachträglich suchen muss. Ohne Wahl: Modal als Rückfallebene.
+        const ohneBegleiter = [];
+        for (const u of u18s) {
+          const gewaehlt = begleiterWahl[u.mitgliedId];
+          if (!gewaehlt) { ohneBegleiter.push(u); continue; }
+          try {
+            await base44.functions.invoke('verwalteU18Begleitung', {
+              aktion: 'anlegen',
+              typ: 'ausfahrt',
+              termin_id: id,
+              u18_mitglied_id: u.mitgliedId,
+              begleit_mitglied_id: gewaehlt.id,
+            });
+          } catch (e) {
+            console.error('Erziehungsauftrag anlegen:', e);
+            ohneBegleiter.push(u);
+          }
+        }
+        setBegleiterWahl({});
+        setBegleiterSuche({});
+        if (ohneBegleiter.length > 0) setU18Offen(ohneBegleiter[0]);
       }
       fetchData();
     } catch (err) {
@@ -1205,6 +1245,75 @@ export default function AusfahrtDetail() {
                           </div>
                           )}
                         </div>
+                        {/* Erziehungsauftrag: nur Kinder unterwegs -> Begleitperson direkt hier wählen */}
+                        {brauchtBegleiter && (
+                          <div className="mt-3 space-y-2">
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+                              Erziehungsauftrag nötig
+                            </p>
+                            <p className="text-[11px] text-muted-foreground -mt-1">
+                              Kein Erwachsener aus der Familie fährt mit. Bitte für jedes Kind die Aufsichtsperson eintragen.
+                            </p>
+                            {u18Kinder.map(kind => {
+                              const gewaehlt = begleiterWahl[kind.id];
+                              const text = begleiterSuche[kind.id] || '';
+                              const treffer = text.trim().length >= 2
+                                ? erwachsene.filter(m => `${m.vorname || ''} ${m.nachname || ''}`.toLowerCase().includes(text.trim().toLowerCase())).slice(0, 5)
+                                : [];
+                              return (
+                                <div key={kind.id} className="rounded-lg border border-primary/30 bg-primary/5 p-2.5">
+                                  <p className="text-xs font-semibold text-foreground mb-1.5">
+                                    Aufsicht für {kind.name}
+                                  </p>
+                                  {gewaehlt ? (
+                                    <div className="flex items-center justify-between gap-2">
+                                      <span className="text-xs text-foreground flex items-center gap-1.5">
+                                        <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> {gewaehlt.name}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => setBegleiterWahl(p => { const n = { ...p }; delete n[kind.id]; return n; })}
+                                        className="text-[11px] text-muted-foreground hover:text-foreground underline"
+                                      >
+                                        ändern
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <input
+                                        value={text}
+                                        onChange={e => setBegleiterSuche(p => ({ ...p, [kind.id]: e.target.value }))}
+                                        placeholder="Aufsichtsperson suchen (min. 2 Zeichen)…"
+                                        className="w-full px-2.5 py-2 rounded-md bg-background border border-border text-xs text-foreground focus:outline-none focus:border-primary"
+                                      />
+                                      {treffer.length > 0 && (
+                                        <div className="mt-1 space-y-1">
+                                          {treffer.map(m => (
+                                            <button
+                                              key={m.id}
+                                              type="button"
+                                              onClick={() => {
+                                                setBegleiterWahl(p => ({ ...p, [kind.id]: { id: m.id, name: `${m.vorname} ${m.nachname}`.trim() } }));
+                                                setBegleiterSuche(p => ({ ...p, [kind.id]: '' }));
+                                              }}
+                                              className="w-full text-left px-2 py-1.5 rounded-md bg-secondary hover:bg-border text-xs text-foreground"
+                                            >
+                                              {m.vorname} {m.nachname}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      )}
+                                      {text.trim().length >= 2 && treffer.length === 0 && (
+                                        <p className="text-[11px] text-muted-foreground mt-1">Niemand gefunden.</p>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
                         <p className="text-[11px] text-muted-foreground mt-2 italic">
                           {anzahlGewaehlt === 0
                             ? 'Noch niemand ausgewählt.'
