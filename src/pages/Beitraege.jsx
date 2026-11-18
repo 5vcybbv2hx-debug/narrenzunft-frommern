@@ -6,6 +6,8 @@ import { CreditCard, Search, Plus, Settings, Bus, AlertCircle, Check, AlertTrian
 import { toast } from 'sonner';
 import BeitraegeEinstellungen from '@/components/beitraege/BeitraegeEinstellungen';
 import Buskosten from '@/components/beitraege/Buskosten';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 const STATUS_COLORS = {
   'Offen':      'bg-yellow-900/20 text-yellow-400 border border-yellow-700/30',
@@ -68,6 +70,9 @@ export default function Beitraege() {
     }
     setLoading(false);
   };
+
+  // Pull-to-Refresh (Vorgabe Pierre 19.11.): fehlte auf dieser Seite.
+  const { pullDistance, refreshing } = usePullToRefresh(async () => { await loadData(); });
 
   const getMitglied = (id) => mitglieder.find(m => m.id === id);
 
@@ -139,6 +144,7 @@ export default function Beitraege() {
 
   return (
     <div className="px-4 lg:px-6 py-6 max-w-4xl mx-auto">
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>

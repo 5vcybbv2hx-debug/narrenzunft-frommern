@@ -11,6 +11,8 @@ import FaelleSektion from '@/components/datenqualitaet/FaelleSektion';
 import VerwandtschaftAbgleich from '@/components/datenqualitaet/VerwandtschaftAbgleich';
 import EmailZuordnung from '@/components/datenqualitaet/EmailZuordnung';
 import MailAbgleich from '@/components/datenqualitaet/MailAbgleich';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 function pruefeStatusAlter(m) {
   if (!m.geburtsdatum || !m.mitgliedsstatus) return null;
@@ -71,6 +73,9 @@ export default function Datenqualitaet() {
     }
     setLoading(false);
   };
+
+  // Pull-to-Refresh (Vorgabe Pierre 19.11.): fehlte auf dieser Seite.
+  const { pullDistance, refreshing } = usePullToRefresh(async () => { await loadData(); });
 
   const probleme = useMemo(() => {
     const result = [];
@@ -177,6 +182,7 @@ export default function Datenqualitaet() {
 
   return (
     <div className="px-4 lg:px-6 py-6 max-w-3xl mx-auto">
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>

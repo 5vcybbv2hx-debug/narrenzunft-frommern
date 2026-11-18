@@ -22,6 +22,8 @@ import { de } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import MobileSelect from '@/components/MobileSelect';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 const TYPEN = ['Umzug', 'Abendveranstaltung', 'Intern', 'Arbeitsdienst', 'Fest'];
 const STATUS_LIST = ['Geplant', 'Aktiv', 'Abgeschlossen', 'Abgesagt'];
@@ -85,6 +87,9 @@ export default function VeranstaltungDetail() {
     }
     setLoading(false);
   };
+
+  // Pull-to-Refresh (Vorgabe Pierre 19.11.): fehlte auf dieser Seite.
+  const { pullDistance, refreshing } = usePullToRefresh(async () => { await loadData(); });
 
   const loadMitglieder = async () => {
     try {
@@ -306,6 +311,7 @@ export default function VeranstaltungDetail() {
 
   return (
     <div className="px-4 lg:px-6 py-6 max-w-3xl mx-auto">
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground">

@@ -13,6 +13,8 @@ import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import { ProtokollModal } from '@/components/ausschuss/ProtokollTab';
 import { ausschussAktion } from '@/lib/ausschussAktionen';
 import toast from 'react-hot-toast';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 const ANWESENHEIT_FARBEN = {
   'Anwesend':      'bg-green-500/20 text-green-400',
@@ -86,6 +88,9 @@ export default function SitzungDetail() {
     }
   };
 
+  // Pull-to-Refresh (Vorgabe Pierre 19.11.): fehlte auf dieser Seite.
+  const { pullDistance, refreshing } = usePullToRefresh(async () => { await loadData(); });
+
   const getMitgliedName = (id) => {
     const m = mitglieder.find(m => m.id === id);
     return m ? `${m.vorname} ${m.nachname}` : '–';
@@ -116,6 +121,7 @@ export default function SitzungDetail() {
   if (!hatZugriff) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+        <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
         <Lock size={40} className="text-muted-foreground mb-3" />
         <h2 className="text-xl font-bold text-foreground mb-2 font-oswald uppercase tracking-wide">{ladeFehler || 'Kein Zugriff'}</h2>
         <p className="text-sm text-muted-foreground">Dieser Bereich ist nur für Vorstand und Ausschuss zugänglich.</p>

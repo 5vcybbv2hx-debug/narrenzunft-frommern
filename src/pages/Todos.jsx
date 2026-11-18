@@ -8,6 +8,8 @@ import { format, differenceInCalendarDays } from 'date-fns';
 import { de } from 'date-fns/locale';
 import TodoForm from '@/components/todos/TodoForm';
 import SwipeActionRow from '@/components/ui/SwipeAction';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 const PRIO_RANK = { 'Dringend': 0, 'Hoch': 1, 'Mittel': 2, 'Niedrig': 3 };
 
@@ -85,6 +87,9 @@ export default function Todos() {
     }
     setLoading(false);
   };
+
+  // Pull-to-Refresh (Vorgabe Pierre 19.11.): fehlte auf dieser Seite.
+  const { pullDistance, refreshing } = usePullToRefresh(async () => { await loadData(); });
 
   // ── Sichtbarkeit: Admins sehen alles, andere nur eigene + selbst erstellte ──
   const sichtbareTodos = useMemo(() => todos.filter(t => {
@@ -365,6 +370,7 @@ export default function Todos() {
 
   return (
     <div className="px-4 lg:px-6 py-6 max-w-3xl mx-auto">
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>

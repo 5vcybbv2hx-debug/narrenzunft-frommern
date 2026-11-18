@@ -10,6 +10,8 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { toast } from 'sonner';
 import BottomModal from '@/components/ui/BottomModal';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 const STATUS_COLORS = {
   'Aktiv': 'bg-green-500/20 text-green-400',
@@ -72,6 +74,9 @@ export default function HaesDetail() {
     }
     setLoading(false);
   };
+
+  // Pull-to-Refresh (Vorgabe Pierre 19.11.): fehlte auf dieser Seite.
+  const { pullDistance, refreshing } = usePullToRefresh(async () => { await loadData(); });
 
   // Nur Vorstand, Stellv. Vorstand und Admin (nach allen Hooks)
   if (!admin) return (
@@ -207,6 +212,7 @@ export default function HaesDetail() {
 
   return (
     <div className="px-4 lg:px-6 py-6 max-w-2xl mx-auto">
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
       {/* Header */}
       <div className="flex items-center gap-3 mb-6 flex-wrap">
         <button onClick={() => navigate('/haes')} className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground">

@@ -8,6 +8,8 @@ import { de } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import BottomModal from '@/components/ui/BottomModal';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 const STATUS_COLORS = {
   'Neu': 'bg-yellow-500/20 text-yellow-400',
@@ -70,6 +72,9 @@ export default function Mitgliedsantraege({ embedded = false }) {
     setLoading(false);
   };
 
+  // Pull-to-Refresh (Vorgabe Pierre 19.11.): fehlte auf dieser Seite.
+  const { pullDistance, refreshing } = usePullToRefresh(async () => { await loadData(); });
+
   const getMitgliedName = (id) => {
     const m = mitglieder.find(m => m.id === id);
     return m ? `${m.vorname} ${m.nachname}` : '–';
@@ -105,6 +110,7 @@ export default function Mitgliedsantraege({ embedded = false }) {
   if (!admin) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] px-4 text-center">
+        <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
         <div>
           <FileText size={40} className="text-muted-foreground mx-auto mb-3" />
           <p className="text-muted-foreground">Nur Vorstand und Admins können Mitgliedsanträge verwalten.</p>

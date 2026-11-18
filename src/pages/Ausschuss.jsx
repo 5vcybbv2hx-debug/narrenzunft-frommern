@@ -27,6 +27,8 @@ import { ausschussAktion } from '@/lib/ausschussAktionen';
 import { Gavel as GavelIcon } from 'lucide-react';
 import { LayoutDashboard, Repeat } from 'lucide-react';
 import BottomModal from '@/components/ui/BottomModal';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 const PRIO_FARBEN = {
   'Niedrig':  'bg-neutral-700 text-neutral-300',
@@ -151,9 +153,13 @@ export default function Ausschuss() {
     setLoading(false);
   };
 
+  // Pull-to-Refresh (Vorgabe Pierre 19.11.): fehlte auf dieser Seite.
+  const { pullDistance, refreshing } = usePullToRefresh(async () => { await loadData(); });
+
   if (!hatZugriff) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+        <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
         <Lock size={40} className="text-muted-foreground mb-3" />
         <h2 className="text-xl font-bold font-oswald uppercase tracking-wide text-foreground mb-2">Kein Zugriff</h2>
         <p className="text-sm text-muted-foreground">Dieser Bereich ist nur für Vorstand und Ausschuss zugänglich.</p>

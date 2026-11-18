@@ -15,6 +15,8 @@ import VerleihZustaendigeModal from '@/components/inventar/VerleihZustaendigeMod
 import AusleiheForm from '@/components/inventar/AusleiheForm';
 import { toast } from 'sonner';
 import VerleihQrModal from '@/components/inventar/VerleihQrModal';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 export default function Inventar() {
   const { user } = useAuth();
@@ -78,6 +80,9 @@ export default function Inventar() {
       setLoading(false);
     }
   };
+
+  // Pull-to-Refresh (Vorgabe Pierre 19.11.): fehlte auf dieser Seite.
+  const { pullDistance, refreshing } = usePullToRefresh(async () => { await loadData(); });
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -324,6 +329,7 @@ export default function Inventar() {
   if (!hatZugriff) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+        <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
         <Lock size={40} className="text-muted-foreground mb-3" />
         <h2 className="text-xl font-oswald uppercase text-foreground mb-2">Kein Zugriff</h2>
         <p className="text-sm text-muted-foreground">Dieser Bereich ist nur für Vorstand und berechtigte Personen.</p>

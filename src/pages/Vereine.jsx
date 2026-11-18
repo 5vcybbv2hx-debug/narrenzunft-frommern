@@ -3,6 +3,8 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
 import { Plus, Search, Edit, Trash2, Mail, Phone, Globe, MapPin, ChevronDown, ChevronUp, X, AlertTriangle, Building2 } from 'lucide-react';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 export default function Vereine() {
   const { user } = useAuth();
@@ -42,6 +44,9 @@ export default function Vereine() {
     }
     setLoading(false);
   };
+
+  // Pull-to-Refresh (Vorgabe Pierre 19.11.): fehlte auf dieser Seite.
+  const { pullDistance, refreshing } = usePullToRefresh(async () => { await loadVereine(); });
 
   const getKontakteForVerein = (vereinId) => kontakte.filter(k => k.verein_id === vereinId);
 
@@ -131,6 +136,7 @@ export default function Vereine() {
 
   return (
     <div className="px-4 lg:px-6 py-6 max-w-3xl mx-auto">
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>

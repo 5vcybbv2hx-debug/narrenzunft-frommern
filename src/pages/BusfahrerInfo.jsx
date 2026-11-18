@@ -4,6 +4,8 @@ import { base44 } from '@/api/base44Client';
 import { Navigation, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 function NavButton({ adresse, label }) {
   if (!adresse) return null;
@@ -91,6 +93,9 @@ export default function BusfahrerInfo() {
     setLoading(false);
   };
 
+  // Pull-to-Refresh (Vorgabe Pierre 19.11.): fehlte auf dieser Seite.
+  const { pullDistance, refreshing } = usePullToRefresh(async () => { await loadData(); });
+
   const getMitgliedName = (id) => {
     const m = mitglieder.find(m => m.id === id);
     return m ? `${m.vorname} ${m.nachname}` : '–';
@@ -120,6 +125,7 @@ export default function BusfahrerInfo() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
       {/* Header */}
       <div className="bg-primary px-5 py-6 text-center">
         <div className="text-4xl mb-2">🚌</div>

@@ -25,6 +25,8 @@ import { Drama,
 import { toast } from 'sonner';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import MobileSelect from '@/components/MobileSelect';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 function formatPhoneForTel(phone) {
   if (!phone) return null;
@@ -243,6 +245,9 @@ export default function SpartenDashboard() {
       setLoading(false);
     }
   };
+
+  // Pull-to-Refresh (Vorgabe Pierre 19.11.): fehlte auf dieser Seite.
+  const { pullDistance, refreshing } = usePullToRefresh(async () => { await loadData(); });
 
   useEffect(() => {
     if (id) {
@@ -837,6 +842,7 @@ export default function SpartenDashboard() {
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-12">
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
       {/* HEADER BAR */}
       <div className="border-b border-border bg-card sticky top-0 z-10 px-4 py-4 md:px-8">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

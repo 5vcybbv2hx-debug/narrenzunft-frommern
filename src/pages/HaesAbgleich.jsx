@@ -3,6 +3,8 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import DateSelect from '@/components/ui/DateSelect';
 import { Shirt, Search, ChevronLeft, ChevronRight, ChevronDown, UserX, AlertTriangle, Plus, Undo2, Check } from 'lucide-react';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 /**
  * Häs-Abgleich für die Vorstandschaft.
@@ -96,6 +98,9 @@ export default function HaesAbgleich() {
     }
     setLoading(false);
   };
+
+  // Pull-to-Refresh (Vorgabe Pierre 19.11.): fehlte auf dieser Seite.
+  const { pullDistance, refreshing } = usePullToRefresh(async () => { await laden(); });
 
   const haesProMitglied = useMemo(() => {
     const map = new Map();
@@ -210,6 +215,7 @@ export default function HaesAbgleich() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
+        <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
         <div className="w-9 h-9 border-[3px] border-border border-t-primary rounded-full animate-spin" />
       </div>
     );

@@ -17,6 +17,8 @@ import {
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 const TABS = [
   { id: 'faellig', label: 'Fällig', icon: AlertTriangle },
@@ -81,6 +83,9 @@ export default function Ehrungen() {
     }
     setLoading(false);
   };
+
+  // Pull-to-Refresh (Vorgabe Pierre 19.11.): fehlte auf dieser Seite.
+  const { pullDistance, refreshing } = usePullToRefresh(async () => { await loadData(); });
 
   const alleAuswertungen = useMemo(() => {
     if (loading) return [];
@@ -224,6 +229,7 @@ export default function Ehrungen() {
   if (!kannVerwalten) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+        <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
         <Award size={40} className="text-muted-foreground mb-3" />
         <h2 className="text-xl font-bold font-oswald uppercase tracking-wide text-foreground mb-2">Kein Zugriff</h2>
         <p className="text-sm text-muted-foreground">Diese Seite ist nur für Ehrungsverwalter.</p>

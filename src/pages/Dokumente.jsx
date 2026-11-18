@@ -7,6 +7,8 @@ import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import ZustimmungsUebersicht from '@/components/dokumente/ZustimmungsUebersicht';
 import TextDokumentLeser from '@/components/dokumente/TextDokumentLeser';
 import TextDokumentEditor from '@/components/dokumente/TextDokumentEditor';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 const KATEGORIEN = ['Satzung', 'Datenschutz', 'Ordnung', 'Antragsformular', 'Protokoll', 'Sonstiges'];
 const istVerwaltung = (u) => ['admin', 'vorstand', 'stellv_vorstand'].includes(u?.role);
@@ -47,6 +49,9 @@ export default function Dokumente() {
     } catch (e) { console.error('Dokumente laden:', e); setFehler('Dokumente konnten nicht geladen werden.'); }
     finally { setLoading(false); }
   }, [verwaltung]);
+
+  // Pull-to-Refresh (Vorgabe Pierre 19.11.): fehlte auf dieser Seite.
+  const { pullDistance, refreshing } = usePullToRefresh(async () => { await laden(); });
 
   useEffect(() => { laden(); }, [laden]);
 
@@ -113,6 +118,7 @@ export default function Dokumente() {
 
   return (
     <div className="px-4 py-5 max-w-3xl mx-auto">
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
       <h1 className="font-oswald uppercase tracking-wide text-2xl text-foreground mb-1">Dokumente</h1>
       <p className="text-sm text-muted-foreground mb-4">Satzung, Ordnungen und Formulare der Narrenzunft Frommern e.V.</p>
 

@@ -7,6 +7,8 @@ import { Wallet, Search, Download, Save, AlertCircle, Check, ShieldCheck, Refres
 import { toast } from 'sonner';
 import KassenbuchTab from '@/components/finanzen/KassenbuchTab';
 import { kannKasseSehn, kannKasseBuchen } from '@/lib/roles';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 const euro = (v) => Number(v || 0).toFixed(2).replace('.', ',') + ' €';
 
@@ -59,6 +61,9 @@ export default function Finanzen() {
     }
     setLaden(false);
   };
+
+  // Pull-to-Refresh (Vorgabe Pierre 19.11.): fehlte auf dieser Seite.
+  const { pullDistance, refreshing } = usePullToRefresh(async () => { await laden_(); });
 
   useEffect(() => { if (darf) laden_(); }, [darf]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -156,6 +161,7 @@ export default function Finanzen() {
   if (!darf) {
     return (
       <div className="p-6 max-w-lg mx-auto text-center">
+        <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
         <ShieldCheck className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
         <p className="text-sm text-muted-foreground">Der Finanzbereich ist dem Vorstand und dem Kassierer vorbehalten.</p>
       </div>

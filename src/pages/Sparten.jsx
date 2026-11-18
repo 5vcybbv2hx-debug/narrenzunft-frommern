@@ -8,6 +8,8 @@ import SparteFormModal from '@/components/sparten/SparteFormModal';
 import Sparte from '@/components/sparten/Sparte';
 import { toast } from 'sonner';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 export default function Sparten() {
   const { user } = useAuth();
@@ -48,6 +50,9 @@ export default function Sparten() {
     }
     setLoading(false);
   };
+
+  // Pull-to-Refresh (Vorgabe Pierre 19.11.): fehlte auf dieser Seite.
+  const { pullDistance, refreshing } = usePullToRefresh(async () => { await loadData(); });
 
   const handleSaved = () => {
     setShowForm(false);
@@ -112,6 +117,7 @@ export default function Sparten() {
 
   return (
     <div className="px-4 lg:px-6 py-6 max-w-4xl mx-auto overflow-x-hidden">
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-oswald font-semibold text-foreground tracking-wide">Sparten & Gruppen</h1>

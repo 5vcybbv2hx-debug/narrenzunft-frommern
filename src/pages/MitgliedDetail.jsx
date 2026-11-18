@@ -31,6 +31,8 @@ import { toast } from 'sonner';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import MobileSelect from '@/components/MobileSelect';
 import BottomModal from '@/components/ui/BottomModal';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 const ALLE_STATUS = ['Aktiv', 'Passiv', 'Passiv mit Häs', 'Leihäs', 'Jugendliche 11-14', 'Jungaktive 15-17', 'Kinder 4-10', 'Kleinkind 0-3', 'Ehrenmitglied'];
 
@@ -262,6 +264,9 @@ export default function MitgliedDetail() {
       setEditing(true);
     }
   };
+
+  // Pull-to-Refresh (Vorgabe Pierre 19.11.): fehlte auf dieser Seite.
+  const { pullDistance, refreshing } = usePullToRefresh(async () => { await loadMitglied(); });
 
   const handleInvite = async () => {
     if (!mitglied.email) return;
@@ -582,6 +587,7 @@ export default function MitgliedDetail() {
 
   return (
     <div {...mitgliedSwipe} className="px-4 lg:px-6 py-6 max-w-3xl mx-auto overflow-x-hidden touch-pan-y">
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
       {/* Header */}
       <div className="flex items-center gap-3 mb-6 flex-wrap">
         <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground">

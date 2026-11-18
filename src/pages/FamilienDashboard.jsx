@@ -13,6 +13,8 @@ import { differenceInYears } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { format } from 'date-fns';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 const BEZIEHUNGEN = [
   'Ehepartner/in', 'Kind', 'Geschwister', 'Elternteil',
@@ -69,6 +71,9 @@ export default function FamilienDashboard() {
     }
     setLoading(false);
   }, []);
+
+  // Pull-to-Refresh (Vorgabe Pierre 19.11.): fehlte auf dieser Seite.
+  const { pullDistance, refreshing } = usePullToRefresh(async () => { await loadData(); });
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -150,6 +155,7 @@ export default function FamilienDashboard() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 sm:p-6 text-foreground">
+        <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
         <div className="w-10 h-10 border-[3px] border-border border-t-primary rounded-full animate-spin" />
         <p className="mt-4 text-sm font-medium tracking-wide font-oswald uppercase text-muted-foreground">Familie wird geladen...</p>
       </div>

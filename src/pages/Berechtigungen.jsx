@@ -4,6 +4,8 @@ import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, ROLLEN_LABELS } from '@/lib/roles';
 import { Shield, Search, ChevronDown, ChevronUp, Lock, Check, AlertCircle, User, ClipboardList, Wallet, Crown, Package, Landmark, CheckSquare, ShoppingBag } from 'lucide-react';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 const ROLLEN_OPTIONEN = [
   { value: 'mitglied',        label: 'Mitglied',        desc: 'Grundzugang',          Icon: User },
@@ -53,6 +55,9 @@ export default function Berechtigungen() {
     }
     setLoading(false);
   };
+
+  // Pull-to-Refresh (Vorgabe Pierre 19.11.): fehlte auf dieser Seite.
+  const { pullDistance, refreshing } = usePullToRefresh(async () => { await loadData(); });
 
   const getLinkedUser = (mitglied) => users.find(u => u.id === mitglied.user_id);
 
@@ -106,6 +111,7 @@ export default function Berechtigungen() {
   if (!admin) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+        <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
         <Lock size={40} className="text-muted-foreground mb-3" />
         <h2 className="text-xl font-bold font-oswald uppercase tracking-wide text-foreground mb-2">Kein Zugriff</h2>
         <p className="text-sm text-muted-foreground">Nur für Administratoren.</p>
