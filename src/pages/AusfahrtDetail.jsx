@@ -234,7 +234,6 @@ export default function AusfahrtDetail() {
       .catch(() => setErwachsene([]));
   }, [brauchtBegleiter, ausfahrt?.datum, erwachsene.length]);
 
-
   const toggleFamilienmitglied = (mitgliedId) => {
     setAusgewaehlteFamilienmitglieder(prev =>
       prev.includes(mitgliedId)
