@@ -11,10 +11,28 @@ import { toast } from 'sonner';
  */
 export default function U18AuftraegeWidget() {
   const { user } = useAuth();
-  const meinId = user?._mitglied?.id;
+  // user._mitglied setzt AuthContext nur direkt nach verknuepfeMitgliedLogin.
+  // Bei bestehenden Sessions ist es leer — deshalb die Mitglieds-ID am Profil
+  // über user_id (Fallback E-Mail) nachschlagen.
+  const [meinId, setMeinId] = useState(user?._mitglied?.id || null);
   const [eintraege, setEintraege] = useState([]);
   const [termine, setTermine] = useState({});
   const [busy, setBusy] = useState(null);
+
+  useEffect(() => {
+    if (meinId || !user?.id) return;
+    let aktiv = true;
+    (async () => {
+      const perUser = await base44.entities.Mitglied.filter({ user_id: user.id });
+      let m = perUser?.[0];
+      if (!m && user.email) {
+        const perMail = await base44.entities.Mitglied.filter({ email: user.email });
+        m = perMail?.[0];
+      }
+      if (aktiv && m) setMeinId(m.id);
+    })().catch(e => console.error('Mitglied zum Login suchen:', e));
+    return () => { aktiv = false; };
+  }, [user?.id, user?.email, meinId]);
 
   const laden = async () => {
     if (!meinId) return;

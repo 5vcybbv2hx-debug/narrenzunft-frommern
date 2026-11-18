@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { meldeAnAusfahrtSicher } from '@/lib/ausfahrtAnmeldung';
 import { istU18 } from '@/lib/u18Begleitung';
 import { U18BegleitungKarte, U18BegleitungModal } from '@/components/veranstaltung/U18Begleitung';
+import ErziehungsauftragFehlt from '@/components/ausfahrt/ErziehungsauftragFehlt';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannAusschussSehn, kannAusfahrtCheckin } from '@/lib/roles';
 import { Bus, MapPin, Clock, Calendar, Users, ArrowLeft, UserPlus, CheckCircle2, Download, X, Pencil, Trash2, Ban, AlertTriangle, QrCode, ScanLine, Search, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -210,6 +211,22 @@ export default function AusfahrtDetail() {
     familienmitglieder.some(fm => ausgewaehlteFamilienmitglieder.includes(fm.id) && fm.alter != null && fm.alter >= 18);
   // Nur wenn ausschließlich Kinder mitfahren, braucht es den Erziehungsauftrag.
   const brauchtBegleiter = u18Kinder.length > 0 && !erwachsenerDabei;
+
+  // Schon angemeldete Kinder, für die noch kein Erziehungsauftrag existiert.
+  // Die Aufsichtssuche oben greift nur für neu angehakte Kinder.
+  const fehlendeAuftraege = ausfahrt?.u18_begleitung_erforderlich
+    ? [
+        ...(currentMitglied
+          && anmeldungen.some(a => a.mitglied_id === currentMitglied.id && a.status !== 'Abgemeldet')
+          && istU18(currentMitglied.geburtsdatum, ausfahrt.datum)
+          ? [{ id: currentMitglied.id, name: `${currentMitglied.vorname || ''} ${currentMitglied.nachname || ''}`.trim() }]
+          : []),
+        ...familienmitglieder
+          .filter(fm => fm.alter != null && fm.alter < 18)
+          .filter(fm => anmeldungen.some(a => a.mitglied_id === fm.id && a.status !== 'Abgemeldet'))
+          .map(fm => ({ id: fm.id, name: fm.name })),
+      ].filter(k => !u18Eintraege.some(e => e.u18_mitglied_id === k.id))
+    : [];
 
   useEffect(() => {
     if (!brauchtBegleiter || erwachsene.length > 0) return;
@@ -1163,6 +1180,16 @@ export default function AusfahrtDetail() {
                     </div>
                   )}
 
+                  {fehlendeAuftraege.length > 0 && (
+                    <ErziehungsauftragFehlt
+                      typ="ausfahrt"
+                      terminId={id}
+                      datum={ausfahrt?.datum}
+                      kinder={fehlendeAuftraege}
+                      onSaved={fetchData}
+                    />
+                  )}
+
                   {/* QR Code Button */}
                   <button
                     onClick={() => setShowQR(true)}
@@ -1341,6 +1368,16 @@ export default function AusfahrtDetail() {
                             : `${anzahlGewaehlt} ${anzahlGewaehlt === 1 ? 'Person wird' : 'Personen werden'} angemeldet.`}
                         </p>
                       </div>
+
+                      {fehlendeAuftraege.length > 0 && (
+                        <ErziehungsauftragFehlt
+                          typ="ausfahrt"
+                          terminId={id}
+                          datum={ausfahrt?.datum}
+                          kinder={fehlendeAuftraege}
+                          onSaved={fetchData}
+                        />
+                      )}
 
                       <div className="pt-2 grid grid-cols-1 gap-2.5">
                         {busBenoetigt ? (
