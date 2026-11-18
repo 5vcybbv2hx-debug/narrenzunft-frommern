@@ -2,13 +2,14 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import KalenderAboModal from '@/components/kalender/KalenderAboModal';
 import { meldeAnAusfahrtSicher } from '@/lib/ausfahrtAnmeldung';
+import QrKarussell from '@/components/ausfahrt/QrKarussell';
 import { familienIdsAusVerwandtschaft, angemeldeteIdsFuerTermin } from '@/lib/kalenderMeineTermine';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin } from '@/lib/roles';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Calendar, List, ChevronLeft, ChevronRight, ChevronDown, Plus, Clock,
-  MapPin, Download, Filter, X, Edit, LayoutTemplate, Bus, Car, AlertCircle, Search, Link2 } from 'lucide-react';
+  MapPin, Download, Filter, X, Edit, LayoutTemplate, Bus, Car, AlertCircle, Search, Link2, QrCode } from 'lucide-react';
 import { cachedFetch, clearEntityCache } from '../lib/entityCache';
 import { useSwipe } from '@/hooks/useSwipe';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
@@ -96,6 +97,7 @@ export default function Kalender({ nur = 'alle' }) {
   const [listLimit, setListLimit] = useState(30);
   const [ausfahrten, setAusfahrten] = useState([]);
   const [ausfahrtAnmeldungen, setAusfahrtAnmeldungen] = useState([]);
+  const [qrTermin, setQrTermin] = useState(null);
   const [submittingAusfahrtId, setSubmittingAusfahrtId] = useState(null);
   const [quelle, setQuelle] = useState(nur); // 'alle' | 'veranstaltung' | 'ausfahrt'
   const [suche, setSuche] = useState('');
@@ -236,6 +238,27 @@ export default function Kalender({ nur = 'alle' }) {
       [...ausfahrtAnmeldungen, ...familienAusfahrtAnmeldungen]);
     return ids.map(id => id === myMitglied?.id ? 'Du' :
       (familienMitglieder.find(m => m.id === id)?.vorname || 'Familie'));
+  };
+
+  /** Anmeldungen der Familie fuer eine Ausfahrt als QR-Eintraege. */
+  const qrEintraegeFuer = (termin) => {
+    const aid = termin?._ausfahrt_id || termin?.id;
+    if (!aid) return [];
+    const alle = [...ausfahrtAnmeldungen, ...familienAusfahrtAnmeldungen]
+      .filter(a => a.ausfahrt_id === aid && a.status !== 'Abgemeldet' && a.mitglied_id);
+    const gesehen = new Set();
+    const eintraege = [];
+    for (const a of alle) {
+      if (gesehen.has(a.mitglied_id)) continue;
+      gesehen.add(a.mitglied_id);
+      const fam = familienMitglieder.find(m => m.id === a.mitglied_id);
+      const eigen = a.mitglied_id === myMitglied?.id;
+      const name = eigen
+        ? `${myMitglied?.vorname || ''} ${myMitglied?.nachname || ''}`.trim() || 'Du'
+        : fam ? `${fam.vorname || ''} ${fam.nachname || ''}`.trim() : 'Familienmitglied';
+      eintraege.push({ id: a.id, name, transport: a.transport || '', istFamilie: !eigen });
+    }
+    return eintraege;
   };
 
   const gefilterteTermine = useMemo(() => {
@@ -799,6 +822,8 @@ export default function Kalender({ nur = 'alle' }) {
                   onEdit={admin ? () => { setEditTermin(t); setShowModal(true); } : null}
                   onEditVeranstaltung={admin ? (v) => { setEditVeranstaltung(v); setShowVeranstaltungModal(true); } : null}
                   ausfahrtAnmeldung={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeStatus(t._ausfahrt_id) : null}
+                  onShowQR={t._quelle === 'ausfahrt' ? () => setQrTermin(t) : null}
+                  hatQR={t._quelle === 'ausfahrt' && qrEintraegeFuer(t).length > 0}
                   ausfahrtAnmeldeCount={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeCount(t._ausfahrt_id) : 0}
                   isAusfahrtOpen={t._quelle === 'ausfahrt' ? isAusfahrtRegistrationOpen(t) : false}
                   canUnregisterAusfahrt={t._quelle === 'ausfahrt' ? canUnregisterAusfahrt(t) : false}
@@ -831,6 +856,8 @@ export default function Kalender({ nur = 'alle' }) {
                   onEdit={admin ? () => { setEditTermin(t); setShowModal(true); } : null}
                   onEditVeranstaltung={admin ? (v) => { setEditVeranstaltung(v); setShowVeranstaltungModal(true); } : null}
                   ausfahrtAnmeldung={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeStatus(t._ausfahrt_id) : null}
+                  onShowQR={t._quelle === 'ausfahrt' ? () => setQrTermin(t) : null}
+                  hatQR={t._quelle === 'ausfahrt' && qrEintraegeFuer(t).length > 0}
                   ausfahrtAnmeldeCount={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeCount(t._ausfahrt_id) : 0}
                   isAusfahrtOpen={t._quelle === 'ausfahrt' ? isAusfahrtRegistrationOpen(t) : false}
                   canUnregisterAusfahrt={t._quelle === 'ausfahrt' ? canUnregisterAusfahrt(t) : false}
@@ -880,6 +907,8 @@ export default function Kalender({ nur = 'alle' }) {
                   onEdit={admin ? () => { setEditTermin(t); setShowModal(true); } : null}
                   onEditVeranstaltung={admin ? (v) => { setEditVeranstaltung(v); setShowVeranstaltungModal(true); } : null}
                   ausfahrtAnmeldung={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeStatus(t._ausfahrt_id) : null}
+                  onShowQR={t._quelle === 'ausfahrt' ? () => setQrTermin(t) : null}
+                  hatQR={t._quelle === 'ausfahrt' && qrEintraegeFuer(t).length > 0}
                   ausfahrtAnmeldeCount={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeCount(t._ausfahrt_id) : 0}
                   isAusfahrtOpen={t._quelle === 'ausfahrt' ? isAusfahrtRegistrationOpen(t) : false}
                   canUnregisterAusfahrt={t._quelle === 'ausfahrt' ? canUnregisterAusfahrt(t) : false}
@@ -929,6 +958,14 @@ export default function Kalender({ nur = 'alle' }) {
       {showNeuDropdown && <div className="fixed inset-0 z-20" onClick={() => setShowNeuDropdown(false)} />}
       {showAboModal && <KalenderAboModal onClose={() => setShowAboModal(false)} />}
 
+      {/* QR-Karussell der angemeldeten Familie */}
+      <QrKarussell
+        open={!!qrTermin}
+        onClose={() => setQrTermin(null)}
+        eintraege={qrTermin ? qrEintraegeFuer(qrTermin) : []}
+        titel={qrTermin ? `${qrTermin.titel || 'Ausfahrt'}${qrTermin.datum ? ` · ${String(qrTermin.datum).slice(0, 10).split('-').reverse().join('.')}` : ''}` : ''}
+      />
+
       {/* U18-Begleitperson nach Anmeldung einer U18-Person */}
       {u18Offen && (
         <U18BegleitungModal
@@ -945,7 +982,7 @@ export default function Kalender({ nur = 'alle' }) {
   );
 }
 
-function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditVeranstaltung, ausfahrtAnmeldung, ausfahrtAnmeldeCount, isAusfahrtOpen, canUnregisterAusfahrt, onAusfahrtRegister, onAusfahrtUnregister, submittingAusfahrt, submittingKalender = false, angemeldetePersonen = [], myMitglied = null }) {
+function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditVeranstaltung, ausfahrtAnmeldung, ausfahrtAnmeldeCount, isAusfahrtOpen, canUnregisterAusfahrt, onAusfahrtRegister, onAusfahrtUnregister, submittingAusfahrt, submittingKalender = false, angemeldetePersonen = [], myMitglied = null, onShowQR = null, hatQR = false }) {
   const farbeClass = TERMINART_FARBEN[termin.terminart] || TERMINART_FARBEN['Sonstiges'];
   const isAngemeldet = anmeldung?.status === 'Angemeldet';
   const istVonVeranstaltung = termin._quelle === 'veranstaltung';
@@ -1152,6 +1189,14 @@ function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditV
                     </span>
                   )}
                 </div>
+              )}
+              {hatQR && onShowQR && (
+                <button
+                  onClick={onShowQR}
+                  className="w-full py-2 min-h-[40px] rounded-lg text-xs font-semibold bg-secondary text-foreground border border-border hover:border-primary/60 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <QrCode size={13} /> QR-Codes der Familie
+                </button>
               )}
               {onAusfahrtRegister && !ausfahrtAnmeldung && (
                 isAusfahrtOpen ? (
