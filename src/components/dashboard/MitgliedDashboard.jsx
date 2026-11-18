@@ -4,6 +4,7 @@
  */
 import PushOnboarding from './PushOnboarding';
 import U18AuftraegeWidget from './U18AuftraegeWidget';
+import ElternAuftraegeWidget from './ElternAuftraegeWidget';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
@@ -113,6 +114,7 @@ export default function MitgliedDashboard() {
       {/* Erziehungsauftraege: muss auch hier stehen, weil Mitglieder dieses
           Dashboard statt Dashboard.jsx sehen (dort wird vorher abgebrochen). */}
       <U18AuftraegeWidget />
+      <ElternAuftraegeWidget />
       {/* Begrüßung */}
       <div className="mb-2">
         <h1 className="text-2xl font-bold text-foreground">

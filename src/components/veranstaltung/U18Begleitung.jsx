@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { toast } from 'sonner';
-import { ShieldCheck, UserCheck, AlertTriangle, Check, X } from 'lucide-react';
+import { ShieldCheck, UserCheck, AlertTriangle, Check, X, Clock } from 'lucide-react';
 
 /**
  * U18-Begleitbestätigung.
@@ -13,9 +13,17 @@ import { ShieldCheck, UserCheck, AlertTriangle, Check, X } from 'lucide-react';
  *  - Bei externer Begleitung und für den Vorstand: manuelle Bestätigung
  * Erst wenn beide Seiten bestätigt haben, ist der Status 'Bestätigt'.
  */
+/** 2026-11-18T22:41:19Z -> 18.11.2026 */
+function datumKurz(iso) {
+  if (!iso) return '';
+  const d = String(iso).slice(0, 10).split('-');
+  return d.length === 3 ? `${d[2]}.${d[1]}.${d[0]}` : '';
+}
+
 export function U18BegleitungKarte({ typ, terminId, myMitglied }) {
   const { user } = useAuth();
   const [eintraege, setEintraege] = useState([]);
+  const [namen, setNamen] = useState({}); // Mitglieds-ID -> Name (wer bestätigt hat)
   const [busy, setBusy] = useState(null);
 
   const istVerwaltung = ['admin', 'vorstand', 'stellv_vorstand'].includes(user?.role);
@@ -23,7 +31,16 @@ export function U18BegleitungKarte({ typ, terminId, myMitglied }) {
   const laden = async () => {
     try {
       const e = await base44.entities.U18Begleitung.filter({ termin_id: terminId });
-      setEintraege((e || []).filter(x => x.typ === typ));
+      const liste = (e || []).filter(x => x.typ === typ);
+      setEintraege(liste);
+      // Wer hat bestätigt? IDs in Namen übersetzen, damit keine Roh-IDs im UI stehen.
+      const ids = [...new Set(liste.flatMap(x => [x.eltern_bestaetigt_von, x.begleitung_bestaetigt_von]).filter(Boolean))];
+      const karte = {};
+      for (const id of ids) {
+        const m = await base44.entities.Mitglied.get(id).catch(() => null);
+        if (m) karte[id] = `${m.vorname || ''} ${m.nachname || ''}`.trim();
+      }
+      setNamen(karte);
     } catch (e) { console.error('U18-Begleitung laden:', e); }
   };
 
@@ -75,13 +92,35 @@ export function U18BegleitungKarte({ typ, terminId, myMitglied }) {
                 {fertig ? '✓ Bestätigt' : 'Ausstehend'}
               </span>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full ${elternOk ? 'bg-green-500/20 text-green-400' : 'bg-secondary text-muted-foreground'}`}>
-                {elternOk ? <Check size={9} /> : <AlertTriangle size={9} />} Eltern {elternOk ? `✓ (${e.eltern_bestaetigt_von || '–'})` : 'offen'}
-              </span>
-              <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full ${beglOk ? 'bg-green-500/20 text-green-400' : 'bg-secondary text-muted-foreground'}`}>
-                {beglOk ? <Check size={9} /> : <X size={9} />} Begleitung {beglOk ? `✓ (${e.begleitung_bestaetigt_von || '–'})` : 'offen'}
-              </span>
+            {/* Zwei Schritte, damit klar ist, wer noch fehlt */}
+            <div className="space-y-1 pt-0.5">
+              <div className="flex items-start gap-1.5 text-[11px] leading-tight">
+                {beglOk
+                  ? <Check size={11} className="text-green-400 mt-0.5 shrink-0" />
+                  : <Clock size={11} className="text-amber-400 mt-0.5 shrink-0" />}
+                <span className={beglOk ? 'text-muted-foreground' : 'text-foreground'}>
+                  <span className="font-medium">Begleitung:</span>{' '}
+                  {beglOk
+                    ? <>hat übernommen{namen[e.begleitung_bestaetigt_von] ? ` (${namen[e.begleitung_bestaetigt_von]})` : ''}{e.begleitung_bestaetigt_am ? ` am ${datumKurz(e.begleitung_bestaetigt_am)}` : ''}</>
+                    : <>hat noch nicht geantwortet</>}
+                </span>
+              </div>
+              <div className="flex items-start gap-1.5 text-[11px] leading-tight">
+                {elternOk
+                  ? <Check size={11} className="text-green-400 mt-0.5 shrink-0" />
+                  : <Clock size={11} className="text-amber-400 mt-0.5 shrink-0" />}
+                <span className={elternOk ? 'text-muted-foreground' : 'text-foreground'}>
+                  <span className="font-medium">Eltern:</span>{' '}
+                  {elternOk
+                    ? <>haben bestätigt{namen[e.eltern_bestaetigt_von] ? ` (${namen[e.eltern_bestaetigt_von]})` : ''}{e.eltern_bestaetigt_am ? ` am ${datumKurz(e.eltern_bestaetigt_am)}` : ''}</>
+                    : <>müssen noch bestätigen</>}
+                </span>
+              </div>
+              {!fertig && (
+                <p className="text-[10px] text-muted-foreground pt-0.5">
+                  Der Auftrag gilt erst als bestätigt, wenn beide zugestimmt haben.
+                </p>
+              )}
             </div>
             {istVerwaltung && !fertig && (
               <div className="flex flex-wrap gap-1.5 pt-1">
