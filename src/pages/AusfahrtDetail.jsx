@@ -52,20 +52,6 @@ export default function AusfahrtDetail() {
   const [erwachsene, setErwachsene] = useState([]);
   const anzahlGewaehlt = (ichMit ? 1 : 0) + ausgewaehlteFamilienmitglieder.length;
 
-  // Wer fährt mit? (für die Begleit-Logik)
-  const u18Kinder = familienmitglieder.filter(fm => ausgewaehlteFamilienmitglieder.includes(fm.id) && fm.alter != null && fm.alter < 18);
-  const erwachsenerDabei =
-    (ichMit && currentMitglied && !istU18(currentMitglied.geburtsdatum, ausfahrt?.datum)) ||
-    familienmitglieder.some(fm => ausgewaehlteFamilienmitglieder.includes(fm.id) && fm.alter != null && fm.alter >= 18);
-  // Nur wenn ausschließlich Kinder mitfahren, braucht es den Erziehungsauftrag.
-  const brauchtBegleiter = u18Kinder.length > 0 && !erwachsenerDabei;
-
-  useEffect(() => {
-    if (!brauchtBegleiter || erwachsene.length > 0) return;
-    base44.entities.Mitglied.list('nachname', 1000)
-      .then(m => setErwachsene((m || []).filter(x => !x.archiviert && !istU18(x.geburtsdatum, ausfahrt?.datum))))
-      .catch(() => setErwachsene([]));
-  }, [brauchtBegleiter, ausfahrt?.datum, erwachsene.length]);
   const [fremdName, setFremdName] = useState('');
   const [fremdTransport, setFremdTransport] = useState('Bus');
   // siehe busBenoetigt: bei Ausfahrten ohne Bus wird auf 'Privat' korrigiert
@@ -216,6 +202,22 @@ export default function AusfahrtDetail() {
           };
         })
     : [];
+
+  // Wer fährt mit? (für die Begleit-Logik)
+  const u18Kinder = familienmitglieder.filter(fm => ausgewaehlteFamilienmitglieder.includes(fm.id) && fm.alter != null && fm.alter < 18);
+  const erwachsenerDabei =
+    (ichMit && currentMitglied && !istU18(currentMitglied.geburtsdatum, ausfahrt?.datum)) ||
+    familienmitglieder.some(fm => ausgewaehlteFamilienmitglieder.includes(fm.id) && fm.alter != null && fm.alter >= 18);
+  // Nur wenn ausschließlich Kinder mitfahren, braucht es den Erziehungsauftrag.
+  const brauchtBegleiter = u18Kinder.length > 0 && !erwachsenerDabei;
+
+  useEffect(() => {
+    if (!brauchtBegleiter || erwachsene.length > 0) return;
+    base44.entities.Mitglied.list('nachname', 1000)
+      .then(m => setErwachsene((m || []).filter(x => !x.archiviert && !istU18(x.geburtsdatum, ausfahrt?.datum))))
+      .catch(() => setErwachsene([]));
+  }, [brauchtBegleiter, ausfahrt?.datum, erwachsene.length]);
+
 
   const toggleFamilienmitglied = (mitgliedId) => {
     setAusgewaehlteFamilienmitglieder(prev =>
