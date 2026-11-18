@@ -6,7 +6,7 @@ import { istU18 } from '@/lib/u18Begleitung';
 import { U18BegleitungKarte, U18BegleitungModal } from '@/components/veranstaltung/U18Begleitung';
 import { useAuth } from '@/lib/AuthContext';
 import { isAdmin, kannAusschussSehn, kannAusfahrtCheckin } from '@/lib/roles';
-import { Bus, MapPin, Clock, Calendar, Users, ArrowLeft, UserPlus, CheckCircle2, Download, X, Pencil, Trash2, Ban, AlertTriangle, QrCode, ScanLine, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Bus, MapPin, Clock, Calendar, Users, ArrowLeft, UserPlus, CheckCircle2, Download, X, Pencil, Trash2, Ban, AlertTriangle, QrCode, ScanLine, Search, ChevronLeft, ChevronRight, ClipboardList } from 'lucide-react';
 import { clearEntityCache } from '../lib/entityCache';
 import AusfahrtEditModal from '@/components/ausfahrt/AusfahrtEditModal';
 import { format, parseISO, differenceInDays } from 'date-fns';
@@ -1081,12 +1081,30 @@ export default function AusfahrtDetail() {
                   <ScanLine size={14} /> QR-Scanner
                 </a>
               )}
+              <Link
+                to={`/ausfahrten/${id}/aufsicht`}
+                className="inline-flex items-center gap-2 bg-secondary hover:bg-border text-foreground border border-border font-semibold px-4 py-2 rounded-lg text-sm transition-colors"
+              >
+                <ClipboardList size={14} /> Aufsichtsliste
+              </Link>
               <button
                 onClick={() => setShowDeleteConfirm(true)}
                 className="inline-flex items-center gap-2 bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-700/40 font-semibold px-4 py-2 rounded-lg text-sm transition-colors"
               >
                 <Trash2 size={14} /> Löschen
               </button>
+            </div>
+          )}
+
+          {/* Busverantwortliche ohne Verwaltungsrolle: Zugriff auf die Aufsichtsliste */}
+          {!isAdmin(user) && isBusverantwortlicher && (
+            <div className="flex flex-wrap items-center gap-2 mt-6 pt-6 border-t border-border">
+              <Link
+                to={`/ausfahrten/${id}/aufsicht`}
+                className="inline-flex items-center gap-2 bg-secondary hover:bg-border text-foreground border border-border font-semibold px-4 py-2 rounded-lg text-sm transition-colors"
+              >
+                <ClipboardList size={14} /> Aufsichtsliste
+              </Link>
             </div>
           )}
         </div>

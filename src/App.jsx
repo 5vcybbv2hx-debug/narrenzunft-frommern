@@ -54,6 +54,7 @@ import VerleihUebersicht from './pages/VerleihUebersicht';
 import Mitgliedsantraege from './pages/Mitgliedsantraege';
 import HaesAbgleich from './pages/HaesAbgleich';
 import Dokumente from './pages/Dokumente';
+import Aufsichtsliste from './pages/Aufsichtsliste';
 
 
 const AuthenticatedApp = () => {
