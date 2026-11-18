@@ -64,11 +64,35 @@ export default async function (req) {
       const bestehende = await S.U18Begleitung.filter({ typ, termin_id, u18_mitglied_id }).catch(() => []);
       const aktiv = (bestehende || [])[0];
       if (aktiv) {
+        // Erneute Zuordnung (Wechsel der Aufsicht, Ab- und Wiederanmeldung oder
+        // vorher abgelehnt): alte Bestaetigungen gelten NICHT weiter, sonst waere
+        // eine fruehere Zusage automatisch wieder gueltig, ohne dass die
+        // Aufsichtsperson erneut gefragt wurde. Beide Seiten bestaetigen neu.
+        const neuerName = begleit_mitglied_id
+          ? await nameVon(begleit_mitglied_id)
+          : String(begleit_name || "").trim();
         const erg = await S.U18Begleitung.update(aktiv.id, {
           begleit_mitglied_id: begleit_mitglied_id || "",
-          begleit_name: begleit_mitglied_id ? await nameVon(begleit_mitglied_id) : String(begleit_name || "").trim(),
+          begleit_name: neuerName,
+          eltern_bestaetigt_am: "",
+          eltern_bestaetigt_von: "",
+          begleitung_bestaetigt_am: "",
+          begleitung_bestaetigt_von: "",
+          status: "Ausstehend",
+          notiz: [aktiv.notiz, "Neu zugeordnet am " + jetztISO().slice(0, 10)]
+            .filter(Boolean).join(" | "),
         });
-        return Response.json({ ok: true, existierend: true, id: aktiv.id, begleitung: erg });
+        if (begleit_mitglied_id) {
+          try {
+            await sendePush(
+              [begleit_mitglied_id],
+              "Erziehungsauftrag",
+              "Du sollst " + (aktiv.u18_name || "ein Kind") + " beaufsichtigen. Bitte bestätige den Auftrag erneut.",
+              { route: "/dashboard" },
+            );
+          } catch (e) { console.error("U18-Neuzuordnung-Push:", e); }
+        }
+        return Response.json({ ok: true, existierend: true, zurueckgesetzt: true, id: aktiv.id, begleitung: erg });
       }
       const rec = await S.U18Begleitung.create({
         typ,

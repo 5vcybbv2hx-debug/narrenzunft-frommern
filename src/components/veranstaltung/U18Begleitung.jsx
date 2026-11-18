@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { toast } from 'sonner';
-import { ShieldCheck, UserCheck, AlertTriangle, Check, X, Clock } from 'lucide-react';
+import { ShieldCheck, UserCheck, AlertTriangle, Check, X, Clock, UserPlus } from 'lucide-react';
 import { nurAktiveAuftraege } from '@/lib/u18AuftragAktiv';
 
 /**
@@ -26,6 +26,7 @@ export function U18BegleitungKarte({ typ, terminId, myMitglied }) {
   const [eintraege, setEintraege] = useState([]);
   const [namen, setNamen] = useState({}); // Mitglieds-ID -> Name (wer bestätigt hat)
   const [busy, setBusy] = useState(null);
+  const [wechsel, setWechsel] = useState(null); // Eintrag, für den eine andere Aufsicht gewählt wird
 
   const istVerwaltung = ['admin', 'vorstand', 'stellv_vorstand'].includes(user?.role);
 
@@ -89,8 +90,8 @@ export function U18BegleitungKarte({ typ, terminId, myMitglied }) {
               <p className="text-xs text-foreground">
                 <b>{e.u18_name || 'U18'}</b> geht mit <b>{e.begleit_name || '–'}</b>
               </p>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 ${fertig ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'}`}>
-                {fertig ? '✓ Bestätigt' : 'Ausstehend'}
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 ${e.status === 'Abgelehnt' ? 'bg-red-500/20 text-red-400' : fertig ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                {e.status === 'Abgelehnt' ? 'Abgegeben' : fertig ? '✓ Bestätigt' : 'Ausstehend'}
               </span>
             </div>
             {/* Zwei Schritte, damit klar ist, wer noch fehlt */}
@@ -117,12 +118,25 @@ export function U18BegleitungKarte({ typ, terminId, myMitglied }) {
                     : <>müssen noch bestätigen</>}
                 </span>
               </div>
-              {!fertig && (
+              {!fertig && e.status !== 'Abgelehnt' && (
                 <p className="text-[10px] text-muted-foreground pt-0.5">
                   Der Auftrag gilt erst als bestätigt, wenn beide zugestimmt haben.
                 </p>
               )}
+              {e.status === 'Abgelehnt' && (
+                <p className="text-[10px] text-red-400 pt-0.5">
+                  Aufsicht wurde abgegeben. Bitte eine andere Person eintragen.
+                </p>
+              )}
             </div>
+            {(istVerwaltung || !fertig) && (
+              <button
+                onClick={() => setWechsel(e)}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-border text-[10px] font-medium text-muted-foreground hover:text-foreground min-h-[30px]"
+              >
+                <UserPlus size={10} /> Andere Aufsicht wählen
+              </button>
+            )}
             {istVerwaltung && !fertig && (
               <div className="flex flex-wrap gap-1.5 pt-1">
                 {!elternOk && (
@@ -148,6 +162,16 @@ export function U18BegleitungKarte({ typ, terminId, myMitglied }) {
           </div>
         );
       })}
+      {wechsel && (
+        <U18BegleitungModal
+          typ={typ}
+          terminId={terminId}
+          u18MitgliedId={wechsel.u18_mitglied_id}
+          u18Name={wechsel.u18_name}
+          onClose={() => setWechsel(null)}
+          onAngelegt={() => { setWechsel(null); laden(); }}
+        />
+      )}
     </div>
   );
 }
