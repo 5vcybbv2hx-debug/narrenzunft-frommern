@@ -1,14 +1,24 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { ShieldCheck, Check, X, Loader2 } from 'lucide-react';
+import { ShieldCheck, Check, X, Loader2, CircleAlert } from 'lucide-react';
 import { toast } from 'sonner';
 
 /**
  * Erziehungsaufträge, in denen ICH die Aufsicht übernehmen soll.
  * Erscheint auf dem Dashboard, damit die Begleitperson nicht erst
- * die Ausfahrt aufrufen muss. Bestätigen oder Ablehnen direkt hier.
+ * die Ausfahrt aufrufen muss.
+ *
+ * Wichtig: Übernommene Aufträge bleiben sichtbar (mit Datum), damit die
+ * Begleitperson im Nachhinein abgeben kann, wenn sie z.B. krank wird.
+ * Das Abgeben geht zurück an die Eltern, das Kind bleibt angemeldet.
  */
+function datumKurz(iso) {
+  if (!iso) return '';
+  const d = String(iso).slice(0, 10).split('-');
+  return d.length === 3 ? `${d[2]}.${d[1]}.${d[0]}` : '';
+}
+
 export default function U18AuftraegeWidget() {
   const { user } = useAuth();
   // user._mitglied wird nur beim automatischen Verknüpfen gesetzt und fehlt bei
@@ -39,13 +49,14 @@ export default function U18AuftraegeWidget() {
     if (!meinId) return;
     try {
       const alle = await base44.entities.U18Begleitung.filter({ begleit_mitglied_id: meinId });
-      const offen = (alle || []).filter(e => e.status !== 'Bestätigt' && e.status !== 'Abgelehnt');
-      setEintraege(offen);
+      // Abgelehnte ausblenden, übernommene aber behalten (Rückgabe möglich).
+      const relevant = (alle || []).filter(e => e.status !== 'Abgelehnt');
+      setEintraege(relevant);
       const map = {};
-      for (const e of offen) {
+      for (const e of relevant) {
         if (e.typ === 'ausfahrt') {
           const a = await base44.entities.Ausfahrt.get(e.termin_id).catch(() => null);
-          if (a) map[e.id] = `${a.titel || 'Ausfahrt'}${a.datum ? ` · ${a.datum.split('-').reverse().join('.')}` : ''}`;
+          if (a) map[e.id] = `${a.titel || 'Ausfahrt'}${a.datum ? ` · ${datumKurz(a.datum)}` : ''}`;
         }
       }
       setTermine(map);
@@ -54,17 +65,33 @@ export default function U18AuftraegeWidget() {
 
   useEffect(() => { laden(); /* eslint-disable-line react-hooks/exhaustive-deps */ }, [meinId]);
 
-  const entscheiden = async (id, aktion) => {
+  const entscheiden = async (id, aktion, grund) => {
     setBusy(id);
     try {
-      const res = await base44.functions.invoke('verwalteU18Begleitung', { aktion, eintrag_id: id });
+      const res = await base44.functions.invoke('verwalteU18Begleitung', { aktion, eintrag_id: id, grund });
       if (res?.error) throw new Error(res.error);
-      toast.success(aktion === 'ablehnen' ? 'Abgelehnt. Die Eltern wurden informiert.' : 'Bestätigt. Danke!');
+      if (aktion === 'ablehnen') {
+        toast.success('Abgegeben. Die Eltern werden informiert und tragen jemand anderen ein.');
+      } else {
+        toast.success('Übernommen. Die Eltern müssen noch bestätigen.');
+      }
       await laden();
     } catch (e) {
       toast.error(e.message || 'Aktion fehlgeschlagen.');
     } finally { setBusy(null); }
   };
+
+  const abgeben = (e) => {
+    const ok = window.confirm(
+      `Aufsicht für ${e.u18_name || 'das Kind'} wirklich abgeben?\n\n` +
+      'Die Eltern werden informiert und müssen jemand anderen eintragen. ' +
+      'Das Kind bleibt angemeldet.'
+    );
+    if (ok) entscheiden(e.id, 'ablehnen', 'Kann doch nicht mitfahren');
+  };
+
+  const offen = eintraege.filter(e => !e.begleitung_bestaetigt_am);
+  const uebernommen = eintraege.filter(e => !!e.begleitung_bestaetigt_am);
 
   if (eintraege.length === 0) return null;
 
@@ -73,10 +100,14 @@ export default function U18AuftraegeWidget() {
       <div className="flex items-center gap-2 mb-3">
         <ShieldCheck size={16} className="text-amber-400" />
         <h3 className="font-oswald uppercase tracking-wide text-white text-sm">Erziehungsauftrag</h3>
-        <span className="ml-auto text-[11px] font-semibold text-amber-400">{eintraege.length} offen</span>
+        <span className="ml-auto text-[11px] font-semibold text-amber-400">
+          {offen.length > 0 ? `${offen.length} offen` : 'übernommen'}
+        </span>
       </div>
+
       <div className="space-y-2">
-        {eintraege.map(e => (
+        {/* Offene Aufträge: hier ist eine Entscheidung nötig */}
+        {offen.map(e => (
           <div key={e.id} className="bg-background border border-border rounded-lg p-3">
             <p className="text-sm text-foreground">
               Du sollst <span className="font-semibold">{e.u18_name || 'ein Kind'}</span> beaufsichtigen.
@@ -102,6 +133,39 @@ export default function U18AuftraegeWidget() {
             </div>
           </div>
         ))}
+
+        {/* Übernommene Aufträge: bleiben sichtbar, Abgeben weiterhin möglich */}
+        {uebernommen.map(e => {
+          const allesBestaetigt = !!e.eltern_bestaetigt_am;
+          return (
+            <div key={e.id} className="bg-background border border-emerald-600/30 rounded-lg p-3">
+              <p className="text-sm text-foreground flex items-start gap-1.5">
+                <Check size={14} className="text-emerald-500 mt-0.5 shrink-0" />
+                <span>
+                  <span className="font-semibold">{e.u18_name || 'Kind'}</span> beaufsichtigst du
+                  {e.begleitung_bestaetigt_am ? ` seit ${datumKurz(e.begleitung_bestaetigt_am)}` : ''}.
+                </span>
+              </p>
+              {termine[e.id] && (
+                <p className="text-[11px] text-muted-foreground mt-0.5 ml-[22px]">{termine[e.id]}</p>
+              )}
+              <p className={`text-[11px] mt-1 ml-[22px] flex items-center gap-1 ${allesBestaetigt ? 'text-emerald-500' : 'text-amber-400'}`}>
+                {allesBestaetigt ? (
+                  <><Check size={11} /> Von den Eltern bestätigt</>
+                ) : (
+                  <><CircleAlert size={11} /> Elternbestätigung steht noch aus</>
+                )}
+              </p>
+              <button
+                onClick={() => abgeben(e)}
+                disabled={busy === e.id}
+                className="mt-2 ml-[22px] inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border text-muted-foreground text-xs font-semibold hover:text-red-400 hover:border-red-500/40 disabled:opacity-50 min-h-[36px]"
+              >
+                {busy === e.id ? <Loader2 size={12} className="animate-spin" /> : <X size={12} />} Kann doch nicht
+              </button>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
