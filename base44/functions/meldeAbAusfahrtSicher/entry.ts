@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
+import { sendePush } from '../../shared/pushSenden.ts';
 
 /**
  * Abmeldung einer Ausfahrt-Anmeldung durch Angehörige (Kinder ↔ Eltern).
@@ -63,7 +64,33 @@ export default async function (req) {
       abgemeldet_am: new Date().toISOString().slice(0, 10),
     });
 
-    return Response.json({ erfolg: true, abgemeldet: true });
+    // Erziehungsauftrag erlischt mit der Abmeldung. Der Auftrag haengt an genau
+    // dieser Veranstaltung (termin_id) und dieser Person, wird also gezielt
+    // geloescht und nicht nur ausgeblendet. Die Begleitperson wird informiert,
+    // damit sie nicht weiter fuer ein Kind plant, das gar nicht mitfaehrt.
+    let erloescht = 0;
+    try {
+      const auftraege = await S.U18Begleitung.filter({
+        termin_id: anmeldung.ausfahrt_id,
+        u18_mitglied_id: anmeldung.mitglied_id,
+      }).catch(() => []);
+      for (const a of (auftraege || [])) {
+        await S.U18Begleitung.delete(a.id);
+        erloescht += 1;
+        if (a.begleit_mitglied_id) {
+          try {
+            await sendePush(
+              [a.begleit_mitglied_id],
+              'Aufsicht nicht mehr nötig',
+              (a.u18_name || 'Das Kind') + ' wurde von der Ausfahrt abgemeldet. Dein Erziehungsauftrag ist damit erloschen.',
+              { route: '/dashboard' },
+            );
+          } catch (e) { console.error('Push Abmeldung:', e); }
+        }
+      }
+    } catch (e) { console.error('Erziehungsauftrag aufraeumen:', e); }
+
+    return Response.json({ erfolg: true, abgemeldet: true, erziehungsauftraege_geloescht: erloescht });
   } catch (error) {
     return Response.json({ erfolg: false, fehler: error.message || 'Unbekannter Fehler' }, { status: 500 });
   }

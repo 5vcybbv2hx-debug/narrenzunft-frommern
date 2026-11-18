@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { ShieldCheck, Check, X, Loader2, CircleAlert } from 'lucide-react';
 import { toast } from 'sonner';
+import { nurAktiveAuftraege } from '@/lib/u18AuftragAktiv';
 
 /**
  * Erziehungsaufträge, in denen ICH die Aufsicht übernehmen soll.
@@ -50,7 +51,9 @@ export default function U18AuftraegeWidget() {
     try {
       const alle = await base44.entities.U18Begleitung.filter({ begleit_mitglied_id: meinId });
       // Abgelehnte ausblenden, übernommene aber behalten (Rückgabe möglich).
-      const relevant = (alle || []).filter(e => e.status !== 'Abgelehnt');
+      const ohneAbgelehnt = (alle || []).filter(e => e.status !== 'Abgelehnt');
+      // Kind abgemeldet -> Auftrag ist hinfällig und verschwindet.
+      const relevant = await nurAktiveAuftraege(ohneAbgelehnt);
       setEintraege(relevant);
       const map = {};
       for (const e of relevant) {

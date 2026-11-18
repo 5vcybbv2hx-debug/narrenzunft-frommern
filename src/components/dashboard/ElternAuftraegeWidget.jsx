@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { ShieldCheck, Check, Loader2, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
+import { nurAktiveAuftraege } from '@/lib/u18AuftragAktiv';
 
 /**
  * Karte für Erziehungsberechtigte: "Wer fährt mit meinem Kind mit?"
@@ -61,7 +62,8 @@ export default function ElternAuftraegeWidget() {
         alle.push(...(liste || []));
       }
       // Nur was noch die Elternbestätigung braucht und nicht abgelehnt ist.
-      const wartend = alle.filter(e => e.status !== 'Abgelehnt' && !e.eltern_bestaetigt_am);
+      // Kind abgemeldet -> Auftrag ist hinfällig und verschwindet.
+      const wartend = await nurAktiveAuftraege(alle.filter(e => e.status !== 'Abgelehnt' && !e.eltern_bestaetigt_am));
       setOffene(wartend);
 
       const map = {};

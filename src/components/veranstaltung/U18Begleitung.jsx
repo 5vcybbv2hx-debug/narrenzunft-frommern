@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { toast } from 'sonner';
 import { ShieldCheck, UserCheck, AlertTriangle, Check, X, Clock } from 'lucide-react';
+import { nurAktiveAuftraege } from '@/lib/u18AuftragAktiv';
 
 /**
  * U18-Begleitbestätigung.
@@ -31,7 +32,7 @@ export function U18BegleitungKarte({ typ, terminId, myMitglied }) {
   const laden = async () => {
     try {
       const e = await base44.entities.U18Begleitung.filter({ termin_id: terminId });
-      const liste = (e || []).filter(x => x.typ === typ);
+      const liste = await nurAktiveAuftraege((e || []).filter(x => x.typ === typ));
       setEintraege(liste);
       // Wer hat bestätigt? IDs in Namen übersetzen, damit keine Roh-IDs im UI stehen.
       const ids = [...new Set(liste.flatMap(x => [x.eltern_bestaetigt_von, x.begleitung_bestaetigt_von]).filter(Boolean))];
