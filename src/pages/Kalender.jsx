@@ -261,6 +261,42 @@ export default function Kalender({ nur = 'alle' }) {
     return eintraege;
   };
 
+  /**
+   * Wer kann bei dieser Ausfahrt mitkommen? Ich selbst plus die Familie.
+   * Bereits angemeldete Personen sind als solche markiert und nicht waehlbar.
+   */
+  const familieOptionenFuer = (termin) => {
+    const aid = termin?._ausfahrt_id || termin?.id;
+    if (!aid) return [];
+    const datum = termin?.datum;
+    const registriert = new Set(
+      [...ausfahrtAnmeldungen, ...familienAusfahrtAnmeldungen]
+        .filter(a => a.ausfahrt_id === aid && a.status !== 'Abgemeldet' && a.mitglied_id)
+        .map(a => a.mitglied_id)
+    );
+    const liste = [];
+    if (myMitglied) {
+      liste.push({
+        id: myMitglied.id,
+        name: `${myMitglied.vorname || ''} ${myMitglied.nachname || ''}`.trim() || 'Ich',
+        istIch: true,
+        istU18: istU18(myMitglied.geburtsdatum, datum),
+        bereitsAngemeldet: registriert.has(myMitglied.id),
+      });
+    }
+    for (const m of familienMitglieder) {
+      if (liste.some(x => x.id === m.id)) continue;
+      liste.push({
+        id: m.id,
+        name: `${m.vorname || ''} ${m.nachname || ''}`.trim(),
+        istIch: false,
+        istU18: istU18(m.geburtsdatum, datum),
+        bereitsAngemeldet: registriert.has(m.id),
+      });
+    }
+    return liste;
+  };
+
   const gefilterteTermine = useMemo(() => {
     // Dedup: falls Backend schon Ausfahrten liefert, nicht doppelt reinmergen
     const backendIds = new Set(termine.map(t => t.id));
@@ -332,18 +368,44 @@ export default function Kalender({ nur = 'alle' }) {
   };
 
   // === Ausfahrt-Anmeldung ===
-  const handleAusfahrtRegister = async (ausfahrtId, transport = 'Bus') => {
+  const handleAusfahrtRegister = async (ausfahrtId, transport = 'Bus', personen = null) => {
     if (!myMitglied) return;
+    // Ohne Auswahl: wie bisher nur ich selbst.
+    const wer = (personen && personen.length ? personen : [myMitglied]).filter(Boolean);
     setSubmittingAusfahrtId(ausfahrtId);
     try {
-      const res = await meldeAnAusfahrtSicher({
-        ausfahrtId,
-        mitgliedId: myMitglied.id,
-        transport,
-      });
-      if (res.bereitsAngemeldet) {
-        toast.info('Du bist für diese Ausfahrt bereits angemeldet.');
+      let neu = 0;
+      for (const person of wer) {
+        const res = await meldeAnAusfahrtSicher({
+          ausfahrtId,
+          mitgliedId: person.id,
+          transport,
+        });
+        if (!res.bereitsAngemeldet) neu += 1;
       }
+
+      // Nur Kinder, kein Erwachsener dabei: Erziehungsauftrag muss gesetzt werden.
+      const ausfahrtDaten = ausfahrten.find(a => a.id === ausfahrtId) || termine.find(t => (t._ausfahrt_id || t.id) === ausfahrtId);
+      const datum = ausfahrtDaten?.datum;
+      // Die Optionen aus der Karte bringen istU18 schon mit; sonst am Datum rechnen.
+      const nurKinder = wer.length > 0 && wer.every(p =>
+        typeof p.istU18 === 'boolean' ? p.istU18 : istU18(p.geburtsdatum, datum));
+      const kindNamen = wer
+        .map(p => p.vorname || (p.name || '').split(' ')[0] || 'Kind')
+        .join(' und ');
+
+      if (nurKinder) {
+        toast.warning(
+          `Angemeldet: ${kindNamen}. Bitte jetzt die Aufsicht eintragen, sonst fährt ${wer.length > 1 ? 'die Kinder' : 'das Kind'} ohne Erziehungsauftrag.`,
+          { duration: 8000 }
+        );
+        navigate(`/ausfahrten/${ausfahrtId}`);
+      } else if (neu > 1) {
+        toast.success(`${neu} Personen angemeldet.`);
+      } else if (neu === 0) {
+        toast.info('Die Auswahl war bereits angemeldet.');
+      }
+
       const updated = await base44.entities.AusfahrtAnmeldung.filter({});
       setAusfahrtAnmeldungen(updated || []);
     } catch (e) {
@@ -827,7 +889,8 @@ export default function Kalender({ nur = 'alle' }) {
                   ausfahrtAnmeldeCount={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeCount(t._ausfahrt_id) : 0}
                   isAusfahrtOpen={t._quelle === 'ausfahrt' ? isAusfahrtRegistrationOpen(t) : false}
                   canUnregisterAusfahrt={t._quelle === 'ausfahrt' ? canUnregisterAusfahrt(t) : false}
-                  onAusfahrtRegister={t._quelle === 'ausfahrt' ? (transport) => handleAusfahrtRegister(t._ausfahrt_id, transport) : null}
+                  onAusfahrtRegister={t._quelle === 'ausfahrt' ? (transport, ids) => handleAusfahrtRegister(t._ausfahrt_id, transport, ids ? (familieOptionenFuer(t) || []).filter(o => ids.includes(o.id)) : null) : null}
+                  familieOptionen={t._quelle === 'ausfahrt' ? familieOptionenFuer(t) : []}
                   onAusfahrtUnregister={t._quelle === 'ausfahrt' ? () => {
                     const anm = getAusfahrtAnmeldeStatus(t._ausfahrt_id);
                     if (anm) handleAusfahrtUnregister(anm.id, t._ausfahrt_id);
@@ -861,7 +924,8 @@ export default function Kalender({ nur = 'alle' }) {
                   ausfahrtAnmeldeCount={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeCount(t._ausfahrt_id) : 0}
                   isAusfahrtOpen={t._quelle === 'ausfahrt' ? isAusfahrtRegistrationOpen(t) : false}
                   canUnregisterAusfahrt={t._quelle === 'ausfahrt' ? canUnregisterAusfahrt(t) : false}
-                  onAusfahrtRegister={t._quelle === 'ausfahrt' ? (transport) => handleAusfahrtRegister(t._ausfahrt_id, transport) : null}
+                  onAusfahrtRegister={t._quelle === 'ausfahrt' ? (transport, ids) => handleAusfahrtRegister(t._ausfahrt_id, transport, ids ? (familieOptionenFuer(t) || []).filter(o => ids.includes(o.id)) : null) : null}
+                  familieOptionen={t._quelle === 'ausfahrt' ? familieOptionenFuer(t) : []}
                   onAusfahrtUnregister={t._quelle === 'ausfahrt' ? () => {
                     const anm = getAusfahrtAnmeldeStatus(t._ausfahrt_id);
                     if (anm) handleAusfahrtUnregister(anm.id, t._ausfahrt_id);
@@ -912,7 +976,8 @@ export default function Kalender({ nur = 'alle' }) {
                   ausfahrtAnmeldeCount={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeCount(t._ausfahrt_id) : 0}
                   isAusfahrtOpen={t._quelle === 'ausfahrt' ? isAusfahrtRegistrationOpen(t) : false}
                   canUnregisterAusfahrt={t._quelle === 'ausfahrt' ? canUnregisterAusfahrt(t) : false}
-                  onAusfahrtRegister={t._quelle === 'ausfahrt' ? (transport) => handleAusfahrtRegister(t._ausfahrt_id, transport) : null}
+                  onAusfahrtRegister={t._quelle === 'ausfahrt' ? (transport, ids) => handleAusfahrtRegister(t._ausfahrt_id, transport, ids ? (familieOptionenFuer(t) || []).filter(o => ids.includes(o.id)) : null) : null}
+                  familieOptionen={t._quelle === 'ausfahrt' ? familieOptionenFuer(t) : []}
                   onAusfahrtUnregister={t._quelle === 'ausfahrt' ? () => {
                     const anm = getAusfahrtAnmeldeStatus(t._ausfahrt_id);
                     if (anm) handleAusfahrtUnregister(anm.id, t._ausfahrt_id);
@@ -982,13 +1047,24 @@ export default function Kalender({ nur = 'alle' }) {
   );
 }
 
-function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditVeranstaltung, ausfahrtAnmeldung, ausfahrtAnmeldeCount, isAusfahrtOpen, canUnregisterAusfahrt, onAusfahrtRegister, onAusfahrtUnregister, submittingAusfahrt, submittingKalender = false, angemeldetePersonen = [], myMitglied = null, onShowQR = null, hatQR = false }) {
+function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditVeranstaltung, ausfahrtAnmeldung, ausfahrtAnmeldeCount, isAusfahrtOpen, canUnregisterAusfahrt, onAusfahrtRegister, onAusfahrtUnregister, submittingAusfahrt, submittingKalender = false, angemeldetePersonen = [], myMitglied = null, onShowQR = null, hatQR = false, familieOptionen = [] }) {
   const farbeClass = TERMINART_FARBEN[termin.terminart] || TERMINART_FARBEN['Sonstiges'];
   const isAngemeldet = anmeldung?.status === 'Angemeldet';
   const istVonVeranstaltung = termin._quelle === 'veranstaltung';
   const istVonAusfahrt = termin._quelle === 'ausfahrt';
   const istTeilnahme = istVonVeranstaltung && teilnahme && !['Abgesagt', 'Abgemeldet'].includes(teilnahme.status);
   const [offen, setOffen] = useState(false);
+
+  // Auswahl fuer die Schnellanmeldung: standardmaessig ich selbst, sofern noch nicht angemeldet.
+  const [auswahl, setAuswahl] = useState([]);
+  const initialisiertFuer = useRef(null);
+  useEffect(() => {
+    const key = termin._ausfahrt_id || termin.id;
+    if (initialisiertFuer.current === key) return;
+    initialisiertFuer.current = key;
+    const ich = (familieOptionen || []).find(o => o.istIch && !o.bereitsAngemeldet);
+    setAuswahl(ich ? [ich.id] : []);
+  });
 
   const hatDetails = istVonVeranstaltung && (
     termin._busparkplatz_adresse || termin._busparkplatz_treffzeit ||
@@ -1198,12 +1274,55 @@ function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditV
                   <QrCode size={13} /> QR-Codes der Familie
                 </button>
               )}
+              {onAusfahrtRegister && isAusfahrtOpen && familieOptionen.length > 1 && (
+                <div className="rounded-lg border border-border bg-secondary/30 p-2.5">
+                  <p className="text-[11px] font-semibold text-foreground mb-1">Wer fährt mit?</p>
+                  <div className="space-y-0.5">
+                    {familieOptionen.map(o => {
+                      const gewaehlt = auswahl.includes(o.id);
+                      return (
+                        <label
+                          key={o.id}
+                          className={`flex items-center gap-2 min-h-[36px] px-1 rounded ${o.bereitsAngemeldet ? 'opacity-60' : 'cursor-pointer'}`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 shrink-0"
+                            style={{ accentColor: '#EA2525' }}
+                            checked={o.bereitsAngemeldet || gewaehlt}
+                            disabled={o.bereitsAngemeldet}
+                            onChange={() => setAuswahl(prev => prev.includes(o.id) ? prev.filter(x => x !== o.id) : [...prev, o.id])}
+                          />
+                          <span className="text-xs text-foreground flex-1 min-w-0 truncate">
+                            {o.name}{o.istIch ? ' (Ich)' : ''}
+                          </span>
+                          {o.istU18 && !o.bereitsAngemeldet && (
+                            <span className="text-[10px] text-muted-foreground shrink-0">Kind</span>
+                          )}
+                          {o.bereitsAngemeldet && (
+                            <span className="text-[10px] text-green-400 shrink-0">angemeldet</span>
+                          )}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {onAusfahrtRegister && ausfahrtAnmeldung && isAusfahrtOpen && auswahl.length > 0 && (
+                <button
+                  onClick={() => onAusfahrtRegister(ausfahrtAnmeldung.transport || 'Bus', auswahl)}
+                  disabled={submittingAusfahrt === termin._ausfahrt_id}
+                  className="w-full py-2.5 min-h-[44px] rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors"
+                >
+                  {submittingAusfahrt === termin._ausfahrt_id ? '...' : `Auswahl anmelden (${auswahl.length})`}
+                </button>
+              )}
               {onAusfahrtRegister && !ausfahrtAnmeldung && (
                 isAusfahrtOpen ? (
                   <div className="flex gap-2">
                     {termin._bus_benoetigt !== false && (
                     <button
-                      onClick={() => onAusfahrtRegister('Bus')}
+                      onClick={() => onAusfahrtRegister('Bus', auswahl)}
                       disabled={submittingAusfahrt === termin._ausfahrt_id}
                       className="flex-1 py-2.5 min-h-[44px] rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
                     >
@@ -1211,7 +1330,7 @@ function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditV
                     </button>
                     )}
                     <button
-                      onClick={() => onAusfahrtRegister('Privat')}
+                      onClick={() => onAusfahrtRegister('Privat', auswahl)}
                       disabled={submittingAusfahrt === termin._ausfahrt_id}
                       className="flex-1 py-2.5 min-h-[44px] rounded-lg text-sm font-semibold bg-secondary text-foreground border border-border hover:border-primary/60 transition-colors flex items-center justify-center gap-2"
                     >
