@@ -1068,8 +1068,11 @@ export default function AusfahrtDetail() {
                       {familienmitglieder.length > 0 && (
                         <div>
                           <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                            Familienmitglieder mit anmelden
+                            Familienmitglieder
                           </label>
+                          <p className="text-[11px] text-muted-foreground mb-2 -mt-1">
+                            Häkchen = zusammen mit dir anmelden. Bus/Privat am Zeilenende = nur diese Person anmelden.
+                          </p>
                           <div className="space-y-2">
                             {familienmitglieder.map(fm => {
                               const fmReg = anmeldungen.find(a => a.mitglied_id === fm.id && a.status !== 'Abgemeldet');
@@ -1095,24 +1098,57 @@ export default function AusfahrtDetail() {
                                 );
                               }
                               return (
-                                <label
+                                <div
                                   key={fm.id}
-                                  className="flex items-center gap-3 p-3 bg-background border border-border rounded-lg cursor-pointer hover:border-primary/40 transition-colors"
+                                  className="flex items-center gap-2 p-3 bg-background border border-border rounded-lg hover:border-primary/40 transition-colors"
                                 >
-                                  <input
-                                    type="checkbox"
-                                    checked={ausgewaehlteFamilienmitglieder.includes(fm.id)}
-                                    onChange={() => toggleFamilienmitglied(fm.id)}
-                                    className="w-4 h-4 rounded accent-primary"
-                                  />
-                                  <div className="flex-1">
-                                    <p className="text-sm text-foreground font-medium">{fm.name}</p>
-                                    <p className="text-xs text-muted-foreground">
-                                      {fm.beziehung}
-                                      {fm.alter ? ` · ${fm.alter} Jahre` : ''}
-                                    </p>
-                                  </div>
-                                </label>
+                                  <label className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={ausgewaehlteFamilienmitglieder.includes(fm.id)}
+                                      onChange={() => toggleFamilienmitglied(fm.id)}
+                                      className="w-4 h-4 rounded accent-primary shrink-0"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm text-foreground font-medium">{fm.name}</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {fm.beziehung}
+                                        {fm.alter ? ` · ${fm.alter} Jahre` : ''}
+                                      </p>
+                                    </div>
+                                  </label>
+                                  {/* Einzelanmeldung: nur diese Person, ohne dass ich selbst mitfahre.
+                                      Wichtig für Kinder, die allein mitfahren (Erziehungsauftrag). */}
+                                  {busBenoetigt ? (
+                                    <div className="flex gap-1 shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRegisterChild(fm.id, 'Bus')}
+                                        className="text-[11px] px-2 py-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+                                        title="Nur diese Person anmelden, mit Bus"
+                                      >
+                                        Bus
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRegisterChild(fm.id, 'Privat')}
+                                        className="text-[11px] px-2 py-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+                                        title="Nur diese Person anmelden, privat"
+                                      >
+                                        Privat
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRegisterChild(fm.id, 'Privat')}
+                                      className="shrink-0 text-[11px] px-2.5 py-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+                                      title="Nur diese Person anmelden"
+                                    >
+                                      nur diese
+                                    </button>
+                                  )}
+                                </div>
                               );
                             })}
                           </div>
