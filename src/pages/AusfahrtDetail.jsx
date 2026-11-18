@@ -664,6 +664,19 @@ export default function AusfahrtDetail() {
           status: 'Abgemeldet',
           abgemeldet_am: todayStr,
         });
+        // Erziehungsauftrag zu genau dieser Ausfahrt und diesem Kind erlischt mit
+        // der Abmeldung — sonst bliebe die Aufsicht als offener Auftrag stehen.
+        if (entry.mitgliedId) {
+          try {
+            await base44.entities.U18Begleitung.deleteMany({
+              typ: 'ausfahrt',
+              termin_id: id,
+              u18_mitglied_id: entry.mitgliedId,
+            });
+          } catch (e) {
+            console.error('Erziehungsauftrag löschen:', e);
+          }
+        }
       }
       toast.success(`${name} entfernt`);
     } catch (err) {
