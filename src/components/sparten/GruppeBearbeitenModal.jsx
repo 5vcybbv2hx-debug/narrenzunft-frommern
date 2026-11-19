@@ -118,3 +118,4 @@ export default function GruppeBearbeitenModal({ gruppe, onClose, onSaved }) {
     </div>
   );
 }
+// Ende GruppeBearbeitenModal

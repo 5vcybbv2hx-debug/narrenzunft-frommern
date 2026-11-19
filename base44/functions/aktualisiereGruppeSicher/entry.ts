@@ -65,3 +65,4 @@ export default async function (req) {
     return Response.json({ error: error.message || 'Interner Fehler' }, { status: 500 });
   }
 }
+// Ende aktualisiereGruppeSicher
