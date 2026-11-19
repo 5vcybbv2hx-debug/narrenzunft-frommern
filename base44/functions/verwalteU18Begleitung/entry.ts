@@ -196,10 +196,16 @@ export default async function (req) {
       const anmeldungen = await S.AusfahrtAnmeldung
         .filter({ ausfahrt_id: termin_id, mitglied_id })
         .catch(() => []);
-      const aktivAngemeldet = (anmeldungen || []).some(a => a.status !== "Abgemeldet");
-      if (!aktivAngemeldet) {
+      const aktiveAnmeldungen = (anmeldungen || []).filter(a => a.status !== "Abgemeldet");
+      if (aktiveAnmeldungen.length === 0) {
         return Response.json({ ok: true, geloescht: 0, grund: "nicht angemeldet" });
       }
+      // Wann hat sich der Elternteil angemeldet? Ein Auftrag, der DANACH
+      // angelegt wurde, ist eine bewusste Entscheidung und bleibt bestehen -
+      // sonst wuerde jede Anmeldung die spaetere Zuordnung wieder loeschen.
+      const anmeldeZeit = Math.max(
+        ...aktiveAnmeldungen.map(a => new Date(a.created_date || a.angemeldet_am || 0).getTime())
+      );
 
       const kindIds = await kindIdsVon(mitglied_id);
       if (kindIds.length === 0) return Response.json({ ok: true, geloescht: 0 });
@@ -216,10 +222,14 @@ export default async function (req) {
       }
 
       let geloescht = 0;
+      let behalten = 0;
       for (const a of betroffen) {
         // Ist die Aufsicht selbst die angemeldete Person, bleibt der Auftrag
         // bestehen - sie muss ihn weiterhin bestaetigen.
         if (a.begleit_mitglied_id && a.begleit_mitglied_id === mitglied_id) continue;
+        // Nach der Anmeldung bewusst zugeordnet -> nicht anfassen.
+        const auftragZeit = new Date(a.created_date || 0).getTime();
+        if (auftragZeit > anmeldeZeit) { behalten += 1; continue; }
         await S.U18Begleitung.delete(a.id);
         geloescht += 1;
         if (a.begleit_mitglied_id) {
@@ -233,7 +243,7 @@ export default async function (req) {
           } catch (e) { console.error("Push Aufsicht erledigt:", e); }
         }
       }
-      return Response.json({ ok: true, geloescht });
+      return Response.json({ ok: true, geloescht, behalten });
     }
 
     if (aktion === "eltern_bestaetigen") {
