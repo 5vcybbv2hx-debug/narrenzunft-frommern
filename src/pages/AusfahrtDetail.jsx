@@ -211,20 +211,24 @@ export default function AusfahrtDetail() {
   // Nur wenn ausschließlich Kinder mitfahren, braucht es den Erziehungsauftrag.
   const brauchtBegleiter = u18Kinder.length > 0 && !erwachsenerDabei;
 
+  // Fährt ein Erwachsener aus der Familie mit, braucht es keinen Erziehungsauftrag.
+  const erwachsenerAngemeldet = anmeldungen.some(a => {
+    if (a.status === 'Abgemeldet' || !a.mitglied_id) return false;
+    if (currentMitglied && a.mitglied_id === currentMitglied.id) {
+      return !istU18(currentMitglied.geburtsdatum, ausfahrt?.datum);
+    }
+    const fm = familienmitglieder.find(x => x.id === a.mitglied_id);
+    return !!fm && fm.alter != null && fm.alter >= 18;
+  });
+
   // Kinder, die bereits angemeldet sind, aber noch keinen Auftrag haben.
   // Ohne diese Liste könnte man eine bestehende Anmeldung nie nachrüsten.
-  const kinderOhneAuftrag = familienmitglieder.filter(fm => {
+  const kinderOhneAuftrag = erwachsenerAngemeldet ? [] : familienmitglieder.filter(fm => {
     if (fm.alter == null || fm.alter >= 18) return false;
     const reg = anmeldungen.find(a => a.mitglied_id === fm.id && a.status !== 'Abgemeldet');
     if (!reg) return false;
     return !u18Eintraege.some(e => e.u18_mitglied_id === fm.id);
   });
-  const erwachsenerDabeiBeiBestand =
-    (ichMit && currentMitglied && !istU18(currentMitglied.geburtsdatum, ausfahrt?.datum)) ||
-    familienmitglieder.some(fm => {
-      if (fm.alter == null || fm.alter >= 18) return false;
-      return false;
-    });
   const nachruestenNoetig = ausfahrt?.u18_begleitung_erforderlich && kinderOhneAuftrag.length > 0;
 
   useEffect(() => {
