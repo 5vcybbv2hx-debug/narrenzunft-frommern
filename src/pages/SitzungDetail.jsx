@@ -45,9 +45,9 @@ export default function SitzungDetail() {
 
   const [termin, setTermin] = useState(null);
   const [ausschussMitglieder, setAusschussMitglieder] = useState([]);
+  const [spartenleiter, setSpartenleiter] = useState([]);
   const [mitglieder, setMitglieder] = useState([]);
   const [anwesenheiten, setAnwesenheiten] = useState([]);
-  const [spartenleiter, setSpartenleiter] = useState([]);
   const [tops, setTops] = useState([]);
   const [abstimmungen, setAbstimmungen] = useState([]);
   const [stimmen, setStimmen] = useState([]);
@@ -73,9 +73,9 @@ export default function SitzungDetail() {
       const absIds = new Set(abs.map(a => a.id));
       setTermin(t || null);
       setAusschussMitglieder(data.ausschussMitglieder || []);
+      setSpartenleiter(data.spartenleiter || []);
       setMitglieder(data.mitglieder || []);
       setAnwesenheiten(anw || []);
-      setSpartenleiter(data.spartenleiter || []);
       setTops((data.tops || []).filter(x => x.termin_id === id).sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)));
       setAbstimmungen(abs);
       setStimmen((data.stimmen || []).filter(v => absIds.has(v.abstimmung_id)));
@@ -112,14 +112,11 @@ export default function SitzungDetail() {
     } catch (e) { toast.error(e.message || 'Anwesenheit konnte nicht gespeichert werden'); }
   };
 
-  // Quorum: Schwelle = Hälfte aller Eingetragenen (Ausschussmitglieder +
-  // Spartenleiter), gezählt werden alle Anwesenden.
-  const eingetrageneIds = new Set([
-    ...ausschussMitglieder.map(a => a.mitglied_id),
-    ...spartenleiter.map(s => s.mitglied_id),
-  ]);
-  const anwesend = anwesenheiten.filter(a => a.status === 'Anwesend' && eingetrageneIds.has(a.mitglied_id)).length;
-  const quorum = eingetrageneIds.size > 0 ? Math.ceil(eingetrageneIds.size / 2) : 0;
+  // Quorum (Vorgabe Pierre 19.11.): alle Anwesenden zählen, Ausschussmitglieder
+  // wie Spartenleiter; die Hälfte aller Eingetragenen ist die Schwelle.
+  const anwesend = anwesenheiten.filter(a => a.status === 'Anwesend').length;
+  const stimmberechtigte = ausschussMitglieder.length + spartenleiter.length;
+  const quorum = stimmberechtigte > 0 ? Math.ceil(stimmberechtigte / 2) : 0;
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
@@ -165,7 +162,7 @@ export default function SitzungDetail() {
       <div className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-4 border ${anwesend >= quorum ? 'bg-green-500/10 border-green-500/20' : 'bg-yellow-500/10 border-yellow-500/20'}`}>
         <Users size={16} className={anwesend >= quorum ? 'text-green-400' : 'text-yellow-400'} />
         <p className="text-sm font-medium text-foreground">
-          {anwesend} von {eingetrageneIds.size} Eingetragenen anwesend
+          {anwesend} von {ausschussMitglieder.length} Mitgliedern anwesend
           {quorum > 0 && ` · Quorum: ${quorum}`}
         </p>
         {anwesend >= quorum && quorum > 0 && (
@@ -193,7 +190,7 @@ export default function SitzungDetail() {
 
       {/* Live-Modus Ansicht */}
       {liveModus && isAdmin && (
-        <LiveModus termin={termin} tops={tops} abstimmungen={abstimmungen} stimmen={stimmen} ausschussMitglieder={ausschussMitglieder} eingetrageneAnzahl={eingetrageneIds.size} getMitgliedName={getMitgliedName} isAdmin={isAdmin} onAenderung={loadData} />
+        <LiveModus termin={termin} tops={tops} abstimmungen={abstimmungen} stimmen={stimmen} ausschussMitglieder={ausschussMitglieder} getMitgliedName={getMitgliedName} isAdmin={isAdmin} onAenderung={loadData} />
       )}
 
       {/* Tabs */}
@@ -387,6 +384,37 @@ function SitzungsProtokollTab({ termin, protokolle, mitglieder, ausschussIds, on
 
 // ─── Anwesenheit Tab ───────────────────────────────────────────────
 function AnwesenheitTab({ ausschussMitglieder, spartenleiter = [], getMitgliedName, getAnwesenheit, onAnwesenheit, isAdmin }) {
+  const zeile = (mitgliedId, rolle, key) => {
+    const anw = getAnwesenheit(mitgliedId);
+    const status = anw?.status || null;
+    const name = getMitgliedName(mitgliedId);
+    return (
+      <div key={key} className="bg-card border border-border rounded-xl px-4 py-3 flex items-center gap-3">
+        <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+          {(name || '?').charAt(0)}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-foreground truncate">{name}</p>
+          <p className="text-xs text-muted-foreground">{rolle}</p>
+        </div>
+        {isAdmin ? (
+          <div className="flex gap-1 shrink-0">
+            {['Anwesend', 'Entschuldigt', 'Unentschuldigt'].map(s => (
+              <button key={s} onClick={() => onAnwesenheit(mitgliedId, s)}
+                className={`px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-medium transition-all border ${status === s ? ANWESENHEIT_FARBEN[s] + ' border-current/30' : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'}`}>
+                {s === 'Anwesend' ? '✓' : s === 'Entschuldigt' ? 'E' : '✗'}
+              </button>
+            ))}
+          </div>
+        ) : (
+          status && (
+            <span className={`text-xs px-2 py-1 rounded-full ${ANWESENHEIT_FARBEN[status]}`}>{status}</span>
+          )
+        )}
+      </div>
+    );
+  };
+
   if (ausschussMitglieder.length === 0 && spartenleiter.length === 0) {
     return (
       <div className="text-center py-12 bg-card border border-border rounded-xl">
@@ -397,58 +425,14 @@ function AnwesenheitTab({ ausschussMitglieder, spartenleiter = [], getMitgliedNa
     );
   }
 
-  // Eine gemeinsame Liste: Ausschussmitglieder und Spartenleiter
-  const eintraege = [
-    ...ausschussMitglieder.map(am => ({
-      key: am.id,
-      mitglied_id: am.mitglied_id,
-      name: getMitgliedName(am.mitglied_id),
-      rolle: am.rolle,
-    })),
-    ...spartenleiter.map(sl => {
-      const gruppen = Array.isArray(sl.gruppen) ? sl.gruppen : [];
-      const name = [sl.vorname, sl.nachname].filter(Boolean).join(' ') || getMitgliedName(sl.mitglied_id);
-      return {
-        key: `sl-${sl.mitglied_id}`,
-        mitglied_id: sl.mitglied_id,
-        name,
-        rolle: gruppen.length ? `Spartenleiter · ${gruppen.join(', ')}` : 'Spartenleiter',
-      };
-    }),
-  ];
-
   return (
     <div className="space-y-2">
-      {eintraege.map(am => {
-        const anw = getAnwesenheit(am.mitglied_id);
-        const status = anw?.status || null;
-        return (
-          <div key={am.key} className="bg-card border border-border rounded-xl px-4 py-3 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-              {am.name[0]}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground truncate">{am.name}</p>
-              <p className="text-xs text-muted-foreground truncate">{am.rolle}</p>
-            </div>
-            {isAdmin ? (
-              <div className="flex gap-1 shrink-0">
-                {['Anwesend', 'Entschuldigt', 'Unentschuldigt'].map(s => (
-                  <button key={s} onClick={() => onAnwesenheit(am.mitglied_id, s)}
-                    className={`px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-medium transition-all border ${status === s ? ANWESENHEIT_FARBEN[s] + ' border-current/30' : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'}`}>
-                    {s === 'Anwesend' ? '✓' : s === 'Entschuldigt' ? 'E' : '✗'}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              status && (
-                <span className={`text-xs px-2 py-1 rounded-full ${ANWESENHEIT_FARBEN[status]}`}>{status}</span>
-              )
-            )}
-          </div>
-        );
-      })}
-
+      {ausschussMitglieder.map(am => zeile(am.mitglied_id, am.rolle, am.id))}
+      {spartenleiter.map(sl => zeile(
+        sl.mitglied_id,
+        sl.gruppe ? `Spartenleiter · ${sl.gruppe}` : 'Spartenleiter',
+        `sl-${sl.mitglied_id}`
+      ))}
     </div>
   );
 }
@@ -881,7 +865,7 @@ function AbstimmungenTab({ terminId, abstimmungen, setAbstimmungen, ausschussMit
                 }
 
                 // ─── Live-Modus ────────────────────────────────────────────────────
-                function LiveModus({ termin, tops, abstimmungen, stimmen, ausschussMitglieder, eingetrageneAnzahl = 0, getMitgliedName, isAdmin, onAenderung }) {
+                function LiveModus({ termin, tops, abstimmungen, stimmen, ausschussMitglieder, getMitgliedName, isAdmin, onAenderung }) {
                 const [idx, setIdx] = useState(0);
                 const [busy, setBusy] = useState(null);
                 const aktiverTop = tops[idx];
@@ -889,7 +873,7 @@ function AbstimmungenTab({ terminId, abstimmungen, setAbstimmungen, ausschussMit
                 const fortschritt = tops.length > 0 ? Math.round((tops.filter(t => t.status !== 'Offen').length / tops.length) * 100) : 0;
 
                 const anwesend = 0; // vereinfacht im Live-Modus
-                const quorum = eingetrageneAnzahl > 0 ? Math.ceil(eingetrageneAnzahl / 2) : 0;
+                const quorum = ausschussMitglieder.length > 0 ? Math.ceil(ausschussMitglieder.length / 2) : 0;
 
                 const topAbs = aktiverTop ? abstimmungen.filter(a => a.top_id === aktiverTop.id) : [];
 
@@ -942,7 +926,7 @@ function AbstimmungenTab({ terminId, abstimmungen, setAbstimmungen, ausschussMit
                 <Zap size={16} className="text-primary" />
                 <span className="font-oswald uppercase tracking-wide text-foreground">Live-Modus</span>
                 </div>
-                <div className="text-xs text-muted-foreground">{anwesend}/{eingetrageneAnzahl} anwesend · Quorum {quorum}</div>
+                <div className="text-xs text-muted-foreground">{anwesend}/{ausschussMitglieder.length} anwesend · Quorum {quorum}</div>
                 </div>
                 <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">Fortschritt</span>

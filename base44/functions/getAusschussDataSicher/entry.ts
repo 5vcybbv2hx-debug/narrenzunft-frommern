@@ -66,7 +66,6 @@ Deno.serve(async (req) => {
       auditLogs,
       tops,
       stimmen,
-      gruppen,
     ] = await Promise.all([
       base44.asServiceRole.entities.KalenderTermin.list("datum", 250),
       base44.asServiceRole.entities.Ausschussaufgabe.list("-created_date", 500),
@@ -81,44 +80,43 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.AusschussAuditLog.list("-zeitpunkt", 300).catch(() => []),
       base44.asServiceRole.entities.Tagesordnungspunkt.list("reihenfolge", 1000).catch(() => []),
       base44.asServiceRole.entities.AbstimmungsStimme.list("-created_date", 1000).catch(() => []),
-      base44.asServiceRole.entities.Haesgruppe.list("name", 250).catch(() => []),
     ]);
 
     // Spartenleiter der aktiven Gruppen (Vorgabe Pierre 19.11.): Sie gehören zum
     // Ausschuss, sind aber oft (noch) kein AusschussMitglied. Damit sie in der
     // Anwesenheitsliste der Sitzung auftauchen, wird hier eine eigene Liste
     // geliefert. Wer schon Ausschussmitglied ist, erscheint nicht doppelt.
-    const aktiveAusschussIds = new Set((ausschussMitglieder || []).map((a) => a.mitglied_id));
-    const mitgliedById = new Map((mitglieder || []).map((m) => [m.id, m]));
-    const gruppenProMitglied = new Map();
-    for (const g of gruppen || []) {
-      if (g.aktiv === false) continue;
-      const ids = Array.isArray(g.verantwortliche_ids) && g.verantwortliche_ids.length
-        ? g.verantwortliche_ids
-        : (g.verantwortlicher_id ? [g.verantwortlicher_id] : []);
-      for (const mid of ids) {
-        if (!mid) continue;
-        const namen = gruppenProMitglied.get(mid) || [];
-        if (g.name && !namen.includes(g.name)) namen.push(g.name);
-        gruppenProMitglied.set(mid, namen);
+    let spartenleiter = [];
+    try {
+      const gruppen = await base44.asServiceRole.entities.Haesgruppe.list("name", 250);
+      const gruppeProMitglied = new Map();
+      (gruppen || []).forEach((g) => {
+        if (g.aktiv === false) return;
+        const ids = Array.isArray(g.verantwortliche_ids) ? g.verantwortliche_ids.filter(Boolean) : [];
+        if (g.verantwortlicher_id) ids.push(g.verantwortlicher_id);
+        ids.forEach((id) => {
+          if (!gruppeProMitglied.has(id)) gruppeProMitglied.set(id, []);
+          gruppeProMitglied.get(id).push(g.name || "Gruppe");
+        });
+      });
+      const schonImAusschuss = new Set(
+        (ausschussMitglieder || []).filter((a) => a.aktiv !== false).map((a) => a.mitglied_id)
+      );
+      const offene = [...gruppeProMitglied.keys()].filter((id) => id && !schonImAusschuss.has(id));
+      if (offene.length) {
+        const rows = await base44.asServiceRole.entities.Mitglied.filter({ id: { $in: offene } });
+        spartenleiter = (rows || [])
+          .filter((m) => !m.archiviert)
+          .map((m) => ({
+            mitglied_id: m.id,
+            name: `${m.vorname || ""} ${m.nachname || ""}`.trim(),
+            gruppe: (gruppeProMitglied.get(m.id) || []).join(", "),
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name, "de"));
       }
+    } catch (e) {
+      console.error("Spartenleiter für Anwesenheit:", e);
     }
-    const spartenleiter = [...gruppenProMitglied.entries()]
-      .filter(([mid]) => !aktiveAusschussIds.has(mid))
-      .map(([mid, namen]) => {
-        const m = mitgliedById.get(mid);
-        if (!m || m.archiviert) return null;
-        return {
-          mitglied_id: mid,
-          vorname: m.vorname || "",
-          nachname: m.nachname || "",
-          name: `${m.vorname || ""} ${m.nachname || ""}`.trim(),
-          gruppen: namen,
-          gruppe: namen.join(", "),
-        };
-      })
-      .filter(Boolean)
-      .sort((a, b) => a.name.localeCompare(b.name, "de"));
 
     const sitzungen = termine.filter((x) =>
       ["Ausschusssitzung", "Vorstandssitzung", "Intern"].includes(x.terminart)
