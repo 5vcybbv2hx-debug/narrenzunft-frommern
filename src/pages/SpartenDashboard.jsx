@@ -102,8 +102,8 @@ export default function SpartenDashboard() {
   });
 
   const [showVerantwortlicherModal, setShowVerantwortlicherModal] = useState(false);
-  const [showGruppeModal, setShowGruppeModal] = useState(false);
   const [verantwortlicheSelection, setVerantwortlicheSelection] = useState({}); // { mitgliedId: boolean }
+  const [showGruppeModal, setShowGruppeModal] = useState(false);
   const [memberSearchTerm, setMemberSearchTerm] = useState('');
   const [savingVerantwortliche, setSavingVerantwortliche] = useState(false);
 

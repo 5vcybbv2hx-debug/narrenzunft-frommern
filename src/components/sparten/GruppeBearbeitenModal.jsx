@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, Save } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
+import toast from 'react-hot-toast';
 
 /**
  * Stammdaten der eigenen Gruppe bearbeiten (Name, Beschreibung, Farbe).
@@ -22,10 +22,7 @@ export default function GruppeBearbeitenModal({ gruppe, onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
 
   const speichern = async () => {
-    if (form.name.trim().length < 2) {
-      toast({ variant: 'destructive', title: 'Bitte einen Namen mit mindestens 2 Zeichen angeben.' });
-      return;
-    }
+    if (form.name.trim().length < 2) { toast.error('Bitte einen Namen mit mindestens 2 Zeichen angeben.'); return; }
     setSaving(true);
     try {
       const res = await base44.functions.invoke('aktualisiereGruppeSicher', {
@@ -36,11 +33,11 @@ export default function GruppeBearbeitenModal({ gruppe, onClose, onSaved }) {
       });
       const data = res?.data ?? res;
       if (data?.error) throw new Error(data.error);
-      toast({ title: 'Gruppe gespeichert.' });
+      toast.success('Gruppe gespeichert.');
       onSaved?.();
       onClose?.();
     } catch (e) {
-      toast({ variant: 'destructive', title: e.message || 'Speichern fehlgeschlagen.' });
+      toast.error(e.message || 'Speichern fehlgeschlagen.');
     } finally { setSaving(false); }
   };
 

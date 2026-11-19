@@ -47,9 +47,8 @@ Deno.serve(async (req) => {
       }, { status: 403 });
     }
 
-    // Schreiben darf jedes Ausschussmitglied (canManage); vorstandsreservierte
-    // Bereiche (Mitgliedsanträge, Protokollfreigabe, Löschen, Ausschussverwaltung)
-    // hängen an istVorstand.
+    // Schreiben dürfen alle Ausschussmitglieder (Vorgabe Pierre 19.11.);
+    // Verwaltungsaufgaben bleiben beim Vorstand.
     const istVorstand = ["vorstand", "stellv_vorstand", "admin"].includes(user.role);
     const canManage = istVorstand || darfAusschussSehen;
 
@@ -75,7 +74,7 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.AusschussMitglied.filter({ aktiv: true }),
       base44.asServiceRole.entities.Abstimmung.list("-created_date", 500),
       base44.asServiceRole.entities.Protokoll.list("-datum", 500),
-      istVorstand ? base44.asServiceRole.entities.Mitgliedsantrag.list("-created_date", 500) : Promise.resolve([]),
+      canManage ? base44.asServiceRole.entities.Mitgliedsantrag.list("-created_date", 500) : Promise.resolve([]),
       base44.asServiceRole.entities.Veranstaltung.list("-datum", 500),
       base44.asServiceRole.entities.AusschussJahresplan.list("titel", 200).catch(() => []),
       base44.asServiceRole.entities.AusschussAuditLog.list("-zeitpunkt", 300).catch(() => []),

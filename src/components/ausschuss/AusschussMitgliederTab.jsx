@@ -15,7 +15,7 @@ const ROLLE_FARBEN = {
   'Häswart':             'bg-amber-500/20 text-amber-400',
   'Beisitzer':           'bg-gray-500/20 text-muted-foreground',
   'Jugendleiter':        'bg-primary/20 text-primary',
-  'Spartenleiter':       'bg-sky-500/20 text-sky-400',
+  'Spartenleiter':       'bg-blue-500/20 text-blue-400',
   'Sonstiges':           'bg-secondary text-muted-foreground',
 };
 
@@ -176,7 +176,6 @@ export default function AusschussMitgliederTab({ mitglieder, ausschussMitglieder
         // Rollen-Sync bei einer Zuweisung versagt hat, erscheint die Person trotzdem.
         const getSplatGruppen = m => m.spartenleiter_haesgruppen_ids
           || (m.spartenleiter_haesgruppe_id ? [m.spartenleiter_haesgruppe_id] : []);
-        // Nur Spartenleiter, die noch nicht im Ausschuss sind — jeweils mit "Aufnehmen".
         const spartenleiter = mitglieder.filter(m =>
           !bereitsImAusschuss.has(m.id) &&
           (m.app_rolle === 'spartenleiter' || getSplatGruppen(m).length > 0)

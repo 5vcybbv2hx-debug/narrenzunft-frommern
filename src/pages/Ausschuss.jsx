@@ -262,7 +262,8 @@ export default function Ausschuss() {
         <div className="space-y-4">
           <CockpitTab
             data={{ termine, aufgaben, beschluesse, protokolle, antraege, veranstaltungen, tops, abstimmungen, currentMitgliedId, mitglieder }}
-            canManage={istVorstand}
+            canManage={canManage}
+            istVorstand={istVorstand}
             onNavigate={(t) => setActiveTab(t === 'antraege' && !istVorstand ? 'cockpit' : t)}
             onOpenSitzung={(sid) => navigate(`/ausschuss/sitzung/${sid}`)}
             onFilterAufgaben={(f) => { setAufgabenFilter(f === 'meine' ? 'Meine' : 'Überfällig'); setActiveTab('aufgaben'); }}
