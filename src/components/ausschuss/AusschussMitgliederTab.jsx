@@ -5,7 +5,7 @@ import { ausschussAktion } from '@/lib/ausschussAktionen';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import toast from 'react-hot-toast';
 
-const ROLLEN = ['Vorsitzender', 'Stellv. Vorsitzender', 'Schriftführer', 'Kassierer', 'Häswart', 'Beisitzer', 'Jugendleiter', 'Sonstiges'];
+const ROLLEN = ['Vorsitzender', 'Stellv. Vorsitzender', 'Schriftführer', 'Kassierer', 'Häswart', 'Beisitzer', 'Jugendleiter', 'Spartenleiter', 'Sonstiges'];
 
 const ROLLE_FARBEN = {
   'Vorsitzender':        'bg-primary/20 text-primary',
@@ -15,6 +15,7 @@ const ROLLE_FARBEN = {
   'Häswart':             'bg-amber-500/20 text-amber-400',
   'Beisitzer':           'bg-gray-500/20 text-muted-foreground',
   'Jugendleiter':        'bg-primary/20 text-primary',
+  'Spartenleiter':       'bg-blue-500/20 text-blue-400',
   'Sonstiges':           'bg-secondary text-muted-foreground',
 };
 
@@ -25,6 +26,7 @@ export default function AusschussMitgliederTab({ mitglieder, ausschussMitglieder
   const [form, setForm] = useState({ mitglied_id: '', rolle: 'Beisitzer', notizen: '' });
   const [saving, setSaving] = useState(false);
   const [suche, setSuche] = useState('');
+  const [savingSpl, setSavingSpl] = useState(null);
 
   useEffect(() => { load(); }, []);
 
@@ -60,6 +62,22 @@ export default function AusschussMitgliederTab({ mitglieder, ausschussMitglieder
       setShowForm(false);
     } catch (e) { toast.error(e.message || 'Ausschussmitglied konnte nicht angelegt werden'); }
     finally { setSaving(false); }
+  };
+
+  /** Spartenleiter direkt als Ausschussmitglied aufnehmen (Vorgabe Pierre 19.11.). */
+  const aufnehmenAlsSpartenleiter = async (m) => {
+    setSavingSpl(m.id);
+    try {
+      await ausschussAktion('ausschuss_mitglied_anlegen', {
+        mitglied_id: m.id,
+        rolle: 'Spartenleiter',
+        notizen: '',
+      });
+      toast.success(`${m.vorname} ${m.nachname} ist jetzt im Ausschuss.`);
+      onSaved?.();
+    } catch (e) {
+      toast.error(e.message || 'Aufnehmen fehlgeschlagen');
+    } finally { setSavingSpl(null); }
   };
 
   const handleRolleChange = async (amId, rolle) => {
@@ -159,12 +177,13 @@ export default function AusschussMitgliederTab({ mitglieder, ausschussMitglieder
         const getSplatGruppen = m => m.spartenleiter_haesgruppen_ids
           || (m.spartenleiter_haesgruppe_id ? [m.spartenleiter_haesgruppe_id] : []);
         const spartenleiter = mitglieder.filter(m =>
-          m.app_rolle === 'spartenleiter' || getSplatGruppen(m).length > 0
+          !bereitsImAusschuss.has(m.id) &&
+          (m.app_rolle === 'spartenleiter' || getSplatGruppen(m).length > 0)
         );
         if (spartenleiter.length === 0) return null;
         return (
           <div className="mb-5">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Spartenleiter</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Spartenleiter · noch nicht im Ausschuss</p>
             <div className="space-y-2">
               {spartenleiter.map(m => {
                 const gruppenNamen = getSplatGruppen(m)
@@ -181,6 +200,15 @@ export default function AusschussMitgliederTab({ mitglieder, ausschussMitglieder
                         {gruppenNamen.length > 0 ? `Spartenleiter · ${gruppenNamen.join(', ')}` : 'Spartenleiter'}
                       </span>
                     </div>
+                    {isAdmin && (
+                      <button
+                        onClick={() => aufnehmenAlsSpartenleiter(m)}
+                        disabled={savingSpl === m.id}
+                        className="shrink-0 px-2.5 py-1.5 rounded-lg bg-primary/15 text-primary text-[11px] font-semibold hover:bg-primary/25 disabled:opacity-50 min-h-[34px]"
+                      >
+                        {savingSpl === m.id ? '...' : 'Aufnehmen'}
+                      </button>
+                    )}
                   </div>
                 );
               })}

@@ -47,7 +47,10 @@ Deno.serve(async (req) => {
       }, { status: 403 });
     }
 
-    const canManage = ["vorstand", "stellv_vorstand", "admin"].includes(user.role);
+    // Schreiben dürfen alle Ausschussmitglieder (Vorgabe Pierre 19.11.);
+    // Verwaltungsaufgaben bleiben beim Vorstand.
+    const istVorstand = ["vorstand", "stellv_vorstand", "admin"].includes(user.role);
+    const canManage = istVorstand || darfAusschussSehen;
 
     const [
       termine,
@@ -107,6 +110,7 @@ Deno.serve(async (req) => {
       stimmen: stimmen || [],
       currentMitgliedId: mitglied?.id || null,
       canManage,
+      istVorstand,
     });
   } catch (error) {
     console.error("getAusschussDataSicher:", error);

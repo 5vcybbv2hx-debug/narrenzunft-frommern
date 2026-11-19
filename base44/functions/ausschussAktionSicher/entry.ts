@@ -53,19 +53,19 @@ export default async function (req) {
     const aktion = body.aktion;
     if (!aktion) return Response.json({ error: "Keine Aktion angegeben" }, { status: 400 });
 
-    // ── Allowlist ──
-    const brauchVerwaltung = (a) =>
-      ["sitzung_anlegen", "sitzung_status", "sitzung_einladen", "tops_sperren", "sitzung_anwesenheit", "top_status", "top_loeschen",
-       "abstimmung_anlegen", "abstimmung_update", "top_abstimmung_anlegen", "abstimmung_stimme_fuer", "abstimmung_wiedereroeffnen",
-       "jahresplan_speichern", "jahresplan_loeschen",
-       "abstimmung_abschliessen", "abstimmung_loeschen", "beschluss_anlegen",
-       "beschluss_aus_abstimmung", "beschluss_update", "beschluss_aufheben",
-       "beschluss_loeschen", "aufgabe_aus_beschluss", "aufgabe_update", "aufgabe_loeschen",
-       "protokoll_entwurf", "protokoll_freigabe", "protokoll_loeschen", "sitzung_kopieren", "datei_entfernen",
-       "ausschuss_mitglied_anlegen", "ausschuss_mitglied_update", "ausschuss_mitglied_loeschen"].includes(a);
-
-    if (brauchVerwaltung(aktion) && !ctx.kannVerwalten) {
-      return Response.json({ error: "Access Denied", message: "Aktion nur für Vorstand/Stellv./Admin." }, { status: 403 });
+    // ── Rechte (Vorgabe Pierre 19.11.): ALLE Ausschussmitglieder dürfen
+    //    schreiben — Sitzungen, TOPs, Abstimmungen, Stimmen, Beschlüsse,
+    //    Aufgaben, Protokollentwürfe und Jahresplanung.
+    //    Vorstand/Stellv./Admin bleiben zuständig für Mitgliederverwaltung,
+    //    Einladungen, Protokoll-Freigabe und alles Löschen/Aufheben. ──
+    const NUR_VORSTAND = [
+      "ausschuss_mitglied_anlegen", "ausschuss_mitglied_update", "ausschuss_mitglied_loeschen",
+      "sitzung_einladen", "tops_sperren", "protokoll_freigabe",
+      "top_loeschen", "abstimmung_loeschen", "beschluss_aufheben", "beschluss_loeschen",
+      "protokoll_loeschen", "jahresplan_loeschen",
+    ];
+    if (NUR_VORSTAND.includes(aktion) && !ctx.kannVerwalten) {
+      return Response.json({ error: "Access Denied", message: "Diese Aktion ist dem Vorstand vorbehalten." }, { status: 403 });
     }
 
     const result = await ausfuehren(base44, ctx, body);
@@ -588,7 +588,7 @@ async function ausfuehren(base44, ctx, body) {
       const bestehende = await S.AusschussMitglied.filter({ mitglied_id, aktiv: true });
       if (bestehende?.length) throw new Error("Mitglied ist bereits im Ausschuss");
       const rolle = String(body.rolle || "Beisitzer");
-      if (!["Vorsitzender", "Stellv. Vorsitzender", "Schriftführer", "Kassierer", "Häswart", "Beisitzer", "Jugendleiter", "Sonstiges"].includes(rolle)) throw new Error("Ungültige Rolle");
+      if (!["Vorsitzender", "Stellv. Vorsitzender", "Schriftführer", "Kassierer", "Häswart", "Beisitzer", "Jugendleiter", "Spartenleiter", "Sonstiges"].includes(rolle)) throw new Error("Ungültige Rolle");
       const zusatz = Array.isArray(mitglied.zusatz_berechtigungen) ? mitglied.zusatz_berechtigungen :
         String(mitglied.zusatz_berechtigungen || "").split(",").map(x => x.trim()).filter(Boolean);
       const rec = await S.AusschussMitglied.create({ mitglied_id, rolle, notizen: body.notizen || "", aktiv: true });

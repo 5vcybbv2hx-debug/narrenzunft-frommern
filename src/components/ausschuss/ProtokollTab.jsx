@@ -21,7 +21,7 @@ const EMPTY_FORM = {
   autor_mitglied_id: '',
 };
 
-export default function ProtokollTab({ termine, mitglieder, protokolle = [], ausschussMitglieder = [], onSaved, canManage = false, currentMitgliedId = null }) {
+export default function ProtokollTab({ termine, mitglieder, protokolle = [], ausschussMitglieder = [], onSaved, canManage = false, istVorstand = false, currentMitgliedId = null }) {
   const [showModal, setShowModal] = useState(false);
   const [editProtokoll, setEditProtokoll] = useState(null);
   const ausschussIds = ausschussMitglieder.filter(a => a.aktiv !== false).map(a => a.mitglied_id);
@@ -95,7 +95,7 @@ export default function ProtokollTab({ termine, mitglieder, protokolle = [], aus
                 )}
               </div>
               <div className="flex gap-1 shrink-0">
-                {canManage && <button
+                {istVorstand && <button
                   onClick={() => handleToggleVeroeffentlicht(p)}
                   title={p.veroeffentlicht ? 'Als Entwurf markieren' : 'Veröffentlichen'}
                   className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
@@ -108,7 +108,7 @@ export default function ProtokollTab({ termine, mitglieder, protokolle = [], aus
                 >
                   <Edit size={14} />
                 </button>}
-                {canManage && <button
+                {istVorstand && <button
                   onClick={() => handleDelete(p.id)}
                   className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                 >
