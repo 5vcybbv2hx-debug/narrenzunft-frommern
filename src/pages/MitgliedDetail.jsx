@@ -1094,6 +1094,25 @@ export default function MitgliedDetail() {
                 />
               </div>
 
+              <label className="flex items-start gap-2 mt-3 cursor-pointer select-none">
+                <input type="checkbox" checked={!!mitglied.ist_trainer}
+                  onChange={async (e) => {
+                    const wert = e.target.checked;
+                    handleFieldChange('ist_trainer', wert);
+                    try {
+                      await base44.entities.Mitglied.update(mitglied.id, { ist_trainer: wert });
+                    } catch (err) {
+                      console.error('Trainer-Kennzeichen:', err);
+                      handleFieldChange('ist_trainer', !wert);
+                      setError('Trainer-Kennzeichen konnte nicht gespeichert werden.');
+                    }
+                  }}
+                  className="mt-0.5 w-4 h-4 shrink-0 accent-[#EA2525]" />
+                <span className="text-xs text-muted-foreground">
+                  <span className="text-foreground font-medium">Nur Trainer:in</span> – arbeitet in ihrer Gruppe, gehört aber nicht zum Ausschuss (keine Sitzungs-Anwesenheit, zählt nicht im Quorum).
+                </span>
+              </label>
+
               {/* Spartenleiter-Historie (Amtszeiten) */}
               {splatHistorie.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-border">

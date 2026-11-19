@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
       if (offene.length) {
         const rows = await base44.asServiceRole.entities.Mitglied.filter({ id: { $in: offene } });
         spartenleiter = (rows || [])
-          .filter((m) => !m.archiviert)
+          .filter((m) => !m.archiviert && m.ist_trainer !== true)
           .map((m) => ({
             mitglied_id: m.id,
             name: `${m.vorname || ""} ${m.nachname || ""}`.trim(),
@@ -134,6 +134,7 @@ Deno.serve(async (req) => {
         app_rolle: m.app_rolle,
         spartenleiter_haesgruppen_ids: m.spartenleiter_haesgruppen_ids,
         spartenleiter_haesgruppe_id: m.spartenleiter_haesgruppe_id,
+        ist_trainer: m.ist_trainer === true,
       })),
       ausschussMitglieder,
       spartenleiter,

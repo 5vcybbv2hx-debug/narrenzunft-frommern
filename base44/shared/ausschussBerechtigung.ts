@@ -35,8 +35,11 @@ export async function findeMitgliedFuerLogin(base44, user) {
 }
 
 /** Rollenrecht aus einer aktiven Gruppe, statt dauerhaftem Zusatzrecht. */
-export async function istAktuellerSpartenleiter(base44, mitgliedId) {
+export async function istAktuellerSpartenleiter(base44, mitgliedId, mitglied = null) {
   if (!mitgliedId) return false;
+  // Trainer:innen sind in ihrer Gruppe verantwortlich, gehören aber nicht zum Ausschuss.
+  const person = mitglied || (await base44.asServiceRole.entities.Mitglied.filter({ id: mitgliedId }))?.[0];
+  if (person?.ist_trainer === true) return false;
   const gruppen = await base44.asServiceRole.entities.Haesgruppe.list("name", 250);
   return (gruppen || []).some(g => g.aktiv !== false && (
     (Array.isArray(g.verantwortliche_ids) && g.verantwortliche_ids.includes(mitgliedId)) ||
@@ -63,11 +66,14 @@ export async function loeseMitgliedUndRechte(base44, user) {
     aktivesAusschussmitglied = (am?.length || 0) > 0;
   }
 
+  // Trainer:innen mit der abgeleiteten Rolle "spartenleiter" bleiben draußen;
+  // ein ausdrücklicher Ausschuss-Eintrag oder Zusatzrecht sticht das.
+  const istTrainer = mitglied?.ist_trainer === true;
   const darfAusschuss =
-    ROLLEN_MIT_ZUGRIFF.includes(user.role) ||
+    (ROLLEN_MIT_ZUGRIFF.includes(user.role) && !(istTrainer && user.role === "spartenleiter")) ||
     zusatz.includes("ausschuss") ||
     aktivesAusschussmitglied ||
-    await istAktuellerSpartenleiter(base44, mitglied?.id);
+    await istAktuellerSpartenleiter(base44, mitglied?.id, mitglied);
 
   const kannVerwalten = ROLLEN_VERWALTUNG.includes(user.role);
 

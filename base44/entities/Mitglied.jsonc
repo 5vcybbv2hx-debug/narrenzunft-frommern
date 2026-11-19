@@ -103,6 +103,11 @@
       },
       "description": "IDs aller Gruppen, f\u00fcr die dieses Mitglied Spartenleiter ist"
     },
+    "ist_trainer": {
+      "type": "boolean",
+      "default": false,
+      "description": "Trainer:in ohne Ausschusszugeh\u00f6rigkeit \u2013 arbeitet in der Gruppe, erscheint aber nicht in Sitzungs-Anwesenheit und Quorum"
+    },
     "einladung_gesendet_am": {
       "type": "string",
       "format": "date"

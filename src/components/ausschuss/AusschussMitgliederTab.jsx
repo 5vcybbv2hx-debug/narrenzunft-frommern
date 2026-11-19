@@ -178,6 +178,7 @@ export default function AusschussMitgliederTab({ mitglieder, ausschussMitglieder
           || (m.spartenleiter_haesgruppe_id ? [m.spartenleiter_haesgruppe_id] : []);
         const spartenleiter = mitglieder.filter(m =>
           !bereitsImAusschuss.has(m.id) &&
+          !m.ist_trainer &&
           (m.app_rolle === 'spartenleiter' || getSplatGruppen(m).length > 0)
         );
         if (spartenleiter.length === 0) return null;
