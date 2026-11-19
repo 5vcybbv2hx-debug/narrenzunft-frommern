@@ -1220,10 +1220,8 @@ export default function AusfahrtDetail() {
                 Anmeldung
               </h2>
 
-              {/* U18-Begleitbestätigungen (falls erforderlich) */}
-              {ausfahrt?.u18_begleitung_erforderlich && (
-                <U18BegleitungKarte typ="ausfahrt" terminId={id} myMitglied={currentMitglied} />
-              )}
+              {/* U18-Begleitbestätigungen — die Karte zeigt sich selbst nur bei vorhandenen Einträgen */}
+              <U18BegleitungKarte typ="ausfahrt" terminId={id} myMitglied={currentMitglied} />
 
               {myRegistration ? (
                 // Already registered
