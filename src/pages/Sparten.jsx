@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { isAdmin } from '@/lib/roles';
+import { isAdmin, effektiveRolle } from '@/lib/roles';
 import { Users, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SparteFormModal from '@/components/sparten/SparteFormModal';
@@ -15,7 +15,7 @@ export default function Sparten() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const admin = isAdmin(user);
-  const isSpartenleiter = user?.role === 'spartenleiter';
+  const isSpartenleiter = effektiveRolle(user) === 'spartenleiter';
 
   const [gruppen, setGruppen] = useState([]);
   const [mitglieder, setMitglieder] = useState([]);

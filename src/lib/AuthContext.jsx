@@ -111,10 +111,36 @@ export const AuthProvider = ({ children }) => {
             zusatz_berechtigungen: res.data.zusatz_berechtigungen || [],
             ausschuss_berechtigt: res.data.ausschuss_berechtigt === true,
             ist_trainer: res.data.ist_trainer === true,
+            // app_rolle + Gruppen: Grundlage für effektiveRolle(), damit
+            // Gruppenverantwortliche auch mit Login-Rolle 'user' arbeiten können.
+            app_rolle: res.data.app_rolle || '',
+            spartenleiter_haesgruppen_ids: res.data.spartenleiter_haesgruppen_ids || [],
           };
         }
       } catch (e) {
         console.warn('Auto-Verknüpfung fehlgeschlagen:', e);
+      }
+
+      // Sicherheitsnetz: Wenn die Auto-Verknüpfung nicht greift, das eigene
+      // Mitgliedsprofil direkt laden. Ohne _mitglied greifen weder effektiveRolle()
+      // noch die Gruppenverantwortung – Spartenleiter stünden sonst ohne Rechte da.
+      if (!currentUser._mitglied?.id) {
+        try {
+          const eigene = await base44.entities.Mitglied.filter({ user_id: currentUser.id });
+          const m = eigene?.[0];
+          if (m) {
+            currentUser._mitglied = {
+              id: m.id,
+              zusatz_berechtigungen: m.zusatz_berechtigungen || [],
+              ausschuss_berechtigt: false,
+              ist_trainer: m.ist_trainer === true,
+              app_rolle: m.app_rolle || '',
+              spartenleiter_haesgruppen_ids: m.spartenleiter_haesgruppen_ids || [],
+            };
+          }
+        } catch (e) {
+          console.warn('Mitgliedsprofil laden fehlgeschlagen:', e);
+        }
       }
 
       // Push-Verknüpfung (external_id = Mitglied-Entity-ID): fire-and-forget,

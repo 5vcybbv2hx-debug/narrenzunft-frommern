@@ -2,7 +2,7 @@ import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { isAdmin, isDeveloper, getRollenLabel } from '@/lib/roles';
+import { isAdmin, isDeveloper, getRollenLabel, effektiveRolle } from '@/lib/roles';
 import {
   LayoutDashboard, Users, Shirt, Calendar, Briefcase,
   Award, CreditCard, ChevronDown,
@@ -93,7 +93,7 @@ const ROOT_PATHS = ['/', '/kalender', '/arbeitsdienste', '/mehr'];
 export function canSeeItem(item, user) {
   if (!item.roles) return true;
   if (isDeveloper(user)) return true;
-  if (item.roles.includes(user?.role)) return true;
+  if (item.roles.includes(effektiveRolle(user))) return true;
   const zusatz = user?._mitglied?.zusatz_berechtigungen || [];
   if (item.zusatz && item.zusatz.some(z => zusatz.includes(z))) return true;
   if (item.zusatz?.includes('ausschuss') && user?._mitglied?.ausschuss_berechtigt === true
@@ -104,7 +104,7 @@ export function canSeeItem(item, user) {
 export function canSeeSection(section, user) {
   if (!section.roles) return true;
   if (isDeveloper(user)) return true;
-  if (section.roles.includes(user?.role)) return true;
+  if (section.roles.includes(effektiveRolle(user))) return true;
   // Einzelne Zusatzrechte (z. B. "ausschuss") müssen auch die übergeordnete
   // Navigation öffnen, sonst ist die erlaubte Seite im Menü nicht erreichbar.
   return section.items.some(item => canSeeItem(item, user));

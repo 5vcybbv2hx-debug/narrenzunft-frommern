@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
       zusatz.includes('ausschuss') || ausschuss.length > 0 ||
       (!ist_trainer && await istAktuellerSpartenleiter(base44, mitglied.id, mitglied));
     return Response.json({ linked: true, mitglied_id: mitglied.id, match_strategy: matchStrategy, updates,
-      app_rolle: mitglied.app_rolle, zusatz_berechtigungen: zusatz, ausschuss_berechtigt, ist_trainer, erstlogin_gemeldet: !!erstloginPush });
+      app_rolle: mitglied.app_rolle, spartenleiter_haesgruppen_ids: mitglied.spartenleiter_haesgruppen_ids || [], zusatz_berechtigungen: zusatz, ausschuss_berechtigt, ist_trainer, erstlogin_gemeldet: !!erstloginPush });
   } catch (error) {
     return Response.json({ error: error.message || 'Unbekannter Fehler' }, { status: 500 });
   }

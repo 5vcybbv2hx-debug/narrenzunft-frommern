@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
+import { effektiveRolle } from '@/lib/roles';
 import { useAuth } from '@/lib/AuthContext';
 import { toast } from 'sonner';
 import { Check, Minus, BellRing, RefreshCw } from 'lucide-react';
@@ -20,7 +21,7 @@ export default function TrainingAnwesenheit({ termin, myMitglied }) {
 
   const istVorstand = ['admin', 'vorstand', 'stellv_vorstand'].includes(user?.role);
   const gruppenChef = myMitglied && (termin.verantwortliche_ids || []).includes(myMitglied.id);
-  const darfVerwalten = istVorstand || gruppenChef || user?.role === 'spartenleiter';
+  const darfVerwalten = istVorstand || gruppenChef || effektiveRolle(user) === 'spartenleiter';
 
   const [namen, setNamen] = useState({}); // mitglied_id -> Name
 

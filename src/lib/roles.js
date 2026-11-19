@@ -43,6 +43,22 @@ export function isDeveloper(user) {
 }
 
 /** Vollzugriff: Vorstand + Stv. Vorstand + Developer */
+/**
+ * Effektive Rolle für Rechteprüfungen.
+ *
+ * Die Login-Rolle wird von der Verwaltung gesetzt; bei Spartenleiter-Konten
+ * steht dort häufig noch 'user'/'mitglied', obwohl das Mitgliedsprofil
+ * app_rolle = 'spartenleiter' trägt. Für Gruppenrechte zählt die tatsächliche
+ * Gruppenverantwortung. Deshalb wird hier ausschließlich 'spartenleiter'
+ * nachgezogen – Vorstands- und Adminrechte werden NIE aus app_rolle abgeleitet.
+ */
+export function effektiveRolle(user) {
+  const rolle = user?.role || 'mitglied';
+  const appRolle = user?._mitglied?.app_rolle;
+  if (appRolle === 'spartenleiter' && ['', 'user', 'mitglied'].includes(rolle)) return 'spartenleiter';
+  return rolle;
+}
+
 export function isAdmin(user) {
   return ['vorstand', 'stellv_vorstand', 'admin'].includes(user?.role) || isDeveloper(user);
 }
@@ -78,17 +94,17 @@ export function kannBeitraegeVerwalten(user) {
 
 /** Mitgliederliste sehen */
 export function kannMitgliederlisteSehn(user) {
-  return ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter', 'admin'].includes(user?.role) || isDeveloper(user);
+  return ['vorstand', 'stellv_vorstand', 'kassierer', 'spartenleiter', 'admin'].includes(effektiveRolle(user)) || isDeveloper(user);
 }
 
 /** Arbeitsdienste verwalten */
 export function kannArbeitsdiensteVerwalten(user) {
-  return ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'].includes(user?.role) || isDeveloper(user);
+  return ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'].includes(effektiveRolle(user)) || isDeveloper(user);
 }
 
 /** Check-In bei Veranstaltungen */
 export function kannCheckinDurchfuehren(user) {
-  return ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'].includes(user?.role) || isDeveloper(user);
+  return ['vorstand', 'stellv_vorstand', 'spartenleiter', 'admin'].includes(effektiveRolle(user)) || isDeveloper(user);
 }
 
 /**

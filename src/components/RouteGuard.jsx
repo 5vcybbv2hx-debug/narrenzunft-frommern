@@ -1,5 +1,5 @@
 import { useAuth } from '@/lib/AuthContext';
-import { isDeveloper } from '@/lib/roles';
+import { isDeveloper, effektiveRolle } from '@/lib/roles';
 import { Lock } from 'lucide-react';
 
 /**
@@ -12,7 +12,7 @@ import { Lock } from 'lucide-react';
 export function canAccess(user, roles, zusatz) {
   if (!roles) return true;
   if (isDeveloper(user)) return true;
-  if (roles.includes(user?.role)) return true;
+  if (roles.includes(effektiveRolle(user))) return true;
   if (zusatz) {
     const userZusatz = user?._mitglied?.zusatz_berechtigungen || [];
     if (zusatz.some(z => userZusatz.includes(z))) return true;

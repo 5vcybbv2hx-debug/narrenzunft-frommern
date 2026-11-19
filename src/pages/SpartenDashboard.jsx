@@ -14,7 +14,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { syncVerantwortliche } from '@/lib/spartenSync';
 import { useAuth } from '@/lib/AuthContext';
-import { isAdmin } from '@/lib/roles';
+import { isAdmin, effektiveRolle } from '@/lib/roles';
 import { Drama,
 
   Calendar, Clock, MapPin, Plus, Users, Wallet, 
@@ -260,10 +260,16 @@ export default function SpartenDashboard() {
   // Compute permissions
   const canEdit = useMemo(() => {
     if (!user || !myMitglied) return false;
-    if (isAdmin(user) || user.role === 'vorstand' || user.role === 'stellv_vorstand') return true;
-    if (user.role === 'spartenleiter' && myMitglied.spartenleiter_haesgruppen_ids?.includes(id)) return true;
+    if (isAdmin(user) || effektiveRolle(user) === 'vorstand' || effektiveRolle(user) === 'stellv_vorstand') return true;
+    // Gruppenverantwortung schlägt die Login-Rolle: wer in verantwortliche_ids
+    // steht, arbeitet in seiner Gruppe (die Backend-Functions prüfen genauso).
+    const verantwortlicheIds = gruppe?.verantwortliche_ids?.length
+      ? gruppe.verantwortliche_ids
+      : (gruppe?.verantwortlicher_id ? [gruppe.verantwortlicher_id] : []);
+    if (verantwortlicheIds.includes(myMitglied.id)) return true;
+    if (effektiveRolle(user) === 'spartenleiter' && myMitglied.spartenleiter_haesgruppen_ids?.includes(id)) return true;
     return false;
-  }, [user, myMitglied, id]);
+  }, [user, myMitglied, id, gruppe]);
 
   // Gruppen-Verantwortliche (verantwortliche_ids) — unabhängig vom Sync-Zustand
   // der Login-Rolle. Spiegelt exakt die Autorisierung der Backend-Functions
