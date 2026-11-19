@@ -21,12 +21,13 @@ import { Drama,
   Send, Edit, Trash2, 
   Check, X, AlertCircle, MessageSquare, Repeat,
   Euro, UserCheck, ArrowLeft, Save, Phone, MessageCircle, Search, User
-, Info , Store , Shirt } from 'lucide-react';
+, Info , Store , Shirt , Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import MobileSelect from '@/components/MobileSelect';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
+import GruppeBearbeitenModal from '@/components/sparten/GruppeBearbeitenModal';
 
 function formatPhoneForTel(phone) {
   if (!phone) return null;
@@ -101,6 +102,7 @@ export default function SpartenDashboard() {
   });
 
   const [showVerantwortlicherModal, setShowVerantwortlicherModal] = useState(false);
+  const [showGruppeModal, setShowGruppeModal] = useState(false);
   const [verantwortlicheSelection, setVerantwortlicheSelection] = useState({}); // { mitgliedId: boolean }
   const [memberSearchTerm, setMemberSearchTerm] = useState('');
   const [savingVerantwortliche, setSavingVerantwortliche] = useState(false);
@@ -843,6 +845,15 @@ export default function SpartenDashboard() {
   return (
     <div className="min-h-screen bg-background text-foreground pb-12">
       <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
+
+      {showGruppeModal && (
+        <GruppeBearbeitenModal
+          gruppe={gruppe}
+          onClose={() => setShowGruppeModal(false)}
+          onSaved={() => loadData()}
+        />
+      )}
+
       {/* HEADER BAR */}
       <div className="border-b border-border bg-card sticky top-0 z-10 px-4 py-4 md:px-8">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -875,6 +886,15 @@ export default function SpartenDashboard() {
                   <span className="text-xs bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 px-2 py-0.5 rounded-full uppercase tracking-wider font-semibold font-oswald">
                     Inaktiv
                   </span>
+                )}
+                {(canEdit || istGruppenVerantwortlicher) && (
+                  <button
+                    onClick={() => setShowGruppeModal(true)}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-border text-[11px] font-medium text-muted-foreground hover:text-foreground min-h-[32px]"
+                    title="Name, Beschreibung und Farbe der Gruppe bearbeiten"
+                  >
+                    <Pencil size={11} /> Gruppe bearbeiten
+                  </button>
                 )}
               </div>
             </div>

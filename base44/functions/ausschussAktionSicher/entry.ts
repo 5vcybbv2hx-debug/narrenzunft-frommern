@@ -589,7 +589,7 @@ async function ausfuehren(base44, ctx, body) {
       const bestehende = await S.AusschussMitglied.filter({ mitglied_id, aktiv: true });
       if (bestehende?.length) throw new Error("Mitglied ist bereits im Ausschuss");
       const rolle = String(body.rolle || "Beisitzer");
-      if (!["Vorsitzender", "Stellv. Vorsitzender", "Schriftführer", "Kassierer", "Häswart", "Beisitzer", "Jugendleiter", "Sonstiges"].includes(rolle)) throw new Error("Ungültige Rolle");
+      if (!["Vorsitzender", "Stellv. Vorsitzender", "Schriftführer", "Kassierer", "Häswart", "Beisitzer", "Jugendleiter", "Spartenleiter", "Sonstiges"].includes(rolle)) throw new Error("Ungültige Rolle");
       const zusatz = Array.isArray(mitglied.zusatz_berechtigungen) ? mitglied.zusatz_berechtigungen :
         String(mitglied.zusatz_berechtigungen || "").split(",").map(x => x.trim()).filter(Boolean);
       const rec = await S.AusschussMitglied.create({ mitglied_id, rolle, notizen: body.notizen || "", aktiv: true });
