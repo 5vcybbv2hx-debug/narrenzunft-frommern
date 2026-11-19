@@ -66,7 +66,7 @@ export default async function (req) {
        "ausschuss_mitglied_anlegen", "ausschuss_mitglied_update", "ausschuss_mitglied_loeschen"].includes(a);
 
     if (nurVorstand(aktion) && !ctx.kannVerwalten) {
-      return Response.json({ error: "Access Denied", message: "Aktion nur für Vorstand/Stellv./Admin." }, { status: 403 });
+      return Response.json({ error: "Access Denied", message: "Diese Aktion ist dem Vorstand vorbehalten." }, { status: 403 });
     }
 
     const result = await ausfuehren(base44, ctx, body);

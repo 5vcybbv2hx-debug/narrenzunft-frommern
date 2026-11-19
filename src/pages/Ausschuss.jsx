@@ -243,7 +243,7 @@ export default function Ausschuss() {
 
       {/* Tabs */}
       <div className="flex gap-1 bg-neutral-900 rounded-xl p-1 mb-5 overflow-x-auto">
-        {TABS.filter(tab => !['antraege', 'mitglieder'].includes(tab.id) || istVorstand).map(tab => {
+        {TABS.filter(tab => tab.id !== 'antraege' || istVorstand).map(tab => {
           const Icon = tab.icon;
           const badge = tabBadges[tab.id];
           return (

@@ -26,6 +26,7 @@ export default function AusschussMitgliederTab({ mitglieder, ausschussMitglieder
   const [form, setForm] = useState({ mitglied_id: '', rolle: 'Beisitzer', notizen: '' });
   const [saving, setSaving] = useState(false);
   const [suche, setSuche] = useState('');
+  const [savingSpl, setSavingSpl] = useState(null);
 
   useEffect(() => { load(); }, []);
 
@@ -63,6 +64,22 @@ export default function AusschussMitgliederTab({ mitglieder, ausschussMitglieder
     finally { setSaving(false); }
   };
 
+  /** Spartenleiter direkt als Ausschussmitglied aufnehmen (Vorgabe Pierre 19.11.). */
+  const aufnehmenAlsSpartenleiter = async (m) => {
+    setSavingSpl(m.id);
+    try {
+      await ausschussAktion('ausschuss_mitglied_anlegen', {
+        mitglied_id: m.id,
+        rolle: 'Spartenleiter',
+        notizen: '',
+      });
+      toast.success(`${m.vorname} ${m.nachname} ist jetzt im Ausschuss.`);
+      onSaved?.();
+    } catch (e) {
+      toast.error(e.message || 'Aufnehmen fehlgeschlagen');
+    } finally { setSavingSpl(null); }
+  };
+
   const handleRolleChange = async (amId, rolle) => {
     try {
       await ausschussAktion('ausschuss_mitglied_update', { ausschuss_mitglied_id: amId, rolle });
@@ -76,14 +93,6 @@ export default function AusschussMitgliederTab({ mitglieder, ausschussMitglieder
       await ausschussAktion('ausschuss_mitglied_loeschen', { ausschuss_mitglied_id: amId });
       onSaved?.();
     } catch (e) { toast.error(e.message || 'Mitglied konnte nicht entfernt werden'); }
-  };
-
-  /** Spartenleiter direkt mit Rolle "Spartenleiter" in den Ausschuss aufnehmen. */
-  const handleAufnehmen = async (mitgliedId) => {
-    try {
-      await ausschussAktion('ausschuss_mitglied_anlegen', { mitglied_id: mitgliedId, rolle: 'Spartenleiter', notizen: '' });
-      onSaved?.();
-    } catch (e) { toast.error(e.message || 'Aufnehmen fehlgeschlagen'); }
   };
 
   if (loading) return (
@@ -175,7 +184,7 @@ export default function AusschussMitgliederTab({ mitglieder, ausschussMitglieder
         if (spartenleiter.length === 0) return null;
         return (
           <div className="mb-5">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Spartenleiter</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Spartenleiter · noch nicht im Ausschuss</p>
             <div className="space-y-2">
               {spartenleiter.map(m => {
                 const gruppenNamen = getSplatGruppen(m)
@@ -193,9 +202,12 @@ export default function AusschussMitgliederTab({ mitglieder, ausschussMitglieder
                       </span>
                     </div>
                     {isAdmin && (
-                      <button onClick={() => handleAufnehmen(m.id)}
-                        className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/15 text-primary text-xs font-semibold hover:bg-primary/25 transition-colors">
-                        <Plus size={12} /> Aufnehmen
+                      <button
+                        onClick={() => aufnehmenAlsSpartenleiter(m)}
+                        disabled={savingSpl === m.id}
+                        className="shrink-0 px-2.5 py-1.5 rounded-lg bg-primary/15 text-primary text-[11px] font-semibold hover:bg-primary/25 disabled:opacity-50 min-h-[34px]"
+                      >
+                        {savingSpl === m.id ? '...' : 'Aufnehmen'}
                       </button>
                     )}
                   </div>

@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
     // Bereiche (Mitgliedsanträge, Protokollfreigabe, Löschen, Ausschussverwaltung)
     // hängen an istVorstand.
     const istVorstand = ["vorstand", "stellv_vorstand", "admin"].includes(user.role);
-    const canManage = true;
+    const canManage = istVorstand || darfAusschussSehen;
 
     const [
       termine,
