@@ -47,6 +47,7 @@ export default function SitzungDetail() {
   const [ausschussMitglieder, setAusschussMitglieder] = useState([]);
   const [mitglieder, setMitglieder] = useState([]);
   const [anwesenheiten, setAnwesenheiten] = useState([]);
+  const [spartenleiter, setSpartenleiter] = useState([]);
   const [tops, setTops] = useState([]);
   const [abstimmungen, setAbstimmungen] = useState([]);
   const [stimmen, setStimmen] = useState([]);
@@ -74,6 +75,7 @@ export default function SitzungDetail() {
       setAusschussMitglieder(data.ausschussMitglieder || []);
       setMitglieder(data.mitglieder || []);
       setAnwesenheiten(anw || []);
+      setSpartenleiter(data.spartenleiter || []);
       setTops((data.tops || []).filter(x => x.termin_id === id).sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)));
       setAbstimmungen(abs);
       setStimmen((data.stimmen || []).filter(v => absIds.has(v.abstimmung_id)));
@@ -110,8 +112,10 @@ export default function SitzungDetail() {
     } catch (e) { toast.error(e.message || 'Anwesenheit konnte nicht gespeichert werden'); }
   };
 
-  // Anwesende für Quorum
-  const anwesend = anwesenheiten.filter(a => a.status === 'Anwesend').length;
+  // Quorum zählt nur echte Ausschussmitglieder — Spartenleiter werden
+  // erfasst, aber nicht mitgezählt.
+  const ausschussMitgliedIds = new Set(ausschussMitglieder.map(a => a.mitglied_id));
+  const anwesend = anwesenheiten.filter(a => a.status === 'Anwesend' && ausschussMitgliedIds.has(a.mitglied_id)).length;
   const quorum = ausschussMitglieder.length > 0 ? Math.ceil(ausschussMitglieder.length / 2) : 0;
 
   if (loading) return (
@@ -208,6 +212,7 @@ export default function SitzungDetail() {
       {activeTab === 'anwesenheit' && (
         <AnwesenheitTab
           ausschussMitglieder={ausschussMitglieder}
+          spartenleiter={spartenleiter}
           getMitgliedName={getMitgliedName}
           getAnwesenheit={getAnwesenheit}
           onAnwesenheit={handleAnwesenheit}
@@ -378,8 +383,8 @@ function SitzungsProtokollTab({ termin, protokolle, mitglieder, ausschussIds, on
 }
 
 // ─── Anwesenheit Tab ───────────────────────────────────────────────
-function AnwesenheitTab({ ausschussMitglieder, getMitgliedName, getAnwesenheit, onAnwesenheit, isAdmin }) {
-  if (ausschussMitglieder.length === 0) {
+function AnwesenheitTab({ ausschussMitglieder, spartenleiter = [], getMitgliedName, getAnwesenheit, onAnwesenheit, isAdmin }) {
+  if (ausschussMitglieder.length === 0 && spartenleiter.length === 0) {
     return (
       <div className="text-center py-12 bg-card border border-border rounded-xl">
         <Users size={32} className="text-muted-foreground mx-auto mb-2" />
@@ -420,6 +425,48 @@ function AnwesenheitTab({ ausschussMitglieder, getMitgliedName, getAnwesenheit, 
           </div>
         );
       })}
+
+      {/* Spartenleiter ohne AusschussMitglied-Datensatz */}
+      {spartenleiter.length > 0 && (
+        <div className="pt-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Spartenleiter</p>
+          <div className="space-y-2">
+            {spartenleiter.map(sl => {
+              const anw = getAnwesenheit(sl.mitglied_id);
+              const status = anw?.status || null;
+              const name = [sl.vorname, sl.nachname].filter(Boolean).join(' ') || getMitgliedName(sl.mitglied_id);
+              const gruppen = Array.isArray(sl.gruppen) ? sl.gruppen : [];
+              return (
+                <div key={sl.mitglied_id} className="bg-card border border-border rounded-xl px-4 py-3 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                    {name[0]}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{name}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {gruppen.length ? `Spartenleiter · ${gruppen.join(', ')}` : 'Spartenleiter'}
+                    </p>
+                  </div>
+                  {isAdmin ? (
+                    <div className="flex gap-1 shrink-0">
+                      {['Anwesend', 'Entschuldigt', 'Unentschuldigt'].map(s => (
+                        <button key={s} onClick={() => onAnwesenheit(sl.mitglied_id, s)}
+                          className={`px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-medium transition-all border ${status === s ? ANWESENHEIT_FARBEN[s] + ' border-current/30' : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'}`}>
+                          {s === 'Anwesend' ? '✓' : s === 'Entschuldigt' ? 'E' : '✗'}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    status && (
+                      <span className={`text-xs px-2 py-1 rounded-full ${ANWESENHEIT_FARBEN[status]}`}>{status}</span>
+                    )
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

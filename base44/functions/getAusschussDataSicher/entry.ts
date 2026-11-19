@@ -66,6 +66,7 @@ Deno.serve(async (req) => {
       auditLogs,
       tops,
       stimmen,
+      gruppen,
     ] = await Promise.all([
       base44.asServiceRole.entities.KalenderTermin.list("datum", 250),
       base44.asServiceRole.entities.Ausschussaufgabe.list("-created_date", 500),
@@ -80,7 +81,36 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.AusschussAuditLog.list("-zeitpunkt", 300).catch(() => []),
       base44.asServiceRole.entities.Tagesordnungspunkt.list("reihenfolge", 1000).catch(() => []),
       base44.asServiceRole.entities.AbstimmungsStimme.list("-created_date", 1000).catch(() => []),
+      base44.asServiceRole.entities.Haesgruppe.list("name", 250).catch(() => []),
     ]);
+
+    // Spartenleiter sind Ausschussmitglieder, haben aber meist keinen
+    // AusschussMitglied-Datensatz. Für die Anwesenheitsliste werden deshalb
+    // die Verantwortlichen aktiver Gruppen zusätzlich geliefert.
+    const aktiveAusschussIds = new Set((ausschussMitglieder || []).map((a) => a.mitglied_id));
+    const mitgliedById = new Map((mitglieder || []).map((m) => [m.id, m]));
+    const gruppenProMitglied = new Map();
+    for (const g of gruppen || []) {
+      if (g.aktiv === false) continue;
+      const ids = Array.isArray(g.verantwortliche_ids) && g.verantwortliche_ids.length
+        ? g.verantwortliche_ids
+        : (g.verantwortlicher_id ? [g.verantwortlicher_id] : []);
+      for (const mid of ids) {
+        if (!mid) continue;
+        const namen = gruppenProMitglied.get(mid) || [];
+        if (g.name && !namen.includes(g.name)) namen.push(g.name);
+        gruppenProMitglied.set(mid, namen);
+      }
+    }
+    const spartenleiter = [...gruppenProMitglied.entries()]
+      .filter(([mid]) => !aktiveAusschussIds.has(mid))
+      .map(([mid, namen]) => {
+        const m = mitgliedById.get(mid);
+        if (!m || m.archiviert) return null;
+        return { mitglied_id: mid, vorname: m.vorname || "", nachname: m.nachname || "", gruppen: namen };
+      })
+      .filter(Boolean)
+      .sort((a, b) => `${a.nachname} ${a.vorname}`.localeCompare(`${b.nachname} ${b.vorname}`, "de"));
 
     const sitzungen = termine.filter((x) =>
       ["Ausschusssitzung", "Vorstandssitzung", "Intern"].includes(x.terminart)
@@ -100,6 +130,7 @@ Deno.serve(async (req) => {
         spartenleiter_haesgruppe_id: m.spartenleiter_haesgruppe_id,
       })),
       ausschussMitglieder,
+      spartenleiter,
       abstimmungen,
       protokolle,
       antraege,
