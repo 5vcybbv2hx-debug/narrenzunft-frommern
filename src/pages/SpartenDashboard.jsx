@@ -257,19 +257,25 @@ export default function SpartenDashboard() {
     }
   }, [id, user]);
 
+  // Eigene Mitglieds-ID: bevorzugt der geladene Datensatz, sonst die vom
+  // Backend beim Login gelieferte ID (funktioniert auch, wenn der direkte
+  // Mitglieder-Read per RLS blockiert ist).
+  const meineMitgliedId = myMitglied?.id || user?._mitglied?.id || null;
+
   // Compute permissions
   const canEdit = useMemo(() => {
-    if (!user || !myMitglied) return false;
+    if (!user || !meineMitgliedId) return false;
     if (isAdmin(user) || effektiveRolle(user) === 'vorstand' || effektiveRolle(user) === 'stellv_vorstand') return true;
     // Gruppenverantwortung schlägt die Login-Rolle: wer in verantwortliche_ids
     // steht, arbeitet in seiner Gruppe (die Backend-Functions prüfen genauso).
     const verantwortlicheIds = gruppe?.verantwortliche_ids?.length
       ? gruppe.verantwortliche_ids
       : (gruppe?.verantwortlicher_id ? [gruppe.verantwortlicher_id] : []);
-    if (verantwortlicheIds.includes(myMitglied.id)) return true;
-    if (effektiveRolle(user) === 'spartenleiter' && myMitglied.spartenleiter_haesgruppen_ids?.includes(id)) return true;
+    if (verantwortlicheIds.includes(meineMitgliedId)) return true;
+    const meineGruppen = myMitglied?.spartenleiter_haesgruppen_ids || user?._mitglied?.spartenleiter_haesgruppen_ids || [];
+    if (effektiveRolle(user) === 'spartenleiter' && meineGruppen.includes(id)) return true;
     return false;
-  }, [user, myMitglied, id, gruppe]);
+  }, [user, myMitglied, meineMitgliedId, id, gruppe]);
 
   // Gruppen-Verantwortliche (verantwortliche_ids) — unabhängig vom Sync-Zustand
   // der Login-Rolle. Spiegelt exakt die Autorisierung der Backend-Functions
@@ -288,21 +294,21 @@ export default function SpartenDashboard() {
 
   // (z. B. verwalteGruppenTeilnehmer), die ebenfalls auf verantwortliche_ids prüfen.
   const istGruppenVerantwortlicher = useMemo(() => {
-    if (!gruppe || !myMitglied) return false;
+    if (!gruppe || !meineMitgliedId) return false;
     const ids = gruppe.verantwortliche_ids || (gruppe.verantwortlicher_id ? [gruppe.verantwortlicher_id] : []);
-    return ids.includes(myMitglied.id);
-  }, [gruppe, myMitglied]);
+    return ids.includes(meineMitgliedId);
+  }, [gruppe, meineMitgliedId]);
 
   // Gruppen-Zugehörigkeit: aktive:r Teilnehmer:in (Tanzgruppen) bzw. Roster-Mitglied.
   // Gruppeninterne Tabs (Häsordnung, Mitglieder, Tanz, Info, Marktplatz) sehen nur
   // Gruppen-Angehörige — nicht Mitglieder anderer Gruppen.
   const istGruppenMitglied = useMemo(() => {
-    if (!gruppe || !myMitglied) return false;
+    if (!gruppe || !meineMitgliedId) return false;
     if (gruppe.typ === 'Tanzgruppe') {
-      return (teilnehmerListe || []).some(t => t.mitglied_id === myMitglied.id && t.aktiv !== false);
+      return (teilnehmerListe || []).some(t => t.mitglied_id === meineMitgliedId && t.aktiv !== false);
     }
-    return (mitglieder || []).some(m => m.id === myMitglied.id);
-  }, [gruppe, myMitglied, teilnehmerListe, mitglieder]);
+    return (mitglieder || []).some(m => m.id === meineMitgliedId);
+  }, [gruppe, meineMitgliedId, teilnehmerListe, mitglieder]);
 
   // Sichtbarkeit für gruppeninterne Inhalte: Angehörige, Verantwortliche oder Verwaltung
   const kannGruppeIntern = canEdit || istGruppenVerantwortlicher || istGruppenMitglied;
