@@ -84,9 +84,10 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.Haesgruppe.list("name", 250).catch(() => []),
     ]);
 
-    // Spartenleiter sind Ausschussmitglieder, haben aber meist keinen
-    // AusschussMitglied-Datensatz. Für die Anwesenheitsliste werden deshalb
-    // die Verantwortlichen aktiver Gruppen zusätzlich geliefert.
+    // Spartenleiter der aktiven Gruppen (Vorgabe Pierre 19.11.): Sie gehören zum
+    // Ausschuss, sind aber oft (noch) kein AusschussMitglied. Damit sie in der
+    // Anwesenheitsliste der Sitzung auftauchen, wird hier eine eigene Liste
+    // geliefert. Wer schon Ausschussmitglied ist, erscheint nicht doppelt.
     const aktiveAusschussIds = new Set((ausschussMitglieder || []).map((a) => a.mitglied_id));
     const mitgliedById = new Map((mitglieder || []).map((m) => [m.id, m]));
     const gruppenProMitglied = new Map();
@@ -107,10 +108,17 @@ Deno.serve(async (req) => {
       .map(([mid, namen]) => {
         const m = mitgliedById.get(mid);
         if (!m || m.archiviert) return null;
-        return { mitglied_id: mid, vorname: m.vorname || "", nachname: m.nachname || "", gruppen: namen };
+        return {
+          mitglied_id: mid,
+          vorname: m.vorname || "",
+          nachname: m.nachname || "",
+          name: `${m.vorname || ""} ${m.nachname || ""}`.trim(),
+          gruppen: namen,
+          gruppe: namen.join(", "),
+        };
       })
       .filter(Boolean)
-      .sort((a, b) => `${a.nachname} ${a.vorname}`.localeCompare(`${b.nachname} ${b.vorname}`, "de"));
+      .sort((a, b) => a.name.localeCompare(b.name, "de"));
 
     const sitzungen = termine.filter((x) =>
       ["Ausschusssitzung", "Vorstandssitzung", "Intern"].includes(x.terminart)

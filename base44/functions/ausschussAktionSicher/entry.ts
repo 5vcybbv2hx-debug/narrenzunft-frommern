@@ -186,8 +186,9 @@ async function ausfuehren(base44, ctx, body) {
       if (!termin || !["Ausschusssitzung", "Vorstandssitzung", "Intern"].includes(termin.terminart)) {
         throw new Error("Sitzung nicht gefunden");
       }
-      // Spartenleiter sind Ausschussmitglieder ohne eigenen AusschussMitglied-
-      // Datensatz — ihre Anwesenheit darf ebenfalls erfasst werden.
+      // Auch aktuelle Spartenleiter dürfen in der Anwesenheitsliste geführt
+      // werden (Vorgabe Pierre 19.11.) — sie gehören zum Ausschuss, ohne
+      // zwingend einen AusschussMitglied-Datensatz zu haben.
       const mitgliedschaft = await S.AusschussMitglied.filter({ mitglied_id, aktiv: true });
       if (!mitgliedschaft?.length && !(await istAktuellerSpartenleiter(base44, mitglied_id))) {
         throw new Error("Kein aktives Ausschussmitglied");
