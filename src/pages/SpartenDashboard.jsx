@@ -853,7 +853,6 @@ export default function SpartenDashboard() {
           onSaved={() => loadData()}
         />
       )}
-
       {/* HEADER BAR */}
       <div className="border-b border-border bg-card sticky top-0 z-10 px-4 py-4 md:px-8">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
