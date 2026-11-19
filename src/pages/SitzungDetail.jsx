@@ -40,6 +40,7 @@ export default function SitzungDetail() {
   // Sichtbarkeit kommt ausschließlich aus der serverseitig geprüften Ausschuss-Funktion.
   const [hatZugriff, setHatZugriff] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [istVorstand, setIstVorstand] = useState(false);
   const [ladeFehler, setLadeFehler] = useState('');
 
   const [termin, setTermin] = useState(null);
@@ -78,6 +79,7 @@ export default function SitzungDetail() {
       setStimmen((data.stimmen || []).filter(v => absIds.has(v.abstimmung_id)));
       setProtokolle((data.protokolle || []).filter(p => p.termin_id === id));
       setIsAdmin(!!data.canManage);
+      setIstVorstand(!!data.istVorstand);
       setHatZugriff(true);
     } catch (e) {
       setHatZugriff(false);
@@ -248,6 +250,7 @@ export default function SitzungDetail() {
           ausschussIds={ausschussMitglieder.map(a => a.mitglied_id)}
           onSaved={loadData}
           isAdmin={isAdmin}
+          istVorstand={istVorstand}
         />
       )}
     </div>
@@ -255,7 +258,7 @@ export default function SitzungDetail() {
 }
 
 // ─── Protokoll Tab (direkt in der Sitzung) ─────────────────────────
-function SitzungsProtokollTab({ termin, protokolle, mitglieder, ausschussIds, onSaved, isAdmin }) {
+function SitzungsProtokollTab({ termin, protokolle, mitglieder, ausschussIds, onSaved, isAdmin, istVorstand }) {
   const [showModal, setShowModal] = useState(false);
   const [editP, setEditP] = useState(null);
 
@@ -304,6 +307,7 @@ function SitzungsProtokollTab({ termin, protokolle, mitglieder, ausschussIds, on
             onClose={() => setShowModal(false)}
             onSaved={() => { setShowModal(false); onSaved(); }}
             canManage={isAdmin}
+            istVorstand={istVorstand}
           />
         )}
       </div>
@@ -334,21 +338,21 @@ function SitzungsProtokollTab({ termin, protokolle, mitglieder, ausschussIds, on
                 </a>
               )}
             </div>
-            {isAdmin && <div className="flex gap-1 shrink-0">
-              <button
+            {(isAdmin || istVorstand) && <div className="flex gap-1 shrink-0">
+              {istVorstand && <button
                 onClick={() => handleToggleVeroeffentlicht(p)}
                 title={p.veroeffentlicht ? 'Als Entwurf markieren' : 'Veröffentlichen'}
                 className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
               >
                 {p.veroeffentlicht ? <EyeOff size={15} /> : <Eye size={15} />}
-              </button>
-              <button
+              </button>}
+              {isAdmin && <button
                 onClick={() => { setEditP(p); setShowModal(true); }}
                 title="Bearbeiten"
                 className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
               >
                 <Edit size={15} />
-              </button>
+              </button>}
             </div>}
           </div>
           {p.inhalt && !p.datei_url && (
@@ -366,6 +370,7 @@ function SitzungsProtokollTab({ termin, protokolle, mitglieder, ausschussIds, on
           onClose={() => setShowModal(false)}
           onSaved={() => { setShowModal(false); onSaved(); }}
           canManage={isAdmin}
+          istVorstand={istVorstand}
         />
       )}
     </div>

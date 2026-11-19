@@ -12,7 +12,7 @@
  * Verwaltung) bleiben auf Vorstand / Stellv. / Admin beschränkt (kannVerwalten).
  */
 
-const ROLLEN_MIT_ZUGRIFF = ["vorstand", "stellv_vorstand", "admin"];
+const ROLLEN_MIT_ZUGRIFF = ["vorstand", "stellv_vorstand", "admin", "spartenleiter"];
 const ROLLEN_VERWALTUNG = ["vorstand", "stellv_vorstand", "admin"];
 
 /** Nur eindeutig verknüpfte Logins dürfen Mitgliedsrechte übernehmen. */

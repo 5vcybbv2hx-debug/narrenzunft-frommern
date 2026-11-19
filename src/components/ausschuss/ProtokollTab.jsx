@@ -21,7 +21,7 @@ const EMPTY_FORM = {
   autor_mitglied_id: '',
 };
 
-export default function ProtokollTab({ termine, mitglieder, protokolle = [], ausschussMitglieder = [], onSaved, canManage = false, currentMitgliedId = null }) {
+export default function ProtokollTab({ termine, mitglieder, protokolle = [], ausschussMitglieder = [], onSaved, canManage = false, istVorstand = false, currentMitgliedId = null }) {
   const [showModal, setShowModal] = useState(false);
   const [editProtokoll, setEditProtokoll] = useState(null);
   const ausschussIds = ausschussMitglieder.filter(a => a.aktiv !== false).map(a => a.mitglied_id);
@@ -95,7 +95,7 @@ export default function ProtokollTab({ termine, mitglieder, protokolle = [], aus
                 )}
               </div>
               <div className="flex gap-1 shrink-0">
-                {canManage && <button
+                {istVorstand && <button
                   onClick={() => handleToggleVeroeffentlicht(p)}
                   title={p.veroeffentlicht ? 'Als Entwurf markieren' : 'Veröffentlichen'}
                   className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
@@ -108,7 +108,7 @@ export default function ProtokollTab({ termine, mitglieder, protokolle = [], aus
                 >
                   <Edit size={14} />
                 </button>}
-                {canManage && <button
+                {istVorstand && <button
                   onClick={() => handleDelete(p.id)}
                   className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                 >
@@ -129,13 +129,14 @@ export default function ProtokollTab({ termine, mitglieder, protokolle = [], aus
           onClose={() => { setShowModal(false); setEditProtokoll(null); }}
           onSaved={() => { setShowModal(false); setEditProtokoll(null); onSaved?.(); }}
           canManage={canManage}
+          istVorstand={istVorstand}
         />
       )}
     </div>
   );
 }
 
-export function ProtokollModal({ protokoll, prefill = {}, termine, mitglieder, ausschussIds, onClose, onSaved, canManage = false }) {
+export function ProtokollModal({ protokoll, prefill = {}, termine, mitglieder, ausschussIds, onClose, onSaved, canManage = false, istVorstand = false }) {
   const isNew = !protokoll;
   const [form, setForm] = useState({ ...EMPTY_FORM, ...prefill, ...protokoll });
   const [saving, setSaving] = useState(false);
@@ -313,7 +314,7 @@ export function ProtokollModal({ protokoll, prefill = {}, termine, mitglieder, a
         </div>
 
         <div className="flex gap-2 mt-5">
-          {canManage && !isNew && (
+          {istVorstand && !isNew && (
             <button onClick={handleDelete} className="p-2.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors">
               <Trash2 size={16} />
             </button>

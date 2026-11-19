@@ -47,7 +47,11 @@ Deno.serve(async (req) => {
       }, { status: 403 });
     }
 
-    const canManage = ["vorstand", "stellv_vorstand", "admin"].includes(user.role);
+    // Schreiben darf jedes Ausschussmitglied (canManage); vorstandsreservierte
+    // Bereiche (Mitgliedsanträge, Protokollfreigabe, Löschen, Ausschussverwaltung)
+    // hängen an istVorstand.
+    const istVorstand = ["vorstand", "stellv_vorstand", "admin"].includes(user.role);
+    const canManage = true;
 
     const [
       termine,
@@ -71,7 +75,7 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.AusschussMitglied.filter({ aktiv: true }),
       base44.asServiceRole.entities.Abstimmung.list("-created_date", 500),
       base44.asServiceRole.entities.Protokoll.list("-datum", 500),
-      canManage ? base44.asServiceRole.entities.Mitgliedsantrag.list("-created_date", 500) : Promise.resolve([]),
+      istVorstand ? base44.asServiceRole.entities.Mitgliedsantrag.list("-created_date", 500) : Promise.resolve([]),
       base44.asServiceRole.entities.Veranstaltung.list("-datum", 500),
       base44.asServiceRole.entities.AusschussJahresplan.list("titel", 200).catch(() => []),
       base44.asServiceRole.entities.AusschussAuditLog.list("-zeitpunkt", 300).catch(() => []),
@@ -107,6 +111,7 @@ Deno.serve(async (req) => {
       stimmen: stimmen || [],
       currentMitgliedId: mitglied?.id || null,
       canManage,
+      istVorstand,
     });
   } catch (error) {
     console.error("getAusschussDataSicher:", error);

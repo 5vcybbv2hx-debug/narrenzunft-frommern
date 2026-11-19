@@ -82,6 +82,7 @@ export default function Ausschuss() {
   const [veranstaltungen, setVeranstaltungen] = useState([]);
   const [currentMitgliedId, setCurrentMitgliedId] = useState(null);
   const [canManage, setCanManage] = useState(false);
+  const [istVorstand, setIstVorstand] = useState(false);
   const [aufgabenFilter, setAufgabenFilter] = useState('Alle');
   const [beschlussJahr, setBeschlussJahr] = useState('Alle');
   const [loading, setLoading] = useState(true);
@@ -146,6 +147,7 @@ export default function Ausschuss() {
       setVeranstaltungen(data.veranstaltungen || []);
       setCurrentMitgliedId(data.currentMitgliedId || null);
       setCanManage(!!data.canManage);
+      setIstVorstand(!!data.istVorstand);
     } catch (e) {
       console.error('Ausschuss laden:', e);
       setError('Ausschussdaten konnten nicht geladen werden.');
@@ -241,7 +243,7 @@ export default function Ausschuss() {
 
       {/* Tabs */}
       <div className="flex gap-1 bg-neutral-900 rounded-xl p-1 mb-5 overflow-x-auto">
-        {TABS.filter(tab => tab.id !== 'antraege' || canManage).map(tab => {
+        {TABS.filter(tab => !['antraege', 'mitglieder'].includes(tab.id) || istVorstand).map(tab => {
           const Icon = tab.icon;
           const badge = tabBadges[tab.id];
           return (
@@ -260,8 +262,8 @@ export default function Ausschuss() {
         <div className="space-y-4">
           <CockpitTab
             data={{ termine, aufgaben, beschluesse, protokolle, antraege, veranstaltungen, tops, abstimmungen, currentMitgliedId, mitglieder }}
-            canManage={canManage}
-            onNavigate={(t) => setActiveTab(t === 'antraege' && !canManage ? 'cockpit' : t)}
+            canManage={istVorstand}
+            onNavigate={(t) => setActiveTab(t === 'antraege' && !istVorstand ? 'cockpit' : t)}
             onOpenSitzung={(sid) => navigate(`/ausschuss/sitzung/${sid}`)}
             onFilterAufgaben={(f) => { setAufgabenFilter(f === 'meine' ? 'Meine' : 'Überfällig'); setActiveTab('aufgaben'); }}
           />
@@ -330,12 +332,12 @@ export default function Ausschuss() {
 
       {/* PROTOKOLLE */}
       {activeTab === 'protokolle' && (
-        <ProtokollTab termine={termine} mitglieder={mitglieder} protokolle={protokolle} ausschussMitglieder={ausschussMitglieder} onSaved={loadData} canManage={canManage} currentMitgliedId={currentMitgliedId} />
+        <ProtokollTab termine={termine} mitglieder={mitglieder} protokolle={protokolle} ausschussMitglieder={ausschussMitglieder} onSaved={loadData} canManage={canManage} istVorstand={istVorstand} currentMitgliedId={currentMitgliedId} />
       )}
 
       {/* AUSSCHUSSMITGLIEDER */}
       {activeTab === 'mitglieder' && (
-        <AusschussMitgliederTab mitglieder={mitglieder} ausschussMitglieder={ausschussMitglieder} onSaved={loadData} isAdmin={canManage} />
+        <AusschussMitgliederTab mitglieder={mitglieder} ausschussMitglieder={ausschussMitglieder} onSaved={loadData} isAdmin={istVorstand} />
       )}
 
       {/* JAHRESPLANUNG */}
@@ -529,7 +531,7 @@ export default function Ausschuss() {
       )}
 
       {/* MITGLIEDSANTRÄGE */}
-      {activeTab === 'antraege' && canManage && (
+      {activeTab === 'antraege' && istVorstand && (
         <Mitgliedsantraege embedded />
       )}
 

@@ -5,7 +5,7 @@ import { ausschussAktion } from '@/lib/ausschussAktionen';
 import { confirmDialog } from '@/components/ui/ConfirmProvider';
 import toast from 'react-hot-toast';
 
-const ROLLEN = ['Vorsitzender', 'Stellv. Vorsitzender', 'Schriftführer', 'Kassierer', 'Häswart', 'Beisitzer', 'Jugendleiter', 'Sonstiges'];
+const ROLLEN = ['Vorsitzender', 'Stellv. Vorsitzender', 'Schriftführer', 'Kassierer', 'Häswart', 'Beisitzer', 'Jugendleiter', 'Spartenleiter', 'Sonstiges'];
 
 const ROLLE_FARBEN = {
   'Vorsitzender':        'bg-primary/20 text-primary',
@@ -15,6 +15,7 @@ const ROLLE_FARBEN = {
   'Häswart':             'bg-amber-500/20 text-amber-400',
   'Beisitzer':           'bg-gray-500/20 text-muted-foreground',
   'Jugendleiter':        'bg-primary/20 text-primary',
+  'Spartenleiter':       'bg-sky-500/20 text-sky-400',
   'Sonstiges':           'bg-secondary text-muted-foreground',
 };
 
@@ -75,6 +76,14 @@ export default function AusschussMitgliederTab({ mitglieder, ausschussMitglieder
       await ausschussAktion('ausschuss_mitglied_loeschen', { ausschuss_mitglied_id: amId });
       onSaved?.();
     } catch (e) { toast.error(e.message || 'Mitglied konnte nicht entfernt werden'); }
+  };
+
+  /** Spartenleiter direkt mit Rolle "Spartenleiter" in den Ausschuss aufnehmen. */
+  const handleAufnehmen = async (mitgliedId) => {
+    try {
+      await ausschussAktion('ausschuss_mitglied_anlegen', { mitglied_id: mitgliedId, rolle: 'Spartenleiter', notizen: '' });
+      onSaved?.();
+    } catch (e) { toast.error(e.message || 'Aufnehmen fehlgeschlagen'); }
   };
 
   if (loading) return (
@@ -158,8 +167,10 @@ export default function AusschussMitgliederTab({ mitglieder, ausschussMitglieder
         // Rollen-Sync bei einer Zuweisung versagt hat, erscheint die Person trotzdem.
         const getSplatGruppen = m => m.spartenleiter_haesgruppen_ids
           || (m.spartenleiter_haesgruppe_id ? [m.spartenleiter_haesgruppe_id] : []);
+        // Nur Spartenleiter, die noch nicht im Ausschuss sind — jeweils mit "Aufnehmen".
         const spartenleiter = mitglieder.filter(m =>
-          m.app_rolle === 'spartenleiter' || getSplatGruppen(m).length > 0
+          !bereitsImAusschuss.has(m.id) &&
+          (m.app_rolle === 'spartenleiter' || getSplatGruppen(m).length > 0)
         );
         if (spartenleiter.length === 0) return null;
         return (
@@ -181,6 +192,12 @@ export default function AusschussMitgliederTab({ mitglieder, ausschussMitglieder
                         {gruppenNamen.length > 0 ? `Spartenleiter · ${gruppenNamen.join(', ')}` : 'Spartenleiter'}
                       </span>
                     </div>
+                    {isAdmin && (
+                      <button onClick={() => handleAufnehmen(m.id)}
+                        className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/15 text-primary text-xs font-semibold hover:bg-primary/25 transition-colors">
+                        <Plus size={12} /> Aufnehmen
+                      </button>
+                    )}
                   </div>
                 );
               })}
