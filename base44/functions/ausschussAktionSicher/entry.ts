@@ -54,17 +54,18 @@ export default async function (req) {
     if (!aktion) return Response.json({ error: "Keine Aktion angegeben" }, { status: 400 });
 
     // ── Allowlist ──
-    const brauchVerwaltung = (a) =>
-      ["sitzung_anlegen", "sitzung_status", "sitzung_einladen", "tops_sperren", "sitzung_anwesenheit", "top_status", "top_loeschen",
-       "abstimmung_anlegen", "abstimmung_update", "top_abstimmung_anlegen", "abstimmung_stimme_fuer", "abstimmung_wiedereroeffnen",
-       "jahresplan_speichern", "jahresplan_loeschen",
-       "abstimmung_abschliessen", "abstimmung_loeschen", "beschluss_anlegen",
-       "beschluss_aus_abstimmung", "beschluss_update", "beschluss_aufheben",
-       "beschluss_loeschen", "aufgabe_aus_beschluss", "aufgabe_update", "aufgabe_loeschen",
-       "protokoll_entwurf", "protokoll_freigabe", "protokoll_loeschen", "sitzung_kopieren", "datei_entfernen",
+    // Vorstand-only bleiben: Verwaltung des Ausschusses selbst, Einladungen,
+    // TOP-Sperre, finale Protokollfreigabe sowie ALLE Lösch-/Aufhebe-Aktionen.
+    // Alle anderen Schreibaktionen (Sitzungen, TOPs, Status, Anwesenheit,
+    // Abstimmungen, Stimmen, Beschlüsse, Aufgaben, Protokollentwürfe,
+    // Sitzung kopieren, Jahresplanung) darf jedes Ausschussmitglied ausführen.
+    const nurVorstand = (a) =>
+      ["sitzung_einladen", "tops_sperren", "protokoll_freigabe",
+       "top_loeschen", "abstimmung_loeschen", "beschluss_aufheben", "beschluss_loeschen",
+       "aufgabe_loeschen", "protokoll_loeschen", "jahresplan_loeschen", "datei_entfernen",
        "ausschuss_mitglied_anlegen", "ausschuss_mitglied_update", "ausschuss_mitglied_loeschen"].includes(a);
 
-    if (brauchVerwaltung(aktion) && !ctx.kannVerwalten) {
+    if (nurVorstand(aktion) && !ctx.kannVerwalten) {
       return Response.json({ error: "Access Denied", message: "Aktion nur für Vorstand/Stellv./Admin." }, { status: 403 });
     }
 
