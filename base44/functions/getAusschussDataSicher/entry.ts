@@ -82,6 +82,42 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.AbstimmungsStimme.list("-created_date", 1000).catch(() => []),
     ]);
 
+    // Spartenleiter der aktiven Gruppen (Vorgabe Pierre 19.11.): Sie gehören zum
+    // Ausschuss, sind aber oft (noch) kein AusschussMitglied. Damit sie in der
+    // Anwesenheitsliste der Sitzung auftauchen, wird hier eine eigene Liste
+    // geliefert. Wer schon Ausschussmitglied ist, erscheint nicht doppelt.
+    let spartenleiter = [];
+    try {
+      const gruppen = await base44.asServiceRole.entities.Haesgruppe.list("name", 250);
+      const gruppeProMitglied = new Map();
+      (gruppen || []).forEach((g) => {
+        if (g.aktiv === false) return;
+        const ids = Array.isArray(g.verantwortliche_ids) ? g.verantwortliche_ids.filter(Boolean) : [];
+        if (g.verantwortlicher_id) ids.push(g.verantwortlicher_id);
+        ids.forEach((id) => {
+          if (!gruppeProMitglied.has(id)) gruppeProMitglied.set(id, []);
+          gruppeProMitglied.get(id).push(g.name || "Gruppe");
+        });
+      });
+      const schonImAusschuss = new Set(
+        (ausschussMitglieder || []).filter((a) => a.aktiv !== false).map((a) => a.mitglied_id)
+      );
+      const offene = [...gruppeProMitglied.keys()].filter((id) => id && !schonImAusschuss.has(id));
+      if (offene.length) {
+        const rows = await base44.asServiceRole.entities.Mitglied.filter({ id: { $in: offene } });
+        spartenleiter = (rows || [])
+          .filter((m) => !m.archiviert)
+          .map((m) => ({
+            mitglied_id: m.id,
+            name: `${m.vorname || ""} ${m.nachname || ""}`.trim(),
+            gruppe: (gruppeProMitglied.get(m.id) || []).join(", "),
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name, "de"));
+      }
+    } catch (e) {
+      console.error("Spartenleiter für Anwesenheit:", e);
+    }
+
     const sitzungen = termine.filter((x) =>
       ["Ausschusssitzung", "Vorstandssitzung", "Intern"].includes(x.terminart)
     );
@@ -100,6 +136,7 @@ Deno.serve(async (req) => {
         spartenleiter_haesgruppe_id: m.spartenleiter_haesgruppe_id,
       })),
       ausschussMitglieder,
+      spartenleiter,
       abstimmungen,
       protokolle,
       antraege,

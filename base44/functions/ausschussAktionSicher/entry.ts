@@ -1,5 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.50";
-import { loeseMitgliedUndRechte, schreibeAudit, generiereBeschlussnummer } from "../../shared/ausschussBerechtigung.ts"; // redeploy 481cf71
+import { loeseMitgliedUndRechte, schreibeAudit, generiereBeschlussnummer, istAktuellerSpartenleiter } from "../../shared/ausschussBerechtigung.ts"; // redeploy 481cf71
 import { sendePush, holeAusschussIds } from "../../shared/pushSenden.ts";
 
 /**
@@ -186,8 +186,13 @@ async function ausfuehren(base44, ctx, body) {
       if (!termin || !["Ausschusssitzung", "Vorstandssitzung", "Intern"].includes(termin.terminart)) {
         throw new Error("Sitzung nicht gefunden");
       }
+      // Auch aktuelle Spartenleiter dürfen in der Anwesenheitsliste geführt
+      // werden (Vorgabe Pierre 19.11.) — sie gehören zum Ausschuss, ohne
+      // zwingend einen AusschussMitglied-Datensatz zu haben.
       const mitgliedschaft = await S.AusschussMitglied.filter({ mitglied_id, aktiv: true });
-      if (!mitgliedschaft?.length) throw new Error("Kein aktives Ausschussmitglied");
+      if (!mitgliedschaft?.length && !(await istAktuellerSpartenleiter(base44, mitglied_id))) {
+        throw new Error("Kein aktives Ausschussmitglied");
+      }
       const alle = await S.SitzungsAnwesenheit.filter({ termin_id });
       const bestehend = (alle || []).find((a) => a.mitglied_id === mitglied_id);
       const anwesenheit = bestehend

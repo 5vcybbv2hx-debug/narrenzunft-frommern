@@ -45,6 +45,7 @@ export default function SitzungDetail() {
 
   const [termin, setTermin] = useState(null);
   const [ausschussMitglieder, setAusschussMitglieder] = useState([]);
+  const [spartenleiter, setSpartenleiter] = useState([]);
   const [mitglieder, setMitglieder] = useState([]);
   const [anwesenheiten, setAnwesenheiten] = useState([]);
   const [tops, setTops] = useState([]);
@@ -72,6 +73,7 @@ export default function SitzungDetail() {
       const absIds = new Set(abs.map(a => a.id));
       setTermin(t || null);
       setAusschussMitglieder(data.ausschussMitglieder || []);
+      setSpartenleiter(data.spartenleiter || []);
       setMitglieder(data.mitglieder || []);
       setAnwesenheiten(anw || []);
       setTops((data.tops || []).filter(x => x.termin_id === id).sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)));
@@ -110,8 +112,10 @@ export default function SitzungDetail() {
     } catch (e) { toast.error(e.message || 'Anwesenheit konnte nicht gespeichert werden'); }
   };
 
-  // Anwesende für Quorum
-  const anwesend = anwesenheiten.filter(a => a.status === 'Anwesend').length;
+  // Anwesende für Quorum — nur echte Ausschussmitglieder zählen, nicht die
+  // zusätzlich geführten Spartenleiter.
+  const ausschussIds = new Set(ausschussMitglieder.map(a => a.mitglied_id));
+  const anwesend = anwesenheiten.filter(a => a.status === 'Anwesend' && ausschussIds.has(a.mitglied_id)).length;
   const quorum = ausschussMitglieder.length > 0 ? Math.ceil(ausschussMitglieder.length / 2) : 0;
 
   if (loading) return (
@@ -208,6 +212,7 @@ export default function SitzungDetail() {
       {activeTab === 'anwesenheit' && (
         <AnwesenheitTab
           ausschussMitglieder={ausschussMitglieder}
+          spartenleiter={spartenleiter}
           getMitgliedName={getMitgliedName}
           getAnwesenheit={getAnwesenheit}
           onAnwesenheit={handleAnwesenheit}
@@ -378,8 +383,39 @@ function SitzungsProtokollTab({ termin, protokolle, mitglieder, ausschussIds, on
 }
 
 // ─── Anwesenheit Tab ───────────────────────────────────────────────
-function AnwesenheitTab({ ausschussMitglieder, getMitgliedName, getAnwesenheit, onAnwesenheit, isAdmin }) {
-  if (ausschussMitglieder.length === 0) {
+function AnwesenheitTab({ ausschussMitglieder, spartenleiter = [], getMitgliedName, getAnwesenheit, onAnwesenheit, isAdmin }) {
+  const zeile = (mitgliedId, rolle, key) => {
+    const anw = getAnwesenheit(mitgliedId);
+    const status = anw?.status || null;
+    const name = getMitgliedName(mitgliedId);
+    return (
+      <div key={key} className="bg-card border border-border rounded-xl px-4 py-3 flex items-center gap-3">
+        <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+          {(name || '?').charAt(0)}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-foreground truncate">{name}</p>
+          <p className="text-xs text-muted-foreground">{rolle}</p>
+        </div>
+        {isAdmin ? (
+          <div className="flex gap-1 shrink-0">
+            {['Anwesend', 'Entschuldigt', 'Unentschuldigt'].map(s => (
+              <button key={s} onClick={() => onAnwesenheit(mitgliedId, s)}
+                className={`px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-medium transition-all border ${status === s ? ANWESENHEIT_FARBEN[s] + ' border-current/30' : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'}`}>
+                {s === 'Anwesend' ? '✓' : s === 'Entschuldigt' ? 'E' : '✗'}
+              </button>
+            ))}
+          </div>
+        ) : (
+          status && (
+            <span className={`text-xs px-2 py-1 rounded-full ${ANWESENHEIT_FARBEN[status]}`}>{status}</span>
+          )
+        )}
+      </div>
+    );
+  };
+
+  if (ausschussMitglieder.length === 0 && spartenleiter.length === 0) {
     return (
       <div className="text-center py-12 bg-card border border-border rounded-xl">
         <Users size={32} className="text-muted-foreground mx-auto mb-2" />
@@ -391,35 +427,19 @@ function AnwesenheitTab({ ausschussMitglieder, getMitgliedName, getAnwesenheit, 
 
   return (
     <div className="space-y-2">
-      {ausschussMitglieder.map(am => {
-        const anw = getAnwesenheit(am.mitglied_id);
-        const status = anw?.status || null;
-        return (
-          <div key={am.id} className="bg-card border border-border rounded-xl px-4 py-3 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-              {getMitgliedName(am.mitglied_id)[0]}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground truncate">{getMitgliedName(am.mitglied_id)}</p>
-              <p className="text-xs text-muted-foreground">{am.rolle}</p>
-            </div>
-            {isAdmin ? (
-              <div className="flex gap-1 shrink-0">
-                {['Anwesend', 'Entschuldigt', 'Unentschuldigt'].map(s => (
-                  <button key={s} onClick={() => onAnwesenheit(am.mitglied_id, s)}
-                    className={`px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-medium transition-all border ${status === s ? ANWESENHEIT_FARBEN[s] + ' border-current/30' : 'bg-secondary text-muted-foreground border-border hover:border-primary/40'}`}>
-                    {s === 'Anwesend' ? '✓' : s === 'Entschuldigt' ? 'E' : '✗'}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              status && (
-                <span className={`text-xs px-2 py-1 rounded-full ${ANWESENHEIT_FARBEN[status]}`}>{status}</span>
-              )
-            )}
-          </div>
-        );
-      })}
+      {ausschussMitglieder.map(am => zeile(am.mitglied_id, am.rolle, am.id))}
+      {spartenleiter.length > 0 && (
+        <>
+          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold pt-3 pb-0.5">
+            Spartenleiter
+          </p>
+          {spartenleiter.map(sl => zeile(
+            sl.mitglied_id,
+            sl.gruppe ? `Spartenleiter · ${sl.gruppe}` : 'Spartenleiter',
+            `sl-${sl.mitglied_id}`
+          ))}
+        </>
+      )}
     </div>
   );
 }
