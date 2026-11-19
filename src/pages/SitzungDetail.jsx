@@ -112,11 +112,11 @@ export default function SitzungDetail() {
     } catch (e) { toast.error(e.message || 'Anwesenheit konnte nicht gespeichert werden'); }
   };
 
-  // Anwesende für Quorum — nur echte Ausschussmitglieder zählen, nicht die
-  // zusätzlich geführten Spartenleiter.
-  const ausschussIds = new Set(ausschussMitglieder.map(a => a.mitglied_id));
-  const anwesend = anwesenheiten.filter(a => a.status === 'Anwesend' && ausschussIds.has(a.mitglied_id)).length;
-  const quorum = ausschussMitglieder.length > 0 ? Math.ceil(ausschussMitglieder.length / 2) : 0;
+  // Quorum (Vorgabe Pierre 19.11.): alle Anwesenden zählen, Ausschussmitglieder
+  // wie Spartenleiter; die Hälfte aller Eingetragenen ist die Schwelle.
+  const anwesend = anwesenheiten.filter(a => a.status === 'Anwesend').length;
+  const stimmberechtigte = ausschussMitglieder.length + spartenleiter.length;
+  const quorum = stimmberechtigte > 0 ? Math.ceil(stimmberechtigte / 2) : 0;
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
@@ -428,18 +428,11 @@ function AnwesenheitTab({ ausschussMitglieder, spartenleiter = [], getMitgliedNa
   return (
     <div className="space-y-2">
       {ausschussMitglieder.map(am => zeile(am.mitglied_id, am.rolle, am.id))}
-      {spartenleiter.length > 0 && (
-        <>
-          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold pt-3 pb-0.5">
-            Spartenleiter
-          </p>
-          {spartenleiter.map(sl => zeile(
-            sl.mitglied_id,
-            sl.gruppe ? `Spartenleiter · ${sl.gruppe}` : 'Spartenleiter',
-            `sl-${sl.mitglied_id}`
-          ))}
-        </>
-      )}
+      {spartenleiter.map(sl => zeile(
+        sl.mitglied_id,
+        sl.gruppe ? `Spartenleiter · ${sl.gruppe}` : 'Spartenleiter',
+        `sl-${sl.mitglied_id}`
+      ))}
     </div>
   );
 }
