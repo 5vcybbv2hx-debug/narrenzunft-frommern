@@ -154,11 +154,15 @@ Deno.serve(async (req) => {
         if (zentral || (gegenstaende || []).length > 0) zusatz.push('inventar');
       } catch (e) { /* Zugang bleibt unverändert */ }
     }
+    // Trainer:innen gehören nicht zum Ausschuss (Vorgabe Pierre 19.11.):
+    // der abgeleitete Spartenleiter-Zugang entfällt, ein ausdrücklicher
+    // Ausschuss-Eintrag oder Zusatzrecht bleibt gültig.
+    const ist_trainer = mitglied.ist_trainer === true;
     const ausschuss_berechtigt = ['vorstand', 'stellv_vorstand', 'admin'].includes(user.role) ||
       zusatz.includes('ausschuss') || ausschuss.length > 0 ||
-      await istAktuellerSpartenleiter(base44, mitglied.id);
+      (!ist_trainer && await istAktuellerSpartenleiter(base44, mitglied.id, mitglied));
     return Response.json({ linked: true, mitglied_id: mitglied.id, match_strategy: matchStrategy, updates,
-      app_rolle: mitglied.app_rolle, zusatz_berechtigungen: zusatz, ausschuss_berechtigt, erstlogin_gemeldet: !!erstloginPush });
+      app_rolle: mitglied.app_rolle, zusatz_berechtigungen: zusatz, ausschuss_berechtigt, ist_trainer, erstlogin_gemeldet: !!erstloginPush });
   } catch (error) {
     return Response.json({ error: error.message || 'Unbekannter Fehler' }, { status: 500 });
   }

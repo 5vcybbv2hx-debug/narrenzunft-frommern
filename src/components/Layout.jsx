@@ -96,7 +96,8 @@ export function canSeeItem(item, user) {
   if (item.roles.includes(user?.role)) return true;
   const zusatz = user?._mitglied?.zusatz_berechtigungen || [];
   if (item.zusatz && item.zusatz.some(z => zusatz.includes(z))) return true;
-  if (item.zusatz?.includes('ausschuss') && user?._mitglied?.ausschuss_berechtigt === true) return true;
+  if (item.zusatz?.includes('ausschuss') && user?._mitglied?.ausschuss_berechtigt === true
+      && user?._mitglied?.ist_trainer !== true) return true;
   return false;
 }
 

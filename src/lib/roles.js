@@ -137,10 +137,14 @@ export function kannMitgliedProfilSehn(user, myMitglied, zielMitglied, meineKind
  * (wird beim Hinzufügen/Entfernen im Ausschuss automatisch synchronisiert, s. lib/ausschussSync.js).
  */
 export function kannAusschussSehn(user) {
-  return ['vorstand', 'stellv_vorstand', 'admin'].includes(user?.role)
-    || (user?._mitglied?.zusatz_berechtigungen || []).includes('ausschuss')
-    || user?._mitglied?.ausschuss_berechtigt === true
-    || isDeveloper(user);
+  if (isDeveloper(user)) return true;
+  if (['vorstand', 'stellv_vorstand', 'admin'].includes(user?.role)) return true;
+  if ((user?._mitglied?.zusatz_berechtigungen || []).includes('ausschuss')) return true;
+  // Trainer:innen gehören nicht zum Ausschuss – auch nicht über den
+  // abgeleiteten Zugang (Gruppenverantwortung). Ausdrückliche Freigabe
+  // oben (Rolle/Zusatzrecht) sticht weiterhin.
+  if (user?._mitglied?.ist_trainer === true) return false;
+  return user?._mitglied?.ausschuss_berechtigt === true;
 }
 
 /** Darf Importe durchführen (nur Admin) */

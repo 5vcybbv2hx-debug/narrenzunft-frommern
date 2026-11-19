@@ -34,11 +34,15 @@ Deno.serve(async (req) => {
       aktivesAusschussmitglied = (am?.length || 0) > 0;
     }
 
+    // Trainer:innen sind in ihrer Gruppe verantwortlich, gehören aber nicht zum
+    // Ausschuss – der abgeleitete Spartenleiter-Zugang entfällt für sie.
+    // Ein ausdrücklicher Ausschuss-Eintrag oder Zusatzrecht sticht weiter.
+    const istTrainer = mitglied?.ist_trainer === true;
     const darfAusschussSehen =
       rollenMitZugriff.includes(user.role) ||
       zusatz.includes("ausschuss") ||
       aktivesAusschussmitglied ||
-      await istAktuellerSpartenleiter(base44, mitglied?.id);
+      (!istTrainer && await istAktuellerSpartenleiter(base44, mitglied?.id, mitglied));
 
     if (!darfAusschussSehen) {
       return Response.json({
