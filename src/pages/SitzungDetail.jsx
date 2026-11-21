@@ -351,8 +351,9 @@ function SitzungsProtokollTab({ termin, protokolle, mitglieder, ausschussIds, on
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+                      title={d.name || 'Anlage'}
                     >
-                      <Download size={12} /> {d.name}
+                      <Download size={12} /> {d.name || 'Anlage'}
                     </a>
                   ))}
                 </div>

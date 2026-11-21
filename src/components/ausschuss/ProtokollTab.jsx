@@ -103,8 +103,9 @@ export default function ProtokollTab({ termine, mitglieder, protokolle = [], aus
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+                        title={d.name || 'Anlage'}
                       >
-                        <Download size={12} /> {d.name}
+                        <Download size={12} /> {d.name || 'Anlage'}
                       </a>
                     ))}
                   </div>
@@ -161,10 +162,11 @@ export function ProtokollModal({ protokoll, prefill = {}, termine, mitglieder, a
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [modus, setModus] = useState(protokoll?.datei_url ? 'datei' : 'text');
-  const fileRef = useRef(null);
-  const anlagenRef = useRef(null);
+  // Anlagen: mehrere Dateien je Protokoll, unabhängig vom Text/Datei-Modus
   const [anlagenUploading, setAnlagenUploading] = useState(false);
   const anlagen = form.dateien || [];
+  const fileRef = useRef(null);
+  const anlagenRef = useRef(null);
   const set = (f, v) => setForm(p => ({ ...p, [f]: v }));
 
   // Verfasser: Ausschussmitglieder UND Spartenleiter. Der aktuell
@@ -387,7 +389,7 @@ export function ProtokollModal({ protokoll, prefill = {}, termine, mitglieder, a
                   <div key={`${d.url}-${i}`} className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-secondary border border-border">
                     <FileText size={14} className="text-muted-foreground shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-foreground font-medium truncate">{d.name}</p>
+                      <p className="text-xs text-foreground font-medium truncate">{d.name || 'Anlage'}</p>
                       <a href={d.url} target="_blank" rel="noopener noreferrer" className="text-[11px] text-primary hover:underline">
                         Vorschau öffnen
                       </a>
