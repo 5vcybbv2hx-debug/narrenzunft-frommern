@@ -90,6 +90,16 @@ export default function ProtokollTab({ termine, mitglieder, protokolle = [], aus
                     <Download size={12} /> {p.datei_name}
                   </a>
                 )}
+                {(p.dateien || []).length > 0 && (
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+                    {(p.dateien || []).map((d, i) => (
+                      <a key={`${d.url}-${i}`} href={d.url} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline">
+                        <Download size={12} /> {d.name}
+                      </a>
+                    ))}
+                  </div>
+                )}
                 {p.inhalt && !p.datei_url && (
                   <p className="text-xs text-muted-foreground mt-2 line-clamp-2 whitespace-pre-wrap">{p.inhalt}</p>
                 )}
@@ -142,7 +152,11 @@ export function ProtokollModal({ protokoll, prefill = {}, termine, mitglieder, a
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [modus, setModus] = useState(protokoll?.datei_url ? 'datei' : 'text');
+  // Anlagen: mehrere Dateien je Protokoll, unabhängig von Text/Datei-Modus
+  const [anlagen, setAnlagen] = useState(Array.isArray(protokoll?.dateien) ? protokoll.dateien : []);
+  const [uploadingAnlage, setUploadingAnlage] = useState(false);
   const fileRef = useRef(null);
+  const anlagenRef = useRef(null);
   const set = (f, v) => setForm(p => ({ ...p, [f]: v }));
 
   // Verfasser: Ausschussmitglieder UND Spartenleiter. Der aktuell
@@ -177,10 +191,32 @@ export function ProtokollModal({ protokoll, prefill = {}, termine, mitglieder, a
     setUploading(false);
   };
 
+  const handleAnlageUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploadingAnlage(true);
+    try {
+      const hochgeladen = [];
+      for (const file of files) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        hochgeladen.push({
+          name: file.name,
+          url: file_url,
+          typ: file.type || '',
+          groesse: file.size || 0,
+          datum: new Date().toISOString(),
+        });
+      }
+      setAnlagen(prev => [...prev, ...hochgeladen].slice(0, 12));
+    } catch (err) { console.error('Anlage hochladen:', err); }
+    setUploadingAnlage(false);
+    if (anlagenRef.current) anlagenRef.current.value = '';
+  };
+
   const handleSave = async () => {
     if (!form.titel || !form.datum) return;
     setSaving(true);
-    const data = { ...form };
+    const data = { ...form, dateien: anlagen };
     if (modus === 'datei') { data.inhalt = ''; }
     if (modus === 'text') { data.datei_url = ''; data.datei_name = ''; }
     try {
@@ -309,6 +345,30 @@ export function ProtokollModal({ protokoll, prefill = {}, termine, mitglieder, a
               )}
             </div>
           )}
+
+          {/* Anlagen */}
+          <div>
+            <label className="text-xs text-muted-foreground font-medium block mb-1">Anlagen (optional)</label>
+            <input ref={anlagenRef} type="file" multiple accept=".pdf,.doc,.docx,.odt,.txt,.jpg,.jpeg,.png" className="hidden" onChange={handleAnlageUpload} />
+            {anlagen.length > 0 && (
+              <div className="space-y-1.5 mb-2">
+                {anlagen.map((a, i) => (
+                  <div key={`${a.url}-${i}`} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary border border-border">
+                    <FileText size={14} className="text-primary shrink-0" />
+                    <a href={a.url} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-0 text-xs text-foreground truncate hover:text-primary">{a.name}</a>
+                    <button type="button" onClick={() => setAnlagen(prev => prev.filter((_, idx) => idx !== i))}
+                      className="text-muted-foreground hover:text-destructive shrink-0"><X size={13} /></button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button type="button" onClick={() => anlagenRef.current?.click()} disabled={uploadingAnlage}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-dashed border-border text-xs font-medium text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors disabled:opacity-50">
+              {uploadingAnlage
+                ? <span className="w-4 h-4 border-2 border-border border-t-primary rounded-full animate-spin" />
+                : <><Upload size={14} /> Datei anhängen (PDF, Word, Bilder)</>}
+            </button>
+          </div>
 
           <p className="text-xs text-muted-foreground">Veröffentlichung erfolgt separat durch Vorstand oder Admin.</p>
         </div>

@@ -653,8 +653,19 @@ async function ausfuehren(base44, ctx, body) {
       if (url && !/^https:\/\//i.test(url)) throw new Error("Ungültige Datei-URL");
       const autor = ctx.kannVerwalten ? (body.autor_mitglied_id || "") : ctx.currentMitgliedId;
       if (autor && !(await S.Mitglied.get(autor))) throw new Error("Verfasser nicht gefunden");
+      // Anlagen (mehrere Dateien je Protokoll) — nur https-URLs, max. 12 Stück.
+      const dateien = (Array.isArray(body.dateien) ? body.dateien : [])
+        .filter((d) => d && typeof d.url === "string" && /^https:\/\//i.test(d.url))
+        .slice(0, 12)
+        .map((d) => ({
+          name: String(d.name || "Datei").slice(0, 200),
+          url: d.url,
+          typ: String(d.typ || "").slice(0, 120),
+          groesse: Number(d.groesse) || 0,
+          datum: String(d.datum || new Date().toISOString()),
+        }));
       const patch = { titel, datum, termin_id: body.termin_id || "", inhalt: body.inhalt || "",
-        datei_url: url, datei_name: body.datei_name || "", autor_mitglied_id: autor };
+        datei_url: url, datei_name: body.datei_name || "", dateien, autor_mitglied_id: autor };
       const gespeichert = neu
         ? await S.Protokoll.create({ ...patch, veroeffentlicht: false, freigabestatus: "Entwurf" })
         : await S.Protokoll.update(prot.id, patch);
