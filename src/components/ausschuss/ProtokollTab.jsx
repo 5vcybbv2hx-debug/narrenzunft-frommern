@@ -9,6 +9,9 @@ import MobileSelect from '@/components/MobileSelect';
 import { ausschussAktion } from '@/lib/ausschussAktionen';
 import BottomModal from '@/components/ui/BottomModal';
 import { fmtDatum } from '@/lib/datum';
+import { toast } from 'sonner';
+
+const MAX_ANLAGEN = 12;
 
 const EMPTY_FORM = {
   titel: '',
@@ -18,6 +21,7 @@ const EMPTY_FORM = {
   veroeffentlicht: false,
   datei_url: '',
   datei_name: '',
+  dateien: [],
   autor_mitglied_id: '',
 };
 
@@ -90,6 +94,21 @@ export default function ProtokollTab({ termine, mitglieder, protokolle = [], aus
                     <Download size={12} /> {p.datei_name}
                   </a>
                 )}
+                {(p.dateien || []).length > 0 && (
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+                    {(p.dateien || []).map((d, i) => (
+                      <a
+                        key={`${d.url}-${i}`}
+                        href={d.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+                      >
+                        <Download size={12} /> {d.name}
+                      </a>
+                    ))}
+                  </div>
+                )}
                 {p.inhalt && !p.datei_url && (
                   <p className="text-xs text-muted-foreground mt-2 line-clamp-2 whitespace-pre-wrap">{p.inhalt}</p>
                 )}
@@ -143,6 +162,9 @@ export function ProtokollModal({ protokoll, prefill = {}, termine, mitglieder, a
   const [uploading, setUploading] = useState(false);
   const [modus, setModus] = useState(protokoll?.datei_url ? 'datei' : 'text');
   const fileRef = useRef(null);
+  const anlagenRef = useRef(null);
+  const [anlagenUploading, setAnlagenUploading] = useState(false);
+  const anlagen = form.dateien || [];
   const set = (f, v) => setForm(p => ({ ...p, [f]: v }));
 
   // Verfasser: Ausschussmitglieder UND Spartenleiter. Der aktuell
@@ -175,6 +197,39 @@ export function ProtokollModal({ protokoll, prefill = {}, termine, mitglieder, a
       set('datei_name', file.name);
     } catch (err) { console.error('Error:', err); }
     setUploading(false);
+  };
+
+  // Anlagen: Mehrfachauswahl, bleibt beim Umschalten Text/Datei erhalten
+  const handleAnlagenUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const freie = Math.max(0, MAX_ANLAGEN - anlagen.length);
+    if (freie === 0) {
+      toast.error(`Höchstens ${MAX_ANLAGEN} Anlagen`);
+      e.target.value = '';
+      return;
+    }
+    setAnlagenUploading(true);
+    try {
+      const neu = [];
+      for (const file of files.slice(0, freie)) {
+        const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
+        neu.push({
+          name: file.name.slice(0, 200),
+          url: file_url,
+          typ: file.type || '',
+          groesse: file.size || 0,
+          datum: new Date().toISOString(),
+        });
+      }
+      setForm(p => ({ ...p, dateien: [...(p.dateien || []), ...neu] }));
+      if (files.length > freie) toast.info(`Nur ${freie} von ${files.length} Anlagen übernommen (max. ${MAX_ANLAGEN})`);
+    } catch (err) {
+      console.error('Anlagen-Upload:', err);
+      toast.error('Anlage konnte nicht hochgeladen werden');
+    }
+    setAnlagenUploading(false);
+    if (anlagenRef.current) anlagenRef.current.value = '';
   };
 
   const handleSave = async () => {
@@ -309,6 +364,60 @@ export function ProtokollModal({ protokoll, prefill = {}, termine, mitglieder, a
               )}
             </div>
           )}
+
+          {/* Anlagen (optional) */}
+          <div className="border-t border-border pt-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs text-muted-foreground font-medium">Anlagen (optional)</label>
+              <span className="text-[11px] text-muted-foreground">{anlagen.length}/{MAX_ANLAGEN}</span>
+            </div>
+
+            <input
+              ref={anlagenRef}
+              type="file"
+              multiple
+              accept=".pdf,.doc,.docx,.odt,.txt,.jpg,.jpeg,.png"
+              className="hidden"
+              onChange={handleAnlagenUpload}
+            />
+
+            {anlagen.length > 0 && (
+              <div className="space-y-1.5 mb-2">
+                {anlagen.map((d, i) => (
+                  <div key={`${d.url}-${i}`} className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-secondary border border-border">
+                    <FileText size={14} className="text-muted-foreground shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-foreground font-medium truncate">{d.name}</p>
+                      <a href={d.url} target="_blank" rel="noopener noreferrer" className="text-[11px] text-primary hover:underline">
+                        Vorschau öffnen
+                      </a>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setForm(p => ({ ...p, dateien: (p.dateien || []).filter((_, xi) => xi !== i) }))}
+                      className="p-1 rounded text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                      title="Anlage entfernen"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => anlagenRef.current?.click()}
+              disabled={anlagenUploading || anlagen.length >= MAX_ANLAGEN}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-dashed border-border text-xs font-medium text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors disabled:opacity-50"
+            >
+              {anlagenUploading
+                ? <span className="w-4 h-4 border-2 border-border border-t-primary rounded-full animate-spin" />
+                : <Upload size={14} />}
+              {anlagenUploading ? 'Wird hochgeladen…' : 'Anlagen hinzufügen'}
+            </button>
+            <p className="text-[11px] text-muted-foreground mt-1">PDF, Word, ODT, TXT, JPG/PNG · max. {MAX_ANLAGEN} Dateien</p>
+          </div>
 
           <p className="text-xs text-muted-foreground">Veröffentlichung erfolgt separat durch Vorstand oder Admin.</p>
         </div>

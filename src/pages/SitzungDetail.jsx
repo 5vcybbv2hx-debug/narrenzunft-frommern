@@ -342,6 +342,21 @@ function SitzungsProtokollTab({ termin, protokolle, mitglieder, ausschussIds, on
                   <Download size={12} /> {p.datei_name}
                 </a>
               )}
+              {(p.dateien || []).length > 0 && (
+                <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
+                  {(p.dateien || []).map((d, i) => (
+                    <a
+                      key={`${d.url}-${i}`}
+                      href={d.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+                    >
+                      <Download size={12} /> {d.name}
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
             {(isAdmin || istVorstand) && <div className="flex gap-1 shrink-0">
               {istVorstand && <button

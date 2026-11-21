@@ -651,10 +651,26 @@ async function ausfuehren(base44, ctx, body) {
       }
       const url = String(body.datei_url || "");
       if (url && !/^https:\/\//i.test(url)) throw new Error("Ungültige Datei-URL");
+      // Anlagen (optional): nur https-URLs, Name max. 200 Zeichen, höchstens 12 Stück
+      // Ohne Feld im Request bleiben bestehende Anlagen erhalten (kein Datenverlust)
+      const roheAnlagen = Array.isArray(body.dateien) ? body.dateien : (prot?.dateien || []);
+      if (roheAnlagen.length > 12) throw new Error("Höchstens 12 Anlagen pro Protokoll");
+      const dateien = roheAnlagen.map((d: any) => {
+        const anlagenUrl = String(d?.url || "");
+        if (!/^https:\/\//i.test(anlagenUrl)) throw new Error("Ungültige Anlagen-URL");
+        return {
+          name: (String(d?.name || "").trim() || "Anlage").slice(0, 200),
+          url: anlagenUrl,
+          typ: String(d?.typ || "").slice(0, 100),
+          groesse: Number(d?.groesse) || 0,
+          datum: String(d?.datum || "") || new Date().toISOString(),
+          hochgeladen_von_id: String(d?.hochgeladen_von_id || ctx.currentMitgliedId || ""),
+        };
+      });
       const autor = ctx.kannVerwalten ? (body.autor_mitglied_id || "") : ctx.currentMitgliedId;
       if (autor && !(await S.Mitglied.get(autor))) throw new Error("Verfasser nicht gefunden");
       const patch = { titel, datum, termin_id: body.termin_id || "", inhalt: body.inhalt || "",
-        datei_url: url, datei_name: body.datei_name || "", autor_mitglied_id: autor };
+        datei_url: url, datei_name: body.datei_name || "", dateien, autor_mitglied_id: autor };
       const gespeichert = neu
         ? await S.Protokoll.create({ ...patch, veroeffentlicht: false, freigabestatus: "Entwurf" })
         : await S.Protokoll.update(prot.id, patch);
