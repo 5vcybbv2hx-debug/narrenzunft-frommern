@@ -103,7 +103,7 @@ export default function PushStatus({ istAdmin = false }) {
             disabled={laeuft}
             className="shrink-0 text-[13px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline disabled:opacity-60"
           >
-            {laeuft ? '…' : 'Deaktivieren'}
+            {laeuft ? '…' : 'Ausschalten'}
           </button>
         </div>
         {hinweis && <p className="text-xs text-foreground px-1">{hinweis}</p>}
