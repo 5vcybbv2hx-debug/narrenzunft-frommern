@@ -72,8 +72,38 @@ Deno.serve(async (req) => {
       } catch (e) { console.error('Verwandtschaft umgekehrt:', e); }
     }
 
+    // Gruppenverantwortung (Spartenleiter:in/Trainer:in): darf die persönlichen
+    // Felder der Mitglieder SEINER Gruppe bearbeiten — gleiche Feld-Whitelist.
+    // Gruppen kommen aus dem eigenen Profil und aus Haesgruppe.verantwortliche_ids.
+    let istGruppenVerantwortlich = false;
     if (!istElternteil) {
-      return Response.json({ erfolg: false, fehler: 'Keine Eltern-Berechtigung für dieses Profil.' }, { status: 403 });
+      try {
+        const eigeneGruppen = new Set<string>();
+        for (const gid of (selbst.spartenleiter_haesgruppen_ids || [])) eigeneGruppen.add(gid);
+        if (selbst.spartenleiter_haesgruppe_id) eigeneGruppen.add(selbst.spartenleiter_haesgruppe_id);
+        const gruppen = await base44.asServiceRole.entities.Haesgruppe.list('name', 200);
+        for (const g of gruppen || []) {
+          const v = (g.verantwortliche_ids?.length
+            ? g.verantwortliche_ids
+            : (g.verantwortlicher_id ? [g.verantwortlicher_id] : []));
+          if (v.includes(selbst.id)) eigeneGruppen.add(g.id);
+        }
+        if (eigeneGruppen.size > 0) {
+          const zielGruppen = new Set<string>();
+          for (const gid of (kind.haesgruppen_ids || [])) zielGruppen.add(gid);
+          if (kind.haesgruppe_id) zielGruppen.add(kind.haesgruppe_id);
+          istGruppenVerantwortlich = [...zielGruppen].some((gid) => eigeneGruppen.has(gid));
+          if (!istGruppenVerantwortlich) {
+            // Tanzgruppen: Zugehörigkeit steht in GruppenTeilnehmer.
+            const teilnahmen = await base44.asServiceRole.entities.GruppenTeilnehmer.filter({ mitglied_id: kindId });
+            istGruppenVerantwortlich = (teilnahmen || []).some((t: any) => eigeneGruppen.has(t.haesgruppe_id));
+          }
+        }
+      } catch (e) { console.error('Gruppenverantwortung:', e); }
+    }
+
+    if (!istElternteil && !istGruppenVerantwortlich) {
+      return Response.json({ erfolg: false, fehler: 'Keine Berechtigung für dieses Profil.' }, { status: 403 });
     }
 
     await base44.asServiceRole.entities.Mitglied.update(kindId, daten);
