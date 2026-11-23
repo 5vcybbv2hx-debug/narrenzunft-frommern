@@ -5,6 +5,10 @@
 
 export const APP_URL = 'https://narrenzunft-frommern.base44.app';
 
+// Anleitung als PDF (Registrieren + Installieren, mit QR-Code). Wird in der
+// Einladung mitgeschickt, weil wa.me nur Text uebertragen kann, keine Anhaenge.
+export const ANLEITUNG_PDF_URL = 'https://media.base44.com/files/public/6a216d71b6fcba886566ffb1/ea2f73c2695c77da0b7bfc4303ad5f96_Zunft-App-Anleitung.pdf';
+
 /** Normalisiert eine deutsche Telefonnummer auf internationale Ziffern (wa.me-Format). */
 export function waNummer(telefon) {
   if (!telefon) return null;
@@ -27,6 +31,8 @@ wir laden dich herzlich in die neue Narrenzunft-Frommern-App ein! Dort findest d
 1. Öffne: ${APP_URL}
 ${mailZeile}
 3. Danach wird dein Profil automatisch zugeordnet.
+
+Anleitung zum Installieren (PDF, mit QR-Code): ${ANLEITUNG_PDF_URL}
 
 Viele Grüße
 Narrenzunft Frommern`;
