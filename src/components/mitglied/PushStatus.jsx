@@ -4,8 +4,14 @@ import { toast } from 'sonner';
 import { Bell, BellOff, RefreshCw } from 'lucide-react';
 
 /**
- * Dauerhafte Diagnose-Zeile für Push im Profil:
- * Abo-Status, Notification.permission, eingeloggte external_id.
+ * Push im Profil.
+ *
+ * Vorgabe Pierre 23.11.: Nach dem Aktivieren soll die Diagnose-Anzeige
+ * verschwinden. Deshalb zwei Zustände:
+ *  - nicht abonniert: Diagnose (Abo, Erlaubnis, external_id) plus Aktivieren-Knopf,
+ *    damit man den Grund für ein Problem sieht.
+ *  - abonniert: nur noch eine schmale Zeile "Benachrichtigungen aktiv" mit
+ *    unauffälligem Ausschalten-Link.
  */
 export default function PushStatus() {
   const [status, setStatus] = useState(null);
@@ -26,13 +32,55 @@ export default function PushStatus() {
   const umgebung = pushUmgebung();
   const externalId = status.externalId ? `…${String(status.externalId).slice(-6)}` : '–';
 
+  const umschalten = async (aus) => {
+    setLaeuft(true);
+    setHinweis(null);
+    const ergebnis = await setzePushAbo(!aus);
+    setStatus(await getPushStatus());
+    setPrueft(true);
+    setLaeuft(false);
+    if (aus) {
+      if (ergebnis.ok) toast.success('Push ausgeschaltet. Du bekommst keine Benachrichtigungen mehr.');
+      else setHinweis('Ausschalten hat nicht geklappt. Bitte erneut versuchen oder die App neu laden.');
+      return;
+    }
+    if (ergebnis.ok) {
+      toast.success('Push aktiviert ✓ Du bekommst jetzt Benachrichtigungen.');
+    } else if (ergebnis.grund === 'blockiert' || ergebnis.erlaubnis === 'denied') {
+      setHinweis(pushHinweisBlockiert());
+    } else {
+      setHinweis('Der Browser hat die Nachfrage nicht angezeigt. Bitte erneut tippen, '
+        + 'oder Benachrichtigungen direkt in den Browser-/Geräteeinstellungen erlauben.');
+    }
+  };
+
+  // Abonniert: kompakte Zeile statt Diagnose
+  if (abonniert) {
+    return (
+      <section className="rounded-lg border border-border bg-card px-4 py-3" aria-label="Push-Status">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <Bell size={16} className="text-primary shrink-0" />
+            <p className="text-sm font-medium text-foreground">Benachrichtigungen aktiv</p>
+          </div>
+          <button
+            disabled={laeuft}
+            onClick={() => umschalten(true)}
+            className="shrink-0 text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors disabled:opacity-60"
+          >
+            {laeuft ? 'Einen Moment …' : 'Ausschalten'}
+          </button>
+        </div>
+        {hinweis && <p className="text-xs text-foreground mt-2">{hinweis}</p>}
+      </section>
+    );
+  }
+
   return (
     <section className="rounded-lg border border-border bg-card p-4" aria-label="Push-Status">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {abonniert
-            ? <Bell size={16} className="text-primary" />
-            : <BellOff size={16} className="text-muted-foreground" />}
+          <BellOff size={16} className="text-muted-foreground" />
           <h3 className="font-oswald text-lg text-foreground">Push-Benachrichtigungen</h3>
         </div>
         <button
@@ -45,8 +93,8 @@ export default function PushStatus() {
       </div>
       <div className="mt-2 space-y-1 text-xs">
         <p className="text-foreground">
-          Abo: <span className={abonniert ? 'text-primary font-medium' : 'text-muted-foreground'}>
-            {abonniert ? 'aktiv ✓' : (status.deaktiviert ? 'ausgeschaltet' : 'nicht abonniert')}
+          Abo: <span className="text-muted-foreground">
+            {status.deaktiviert ? 'ausgeschaltet' : 'nicht abonniert'}
           </span>
         </p>
         <p className="text-muted-foreground">Benachrichtigungs-Erlaubnis: {status.erlaubnis}</p>
@@ -62,35 +110,13 @@ export default function PushStatus() {
           <p className="text-xs text-muted-foreground mt-1">{umgebung.hinweis}</p>
         </div>
       ) : (
-      <button
-        disabled={laeuft}
-        onClick={async () => {
-          setLaeuft(true);
-          setHinweis(null);
-          const ergebnis = await setzePushAbo(!abonniert);
-          setStatus(await getPushStatus());
-          setPrueft(true);
-          setLaeuft(false);
-          if (abonniert) {
-            if (ergebnis.ok) toast.success('Push ausgeschaltet. Du bekommst keine Benachrichtigungen mehr.');
-            else setHinweis('Ausschalten hat nicht geklappt. Bitte erneut versuchen oder die App neu laden.');
-            return;
-          }
-          if (ergebnis.ok) {
-            toast.success('Push aktiviert ✓ Du bekommst jetzt Benachrichtigungen.');
-          } else if (ergebnis.grund === 'blockiert' || ergebnis.erlaubnis === 'denied') {
-            setHinweis(pushHinweisBlockiert());
-          } else {
-            setHinweis('Der Browser hat die Nachfrage nicht angezeigt. Bitte erneut tippen, '
-              + 'oder Benachrichtigungen direkt in den Browser-/Geräteeinstellungen erlauben.');
-          }
-        }}
-        className={abonniert
-          ? 'mt-3 w-full px-4 py-2 rounded-lg border border-border text-foreground text-sm font-medium hover:bg-muted transition-colors disabled:opacity-60'
-          : 'mt-3 w-full px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60'}
-      >
-        {laeuft ? 'Einen Moment …' : abonniert ? 'Benachrichtigungen ausschalten' : 'Benachrichtigungen aktivieren'}
-      </button>
+        <button
+          disabled={laeuft}
+          onClick={() => umschalten(false)}
+          className="mt-3 w-full px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60"
+        >
+          {laeuft ? 'Einen Moment …' : 'Benachrichtigungen aktivieren'}
+        </button>
       )}
       {hinweis && <p className="text-xs text-foreground mt-2">{hinweis}</p>}
     </section>
