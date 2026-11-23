@@ -7,7 +7,7 @@ export const APP_URL = 'https://narrenzunft-frommern.base44.app';
 
 // Anleitung als PDF (Registrieren + Installieren, mit QR-Code). Wird in der
 // Einladung mitgeschickt, weil wa.me nur Text uebertragen kann, keine Anhaenge.
-export const ANLEITUNG_PDF_URL = 'https://media.base44.com/files/public/6a216d71b6fcba886566ffb1/e9799da1eaca34239ab1df61b193188f_Zunft-App-Anleitung.pdf';
+export const ANLEITUNG_PDF_URL = 'https://media.base44.com/files/public/6a216d71b6fcba886566ffb1/410eaaa734aca04c293d4f36dec42351_Zunft-App-Anleitung.pdf';
 
 /** Normalisiert eine deutsche Telefonnummer auf internationale Ziffern (wa.me-Format). */
 export function waNummer(telefon) {
