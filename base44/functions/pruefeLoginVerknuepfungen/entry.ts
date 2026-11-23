@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+// shared-Helper: case-insensitiver E-Mail-Schlüssel (Import war zuvor versehentlich entfernt)
 import { emailSchluessel } from '../../shared/emailSchluessel.ts';
 
 /**
