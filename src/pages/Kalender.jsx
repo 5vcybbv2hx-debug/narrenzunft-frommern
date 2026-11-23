@@ -1075,42 +1075,55 @@ function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditV
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
-      {/* Kompakter Kopf: Datum + Titel + Art. Alles Weitere per Antippen. */}
+      {/* Kopf: Datum, Titel, Art und Uhrzeit bewusst gross — gut lesbar auch
+          für aeltere Mitglieder (Vorgabe Vorstand 23.11.2026). */}
       <button
         onClick={() => setOffen(v => !v)}
-        className="w-full flex items-center gap-3 p-3 text-left hover:bg-secondary/50 transition-colors"
+        className="w-full flex items-center gap-3 p-3.5 text-left hover:bg-secondary/50 transition-colors"
       >
-        <div className="w-12 h-12 rounded-lg bg-primary/10 flex flex-col items-center justify-center shrink-0 py-0.5">
-          <span className="text-[9px] text-muted-foreground leading-none capitalize">
-            {format(parseISO(termin.datum), 'EEEEEE', { locale: de })}
+        <div className="w-14 h-14 rounded-lg bg-primary/10 flex flex-col items-center justify-center shrink-0">
+          <span className="text-[11px] font-medium text-muted-foreground leading-none capitalize">
+            {format(parseISO(termin.datum), 'EEE', { locale: de })}
           </span>
-          <span className="text-sm font-bold text-primary leading-none mt-0.5">
+          <span className="text-xl font-bold text-primary leading-none mt-0.5">
             {format(parseISO(termin.datum), 'd')}
           </span>
-          <span className="text-[8px] text-muted-foreground leading-none mt-0.5">
+          <span className="text-[10px] text-muted-foreground leading-none mt-0.5">
             {format(parseISO(termin.datum), 'MMM', { locale: de })}
           </span>
         </div>
-        <p className="flex-1 min-w-0 font-semibold text-foreground text-sm break-words">{termin.titel}</p>
-        <span className={`shrink-0 text-[10px] px-2 py-0.5 rounded-full border font-medium ${farbeClass}`}>
-          {termin.terminart}
-        </span>
-        <ChevronDown size={14} className={`shrink-0 text-muted-foreground transition-transform ${offen ? 'rotate-180' : ''}`} />
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-foreground text-base leading-snug break-words">{termin.titel}</p>
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-1">
+            <span className={`inline-flex items-center text-[11px] px-2 py-0.5 rounded-full border font-medium ${farbeClass}`}>
+              {termin.terminart}
+            </span>
+            <span className="text-[13px] text-foreground/80 leading-snug">
+              {format(parseISO(termin.datum), 'dd.MM.yyyy', { locale: de })}
+              {(termin.startzeit || termin.endzeit) && (
+                <> · {termin.startzeit
+                  ? `${termin.startzeit}${termin.endzeit ? ` – ${termin.endzeit}` : ''} Uhr`
+                  : `bis ${termin.endzeit} Uhr`}</>
+              )}
+            </span>
+          </div>
+        </div>
+        <ChevronDown size={18} className={`shrink-0 text-muted-foreground transition-transform ${offen ? 'rotate-180' : ''}`} />
       </button>
 
       {/* Aufgeklappt: alle Details + Anmeldungen */}
       {offen && (
         <div className="px-4 pb-4 pt-3 border-t border-border space-y-3">
-          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+          <div className="flex flex-wrap gap-3 text-[13px] text-muted-foreground">
             {(termin.startzeit || termin.endzeit) && (
-              <span className="flex items-center gap-1">
-                <Clock size={10} />
-                {termin.startzeit}{termin.endzeit ? ` – ${termin.endzeit}` : ''}
+              <span className="flex items-center gap-1.5">
+                <Clock size={13} />
+                {termin.startzeit}{termin.endzeit ? ` – ${termin.endzeit}` : ''} Uhr
               </span>
             )}
             {termin.ort && (
-              <span className="flex items-center gap-1">
-                <MapPin size={10} /> {termin.ort}
+              <span className="flex items-center gap-1.5">
+                <MapPin size={13} /> {termin.ort}
               </span>
             )}
             {termin._bus && <span className="text-blue-400">🚌 Bus</span>}
