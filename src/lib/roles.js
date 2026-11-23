@@ -128,7 +128,9 @@ export function getRollenLabel(role) {
 /** Nur einfaches Mitglied oder Elternkonto – kein erweiterter Zugriff (Developer hat Zugriff) */
 export function istNurMitglied(user) {
   if (isDeveloper(user)) return false; // Developer hat immer Zugriff
-  return ['mitglied', 'user'].includes(user?.role);
+  // Gruppenverantwortliche zählen wie Spartenleiter, auch wenn die Login-Rolle
+  // noch auf 'user' steht (effektiveRolle zieht app_rolle nach).
+  return ['mitglied', 'user'].includes(effektiveRolle(user));
 }
 
 /** Darf dieses Mitglied-Profil sehen?

@@ -184,6 +184,8 @@ export default function MitgliedDetail() {
   const [inviteSent, setInviteSent] = useState(false);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'profil');
   const [istKindVonMir, setIstKindVonMir] = useState(false);
+  // Spartenleiter/Verantwortliche dürfen Profile ihrer eigenen Gruppe pflegen.
+  const [istGruppenVerantwortlicherVon, setIstGruppenVerantwortlicherVon] = useState(false);
   const [showHaesModal, setShowHaesModal] = useState(false);
   const [allHaes, setAllHaes] = useState([]);
   const [haessuche, setHaessuche] = useState('');
@@ -232,6 +234,25 @@ export default function MitgliedDetail() {
               meineKinderIds = meineVerwandten.filter(v => v.beziehung === 'Kind').map(v => v.verwandter_id);
               istMeinKind = meineKinderIds.includes(m[0].id);
               setIstKindVonMir(istMeinKind);
+
+              // Gruppenverantwortung: Verantwortliche einer Häsgruppe pflegen die
+              // Profile ihrer eigenen Gruppe (gleiche Feld-Whitelist wie Eltern).
+              try {
+                const meins = meinMitglied[0];
+                const meineGruppen = new Set(
+                  [meins.spartenleiter_haesgruppe_id, ...(meins.spartenleiter_haesgruppen_ids || [])].filter(Boolean)
+                );
+                const zielGruppe = m[0].haesgruppe_id;
+                let verantwortlich = !!(zielGruppe && meineGruppen.has(zielGruppe));
+                if (!verantwortlich && zielGruppe) {
+                  const g = await base44.entities.Haesgruppe.filter({ id: zielGruppe });
+                  const verant = g?.[0]?.verantwortliche_ids || [];
+                  verantwortlich = verant.includes(meins.id);
+                }
+                setIstGruppenVerantwortlicherVon(verantwortlich);
+              } catch (gerr) {
+                console.error('Gruppenverantwortung-Check:', gerr);
+              }
             }
           } catch (verr) {
             console.error('Verwandtschaft-Check:', verr);
@@ -379,7 +400,7 @@ export default function MitgliedDetail() {
       if (isNew) {
         await base44.entities.Mitglied.create(mitglied);
         navigate('/mitglieder');
-      } else if (!admin && istKindVonMir) {
+      } else if (!admin && (istKindVonMir || istGruppenVerantwortlicherVon)) {
         // Eltern bearbeiten das Profil ihres Kindes: Die Mitglied-RLS erlaubt
         // direkte Updates nur für admin/vorstand/den eigenen Datensatz — daher
         // läuft das Speichern über die gesicherte Backend-Function
@@ -612,13 +633,13 @@ export default function MitgliedDetail() {
           {alter !== null && <p className="text-sm text-muted-foreground">{alter} Jahre alt</p>}
           {!isNew && <p className="text-xs text-muted-foreground">{mitglied.mitgliedsnummer ? `#${mitglied.mitgliedsnummer} · ` : ''}{mitglied.user_id ? 'App-Zugang vorhanden' : 'Kein verknüpfter App-Zugang'}{mitglied.familie_id ? ' · Familie zugeordnet' : ''}</p>}
         </div>
-        {(admin || istKindVonMir) && !editing && (
+        {(admin || istKindVonMir || istGruppenVerantwortlicherVon) && !editing && (
           <button onClick={() => setEditing(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-red-700 transition-colors">
             <Edit size={14} /> Bearbeiten
           </button>
         )}
-        {(admin || istKindVonMir) && editing && (
+        {(admin || istKindVonMir || istGruppenVerantwortlicherVon) && editing && (
           <div className="flex gap-2">
             <button onClick={() => { setEditing(false); if (isNew) navigate(-1); }}
               className="p-2 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors">
@@ -763,8 +784,8 @@ export default function MitgliedDetail() {
           <Field label="Mitgliedsstatus" field="mitgliedsstatus" options={getVerfuegbareStatus(mitglied.geburtsdatum)} editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
           {editing && (
             <>
-              <Field label="E-Mail" field="email" type="email" editing={(admin || istKindVonMir) && editing} mitglied={mitglied} onChange={handleFieldChange} />
-              <Field label="Telefon" field="telefon" editing={(admin || istKindVonMir) && editing} mitglied={mitglied} onChange={handleFieldChange} />
+              <Field label="E-Mail" field="email" type="email" editing={(admin || istKindVonMir || istGruppenVerantwortlicherVon) && editing} mitglied={mitglied} onChange={handleFieldChange} />
+              <Field label="Telefon" field="telefon" editing={(admin || istKindVonMir || istGruppenVerantwortlicherVon) && editing} mitglied={mitglied} onChange={handleFieldChange} />
             </>
           )}
           <Field label="Eintrittsdatum" field="eintrittsdatum" type="date" editing={admin && editing} mitglied={mitglied} onChange={handleFieldChange} />
@@ -872,7 +893,7 @@ export default function MitgliedDetail() {
       {/* Adresse */}
       <div className="bg-card border border-border rounded-xl p-5 mb-4">
         <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2 font-oswald uppercase tracking-wide"><MapPin size={16} className="text-primary" /> Adresse</h2>
-        {(admin || istKindVonMir) && editing ? (
+        {(admin || istKindVonMir || istGruppenVerantwortlicherVon) && editing ? (
           <div className="space-y-3">
             <div>
               <label className="text-xs text-muted-foreground font-medium block mb-1">Adresse suchen</label>
@@ -885,10 +906,10 @@ export default function MitgliedDetail() {
                 }
               }} />
             </div>
-            <Field label="Straße" field="strasse" editing={(admin || istKindVonMir) && editing} mitglied={mitglied} onChange={handleFieldChange} />
+            <Field label="Straße" field="strasse" editing={(admin || istKindVonMir || istGruppenVerantwortlicherVon) && editing} mitglied={mitglied} onChange={handleFieldChange} />
             <div className="grid grid-cols-2 gap-3">
-              <Field label="PLZ" field="plz" editing={(admin || istKindVonMir) && editing} mitglied={mitglied} onChange={handleFieldChange} />
-              <Field label="Ort" field="ort" editing={(admin || istKindVonMir) && editing} mitglied={mitglied} onChange={handleFieldChange} />
+              <Field label="PLZ" field="plz" editing={(admin || istKindVonMir || istGruppenVerantwortlicherVon) && editing} mitglied={mitglied} onChange={handleFieldChange} />
+              <Field label="Ort" field="ort" editing={(admin || istKindVonMir || istGruppenVerantwortlicherVon) && editing} mitglied={mitglied} onChange={handleFieldChange} />
             </div>
           </div>
         ) : (
@@ -911,9 +932,9 @@ export default function MitgliedDetail() {
       <div className="bg-card border border-border rounded-xl p-5 mb-4">
         <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2 font-oswald uppercase tracking-wide"><AlertTriangle size={16} className="text-red-400" /> Notfallkontakt</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Name" field="notfallkontakt_name" editing={(admin || istKindVonMir) && editing} mitglied={mitglied} onChange={handleFieldChange} />
+          <Field label="Name" field="notfallkontakt_name" editing={(admin || istKindVonMir || istGruppenVerantwortlicherVon) && editing} mitglied={mitglied} onChange={handleFieldChange} />
           <div>
-            <Field label="Telefon" field="notfallkontakt_telefon" editing={(admin || istKindVonMir) && editing} mitglied={mitglied} onChange={handleFieldChange} />
+            <Field label="Telefon" field="notfallkontakt_telefon" editing={(admin || istKindVonMir || istGruppenVerantwortlicherVon) && editing} mitglied={mitglied} onChange={handleFieldChange} />
             {!editing && mitglied.notfallkontakt_telefon && (
               <a href={`tel:${mitglied.notfallkontakt_telefon}`} className="inline-flex items-center gap-1 mt-1 text-xs text-primary hover:text-primary/70 transition-colors">
                 <Phone size={11} /> Anrufen

@@ -72,8 +72,34 @@ Deno.serve(async (req) => {
       } catch (e) { console.error('Verwandtschaft umgekehrt:', e); }
     }
 
+    // Zusätzlich: Verantwortliche einer Häsgruppe pflegen die Profile ihrer eigenen
+    // Gruppe (Vorgabe Pierre 23.11.). Gleiche Feld-Whitelist wie für Eltern, also
+    // keine Bank-, Rollen- oder Verwaltungsdaten.
+    let istGruppenverantwortlich = false;
     if (!istElternteil) {
-      return Response.json({ erfolg: false, fehler: 'Keine Eltern-Berechtigung für dieses Profil.' }, { status: 403 });
+      try {
+        const meineGruppen = new Set();
+        if (selbst.spartenleiter_haesgruppe_id) meineGruppen.add(selbst.spartenleiter_haesgruppe_id);
+        for (const g of (selbst.spartenleiter_haesgruppen_ids || [])) if (g) meineGruppen.add(g);
+        const alleGruppen = await base44.asServiceRole.entities.Haesgruppe.list();
+        const verantwortet = (alleGruppen || [])
+          .filter(g => (g.verantwortliche_ids || []).includes(selbst.id) || g.verantwortlicher_id === selbst.id)
+          .map(g => g.id);
+        verantwortet.forEach(g => meineGruppen.add(g));
+
+        const zielGruppe = kind.haesgruppe_id || '';
+        if (zielGruppe && meineGruppen.has(zielGruppe)) istGruppenverantwortlich = true;
+
+        if (!istGruppenverantwortlich && verantwortet.length > 0) {
+          const teilnahmen = await base44.asServiceRole.entities.GruppenTeilnehmer
+            .filter({ mitglied_id: kindId }).catch(() => []);
+          if ((teilnahmen || []).some(t => verantwortet.includes(t.haesgruppe_id))) istGruppenverantwortlich = true;
+        }
+      } catch (e) { console.error('Gruppenverantwortung pruefen:', e); }
+    }
+
+    if (!istElternteil && !istGruppenverantwortlich) {
+      return Response.json({ erfolg: false, fehler: 'Keine Berechtigung für dieses Profil.' }, { status: 403 });
     }
 
     await base44.asServiceRole.entities.Mitglied.update(kindId, daten);
