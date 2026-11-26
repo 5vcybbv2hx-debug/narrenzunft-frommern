@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 import { istAktuellerSpartenleiter } from '../../shared/ausschussBerechtigung.ts';
 import { sendePush } from '../../shared/pushSenden.ts';
 import { ladeAlleMitglieder } from '../../shared/alleMitglieder.ts';
+import { emailSchluessel } from '../../shared/emailSchluessel.ts';
 
 // Einziger Empfänger der Erst-Login-Benachrichtigung (Nur-Pierre-Regel):
 // Pierre Hugendubel (Vorstand). Er will bei jedem ERSTEN Login eines eingeladenen
