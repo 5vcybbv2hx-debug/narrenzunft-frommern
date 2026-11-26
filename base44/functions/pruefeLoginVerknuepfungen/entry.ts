@@ -44,7 +44,14 @@ export default async function (req) {
     }
 
     // ── Vollständiger Abgleich ──
-    const users = await S.User.list(500);
+    // Konten vollständig blättern (list(limit) liefert je nach SDK nur eine Seite).
+    const users = [];
+    for (let skip = 0; skip < 5000; skip += 200) {
+      const teil = await S.User.list('created_date', 200, skip).catch(() => []);
+      if (!Array.isArray(teil) || teil.length === 0) break;
+      users.push(...teil);
+      if (teil.length < 200) break;
+    }
     let mitglieder = await S.Mitglied.list(500);
     if (mitglieder.length >= 500) {
       const rest = await S.Mitglied.list(500, 500);
