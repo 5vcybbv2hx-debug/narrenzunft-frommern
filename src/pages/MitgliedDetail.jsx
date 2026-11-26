@@ -184,6 +184,7 @@ export default function MitgliedDetail() {
   const [inviteSent, setInviteSent] = useState(false);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'profil');
   const [istKindVonMir, setIstKindVonMir] = useState(false);
+  // Spartenleiter/Verantwortliche dürfen Profile ihrer eigenen Gruppe pflegen.
   const [istGruppenVerantwortlicherVon, setIstGruppenVerantwortlicherVon] = useState(false);
   const [showHaesModal, setShowHaesModal] = useState(false);
   const [allHaes, setAllHaes] = useState([]);
@@ -214,7 +215,6 @@ export default function MitgliedDetail() {
     setLoading(true);
     setError(null);
     let istMeinKind = false;
-    let istGruppenVerantwortlich = false;
     try {
       const [m, h, e] = await Promise.all([
         base44.entities.Mitglied.filter({ id }),
@@ -235,38 +235,23 @@ export default function MitgliedDetail() {
               istMeinKind = meineKinderIds.includes(m[0].id);
               setIstKindVonMir(istMeinKind);
 
-              // Gruppenverantwortung: Spartenleiter:innen/Trainer:innen dürfen die
-              // persönlichen Felder ihrer eigenen Gruppenmitglieder bearbeiten.
-              if (meinMitglied[0].id !== m[0].id) {
-                const meineGruppen = new Set([
-                  ...(meinMitglied[0].spartenleiter_haesgruppen_ids || []),
-                  ...(meinMitglied[0].spartenleiter_haesgruppe_id ? [meinMitglied[0].spartenleiter_haesgruppe_id] : []),
-                ]);
-                try {
-                  const gruppen = await base44.entities.Haesgruppe.list('name', 200);
-                  (gruppen || []).forEach(g => {
-                    const v = g.verantwortliche_ids?.length
-                      ? g.verantwortliche_ids
-                      : (g.verantwortlicher_id ? [g.verantwortlicher_id] : []);
-                    if (v.includes(meinMitglied[0].id)) meineGruppen.add(g.id);
-                  });
-                } catch (gerr) { console.error('Gruppen laden:', gerr); }
-                if (meineGruppen.size > 0) {
-                  const zielGruppen = new Set([
-                    ...(m[0].haesgruppen_ids || []),
-                    ...(m[0].haesgruppe_id ? [m[0].haesgruppe_id] : []),
-                  ]);
-                  let verantwortlich = [...zielGruppen].some(gid => meineGruppen.has(gid));
-                  if (!verantwortlich) {
-                    // Tanzgruppen: Zugehörigkeit steht in GruppenTeilnehmer.
-                    try {
-                      const teilnahmen = await base44.entities.GruppenTeilnehmer.filter({ mitglied_id: m[0].id });
-                      verantwortlich = (teilnahmen || []).some(t => meineGruppen.has(t.haesgruppe_id));
-                    } catch (terr) { console.error('Teilnahmen laden:', terr); }
-                  }
-                  istGruppenVerantwortlich = verantwortlich;
-                  setIstGruppenVerantwortlicherVon(verantwortlich);
+              // Gruppenverantwortung: Verantwortliche einer Häsgruppe pflegen die
+              // Profile ihrer eigenen Gruppe (gleiche Feld-Whitelist wie Eltern).
+              try {
+                const meins = meinMitglied[0];
+                const meineGruppen = new Set(
+                  [meins.spartenleiter_haesgruppe_id, ...(meins.spartenleiter_haesgruppen_ids || [])].filter(Boolean)
+                );
+                const zielGruppe = m[0].haesgruppe_id;
+                let verantwortlich = !!(zielGruppe && meineGruppen.has(zielGruppe));
+                if (!verantwortlich && zielGruppe) {
+                  const g = await base44.entities.Haesgruppe.filter({ id: zielGruppe });
+                  const verant = g?.[0]?.verantwortliche_ids || [];
+                  verantwortlich = verant.includes(meins.id);
                 }
+                setIstGruppenVerantwortlicherVon(verantwortlich);
+              } catch (gerr) {
+                console.error('Gruppenverantwortung-Check:', gerr);
               }
             }
           } catch (verr) {
@@ -296,7 +281,7 @@ export default function MitgliedDetail() {
     }
     setLoading(false);
     // Auto-edit mode from FamilienDashboard link (nur wenn Edit-Berechtigung besteht)
-    if (location.search.includes('edit=1') && (isAdmin(user) || istMeinKind || istGruppenVerantwortlich)) {
+    if (location.search.includes('edit=1') && (isAdmin(user) || istMeinKind)) {
       setEditing(true);
     }
   };
@@ -416,10 +401,10 @@ export default function MitgliedDetail() {
         await base44.entities.Mitglied.create(mitglied);
         navigate('/mitglieder');
       } else if (!admin && (istKindVonMir || istGruppenVerantwortlicherVon)) {
-        // Eltern bzw. Gruppenverantwortliche bearbeiten das Profil: Die Mitglied-RLS
-        // erlaubt direkte Updates nur für admin/vorstand/den eigenen Datensatz —
-        // daher läuft das Speichern über die gesicherte Backend-Function
-        // 'aktualisiereKindSicher' (Verwandtschafts-/Gruppenprüfung + Feld-Whitelist).
+        // Eltern bearbeiten das Profil ihres Kindes: Die Mitglied-RLS erlaubt
+        // direkte Updates nur für admin/vorstand/den eigenen Datensatz — daher
+        // läuft das Speichern über die gesicherte Backend-Function
+        // 'aktualisiereKindSicher' (Eltern-Verifikation + Feld-Whitelist).
         await base44.functions.invoke('aktualisiereKindSicher', {
           kind_id: mitglied.id,
           updates: mitglied,

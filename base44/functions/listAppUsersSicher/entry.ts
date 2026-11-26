@@ -12,7 +12,16 @@ Deno.serve(async (req) => {
     if (!user || !['admin', 'vorstand', 'stellv_vorstand'].includes(user.role)) {
       return Response.json({ error: 'Keine Berechtigung' }, { status: 403 });
     }
-    const users = await base44.asServiceRole.entities.User.list(500);
+    // Vollständig blättern: list(limit) liefert je nach SDK nur eine Seite.
+    // Mit einer Seite fehlten die neuesten Konten und verknüpfte Mitglieder
+    // erschienen in der Oberfläche als "kein App-Konto".
+    const users = [];
+    for (let skip = 0; skip < 5000; skip += 200) {
+      const teil = await base44.asServiceRole.entities.User.list('created_date', 200, skip).catch(() => []);
+      if (!Array.isArray(teil) || teil.length === 0) break;
+      users.push(...teil);
+      if (teil.length < 200) break;
+    }
     return Response.json({
       users: (users || []).map(u => ({
         id: u.id,

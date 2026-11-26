@@ -43,12 +43,14 @@ export default function Berechtigungen() {
     setLoading(true);
     setError(null);
     try {
-      const [m, u] = await Promise.all([
+      // Konten über die Admin-Function laden: User.list() ohne Limit liefert nur
+      // eine Seite, dadurch galten verknüpfte Mitglieder als "kein App-Konto".
+      const [m, uResp] = await Promise.all([
         base44.entities.Mitglied.list('nachname', 500),
-        base44.entities.User.list(),
+        base44.functions.invoke('listAppUsersSicher', {}).catch(() => null),
       ]);
       setMitglieder(m.filter(x => !x.archiviert));
-      setUsers(u);
+      setUsers(uResp?.data?.users || []);
     } catch (e) {
       console.error('Fehler beim Laden der Berechtigungen:', e);
       setError('Daten konnten nicht geladen werden. Bitte später erneut versuchen.');

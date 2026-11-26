@@ -128,8 +128,8 @@ export function getRollenLabel(role) {
 /** Nur einfaches Mitglied oder Elternkonto – kein erweiterter Zugriff (Developer hat Zugriff) */
 export function istNurMitglied(user) {
   if (isDeveloper(user)) return false; // Developer hat immer Zugriff
-  // effektiveRolle: Gruppenverantwortliche mit Login-Rolle 'user'/'mitglied'
-  // gelten als Spartenleiter und dürfen die Profile ihrer Gruppe öffnen.
+  // Gruppenverantwortliche zählen wie Spartenleiter, auch wenn die Login-Rolle
+  // noch auf 'user' steht (effektiveRolle zieht app_rolle nach).
   return ['mitglied', 'user'].includes(effektiveRolle(user));
 }
 
