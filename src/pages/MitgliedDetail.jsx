@@ -164,12 +164,6 @@ export default function MitgliedDetail() {
     if (ziel && ziel !== id) navigate(`/mitglieder/${ziel}`);
   };
 
-  // Wischgeste: links = nächstes, rechts = vorheriges Mitglied (nur außerhalb des Bearbeitungsmodus)
-  const mitgliedSwipe = useSwipe({
-    onSwipeLeft: () => geheZuMitglied(1),
-    onSwipeRight: () => geheZuMitglied(-1),
-    enabled: !editing && !loading && navIndex >= 0,
-  });
 
   useEffect(() => {
     if (!mitglied?.id || !zeigeSplatSektion || splatHistorieGeladen) return;
@@ -183,6 +177,24 @@ export default function MitgliedDetail() {
   const [inviting, setInviting] = useState(false);
   const [inviteSent, setInviteSent] = useState(false);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'profil');
+
+  // Wischgeste: links = nächster, rechts = vorheriger Unterpunkt (Profil, Antrag, Familie ...).
+  // Das Wechseln zum nächsten/vorherigen Mitglied läuft nur noch über die Pfeile oben,
+  // damit ein Wisch im Profil nicht versehentlich ein anderes Mitglied öffnet (Rückmeldung Flo 26.11.).
+  const tabIds = ['profil', 'antrag', 'familie', 'aktivitaet', 'arbeitsdienste', 'ehrungen',
+    ...(isAdmin(user) ? ['verlauf'] : []),
+    ...(['admin', 'vorstand'].includes(user?.role) ? ['dokumente'] : []),
+  ];
+  const geheZuTab = (delta) => {
+    const i = tabIds.indexOf(activeTab);
+    const ziel = tabIds[i + delta];
+    if (i >= 0 && ziel) setActiveTab(ziel);
+  };
+  const mitgliedSwipe = useSwipe({
+    onSwipeLeft: () => geheZuTab(1),
+    onSwipeRight: () => geheZuTab(-1),
+    enabled: !editing && !loading,
+  });
   const [istKindVonMir, setIstKindVonMir] = useState(false);
   // Spartenleiter/Verantwortliche dürfen Profile ihrer eigenen Gruppe pflegen.
   const [istGruppenVerantwortlicherVon, setIstGruppenVerantwortlicherVon] = useState(false);
@@ -732,7 +744,7 @@ export default function MitgliedDetail() {
 
       {/* Tabs */}
       {!isNew && (
-        <div className="flex gap-1.5 overflow-x-auto pb-1 mb-4 scrollbar-hide">
+        <div data-no-swipe className="flex gap-1.5 overflow-x-auto pb-1 mb-4 scrollbar-hide">
           {[
             { id: 'profil', label: 'Profil' }, { id: 'antrag', label: 'Antrag' },
             { id: 'familie', label: 'Familie' }, { id: 'aktivitaet', label: 'Aktivität' },
