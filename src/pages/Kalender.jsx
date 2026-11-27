@@ -240,6 +240,24 @@ export default function Kalender({ nur = 'alle' }) {
       (familienMitglieder.find(m => m.id === id)?.vorname || 'Familie'));
   };
 
+  /** Namen aller Personen (ich + Familie), die zu diesem Termin angemeldet sind.
+   *  Bewusst unabhaengig vom Umfang-Schalter, damit die zugeklappte Karte immer
+   *  zeigt, ob man angemeldet ist (Wunsch Vorstand 27.11.2026). */
+  const anmeldeKurzInfo = (termin) => {
+    const namen = angemeldetePersonen(termin, 'familie');
+    if (termin._ausfahrt_id || termin._veranstaltung_id) return namen;
+    // Normale Termine: wer nur auf der Warteliste steht, ist NICHT angemeldet.
+    const wartend = new Set(
+      [...anmeldungen, ...familienAnmeldungen]
+        .filter(a => a.termin_id === termin.id && a.status === 'Warteliste')
+        .map(a => a.mitglied_id)
+    );
+    if (!wartend.size) return namen;
+    const erlaubt = [myMitglied, ...familienMitglieder].filter(Boolean);
+    const nurWartend = new Set(erlaubt.filter(m => wartend.has(m.id)).map(m => m.id === myMitglied?.id ? 'Du' : (m.vorname || 'Familie')));
+    return namen.filter(n => !nurWartend.has(n));
+  };
+
   /** Anmeldungen der Familie fuer eine Ausfahrt als QR-Eintraege. */
   const qrEintraegeFuer = (termin) => {
     const aid = termin?._ausfahrt_id || termin?.id;
@@ -881,6 +899,7 @@ export default function Kalender({ nur = 'alle' }) {
                   submittingKalender={submittingKalenderId === t.id}
                   myMitglied={myMitglied}
                   angemeldetePersonen={terminUmfang === 'familie' ? angemeldetePersonen(t) : []}
+                  anmeldeKurzInfo={anmeldeKurzInfo(t)}
                   onEdit={admin ? () => { setEditTermin(t); setShowModal(true); } : null}
                   onEditVeranstaltung={admin ? (v) => { setEditVeranstaltung(v); setShowVeranstaltungModal(true); } : null}
                   ausfahrtAnmeldung={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeStatus(t._ausfahrt_id) : null}
@@ -916,6 +935,7 @@ export default function Kalender({ nur = 'alle' }) {
                   submittingKalender={submittingKalenderId === t.id}
                   myMitglied={myMitglied}
                   angemeldetePersonen={terminUmfang === 'familie' ? angemeldetePersonen(t) : []}
+                  anmeldeKurzInfo={anmeldeKurzInfo(t)}
                   onEdit={admin ? () => { setEditTermin(t); setShowModal(true); } : null}
                   onEditVeranstaltung={admin ? (v) => { setEditVeranstaltung(v); setShowVeranstaltungModal(true); } : null}
                   ausfahrtAnmeldung={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeStatus(t._ausfahrt_id) : null}
@@ -968,6 +988,7 @@ export default function Kalender({ nur = 'alle' }) {
                   submittingKalender={submittingKalenderId === t.id}
                   myMitglied={myMitglied}
                   angemeldetePersonen={terminUmfang === 'familie' ? angemeldetePersonen(t) : []}
+                  anmeldeKurzInfo={anmeldeKurzInfo(t)}
                   onEdit={admin ? () => { setEditTermin(t); setShowModal(true); } : null}
                   onEditVeranstaltung={admin ? (v) => { setEditVeranstaltung(v); setShowVeranstaltungModal(true); } : null}
                   ausfahrtAnmeldung={t._quelle === 'ausfahrt' ? getAusfahrtAnmeldeStatus(t._ausfahrt_id) : null}
@@ -1047,7 +1068,7 @@ export default function Kalender({ nur = 'alle' }) {
   );
 }
 
-function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditVeranstaltung, ausfahrtAnmeldung, ausfahrtAnmeldeCount, isAusfahrtOpen, canUnregisterAusfahrt, onAusfahrtRegister, onAusfahrtUnregister, submittingAusfahrt, submittingKalender = false, angemeldetePersonen = [], myMitglied = null, onShowQR = null, hatQR = false, familieOptionen = [] }) {
+function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditVeranstaltung, ausfahrtAnmeldung, ausfahrtAnmeldeCount, isAusfahrtOpen, canUnregisterAusfahrt, onAusfahrtRegister, onAusfahrtUnregister, submittingAusfahrt, submittingKalender = false, angemeldetePersonen = [], anmeldeKurzInfo = [], myMitglied = null, onShowQR = null, hatQR = false, familieOptionen = [] }) {
   const farbeClass = TERMINART_FARBEN[termin.terminart] || TERMINART_FARBEN['Sonstiges'];
   const isAngemeldet = anmeldung?.status === 'Angemeldet';
   const istVonVeranstaltung = termin._quelle === 'veranstaltung';
@@ -1107,6 +1128,25 @@ function TerminKarte({ termin, anmeldung, teilnahme, onAnmelden, onEdit, onEditV
               )}
             </span>
           </div>
+          {/* Anmeldestatus direkt im zugeklappten Kopf: man sieht auf einen Blick,
+              wo man (oder die Familie) angemeldet ist, ohne den Termin zu oeffnen. */}
+          {(() => {
+            const personen = anmeldeKurzInfo.length > 0 ? anmeldeKurzInfo
+              : (isAngemeldet || istTeilnahme ? ['Du'] : []);
+            if (personen.length > 0) {
+              const nurIch = personen.length === 1 && personen[0] === 'Du';
+              return (
+                <p className="mt-1.5 inline-flex items-center gap-1.5 text-[12px] font-medium text-green-400">
+                  <span aria-hidden>✓</span>
+                  {nurIch ? 'Angemeldet' : `Angemeldet: ${personen.join(', ')}`}
+                </p>
+              );
+            }
+            if (anmeldung?.status === 'Warteliste') {
+              return <p className="mt-1.5 text-[12px] font-medium text-yellow-400">Warteliste</p>;
+            }
+            return null;
+          })()}
         </div>
         <ChevronDown size={18} className={`shrink-0 text-muted-foreground transition-transform ${offen ? 'rotate-180' : ''}`} />
       </button>
